@@ -46,18 +46,22 @@ bruteforce:
 
 
 .PHONY:dep
-dep: src/Makefile.dep
+dep: src/$(DIROBJ)/Makefile.dep
 	@echo "Resolving dependencies..."
-	@mkdir -p src/d.files
-	-cd src; $(MAKE) Makefile.dep
+	@mkdir -p src/$(DIROBJ)
+	-cd src; $(MAKE) $(DIROBJ)/Makefile.dep
+
+src/$(DIROBJ)/Makefile.dep:
 
 test: all
 	-cd test; $(MAKE)
 
+.PHONY:clean
 clean:
 	-cd src; $(MAKE) clean
 	rm -f *~
 
+.PHONY:clean
 execlean:
 	rm -f bin/QMcBeaver.* bin/pQMcBeaver.*
 
@@ -65,4 +69,6 @@ testclean:
 	-cd test; $(MAKE) clean
 
 cleanall: clean execlean testclean 
+	rm -rf src/obj_*
+
 

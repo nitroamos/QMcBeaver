@@ -1,3 +1,11 @@
+Thurs, 29 July 2004, Chip Kent
+
+1. Included Amos Anderson's changes to the build procedure.  These changes
+   make it possible to remove the annoying src/Makefile.dep file which 
+   constantly changes in CVS.  In addition, the new build procedure makes
+   it possible to build for multiple systems using the same code base.
+
+
 Wed, 21 July 2004, Daniel R. Fisher
 
 1.  Submitted changes on behalf of Amos Anderson fixing 

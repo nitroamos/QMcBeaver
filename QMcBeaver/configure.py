@@ -416,9 +416,10 @@ class ControlMake:
 
     def printString(self):
         text = 'SYS = ' + self.SYS + '\n'
-        text = 'VER = ' + self.VER + '\n'
+        text = text + 'VER = ' + self.VER + '\n'
         text = text + 'HOME = ' + self.HOME + '\n'
         text = text + 'INC = ' + self.INC + '\n'
+	text = text + 'DIROBJ = obj_$(SYS)\n'
         text = text + 'MAKE = ' + self.MAKE + '\n'
         text = text + 'EXE = ' + self.EXE + '\n'
         text = text + 'DEP = ' + self.DEP + '\n'
@@ -593,24 +594,3 @@ if __name__ == '__main__':
     file = open('Makefile.config','w')
     file.write(dat.printString())
     file.close()
-
-    file = open('src/Makefile.dep','w')
-    file.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

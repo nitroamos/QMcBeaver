@@ -34,36 +34,35 @@
 
 include ../Makefile.config
 
-OBJECTS  := $(patsubst %.cpp,%.o,$(wildcard *.cpp))
-DEPFILES := $(patsubst %.cpp,d.files/%.d,$(wildcard *.cpp))
+OBJECTS  := $(patsubst %.cpp,$(DIROBJ)/%.o,$(wildcard *.cpp))
+DEPFILES := $(patsubst %.cpp,$(DIROBJ)/%.d,$(wildcard *.cpp))
 
 all: QMcBeaver.e
 
 QMcBeaver.e: $(OBJECTS) $(LIBS)
 	$(CXX) $(OPT) $(INC) -o ../bin/$(EXE) $^ $(LINK)
 
-Makefile.dep: $(DEPFILES)
-	@cat $(DEPFILES) > Makefile.dep
+$(DIROBJ)/Makefile.dep: $(DEPFILES)
+	@cat $(DEPFILES) > $(DIROBJ)/Makefile.dep
 
-include Makefile.dep
-#include $(DEPFILES)
+include $(DIROBJ)/Makefile.dep
 
-.cpp.o:
-	$(CXX) $(OPT) $(INC) -c $<
-
-d.files/%.d: %.cpp ../include/%.h
-	$(CXX) $(INC) $(DEP) $< >> $@
+$(DIROBJ)/%.d: %.cpp ../include/%.h
+	$(CXX) $(INC) $(DEP) $< | sed -e "s/$*\.o/$(DIROBJ)\/$*\.o/g" >> $@
+	@echo "	$(CXX) $(OPT) $(INC) -c -o $(patsubst %.cpp,$(DIROBJ)/%.o,$<) $*.cpp" >> $@
 	@echo "" >> $@
 	@echo "" >> $@
 
-d.files/QMcBeaver.d: QMcBeaver.cpp
-	@$(CXX) $(INC) $(DEP) $< >> $@
+$(DIROBJ)/QMcBeaver.d: QMcBeaver.cpp
+	$(CXX) $(INC) $(DEP) $< | sed -e "s/QMcBeaver\.o/$(DIROBJ)\/QMcBeaver\.o/g" >> $@
+	@echo "	$(CXX) $(OPT) $(INC) -c -o $(DIROBJ)/QMcBeaver.o QMcBeaver.cpp" >> $@
 	@echo "" >> $@
 	@echo "" >> $@
 
+.PHONY:clean
 clean:
-	rm -f *.o *~ 
-	rm -rf ii_files d.files cxx_repository
+	rm -f *.o *~ *#
+	rm -rf ii_files d.files cxx_repository $(DIROBJ)
 
 
 
