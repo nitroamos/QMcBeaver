@@ -86,7 +86,7 @@ class ControlMake:
         if   self.SYS == 'linux':
             self.MAKE = 'gmake'
             self.EXE  = ''
-            self.CXX  = 'g++ -static -Wall'
+            self.CXX  = 'g++ -Wall'
             self.DEP  = '-MM'
             self.setOptimize()
             self.DBG  = ''
@@ -97,7 +97,7 @@ class ControlMake:
         elif   self.SYS == 'itanium':
             self.MAKE = 'gmake'
             self.EXE  = ''
-            self.CXX  = 'g++ -static -Wall'
+            self.CXX  = 'g++ -Wall'
             self.DEP  = '-MM'
             self.setOptimize()
             self.DBG  = ''
@@ -108,7 +108,7 @@ class ControlMake:
         elif   self.SYS == 'teragrid':
             self.MAKE = 'gmake'
             self.EXE  = ''
-            self.CXX  = 'g++ -static -Wall'
+            self.CXX  = 'g++ -Wall'
             self.DEP  = '-MM'
             self.setOptimize()
             self.DBG  = ''
