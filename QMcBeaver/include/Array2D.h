@@ -183,10 +183,10 @@ public:
       Array2D<T> TEMP(n_1,rhs.n_2);
       for(int i=0;i<n_1;i++)
 	{
-	  for(int j=0;j<n_2;j++)
+	  for(int j=0;j<rhs.n_2;j++)
 	    {
 	      TEMP.pArray[i][j] = 0;
-	      for(int k=0;k<rhs.n_2;k++)
+	      for(int k=0;k<n_2;k++)
 		{
 		  TEMP.pArray[i][j] += pArray[i][k] * rhs.pArray[k][j];
 		}
