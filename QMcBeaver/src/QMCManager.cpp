@@ -320,7 +320,7 @@ void QMCManager::run()
 
        if( !equilibrating && 
 	   ( Input.flags.optimize_Psi || Input.flags.print_configs == 1 ) &&
-	   iteration%Input.flags.print_config_frequency )
+	   iteration%Input.flags.print_config_frequency == 0 )
 	 {
 	   QMCnode.writeCorrelatedSamplingConfigurations(*config_strm_out); 
 	 }	 
@@ -558,7 +558,14 @@ void QMCManager::writeRestart()
 void QMCManager::writeXML(ostream & strm)
 {
   // Write out the random seed
-  strm << "<iseed>\n" << Input.flags.iseed << "\n</iseed>" << endl;
+  if (Input.flags.iseed > 0)
+    {
+      strm << "<iseed>\n" << -1*Input.flags.iseed << "\n</iseed>" << endl;
+    }
+  else if (Input.flags.iseed < 0)
+    {  
+      strm << "<iseed>\n" << Input.flags.iseed << "\n</iseed>" << endl;
+    }
 
   // Write out the number of walkers
   strm << "<NumberOfWalkers>\n" << QMCnode.getNumberOfWalkers()
@@ -596,6 +603,7 @@ void QMCManager::readXML(istream & strm)
   strm >> temp;
   strm >> temp;
   Input.flags.iseed = atoi(temp.c_str());
+  if (Input.flags.iseed > 0) Input.flags.iseed *= -1;
   strm >> temp;
 
   // Read in the number of walkers
