@@ -32,10 +32,6 @@
 # for more details. 
 #**************************************************************************/
 
-
-
-
-
 # A class containing all of the information necessary to build the code
 
 import os
@@ -66,6 +62,7 @@ class ControlMake:
         print '\tmac'
 	print '\tcplant'
         print '\tccmalloc'
+        print '\tcray_x1'
         print '\tinsure'
         print
         print 'Compilation Options'
@@ -110,6 +107,7 @@ class ControlMake:
                self.SYS != 'mac' and \
                self.SYS != 'cplant' and \
                self.SYS != 'ccmalloc'and \
+               self.SYS != 'cray_x1'and \
                self.SYS != 'insure':
             print 'Incorrect system specified!'
             self.printHelp()
@@ -237,6 +235,23 @@ class ControlMake:
             self.LNK  = '-lm -L/ul/chip/TEMP/MemDebugging/ccmalloc/' \
                         + 'ccmalloc-0-3-4/lib -lccmalloc'
             
+        elif self.SYS == 'cray_x1':
+            self.MAKE = 'gmake'
+            self.EXE  = ''
+            #self.CXX = 'CC -h new_for_init '
+            #self.CXX = 'CC -h new_for_init -h conform '
+            #self.CXX = 'CC -h conform '
+            #self.CXX = 'CC -h new_for_init -h fp0 -h list-m -DCRAY_X1 '
+            self.CXX  = 'CC -h new_for_init -h fp0 -DCRAY_X1 '
+            #self.CXX = 'CC -h new_for_init -h ieeeconform -h list = m -DCRAY_X1 '
+            #self.CXX = 'CC -h new_for_init -f ieeeconform -h list=m -h decomp -DCRAY_X1 '
+            self.DEP  = '-M'
+            self.setOptimize()
+            self.DBG = ''
+            self.PFL = ''
+            self.PLL = ''
+            self.LNK = '-lm'
+
         elif self.SYS == 'default':
             self.MAKE = 'gmake'
             self.EXE  = ''
@@ -285,6 +300,11 @@ class ControlMake:
         elif self.SYS == 'ccmalloc':
             self.OPT = '-O3 -felide-constructors -fnonnull-objects -ffast-math'
             
+        elif self.SYS == 'cray_x1':
+            self.OPT = '-02'
+            #self.OPT = '-03'
+            #self.OPT = '-03 -h inline4 -h stream3 -h ivdep' # too aggressive 
+
         elif self.SYS == 'default':
             self.OPT = '-O3'
             
@@ -324,6 +344,9 @@ class ControlMake:
         elif self.SYS == 'ccmalloc':
             self.DBG = '-g'
             
+        elif self.SYS == 'cray_x1':
+            self.OPT = '-g'
+
         elif self.SYS == 'default':
             self.DBG = '-g'
             
