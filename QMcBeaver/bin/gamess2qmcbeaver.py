@@ -115,7 +115,10 @@ elif run_type == "OPTIMIZE":
             start_geometry = i
             for j in range(i,len(gamess_output)):
                 if string.find(gamess_output[j],'INTERNUCLEAR DISTANCES') !=-1:
-                    end_geometry = j
+                    end_geometry = j-3
+                    break
+                elif string.find(gamess_output[j],'INTERNAL COORDINATES') !=-1:
+                    end_geometry = j-3
                     break
             break    
 
@@ -128,13 +131,13 @@ if run_type == "ENERGY":
     for line in geom_data:
         if start: geometry = geometry + [line]
         if string.find(line,'CHARGE') != -1: start = 1
+    geometry = geometry[:len(geometry)-1]
 
 elif run_type == "OPTIMIZE":
     for line in geom_data:
         if start == 2: geometry = geometry + [line]
         if string.find(line,'CHARGE') != -1: start = start + 1
-
-geometry = geometry[:len(geometry)-1]
+    geometry = geometry[1:]
 
 #split up the data
 for i in range(len(geometry)):
@@ -151,6 +154,7 @@ for line in geom_data:
         for i in range(len(geometry)):
             for j in range(2,5):
                 geometry[i][j] = geometry[i][j] * ANGtoBOHRconversion
+        break
 
 #################### EXTRACT GEOMETRY: END ######################
 
@@ -337,19 +341,32 @@ elif scf_type == "MCSCF":
             core_line = string.split(gamess_output[i])
             ncore = string.atoi(core_line[5])
             break
-    for i in range(len(gamess_output)):
-        if string.find(gamess_output[i],'FINAL MCSCF ENERGY') != -1:
-            start_mc_data = i
-            break
+
+    if run_type == "ENERGY":
+
+        for i in range(len(gamess_output)):
+            if string.find(gamess_output[i],'FINAL MCSCF ENERGY') != -1:
+                start_mc_data = i
+                break
+
+    elif run_type == "OPTIMIZE":
+
+        for i in range(start_geometry,len(gamess_output)):
+            if string.find(gamess_output[i],'STATE   1  ENERGY=') != -1:
+                start_mc_data = i
+                break
 
     for j in range(start_mc_data,len(gamess_output)):
-        if string.find(gamess_output[j],'ALPHA') != -1:
+        if string.find(gamess_output[j],'ALPH') != -1:
             start_ci = j+2
             break
     
     for i in range(start_ci,len(gamess_output)):
         if string.find(gamess_output[i],'DENSITY MATRIX') != -1:
             end_ci = i-1
+            break
+        elif string.find(gamess_output[i],'ENERGY COMPONENTS') != -1:
+            end_ci = i-2
             break
 
     ndeterminants = end_ci - start_ci
