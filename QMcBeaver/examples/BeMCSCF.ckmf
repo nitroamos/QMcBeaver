@@ -1,0 +1,255 @@
+&flags
+atoms
+ 1
+charge
+ 0
+energy
+ -14.5297198201
+norbitals
+ 5
+nbasisfunc
+ 9
+ndeterminants
+ 10
+run_type
+ variational
+chip_and_mike_are_cool
+ Yea_Baby!
+
+walker_initialization_method
+ dans_walker_initialization
+temp_dir
+ /temp1/fisher/
+
+iseed
+ -2140828765
+
+sampling_method
+ umrigar93_importance_sampling
+QF_modification_type
+ umrigar93_unequalelectrons
+energy_modification_type
+ umrigar93
+
+correct_population_size_bias
+ 0
+walker_reweighting_method
+ umrigar93_probability_weighted
+branching_method
+ nonunit_weight_branching
+branching_threshold
+ 2.000000000000000e+00
+fusion_threshold
+ 5.000000000000000e-01
+population_control_parameter
+ 1.000000000000000e-00
+
+old_walker_acceptance_parameter
+ 50
+
+dt
+ 1.000000000000000e-03
+dt_equilibration
+ 1.000000000000000e-02
+max_time_steps
+ 1000000
+equilibration_steps
+ 10000
+equilibration_function
+ ramp
+use_equilibration_array
+ 0
+
+number_of_walkers
+ 10
+
+output_interval
+ 10000
+mpireduce_interval
+ 10000
+
+desired_convergence
+ 0.00
+
+checkpoint
+ 0
+checkpoint_interval
+ 1000
+use_available_checkpoints
+ 0
+zero_out_checkpoint_statistics
+ 1
+print_transient_properties
+ 0
+print_transient_properties_interval
+ 10000
+
+print_configs
+ 0
+print_config_frequency
+ 1000
+optimize_Psi
+ 0
+max_optimize_Psi_steps
+ 10
+optimize_Psi_barrier_parameter
+ 1.0
+optimize_Psi_criteria
+ umrigar88
+optimize_Psi_method
+ BFGSQuasiNewton
+numerical_derivative_surface
+ umrigar88
+line_search_step_length
+ Wolfe
+
+equilibrate_every_opt_step
+ 1
+equilibrate_first_opt_step
+ 1
+
+write_all_energies_out
+ 0
+&
+&geometry
+BE	4	0.000000	0.000000	0.000000
+&
+&basis
+BE	9	3
+	3	s
+		71.8876000	1.13361044033
+		10.7289000	1.54675503976
+		2.2220500	0.902700291715
+	2	s
+		1.2954800	-0.36440246531
+		0.2688810	0.325751557133
+	2	px
+		1.2954800	0.404121290831
+		0.2688810	0.243567065016
+	2	py
+		1.2954800	0.404121290831
+		0.2688810	0.243567065016
+	2	pz
+		1.2954800	0.404121290831
+		0.2688810	0.243567065016
+	1	s
+		0.0773501	0.104533562612
+	1	px
+		0.0773501	0.0581455104227
+	1	py
+		0.0773501	0.0581455104227
+	1	pz
+		0.0773501	0.0581455104227
+&
+&wavefunction
+	-0.995528125		-0.073576772		0.0
+	0.0		0.0		0.0395336099
+	0.0		0.0		0.0
+
+
+	-0.202972931		0.254259753		0.0
+	0.0		0.0		0.800599497
+	0.0		0.0		0.0
+
+
+	0.0		0.0		0.114075535
+	-0.582845785		-0.203460827		0.0
+	0.0894209619		-0.456882332		-0.159491609
+
+
+	0.0		0.0		-0.600601137
+	-0.15263141		0.100494552		0.0
+	-0.470803273		-0.119645338		0.0787761644
+
+
+	0.0		0.0		0.142766753
+	-0.176389388		0.585338601		0.0
+	0.111913016		-0.138270212		0.458839364
+
+
+Alpha Occupation
+1	1	0	0	0	
+1	0	0	1	0	
+1	0	1	0	0	
+1	0	0	0	1	
+1	0	0	1	0	
+1	0	0	0	1	
+1	0	0	0	1	
+1	0	1	0	0	
+1	0	1	0	0	
+1	0	0	1	0	
+
+Beta Occupation
+1	1	0	0	0	
+1	0	0	1	0	
+1	0	1	0	0	
+1	0	0	0	1	
+1	0	0	0	1	
+1	0	0	1	0	
+1	0	1	0	0	
+1	0	0	0	1	
+1	0	0	1	0	
+1	0	1	0	0	
+
+CI Coeffs
+0.9497089
+-0.1807885
+-0.1807881
+-0.1807880
+-0.0000003
+-0.0000003
+0.0000001
+0.0000001
+0.0000001
+0.0000001
+
+&
+
+&Jastrow
+
+ParticleTypes: Electron_Up Electron_Down
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 3.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: 0.5
+
+ParticleTypes: Electron_Up Electron_Up
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 100.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: 0.25
+
+ParticleTypes: Electron_Down Electron_Down
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 100.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: 0.25
+
+ParticleTypes: Electron_Up BE
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 100.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: -4.0
+
+ParticleTypes: Electron_Down BE
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 100.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: -4.0
+
+&Jastrow
