@@ -160,7 +160,6 @@ private:
 	void calculateWithCPU(Array2D<double> &R){
 		//data = Array2D<finalType>(2*dim,2*dim);
 		//finalType** collection = data.array();
-		double **coeffs = Coeffs.array();
 
 		double xyz_term, r_sq, radialFunction=0;
 		double x,y,z, gx=0, gy=0, gz=0;
@@ -178,11 +177,11 @@ private:
 			gz = 0.0;
 			for(int j=0; j<N_Gauss; j++){
 				//first calculate psi		
-				radialFunction += coeffs[j][1]*exp(-coeffs[j][0]*r_sq);
+				radialFunction += Coeffs(j,1)*exp(-Coeffs(j,0)*r_sq);
 
 				//2nd, calculate the gradient
-				double exp_xyz_term = coeffs[j][1]*exp(-coeffs[j][0]*r_sq)*xyz_term;
-				double temp = -2.0*coeffs[j][0];
+				double exp_xyz_term = Coeffs(j,1)*exp(-Coeffs(j,0)*r_sq)*xyz_term;
+				double temp = -2.0*Coeffs(j,0);
 
 				gx += (k/x + temp*x)*exp_xyz_term;
 				gy += (l/y + temp*y)*exp_xyz_term;

@@ -1,13 +1,14 @@
 #include <iostream>
 #include <stdlib.h>
+
 #include <windows.h>
 #include <gl/glew.h>
 #include <gl/glut.h>
 #include <cg/cgGL.h>
 #include <time.h>
 
-#include "Stopwatch.h"
 #include "Array2D.h"
+#include "Stopwatch.h"
 #include "playtime.h"
 #include "matrix.h"
 #include "dgemm.h"
@@ -43,10 +44,9 @@ void testBasisFunction(int dim){
 
 	int numBF = dim*dim;
 	Array2D<double> R = Array2D<double>(numBF,3);
-	double** mat = R.array();
     for(int i=0; i<R.dim1(); i++)
 		for(int j=0; j<R.dim2(); j++)
-            mat[i][j] = (double)(rand()/33000.0);
+            R(i,j) = (double)(rand()/33000.0);
 	
 	BasisFunction bfCPU = BasisFunction(numBF,coeffs,0,0,0,coeffs.dim1(),0.0,0.0,0.0,"purple monkey");
 	BasisFunction bfGPU = BasisFunction(numBF,coeffs,0,0,0,coeffs.dim1(),0.0,0.0,0.0,"purple monkey");
@@ -94,24 +94,21 @@ void testBasisFunction(int dim){
 }
 
 void makeRandMatrix(Array2D<mytype> &matrix){
-	mytype** mat = matrix.array();
     for(int i=0; i<matrix.dim1(); i++)
 		for(int j=0; j<matrix.dim2(); j++){
-            mat[i][j] = (mytype)(rand()/33000.0);
-			mat[i][j] = (mytype)( (int)(mat[i][j]*10000) );
+            matrix(i,j) = (mytype)(rand()/33000.0);
+			matrix(i,j) = (mytype)( (int)(matrix(i,j)*10000) );
 		}
 }
 
-void PrintArray(Array2D<GLfloat> matrix){
-    if(!PRINT) return;
-	GLfloat** mat = matrix.array();
+void PrintArray(Array2D<GLfloat> matrix) {
 	for(int i=0; i<matrix.dim1(); i++){
 	    for(int j=0; j<matrix.dim2() && j < 28; j++){
-		    printf("%7.3g", (float)mat[i][j]);
+		    printf("%12.3g", matrix(i,j));
         }
         printf("\n");
     }
-    printf("\n");
+	printf("\n");
 }
 
 /**this just does matrix multiply on the GPU. used to make sure the matrix multiply
@@ -122,18 +119,20 @@ void checkMatrixMultiply(){
 	long timeGPU=0, timeCPU=0;
 	bool verbose = false;
 	bool errorCheck = true;
-	int d = 1000;
+	int d = 1001;
 
 	cout << endl << endl;
 	cout << "beginning matrix multiply test...\n";
 
 	todisplay = Matrix(d,d);
 	other = Matrix(d,d);
+	//todisplay = Matrix(d,d,4.0,false);
+	//other = Matrix(d,d,3.0,false);
 	Matrix res = Matrix(d,d,0.0,false);
 
 	sw.reset();
 	sw.start();
-	//todisplay = todisplay*other;
+	//res = todisplay*other;
 	sw.stop();
 	timeGPU = sw.timeMS();
 	cout << "operator* " << timeGPU << "\n";
@@ -147,16 +146,8 @@ void checkMatrixMultiply(){
 
 	A = todisplay.getData();
 	B = other.getData();
-	//*
-	rows = res.getRows();
-	columns = res.getColumns();
 	C = res.getData();
-	/*/
-	rows = todisplay.getRows();
-	columns = todisplay.getColumns();
-	C = todisplay.getData();
-	//*/
-	
+
 	if(verbose){
 		cout << "matrix A (" << A.dim1() << ", " << A.dim2() << ") is: " << endl;
 		PrintArray(A);
@@ -170,8 +161,7 @@ void checkMatrixMultiply(){
 		cout << "computing accurate result\n";
 		sw.reset();
 		sw.start();
-		//D = A*B;
-		A.matrixMultiply(B,D);
+		D = A*B;
 		sw.stop();
 		timeCPU = sw.timeMS();
 
@@ -201,7 +191,7 @@ void checkMatrixMultiply(){
 			cout << "(" << D.dim1() << ", " << D.dim2() << ") dimensional matrix multiplication a success" << endl;
 		} else {
 			cout << "error in the calculation" << endl;
-			if(verbose){
+			if(verbose || true){
 				cout << "matrix supposed to be: " << endl;
 				PrintArray(D);
 			}
@@ -209,7 +199,8 @@ void checkMatrixMultiply(){
 	} else {
 		printf("%5i GPU time: %6i CPU time: %6i factor: %8.4g\n",d,timeGPU,timeCPU,(double)timeCPU/(double)timeGPU);
 	}
-	
+	rows = res.getRows();
+	columns = res.getColumns();
 	perspective(false);
 	todisplay.display();
 }

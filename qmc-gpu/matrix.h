@@ -1,3 +1,4 @@
+/** Programmed by Amos Anderson, amosa@caltech*/
 #ifndef GPU_MATRIX
 #define GPU_MATRIX
 
@@ -82,15 +83,20 @@ public:
 		setup();
 		if(diag){
 			Array2D<GLfloat> data = Array2D<GLfloat>(rows,columns);
-			GLfloat** mat = data.array();
 			for(int i=0; i<rows; i++)
 				for(int j=0; j<columns; j++){
-					if(i==j) mat[i][j] = initial;
-					else mat[i][j] = 0.0f;
+					if(i==j) data(i,j) = initial;
+					else data(i,j) = 0.0f;
 				}
 			loadMatrix(data);
 		} else {
-			operator=(initial);
+			//operator=(initial);
+			Array2D<GLfloat> data = Array2D<GLfloat>(rows,columns);
+			for(int i=0; i<rows; i++)
+				for(int j=0; j<columns; j++){
+					data(i,j) = initial;
+				}
+			loadMatrix(data);
 		}
 	}
 
@@ -145,15 +151,12 @@ public:
 	function is actually the most expensive part of this function
 	
 	the majority of this code is in handling fringe effects*/
-	void loadMatrix(Array2D<GLfloat> &matrix){
+	void loadMatrix(const Array2D<GLfloat> &matrix){
 		int h = textureData->GetHeight();
 		int w = textureData->GetWidth();
 		if(PRINT) cout << "data: " << rows << "x" << columns << ", texture: " << h << "x" << w << " dimensional\n";
-		GLfloat** mat = matrix.array();
 
-		//trash is the arbitrary value assigned to pixel channels not used by actual data
-		//changing this shouldn't affect the accuracy of the actual answer
-		GLfloat trash = 0.5;
+		GLfloat trash = 0.0;
 
 		/*there is a choice in how to represent a matrix in a texture. either in a box:
           r   g
@@ -169,10 +172,10 @@ public:
 		for(i=0; i<h-1; i++){
             for(j=0; j<w-1; j++){
 				index = mapping(i, j, h, w);
-				pixelData[index   ] = mat[ i*2 ][ j*2 ];
-                pixelData[index +1] = mat[ i*2 ][j*2+1];
-                pixelData[index +2] = mat[i*2+1][ j*2 ];
-                pixelData[index +3] = mat[i*2+1][j*2+1];
+				pixelData[index   ] = matrix.get( i*2   , j*2   );
+                pixelData[index +1] = matrix.get( i*2   , j*2+1 );
+                pixelData[index +2] = matrix.get( i*2+1 , j*2   );
+                pixelData[index +3] = matrix.get( i*2+1 , j*2+1 );
             }
         }
 
@@ -182,10 +185,10 @@ public:
 		if(columns%2 != 0){
 			for(int i=0; i<h; i++){
 				index = mapping(i, j, h, w);
-				pixelData[index   ] = mat[ i*2 ][ j*2 ];
+				pixelData[index   ] = matrix.get( i*2   , j*2   );
                 pixelData[index +1] = trash;
 				if(rows%2 == 0 || i<h-1)
-					pixelData[index +2] = mat[i*2+1][ j*2 ];
+					pixelData[index +2] = matrix.get( i*2+1 , j*2   );
 				else
 					pixelData[index +2] = trash;
 				pixelData[index +3] = trash;
@@ -193,11 +196,11 @@ public:
 		} else {
 			for(int i=0; i<h; i++){
 				index = mapping(i, j, h, w);
-				pixelData[index   ] = mat[ i*2 ][ j*2 ];
-                pixelData[index +1] = mat[ i*2 ][j*2+1];
+				pixelData[index   ] = matrix.get( i*2   , j*2   );
+                pixelData[index +1] = matrix.get( i*2   , j*2+1 );
 				if(rows%2 == 0 || i<h-1){
-					pixelData[index +2] = mat[i*2+1][ j*2 ];
-					pixelData[index +3] = mat[i*2+1][j*2+1];
+					pixelData[index +2] = matrix.get( i*2+1 , j*2   );
+					pixelData[index +3] = matrix.get( i*2+1 , j*2+1 );
 				} else {
 					pixelData[index +2] = trash;
 					pixelData[index +3] = trash;
@@ -209,9 +212,9 @@ public:
 		if(rows%2 != 0){
 			for(int j=0; j<w; j++){
 				index = mapping(i, j, h, w);
-				pixelData[index   ] = mat[ i*2 ][ j*2 ];
+				pixelData[index   ] = matrix.get( i*2   , j*2   );
 				if(columns%2 == 0 || j<w-1)
-					pixelData[index +1] = mat[ i*2 ][j*2+1];
+					pixelData[index +1] = matrix.get( i*2   , j*2+1 );
 				else
 					pixelData[index +2] = trash;
 				pixelData[index +2] = trash;
@@ -220,28 +223,51 @@ public:
 		} else {
 			for(int j=0; j<w; j++){
 				index = mapping(i, j, h, w);
-				pixelData[index   ] = mat[ i*2 ][ j*2 ];
-                pixelData[index +2] = mat[i*2+1][ j*2 ];                
+				pixelData[index   ] = matrix.get( i*2   , j*2   );
+                pixelData[index +2] = matrix.get( i*2+1 , j*2   );                
 				if(columns%2 == 0 || j<w-1){
-					pixelData[index +1] = mat[ i*2 ][j*2+1];
-					pixelData[index +3] = mat[i*2+1][j*2+1];
+					pixelData[index +1] = matrix.get( i*2   , j*2+1 );
+					pixelData[index +3] = matrix.get( i*2+1 , j*2+1 );
 				} else {
 					pixelData[index +1] = trash;
 					pixelData[index +3] = trash;
 				}
 			}
 		}
-
+		/*
 		textureData->Bind();
 		glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_RGBA32_NV, 
 					 w, h, 0, GL_RGBA, GL_FLOAT, pixelData);
-		/* the *wrong* way to do it...
+		operator+=(0);
+		/*/
 		textureData->BeginCapture();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glDrawPixels(w, h, GL_RGBA, GL_FLOAT, texels);
+		glDrawPixels(w, h, GL_RGBA, GL_FLOAT, pixelData);
 		textureData->EndCapture();
-		*/
+		//*/
         getError("Error loading matrix");
+	}
+
+	/*this function is supposed to take the texture out of the GPU's memory and make it accessible
+	to the rest of the c++ code by converting the texture to an Array2D object. the input print
+	can allow the data to be additionally displayed in the console
+	calling this function will store the results in the data class variable.*/
+	void unloadMatrix(bool print){;
+		int h = textureData->GetHeight();
+        int w = textureData->GetWidth();			
+		glFinish();
+		
+		//this is a *lot* faster than glGetTexImage(textureData->GetTextureTarget(),0,GL_RGBA,GL_FLOAT,result);
+		textureData->BeginCapture();
+		glReadPixels(0,0,w,h,GL_RGBA,GL_FLOAT,pixelData);
+		textureData->EndCapture();
+		
+		if(print){
+			//PrintRGBAPixelsColumn(result,w,h);
+			PrintRGBAPixelsBox(pixelData,w,h);
+		}
+
+		getError("Error unloading matrix");
 	}
 
 	/* engine to run simple cg scripts. this is really for simple math operators who only take at most 2 parameters
@@ -361,28 +387,6 @@ public:
 		
 		getError("Error in display");
 		glFinish();
-	}
-
-	/*this function is supposed to take the texture out of the GPU's memory and make it accessible
-	to the rest of the c++ code by converting the texture to an Array2D object. the input print
-	can allow the data to be additionally displayed in the console
-	calling this function will store the results in the data class variable.*/
-	void unloadMatrix(bool print){;
-		int h = textureData->GetHeight();
-        int w = textureData->GetWidth();			
-		glFinish();
-		
-		//this is a *lot* faster than glGetTexImage(textureData->GetTextureTarget(),0,GL_RGBA,GL_FLOAT,result);
-		textureData->BeginCapture();
-		glReadPixels(0,0,w,h,GL_RGBA,GL_FLOAT,pixelData);
-		textureData->EndCapture();
-		
-		if(print){
-			//PrintRGBAPixelsColumn(result,w,h);
-			PrintRGBAPixelsBox(pixelData,w,h);
-		}
-
-		getError("Error unloading matrix");
 	}
 
 	void operator+=(const Matrix RHS){
@@ -541,7 +545,7 @@ public:
 		getError("Error in matrix multiply");
 		return Matrix(rows,RHS.columns,result[writingTexture]);
 	}
-
+	//LHS = this*RHS
 	void matrixMultiplyFaster(Matrix &RHS, Matrix &LHS){
 		if(columns != RHS.rows){
 			cout << "inncorrect dimensions for matrix multiply" << endl;
@@ -554,10 +558,10 @@ public:
 		const int numLoops = textureData->GetWidth();
 		const int numPasses = ceil((double)numLoops/maxLoops);
 		//const char * arg[] = {"fastprecision"};
-		fp = cgCreateProgram(g_cgContext, CG_SOURCE,
-                           matrixMultiply2, g_cgProfile,
-                           "main", NULL);
-        if(fp != NULL){
+		fp = cgCreateProgram(g_cgContext, CG_SOURCE,matrixMultiply, g_cgProfile,"main", NULL);
+        //fp = cgCreateProgram(g_cgContext, CG_SOURCE,testInputs, g_cgProfile,"main", NULL);
+
+		if(fp != NULL){
             cgGLLoadProgram(fp);
 			accum = cgGetNamedParameter(fp, "accum");     
             tLHS = cgGetNamedParameter(fp, "texLHS");
@@ -568,7 +572,7 @@ public:
 			cout << "error in matrixMultiply script" << endl;
 			return;
 		}
-		
+
 		RenderTexture * result = LHS.textureData;
 		result->BeginCapture();
 		cgGLBindProgram(fp);
@@ -594,7 +598,7 @@ public:
 		for(int i=0; i<numPasses; i++){
 			result->BeginCapture();
 			result->swapBuffers();
-
+			
 			cgGLSetParameter1f(startOps, i*maxLoops);
 			cgGLSetParameter1f(stopOps, i<numPasses-1?(i+1)*maxLoops:numLoops);
 			glBegin(GL_QUADS);
@@ -603,7 +607,7 @@ public:
 				glTexCoord2f(maxs, maxt);  glVertex3f(1.0, 1.0, 0.0);
 				glTexCoord2f(maxs, 0.0);   glVertex3f(1.0, -1.0, 0.0);
 			glEnd();
-
+			
 			result->EndCapture();			
 		}
 
@@ -613,7 +617,9 @@ public:
 		cgGLDisableTextureParameter(tLHS);
 		cgGLDisableTextureParameter(tRHS);
 		cgGLDisableProfile(g_cgProfile);
-
+		//LHS.unloadMatrix(true);
+		//unloadMatrix(true);
+		//RHS.unloadMatrix(true);
 		getError("Error in matrix multiply");
 	}
 
@@ -638,37 +644,34 @@ public:
 	the param input is to allow easy creation of different matricies*/
 	void makeCheckerMatrix(Array2D<GLfloat> &matrix, GLfloat param1, GLint param2){
 		GLfloat c;
-		GLfloat** mat = matrix.array();
 		for (int i = 0; i < rows; i+=2) {
 			for (int j = 0; j < columns; j+=2) {
 				//alternates every 8th matrix (not pixel) element
 				c = (((i&param2)==0)^((j&param2)==0))*param1;				
-				mat[ i ][ j ] = c/3.0;
+				matrix(i,j) = c/3.0;
 				if(j<columns-1 || columns%2 == 0)
-				mat[ i ][j+1] = c/6.0;
+				matrix(i,j+1) = c/6.0;
 				if(i<rows-1 || rows%2 == 0)
-				mat[i+1][ j ] = c/2.0;
+				matrix(i+1,j) = c/2.0;
 				if((j<columns-1 && i<rows-1) || (columns%2 == 0 && rows%2 == 0))
-				mat[i+1][j+1] = 1.0;				
+				matrix(i+1,j+1) = 1.0;				
 			}
 		}
 	} 
 
 	void makeRandMatrix(Array2D<GLfloat> &matrix){
-		GLfloat** mat = matrix.array();
-        for(int i=0; i<rows; i++)
-			for(int j=0; j<columns; j++){
-                mat[i][j] = (GLfloat)(rand()/33000.0);
+        for(int i=0; i<matrix.dim1(); i++)
+			for(int j=0; j<matrix.dim2(); j++){
+				matrix(i,j) = (GLfloat)(rand()/33000.0);
 				//mat[i][j] = (GLfloat)( (int)(mat[i][j]*5) );
 			}
     }
 
     void PrintMatrix(Array2D<GLfloat> matrix){
         //if(!PRINT) return;
-		GLfloat** mat = matrix.array();
 		for(int i=0; i<matrix.dim1(); i++){
             for(int j=0; j<matrix.dim2() && j < 28; j++){
-                printf("%7.3g", (float)mat[i][j]);
+                printf("%7.3g", (float)matrix(i,j));
             }
             printf("\n");
         }
@@ -732,12 +735,12 @@ public:
 
 	/*to do: implement method of testing whether unloadMatrix actually needs to be called*/
 	Array2D<GLfloat> getData(){
+		//cout << "unloading...\n";
 		unloadMatrix(false);
 		int h = textureData->GetHeight();
         int w = textureData->GetWidth();
 		int index;
 		Array2D<GLfloat> data = Array2D<GLfloat>(rows,columns);
-		GLfloat** mat = data.array();
 
 		//  r   g    or    x   y
         //  b   a          z   w
@@ -745,15 +748,17 @@ public:
         for(int i=0; i<h; i++){
             for(int j=0; j<w; j++){
 				index = mapping(i, j, h, w);
-                mat[ i*2 ][ j*2 ] = pixelData[index   ];
+                data(i*2,j*2) = pixelData[index   ];
 				if(j*2+1 < columns)
-                mat[ i*2 ][j*2+1] = pixelData[index +1];
+                data(i*2,j*2+1) = pixelData[index +1];
                 if(i*2+1 < rows)
-				mat[i*2+1][ j*2 ] = pixelData[index +2];
+				data(i*2+1,j*2) = pixelData[index +2];
 				if(i*2+1 < rows && j*2+1 < columns)
-                mat[i*2+1][j*2+1] = pixelData[index +3];
+                data(i*2+1,j*2+1) = pixelData[index +3];
             }
         }
+		//cout << "recieved...\n";
+		//cout << endl << data << endl;
 		return data;
 	}
 

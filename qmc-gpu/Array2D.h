@@ -35,9 +35,11 @@ for more details.
 #define Array2D_H
 
 #include <iostream>
+#include "cppblas.h"
+#include <assert.h>
 
 using namespace std;
-
+#define USEATLAS
 
 /**
 A 2-dimensional template for making arrays.  All of the memory allocation
@@ -64,8 +66,8 @@ private:
 	/**
 	Array containing the data.
 	*/
-
-	T** pArray;
+	//T** pArray;
+	T * pArray;
 
 public:
 	/**
@@ -93,8 +95,7 @@ public:
 	Gets a pointer to an array containing the array elements.  
 	The ordering of this array is NOT specified.  
 	*/
-	T** array(){return pArray;}
-
+	T* array(){ return pArray; }
 	/**
 	Allocates memory for the array.
 
@@ -102,25 +103,16 @@ public:
 	@param j size of the array's second dimension.
 	*/
 
-	void allocate(int i, int j)
-	{
-		if( n_1 != i || n_2 != j )
-		{
+	void allocate(int i, int j){
+		if( n_1 != i || n_2 != j ){
 			deallocate();
 
 			n_1 = i;
 			n_2 = j;
 
-			if(n_1 >= 1 && n_2 >= 1)
-			{
-				pArray = new T*[n_1];
-				for(int ii=0; ii< n_1; ii++)
-				{
-					pArray[ii] = new T[n_2];
-				}
-			}
-			else 
-			{
+			if(n_1 >= 1 && n_2 >= 1){
+				pArray = new T[ n_1*n_2 ];
+			} else {
 				pArray = 0;
 			}
 		}
@@ -133,7 +125,6 @@ public:
 
 	void deallocate()
 	{
-		for(int i=0; i<n_1; i++) delete [] pArray[i];
 		delete [] pArray;
 		pArray = 0;
 
@@ -149,10 +140,7 @@ public:
 	void operator=(const Array2D & rhs)
 	{
 		if(n_1 != rhs.n_1 || n_2 != rhs.n_2) allocate(rhs.n_1,rhs.n_2);
-
-		for(int i=0; i<n_1;i++)
-			for(int j=0; j<n_2;j++)
-				pArray[i][j] = rhs.pArray[i][j];
+		memcpy(pArray, rhs.pArray, sizeof(T)*n_1*n_2);
 	}
 
 
@@ -162,16 +150,80 @@ public:
 
 	void operator=(const T C)
 	{
-		for(int i=0; i<n_1;i++)
-			for(int j=0; j<n_2;j++)
-				pArray[i][j] = C;
+		if(C == 0) {
+			memset(pArray,0.0,sizeof(T)*n_1*n_2);
+			return;
+		}
+		for(int i=0; i<n_1*n_2; i++)
+			pArray[i] = C;
 	}
 
 
 	/**
 	Returns the matrix product of two arrays.
 	*/
+#ifdef USEATLAS
+	Array2D<double> operator*(const Array2D<double> & rhs)
+	{
+		if(n_2 != rhs.n_1)
+		{
+			cerr << "ERROR: Matrices of incorrect dimensions are being"
+				<< " multiplied!" << endl;
+			exit(1);
+		}
+		Array2D<T> TEMP(n_1,rhs.n_2);
+		TEMP = 0;
+/*
+	Array2D<int> A = Array2D<int>(d-1,d);
+	Array2D<int> B = Array2D<int>(d,d+1);
+	for(int i=0; i<A.dim1(); i++)
+		for(int j=0; j<A.dim2(); j++)
+			A(i,j) = i + 2*j;
+	for(int i=0; i<B.dim1(); i++)
+		for(int j=0; j<B.dim2(); j++)
+			B(i,j) = i + 2*j;
+	Array2D<int> C = A*B;
 
+void cblas_dgemm(const enum CBLAS_ORDER Order, const enum CBLAS_TRANSPOSE TransA,const enum CBLAS_TRANSPOSE TransB,
+				 const int M, const int N, const int K,
+				 const double alpha, const double *A, const int lda,
+				 const double *B, const int ldb,
+				 const double beta, double *C, const int ldc);
+s,d,c,z
+M = n_1, N = rhs.n_2, K = n_2
+		T * A = pArray;
+		T * B = rhs.pArray;
+		T * C = TEMP.pArray;
+		int M = n_1;
+		int N = rhs.n_2;
+		int K = n_2;
+*/
+		cblas_dgemm(CBLAS_ORDER(CblasRowMajor),CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasNoTrans),
+			n_1, rhs.n_2, n_2,
+			1.0, pArray, n_2,
+			rhs.pArray, rhs.n_2,
+			0.0, TEMP.pArray, TEMP.n_2);
+		return TEMP;
+	}
+
+	Array2D<float> operator*(const Array2D<float> & rhs)
+	{
+		if(n_2 != rhs.n_1)
+		{
+			cerr << "ERROR: Matrices of incorrect dimensions are being"
+				<< " multiplied!" << endl;
+			exit(1);
+		}
+		Array2D<T> TEMP(n_1,rhs.n_2);
+		TEMP = 0;
+		cblas_sgemm(CBLAS_ORDER(CblasRowMajor),CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasNoTrans),
+			n_1, rhs.n_2, n_2,
+			1.0, pArray, n_2,
+			rhs.pArray, rhs.n_2,
+			0.0, TEMP.pArray, TEMP.n_2);
+		return TEMP;
+	}
+#else
 	Array2D operator*(const Array2D & rhs)
 	{
 		if(n_2 != rhs.n_1)
@@ -181,42 +233,28 @@ public:
 			exit(1);
 		}
 		Array2D<T> TEMP(n_1,rhs.n_2);
-		T sum;
-		for(int i=0;i<n_1;i++)
-		{
-			for(int j=0;j<rhs.n_2;j++)
-			{
-				sum = 0;				
-				for(int k=0;k<n_2;k++)
-				{
-					sum += pArray[i][k] * rhs.pArray[k][j];
+		TEMP = 0;
+		T * A = pArray;
+		T * B = rhs.pArray;
+		T * C = TEMP.pArray;
+		int M = n_1;
+		int N = rhs.n_2;
+		int K = n_2;
+		for (int i = 0; i < M; ++i) {
+			const register T *Ai_ = A + i*K;
+			for (int j = 0; j < N; ++j) {
+				register T cij = 0;
+				for (int k = 0; k < K; ++k) {
+					cij += Ai_[k] * B[k*N+j];
 				}
-				TEMP.pArray[i][j] = sum;
+				C[i*N + j] = cij;
 			}
 		}
 		return TEMP;
 	}
+#endif
 
-	void matrixMultiply(const Array2D & rhs, Array2D & result){
-		if(n_2 != rhs.n_1){
-			cerr << "ERROR: Matrices of incorrect dimensions are being"
-				<< " multiplied!" << endl;
-			exit(1);
-		}
-		if(result.n_1 != n_1 || result.n_2 != rhs.n_2){
-			result.allocate(n_1,rhs.n_2);
-		}
-		T sum;
-		for(int i=0;i<n_1;i++){
-			for(int j=0;j<rhs.n_2;j++){
-				sum = 0;				
-				for(int k=0;k<n_2;k++){
-					sum += pArray[i][k] * rhs.pArray[k][j];
-				}
-				result.pArray[i][j] = sum;
-			}
-		}
-	}
+
 	/**
 	Returns the product of an array and a scalar.
 	*/
@@ -224,13 +262,8 @@ public:
 	Array2D operator*(const T C)
 	{
 		Array2D<T> TEMP(n_1,n_2);
-		for(int i=0;i<n_1;i++)
-		{
-			for(int j=0;j<n_2;j++)
-			{
-				TEMP.pArray[i][j] = C*pArray[i][j];
-			}
-		}
+		for(int i=0; i<n_1*n_2; i++)
+			TEMP.pArray[i] = C*pArray[i];
 		return TEMP;
 	}
 
@@ -241,13 +274,8 @@ public:
 
 	void operator*=(const T C)
 	{
-		for(int i=0;i<n_1;i++)
-		{
-			for(int j=0;j<n_2;j++)
-			{
-				pArray[i][j] *= C;
-			}
-		}
+		for(int i=0; i<n_1*n_2; i++)
+			pArray[i] *= C;
 	}
 
 
@@ -257,13 +285,8 @@ public:
 
 	void operator/=(const T C)
 	{
-		for(int i=0;i<n_1;i++)
-		{
-			for(int j=0;j<n_2;j++)
-			{
-				pArray[i][j] /= C;
-			}
-		}
+		T inv = 1.0/C;
+		operator*=(inv);
 	}
 
 
@@ -281,7 +304,11 @@ public:
 	@param j size of the array's second dimension.
 	*/
 
-	Array2D(int i, int j) {pArray = 0; n_1 = 0; n_2 = 0; allocate(i,j);}
+	Array2D(int i, int j) {
+		pArray = 0;
+		n_1 = 0; n_2 = 0;
+		allocate(i,j);
+	}
 
 
 	/**
@@ -296,8 +323,7 @@ public:
 		n_2 = 0;
 		pArray = 0;
 		allocate(rhs.n_1,rhs.n_2);
-		for(int i = 0; i<n_1; i++)
-			for(int j = 0; j<n_2; j++) pArray[i][j] = rhs.pArray[i][j];
+		operator=(rhs);
 	}
 
 
@@ -307,12 +333,23 @@ public:
 
 	~Array2D(){deallocate();}
 
+	inline int map(int i, int j) const{
+		return n_2*i + j;
+		//return n_1*j + i;
+	}
 
 	/**
 	Accesses element <code>(i,j)</code> of the array.
 	*/
-	T& operator()(int i,int j){return pArray[i][j];}
+	T& operator()(int i,int j){
+		assert(pArray != 0);
+		return pArray[map(i,j)];
+	}
 
+	T get(int i, int j) const{
+		assert(pArray != 0);
+		return pArray[map(i,j)];
+	}
 
 	/**
 	Prints the array to a stream.
@@ -324,13 +361,12 @@ public:
 		{
 			for(int j=0; j<rhs.n_2; j++)
 			{
-				strm << rhs.pArray[i][j] << "\t";
+				strm << rhs.pArray[rhs.map(i,j)] << "\t";
 			}
 			strm << endl;
 		}
 		return strm;
 	}
-
 };
 
 #endif

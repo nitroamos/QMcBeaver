@@ -43,6 +43,7 @@ static const char *testInputs =
 "{																	\n"
 "	 float4 a  = texRECT(texLHS, position);						    \n"
 "	 float4 b  = texRECT(texRHS, position);							\n"
+"	 float4 c  = float4(startOps, stopOps,position);				\n"
 "    return a;										                \n"
 "}                                                                  \n";
 
