@@ -36,7 +36,7 @@ for vector operations (e.g. vector-matrix multiplies)
 */
 class Matrix {
 public:
-	Matrix(){ rows = 0; columns = 0; textureData = 0; pixelData = 0; }
+	Matrix(){ rows = 0; columns = 0; textureData = 0; pixelData = 0;}
 
 	/**the number of rows and columns must be specified in this constructor because there is not a bijection between
 	data dimensions and texture dimensions*/
@@ -72,7 +72,11 @@ public:
 		setup();
 		Array2D<GLfloat> data = Array2D<GLfloat>(rows,columns);
 		makeRandMatrix(data);
+		Stopwatch sw = Stopwatch();
+		sw.reset(); sw.start();
 		loadMatrix(data);
+		sw.stop();
+		cout << "uploading took " << sw.timeMS() << " ms" << endl;
 	}
 
 	/**the initial value is the value meant to initialize the texture. if diagonal matricies are a major
@@ -90,13 +94,13 @@ public:
 				}
 			loadMatrix(data);
 		} else {
-			//operator=(initial);
+			//operator=(initial+3);
 			Array2D<GLfloat> data = Array2D<GLfloat>(rows,columns);
 			for(int i=0; i<rows; i++)
 				for(int j=0; j<columns; j++){
 					data(i,j) = initial;
 				}
-			loadMatrix(data);
+			loadMatrix(data);			
 		}
 	}
 
@@ -110,6 +114,16 @@ public:
 		loadMatrix(data);
 	}
 
+	/*i was having problems with a destructor. it might be a compiler problem?
+	basically, it would run the default constructor for any object created, 
+	then run the destructor on that object deleting the same memory. we'll do
+	this manually.*/
+	void destroy(){
+		delete [] pixelData;
+		//Reset both deletes the textures and returns buffer memory
+		textureData->Reset(0,0);
+	}
+
 	void setup(){
 		int tw = columns/2.0;
 		int th = rows/2.0;
@@ -118,12 +132,22 @@ public:
 
 		textureData = new RenderTexture(textureMode);
 		textureData->Initialize(tw,th,true,false);
-		pixelData = (GLfloat*)malloc( sizeof(GLfloat) * th * tw * 4);
-	}
+		textureData->BeginCapture();
+		glDrawBuffer(GL_BACK);
+		glReadBuffer(GL_BACK);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+		glDrawBuffer(GL_FRONT);
+		glReadBuffer(GL_FRONT);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	/**we really need a deconstructor. but i haven't quite figured out how to deconstruct a RenderTexture yet*/
-	void release(){
-		
+		textureData->BindBuffer(WGL_BACK_LEFT_ARB); 
+		textureData->EndCapture();
+		pixelData = new GLfloat[th*tw*4];
+		//cout << "matrix created, " << pixelData << " size " << (sizeof(GLfloat) * th * tw * 4) << endl;
+		//pixelData = (GLfloat*)malloc( sizeof(GLfloat) * th * tw * 4);
 	}
 
 	/** there is a question of how to store 2D data in a 1D array, which is required by OpenGl. all other functions
@@ -234,14 +258,14 @@ public:
 				}
 			}
 		}
-		/*
+		//*
+		//textureData->BindBuffer(WGL_BACK_LEFT_ARB);
 		textureData->Bind();
 		glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_RGBA32_NV, 
 					 w, h, 0, GL_RGBA, GL_FLOAT, pixelData);
-		operator+=(0);
+		moveTextureToBuffer();
 		/*/
 		textureData->BeginCapture();
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glDrawPixels(w, h, GL_RGBA, GL_FLOAT, pixelData);
 		textureData->EndCapture();
 		//*/
@@ -263,6 +287,7 @@ public:
 		textureData->EndCapture();
 		
 		if(print){
+			cout << "unloading data...\n";
 			//PrintRGBAPixelsColumn(result,w,h);
 			PrintRGBAPixelsBox(pixelData,w,h);
 		}
@@ -284,24 +309,16 @@ public:
 	fragProg is the created program object (not bound yet)
 	param1, param2 are either uniform constants or texture objects
 	*/
-    RenderTexture * runCg(	float RHS, int idRHS, bool binaryOp, CGprogram fragProg, 
+    void runCg(	float RHS, int idRHS, bool binaryOp, CGprogram fragProg, 
 								CGparameter param1, CGparameter param2){
-		RenderTexture * result = new RenderTexture(textureMode);
-		result->Initialize(textureData->GetWidth(),textureData->GetHeight(),true,false);
-		
-		//how many hours did it take me to discover that this line needs to be BEFORE the cg stuff??? :-(
-		//someone mentioned to me on the opengl forum that with list sharing, it shouldn't matter where
-		//this line is... but either i don't understand list sharing (likely) or they were wrong
-		//but BeginCapture captures more than the output data, it must "capture" the state information as well
-		result->BeginCapture();
-
+		textureData->BeginCapture();
 		cgGLBindProgram(fragProg);
 		cgGLEnableProfile(g_cgProfile);
-		
+		textureData->swapBuffers();
 		//specTest();
 
-		if(binaryOp){
-			cgGLSetTextureParameter(param1, textureData->GetTextureID());
+		if(binaryOp){			
+			cgGLSetTextureParameter(param1, textureData->GetTextureID());			
 			cgGLEnableTextureParameter(param1);
 			if(idRHS < 0){
 				cgGLSetParameter1f(param2, RHS);
@@ -329,8 +346,7 @@ public:
 			glTexCoord2f(maxs, maxt);  glVertex3f(1.0, 1.0, 0.0);
 			glTexCoord2f(maxs, 0.0);   glVertex3f(1.0, -1.0, 0.0);
 		glEnd();
-			
-		result->EndCapture();
+		textureData->EndCapture();
 		glFinish();
 		glFlush();
 		
@@ -343,7 +359,6 @@ public:
 		cgGLDisableProfile(g_cgProfile);
 		
 		getError("Error in runCg function");
-		return result;
     }    
 
 	/*this function simply displays whatever data is currently in the textureData. It needs
@@ -404,9 +419,7 @@ public:
             tLHS = cgGetNamedParameter(fp, "texLHS");
 			tRHS = cgGetNamedParameter(fp, "texRHS");			
         }
-		RenderTexture * temp = runCg(0,RHS.textureData->GetTextureID(),true,fp,tLHS,tRHS);
-		delete textureData;
-		textureData = temp;
+		runCg(0,RHS.textureData->GetTextureID(),true,fp,tLHS,tRHS);
 	}
 
 	void operator+=(const float C){
@@ -423,9 +436,8 @@ public:
             _textureParam = cgGetNamedParameter(_fragmentProgram, "texture");
 			_valueParam = cgGetNamedParameter(_fragmentProgram, "value");
         }
-		RenderTexture * temp = runCg(C,-1,true,_fragmentProgram,_textureParam,_valueParam);
-		delete textureData;
-		textureData = temp;
+		runCg(C,-1,true,_fragmentProgram,_textureParam,_valueParam);
+		cleanFringes();
 	}
 
 	void operator*=(const float C){
@@ -448,8 +460,9 @@ public:
 			_valueParam = cgGetNamedParameter(_fragmentProgram, "value");
         }
 
-		RenderTexture * temp = runCg(C,-1,true,_fragmentProgram,_textureParam,_valueParam);
-		return Matrix(rows,columns,temp);
+		runCg(C,-1,true,_fragmentProgram,_textureParam,_valueParam);
+		cout << "this method is broken. runCg affects this textureData, doesn't create a new one\n";
+		return Matrix(0,0);
 	}
 
 	/*most of the variables are self explanatory. the startOps and stopOps direct the shader to which elements of the 
@@ -467,7 +480,7 @@ public:
 	Matrix operator*(const Matrix RHS){
 		if(columns != RHS.rows){
 			cout << "inncorrect dimensions for matrix multiply" << endl;
-			return Matrix();
+			return Matrix(0,0);
 		}
 		CGprogram     fp;
 		CGparameter   accum, tLHS, tRHS, startOps, stopOps;
@@ -577,10 +590,10 @@ public:
 		result->BeginCapture();
 		cgGLBindProgram(fp);
 		cgGLEnableProfile(g_cgProfile);
-		textureData->BindBuffer(WGL_BACK_LEFT_ARB);
+		textureData->BindBuffer(WGL_FRONT_LEFT_ARB);
 		cgGLSetTextureParameter(tLHS, textureData->GetTextureID());
 		cgGLEnableTextureParameter(tLHS);
-		RHS.textureData->BindBuffer(WGL_BACK_LEFT_ARB);
+		RHS.textureData->BindBuffer(WGL_FRONT_LEFT_ARB);
 		cgGLSetTextureParameter(tRHS, RHS.textureData->GetTextureID());
 		cgGLEnableTextureParameter(tRHS);
 		cgGLSetTextureParameter(accum, result->GetTextureID());
@@ -630,14 +643,16 @@ public:
 		_fragmentProgram = cgCreateProgram(g_cgContext, CG_SOURCE,
                            assignConst, g_cgProfile,
                            "main", NULL);
-
+		/*
+		_fragmentProgram = cgCreateProgram(g_cgContext, CG_SOURCE,
+                           assignConstFixRight, g_cgProfile,
+                           "main", NULL);
+		*/
         if(_fragmentProgram != NULL){
             cgGLLoadProgram(_fragmentProgram);
 			_valueParam = cgGetNamedParameter(_fragmentProgram, "v");
         }
-		RenderTexture * temp = runCg(C,-1,false,_fragmentProgram,_valueParam,_valueParam);
-		delete textureData;
-		textureData = temp;
+		runCg(C,-1,false,_fragmentProgram,_valueParam,_valueParam);
 	}
 
 	/*this function makes some arbitrary data to view. creates a checker type board.
@@ -733,9 +748,126 @@ public:
 		return pixelData[mapping(i,j,textureData->GetHeight(),textureData->GetWidth())];
 	}
 
+	void moveTextureToBuffer(){
+		CGprogram     _fragmentProgram;
+		CGparameter   _textureParam;
+
+		_fragmentProgram = cgCreateProgram(g_cgContext, CG_SOURCE,
+                           copyTexture, g_cgProfile,
+                           "main", NULL);
+
+        if(_fragmentProgram != NULL){
+            cgGLLoadProgram(_fragmentProgram);
+            _textureParam = cgGetNamedParameter(_fragmentProgram, "texture");
+        }
+
+		textureData->BeginCapture();
+		cgGLBindProgram(_fragmentProgram);
+		cgGLEnableProfile(g_cgProfile);
+		cgGLSetTextureParameter(_textureParam, textureData->GetTextureID());
+		cgGLEnableTextureParameter(_textureParam);
+		
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		int maxs = textureData->GetMaxS();
+		int maxt = textureData->GetMaxT(); 
+		glBegin(GL_QUADS);
+			glTexCoord2f(0.0,  0.0);   glVertex3f(-1.0, -1.0, 0.0);
+			glTexCoord2f(0.0,  maxt);  glVertex3f(-1.0, 1.0, 0.0);
+			glTexCoord2f(maxs, maxt);  glVertex3f(1.0, 1.0, 0.0);
+			glTexCoord2f(maxs, 0.0);   glVertex3f(1.0, -1.0, 0.0);
+		glEnd();
+		glFinish();
+		textureData->EndCapture();
+
+		cgGLDisableTextureParameter(_textureParam);
+		cgGLDisableProfile(g_cgProfile);		
+		getError("Error in display");
+	}
+
+	void cleanFringes(){
+		CGprogram     _fragmentProgram;
+		CGparameter   _textureParam, _valueParam;
+
+		if(rows%2 == 1){
+			_fragmentProgram = cgCreateProgram(g_cgContext, CG_SOURCE,
+							fixRightFringe, g_cgProfile,
+							"main", NULL);
+
+			if(_fragmentProgram != NULL){
+				cgGLLoadProgram(_fragmentProgram);
+				_textureParam = cgGetNamedParameter(_fragmentProgram, "texture");
+				_valueParam = cgGetNamedParameter(_fragmentProgram, "value");
+			}
+
+			textureData->BeginCapture();
+			textureData->swapBuffers();
+			cgGLBindProgram(_fragmentProgram);
+			cgGLEnableProfile(g_cgProfile);
+			cgGLSetTextureParameter(_textureParam, textureData->GetTextureID());
+			cgGLEnableTextureParameter(_textureParam);
+
+			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			int maxs = textureData->GetMaxS();
+			int maxt = textureData->GetMaxT();
+			cgGLSetParameter1f(_valueParam,maxs-0.51);
+			glBegin(GL_QUADS);
+				glTexCoord2f(0.0,  0.0);   glVertex3f(-1.0, -1.0, 0.0);
+				glTexCoord2f(0.0,  maxt);  glVertex3f(-1.0, 1.0, 0.0);
+				glTexCoord2f(maxs, maxt);  glVertex3f(1.0, 1.0, 0.0);
+				glTexCoord2f(maxs, 0.0);   glVertex3f(1.0, -1.0, 0.0);
+			glEnd();
+			glFinish();
+			textureData->EndCapture();
+
+			cgGLDisableTextureParameter(_textureParam);
+			cgGLDisableProfile(g_cgProfile);
+		}
+
+		if(columns%2 == 1){
+			_fragmentProgram = cgCreateProgram(g_cgContext, CG_SOURCE,
+							fixBottomFringe, g_cgProfile,
+							"main", NULL);
+
+			if(_fragmentProgram != NULL){
+				cgGLLoadProgram(_fragmentProgram);
+				_textureParam = cgGetNamedParameter(_fragmentProgram, "texture");
+				_valueParam = cgGetNamedParameter(_fragmentProgram, "value");
+			}
+
+			textureData->BeginCapture();
+			textureData->swapBuffers();
+			cgGLBindProgram(_fragmentProgram);
+			cgGLEnableProfile(g_cgProfile);
+			cgGLSetTextureParameter(_textureParam, textureData->GetTextureID());
+			cgGLEnableTextureParameter(_textureParam);
+
+			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			int maxs = textureData->GetMaxS();
+			int maxt = textureData->GetMaxT();
+			cgGLSetParameter1f(_valueParam,maxs-0.51);
+			glBegin(GL_QUADS);
+				glTexCoord2f(0.0,  0.0);   glVertex3f(-1.0, -1.0, 0.0);
+				glTexCoord2f(0.0,  maxt);  glVertex3f(-1.0, 1.0, 0.0);
+				glTexCoord2f(maxs, maxt);  glVertex3f(1.0, 1.0, 0.0);
+				glTexCoord2f(maxs, 0.0);   glVertex3f(1.0, -1.0, 0.0);
+			glEnd();
+			glFinish();
+			textureData->EndCapture();
+
+			cgGLDisableTextureParameter(_textureParam);
+			cgGLDisableProfile(g_cgProfile);
+		}
+
+		getError("Error in display");
+	}
 	/*to do: implement method of testing whether unloadMatrix actually needs to be called*/
 	Array2D<GLfloat> getData(){
-		//cout << "unloading...\n";
 		unloadMatrix(false);
 		int h = textureData->GetHeight();
         int w = textureData->GetWidth();
@@ -769,7 +901,7 @@ public:
 
 protected:
 	//implement this!
-	//bool pixelDataNeedsUpdate;
+	//bool sync;
 
 	//there is no bijection between these numbers and the texture dimensions
 	int rows, columns;

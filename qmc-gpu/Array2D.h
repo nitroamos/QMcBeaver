@@ -29,17 +29,17 @@ FITNESS FOR A  PARTICULAR PURPOSE.  See the GNU General Public License
 for more details. 
 **************************************************************************/
 
-
-
 #ifndef Array2D_H
 #define Array2D_H
 
+#include "Stopwatch.h"
 #include <iostream>
 #include "cppblas.h"
 #include <assert.h>
 
+
 using namespace std;
-#define USEATLAS
+//#define USEATLAS
 
 /**
 A 2-dimensional template for making arrays.  All of the memory allocation
@@ -162,6 +162,7 @@ public:
 	/**
 	Returns the matrix product of two arrays.
 	*/
+
 #ifdef USEATLAS
 	Array2D<double> operator*(const Array2D<double> & rhs)
 	{
@@ -189,14 +190,6 @@ void cblas_dgemm(const enum CBLAS_ORDER Order, const enum CBLAS_TRANSPOSE TransA
 				 const double alpha, const double *A, const int lda,
 				 const double *B, const int ldb,
 				 const double beta, double *C, const int ldc);
-s,d,c,z
-M = n_1, N = rhs.n_2, K = n_2
-		T * A = pArray;
-		T * B = rhs.pArray;
-		T * C = TEMP.pArray;
-		int M = n_1;
-		int N = rhs.n_2;
-		int K = n_2;
 */
 		cblas_dgemm(CBLAS_ORDER(CblasRowMajor),CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasNoTrans),
 			n_1, rhs.n_2, n_2,
@@ -232,6 +225,7 @@ M = n_1, N = rhs.n_2, K = n_2
 				<< " multiplied!" << endl;
 			exit(1);
 		}
+		
 		Array2D<T> TEMP(n_1,rhs.n_2);
 		TEMP = 0;
 		T * A = pArray;
@@ -241,7 +235,7 @@ M = n_1, N = rhs.n_2, K = n_2
 		int N = rhs.n_2;
 		int K = n_2;
 		for (int i = 0; i < M; ++i) {
-			const register T *Ai_ = A + i*K;
+			register T *Ai_ = A + i*K;
 			for (int j = 0; j < N; ++j) {
 				register T cij = 0;
 				for (int k = 0; k < K; ++k) {

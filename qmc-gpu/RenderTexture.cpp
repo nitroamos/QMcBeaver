@@ -725,17 +725,14 @@ bool RenderTexture::Resize(int iWidth, int iHeight)
 }
 
 bool RenderTexture::swapBuffers(){
-	if (_bIsDrawingFront)
-	{
-		//printf("drawing to front\n");
-		glDrawBuffer(GL_FRONT);
-		BindBuffer(WGL_BACK_LEFT_ARB); 
-	}
-	else
-	{
-		//printf("drawing to back\n");
+	if (_bIsDrawingFront){
 		glDrawBuffer(GL_BACK);
+		glReadBuffer(GL_BACK);
 		BindBuffer(WGL_FRONT_LEFT_ARB); 
+	} else {
+		glDrawBuffer(GL_FRONT);
+		glReadBuffer(GL_FRONT);
+		BindBuffer(WGL_BACK_LEFT_ARB); 
 	}
 	_bIsDrawingFront = !_bIsDrawingFront;
 	return _bIsDrawingFront;
@@ -2200,8 +2197,8 @@ bool RenderTexture::Initialize(bool         bShare       /* = true */,
 */ 
 bool RenderTexture::Reset(int iWidth, int iHeight)
 {
-    fprintf(stderr, 
-            "RenderTexture Warning: Deprecated Reset() interface used.\n");
+    //fprintf(stderr, 
+    //        "RenderTexture Warning: Deprecated Reset() interface used.\n");
 
     if (!_Invalidate())
     {

@@ -24,7 +24,7 @@ int rows, columns;
 void testBasisFunction(int dim){
 	Stopwatch sw = Stopwatch();
 	long timeGPU=0, timeCPU=0;
-	
+
 	//there has got to be a "more elegant" way of initializing an Array2D than this...
 	//problem is probably just that i'm dumb and forgot pointer stuff
 	Array2D<double> coeffs = Array2D<double>(8,2);
@@ -43,42 +43,43 @@ void testBasisFunction(int dim){
 			coeffs(i,j) = temp[i][j];
 
 	int numBF = dim*dim;
-	Array2D<double> R = Array2D<double>(numBF,3);
+	Array2D<float> R = Array2D<float>(numBF,4);
     for(int i=0; i<R.dim1(); i++)
 		for(int j=0; j<R.dim2(); j++)
             R(i,j) = (double)(rand()/33000.0);
 	
+
 	BasisFunction bfCPU = BasisFunction(numBF,coeffs,0,0,0,coeffs.dim1(),0.0,0.0,0.0,"purple monkey");
-	BasisFunction bfGPU = BasisFunction(numBF,coeffs,0,0,0,coeffs.dim1(),0.0,0.0,0.0,"purple monkey");
-	
+	BasisFunction bfGPU = BasisFunction(numBF,coeffs,0,0,0,coeffs.dim1(),0.0,0.0,0.0,"purple monkey");	
+
 	sw.reset();
 	sw.start();
 	bfCPU.calculateBasisFunctions(R,false);
 	sw.stop();
 	timeCPU = sw.timeMS();
 	
-	//int numIters = 10;
-	//for(int i=0; i<numIters; i++){
-	sw.reset();
-	sw.start();
+	int numIters = 10;
 	bfGPU.calculateBasisFunctions(R,true);
-	sw.stop();
-	timeGPU = sw.timeMS();
-	//cout << i << ") took " << sw.timeMS() << endl;
-	//}
-	//timeGPU /= numIters;
+	for(int i=0; i<numIters; i++){
+		sw.reset(); sw.start();
+		bfGPU.calculateBasisFunctions(R,true);	
+		sw.stop();
+		timeGPU += sw.timeMS();
+		//cout << i << ") took " << sw.timeMS() << endl;
+	}
+	if(numIters != 0) timeGPU /= numIters;
 
-	if(!false){
+	if(false){
 		cout << "calculating errors...\n";
-		GLfloat gpuResult;
-		GLfloat cpuResult;
+		mytype gpuResult;
+		mytype cpuResult;
 		double avgError = 0;
 		double lrgError = 0;
 		double error = 0;
 		for(int i=0; i<numBF; i++){
 			bfGPU.getPsi(i,&gpuResult);
 			bfCPU.getPsi(i,&cpuResult);
-			if(i < 20 && true){
+			if(i < 20 && !true){
 				cout << "gpupsi " << gpuResult << " cpupsi " << cpuResult << endl;
 			}
 			if(abs(gpuResult - cpuResult) == 0) break;
@@ -90,7 +91,10 @@ void testBasisFunction(int dim){
 		printf("average error was %8.4e, and the largest error was %8.4e\n",avgError,lrgError);
 	}
 	printf("%10i%10i%10i%10i\n",dim,dim*dim,timeCPU,timeGPU);
+	coeffs.deallocate();
 	R.deallocate();
+	bfGPU.destroy();
+	bfCPU.destroy();
 }
 
 void makeRandMatrix(Array2D<mytype> &matrix){
@@ -119,13 +123,21 @@ void checkMatrixMultiply(){
 	long timeGPU=0, timeCPU=0;
 	bool verbose = false;
 	bool errorCheck = true;
-	int d = 1001;
+	int d = 999;
 
 	cout << endl << endl;
 	cout << "beginning matrix multiply test...\n";
 
 	todisplay = Matrix(d,d);
+	todisplay.getData();
+	sw.reset(); sw.start();
+	todisplay += 0.1;
+	sw.stop(); cout << "adding cost " << sw.timeMS() << endl;
+	todisplay.getData();
+
+	return;
 	other = Matrix(d,d);
+
 	//todisplay = Matrix(d,d,4.0,false);
 	//other = Matrix(d,d,3.0,false);
 	Matrix res = Matrix(d,d,0.0,false);
@@ -137,12 +149,16 @@ void checkMatrixMultiply(){
 	timeGPU = sw.timeMS();
 	cout << "operator* " << timeGPU << "\n";
 
-	sw.reset();
-	sw.start();
+	int numIters = 5;
 	todisplay.matrixMultiplyFaster(other, res);
-	sw.stop();
-	timeGPU = sw.timeMS();
-	cout << "function " << timeGPU << "\n";
+	for(int i=0; i<numIters; i++){
+		sw.reset(); sw.start();
+		todisplay.matrixMultiplyFaster(other, res);	
+		sw.stop();
+		timeGPU += sw.timeMS();
+		cout << i << ") took " << sw.timeMS() << endl;
+	}
+	timeGPU /= numIters;
 
 	A = todisplay.getData();
 	B = other.getData();
@@ -191,7 +207,7 @@ void checkMatrixMultiply(){
 			cout << "(" << D.dim1() << ", " << D.dim2() << ") dimensional matrix multiplication a success" << endl;
 		} else {
 			cout << "error in the calculation" << endl;
-			if(verbose || true){
+			if(verbose && false){
 				cout << "matrix supposed to be: " << endl;
 				PrintArray(D);
 			}
@@ -305,7 +321,7 @@ void matrixMultiplyTimings(int d){
 	Amat = Amat * Bmat;
 	sw.stop();
 	printf("%20i\n",sw.timeMS());
-	Amat.release(); Bmat.release();
+	Amat.destroy(); Bmat.destroy();
 }
 
 void testTiming(){
@@ -366,8 +382,8 @@ void keyboard(unsigned char key, int x, int y)
 			break;
 		case '1':
 			printf("%10s%10s%10s%10s\n","Dim","#BF","CPU","GPU");
-			if(!true){
-				for(int i=800; i<=900; i+=100)
+			if(true){
+				for(int i=100; i<=1500; i+=100)
 					testBasisFunction(i);
 			} else {
 				testBasisFunction(1000);

@@ -1,7 +1,7 @@
 #include <string>
 #include "matrix.h"
 
-typedef GLfloat finalType;
+typedef double cpuType;
 
 static const char * shaderHead =
 "float4 main(in float2 coords : TEX0,                                   \n"
@@ -19,6 +19,7 @@ static const char * shaderHead =
 static const char * shaderCoeff =
 "       {%E, %E},                                                       \n";
 
+/*
 static const char * shaderTail =
 "   };                                                                  \n"
 "   r = r - center;                                                     \n"
@@ -39,6 +40,28 @@ static const char * shaderTail =
 "       output.z += (klm.y/r.y + temp*r.y)*exp_xyz_term;                \n"
 "       output.w += (klm.z/r.z + temp*r.z)*exp_xyz_term;                \n"
 "   }                                                                   \n"
+"   return output;                                                      \n"
+"}                                                                      \n";
+*/
+static const char * shaderTail =
+"   };                                                                  \n"
+"   float exp_xyz_term = 0;                                             \n"
+"   float temp = 0;                                                     \n"
+"   float gaussian = 0;                                                 \n"
+"   r = r - center;                                                     \n"
+"   r_sq = dot(r,r);                                                    \n"
+"   xyz_term = pow(r.x,klm.x)*pow(r.y,klm.y)*pow(r.z,klm.z);            \n" 
+"   for(int j=0; j<ngauss; j++){                                        \n"
+"       gaussian = coeffs[j][1]*exp(-coeffs[j][0]*r_sq);                \n"
+"       output.x += gaussian;                                           \n"
+"                                                                       \n"
+"       exp_xyz_term = gaussian*xyz_term;                               \n"
+"       temp = -2.0*coeffs[j][0];                                       \n"
+"       output.y += (klm.x/r.x + temp*r.x)*exp_xyz_term;                \n"
+"       output.z += (klm.y/r.y + temp*r.y)*exp_xyz_term;                \n"
+"       output.w += (klm.z/r.z + temp*r.z)*exp_xyz_term;                \n"
+"   }                                                                   \n"
+"   output.x *= xyz_term;                                               \n"
 "   return output;                                                      \n"
 "}                                                                      \n";
 
@@ -75,7 +98,7 @@ public:
 		setData(_numWalkers,_Coeffs,_K,_L,_M,_N_Gauss,_Xc, _Yc, _Zc, _Type);
 	}
 
-	bool calculateBasisFunctions(Array2D<double> &R, bool useGPU){
+	bool calculateBasisFunctions(Array2D<float> &R, bool useGPU){
 		assert( R.dim1() == numWalkers );
 		calculated = true;
 		if(useGPU){
@@ -86,28 +109,28 @@ public:
 		return calculated;
 	}
 
-	void getPsi(const int whichBF, finalType * psi){
+	void getPsi(const int whichBF, cpuType * psi){
 		if(!calculated){
 			printf("calculate it first!\n");
 			return;
 		}
-		(*psi) = pixelData[whichBF];
+		(*psi) = pixelData[4*whichBF];
 	}
 
-	void getGradientPsi(const int whichBF, finalType * gradPsiX, finalType * gradPsiY, finalType * gradPsiZ){
+	void getGradientPsi(const int whichBF, cpuType * gradPsiX, cpuType * gradPsiY, cpuType * gradPsiZ){
 		if(!calculated){
 			printf("calculate it first!\n");
 			return;
 		}
-		(*gradPsiX) = pixelData[whichBF +1];
-		(*gradPsiY) = pixelData[whichBF +2];
-		(*gradPsiZ) = pixelData[whichBF +3];
+		(*gradPsiX) = pixelData[4*whichBF+1];
+		(*gradPsiY) = pixelData[4*whichBF+2];
+		(*gradPsiZ) = pixelData[4*whichBF+3];
 	}
 
 private:
-	void calculateWithGPU(Array2D<double> &R){		
+	void calculateWithGPU(Array2D<float> &R){		
 		int i, j, index;
-		for(i=0; i<dim; i++){
+		/*	for(i=0; i<dim; i++){
             for(j=0; j<dim; j++){
 				index = mapping(i, j, dim, dim);
 				pixelData[index   ] = R(i*dim+j,0);
@@ -115,14 +138,14 @@ private:
                 pixelData[index +2] = R(i*dim+j,2);
                 pixelData[index +3] = 0;
             }
-        }		
-
+        }*/
+		
 		GLuint texId[1];
 		glGenTextures(1, texId);	
 		glActiveTextureARB(GL_TEXTURE0_ARB);
 		glBindTexture(GL_TEXTURE_RECTANGLE_NV, texId[0]);
 		glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_RGBA32_NV, 
-					 dim, dim, 0, GL_RGBA, GL_FLOAT, pixelData);
+					 dim, dim, 0, GL_RGBA, GL_FLOAT, R.array());
 		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_WRAP_S, GL_CLAMP);
 		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_WRAP_T, GL_CLAMP);
 		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -131,7 +154,7 @@ private:
 		textureData->BeginCapture();
 		
 		cgGLEnableProfile(g_cgProfile);	
-		cgGLBindProgram(fragProg);
+		cgGLBindProgram(fragProg);	
 		cgGLSetTextureParameter(tex, texId[0]);
 		cgGLEnableTextureParameter(tex);
 
@@ -148,21 +171,21 @@ private:
 		glEnd();
 
 		textureData->EndCapture();
-
 		glFinish();
 		glFlush();
+		
+		cgGLDisableTextureParameter(tex);
+		cgGLDisableProfile(g_cgProfile);
 		glDeleteTextures(1, texId);
 		getError("Error in calculateWithGPUText function");	
-		unloadMatrix(false);
+		//unloadMatrix(false);
 	}
 
 	//a way needs to be created for this method to store data in double precision
-	void calculateWithCPU(Array2D<double> &R){
-		//data = Array2D<finalType>(2*dim,2*dim);
-		//finalType** collection = data.array();
-
-		double xyz_term, r_sq, radialFunction=0;
-		double x,y,z, gx=0, gy=0, gz=0;
+	void calculateWithCPU(Array2D<float> &R){
+		cpuType xyz_term, r_sq, radialFunction=0;
+		cpuType gaussian, exp_xyz_term, temp;
+		cpuType x,y,z, gx=0, gy=0, gz=0;
 		int index;
 		for(int i=0; i<numWalkers; i++){
 			x = R(i,0) - xc;
@@ -176,12 +199,14 @@ private:
 			gy = 0.0;
 			gz = 0.0;
 			for(int j=0; j<N_Gauss; j++){
+				gaussian = Coeffs(j,1)*exp(-Coeffs(j,0)*r_sq);
+
 				//first calculate psi		
-				radialFunction += Coeffs(j,1)*exp(-Coeffs(j,0)*r_sq);
+				radialFunction += gaussian;
 
 				//2nd, calculate the gradient
-				double exp_xyz_term = Coeffs(j,1)*exp(-Coeffs(j,0)*r_sq)*xyz_term;
-				double temp = -2.0*Coeffs(j,0);
+				exp_xyz_term = gaussian*xyz_term;
+				temp = -2.0*Coeffs(j,0);
 
 				gx += (k/x + temp*x)*exp_xyz_term;
 				gy += (l/y + temp*y)*exp_xyz_term;
@@ -216,6 +241,7 @@ private:
 		rows = dim*2;
 		columns = dim*2;
 		pixelData = new GLfloat[dim*dim*4];
+		//cout << "basisfunction created, " << pixelData << " size " << (sizeof(GLfloat)*dim*dim*4/1024.0/1024.0) << endl;
 	}
 
 	void generateShader(Array2D<double> & coeff,
