@@ -1,3 +1,12 @@
+Wed, 8 Dec 2004, Daniel R. Fisher
+
+1.  Fixed the gamess2qmcbeaver.py script to handle MCSCF geometry 
+    optimizations.
+
+2.  Changed the comments in the parts of the code that deal with the
+    wavefunction to include multideterminant wavefunctions.
+
+
 Thurs, 2 Dec 2004, Daniel R. Fisher
 
 1.  Implemented multi determinant wavefunctions for the SCF part of the trial
