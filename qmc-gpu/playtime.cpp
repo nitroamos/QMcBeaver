@@ -97,11 +97,18 @@ void testBasisFunction(int dim){
 	bfCPU.destroy();
 }
 
-void makeRandMatrix(Array2D<mytype> &matrix){
+void makeRandMatrix(Array2D<float> &matrix){
     for(int i=0; i<matrix.dim1(); i++)
 		for(int j=0; j<matrix.dim2(); j++){
-            matrix(i,j) = (mytype)(rand()/33000.0);
-			matrix(i,j) = (mytype)( (int)(matrix(i,j)*10000) );
+            matrix(i,j) = (float)(rand()/33000.0);
+			//matrix(i,j) = (float)( (int)(matrix(i,j)*10000) );
+		}
+}
+void makeRandMatrix(Array2D<double> &matrix){
+    for(int i=0; i<matrix.dim1(); i++)
+		for(int j=0; j<matrix.dim2(); j++){
+            matrix(i,j) = (double)(rand()/33000.0);
+			//matrix(i,j) = (double)( (int)(matrix(i,j)*10000) );
 		}
 }
 
@@ -118,52 +125,66 @@ void PrintArray(Array2D<GLfloat> matrix) {
 /**this just does matrix multiply on the GPU. used to make sure the matrix multiply
 is doing things correctly*/
 void checkMatrixMultiply(){
-	Array2D<GLfloat> A,B,C,D;
+	Array2D<GLfloat> C,D;
 	Stopwatch sw = Stopwatch();
 	long timeGPU=0, timeCPU=0;
+	int numIters = 100, M, N, K;
 	bool verbose = false;
 	bool errorCheck = true;
-	int d = 999;
+	bool dispTimings = false;
+	
+	/*
+	K = 1000;
+	M = K;
+	N = K;
+	/*/
+	K = 570;
+	M = 76;
+	N = 76;
+	//*/
+	
+	cout << "beginning matrix multiply test: C(" << M << ", " << N << ") = A(" << M << ", " 
+		 << K << ") * B(" << K << ", " << N << ")...\n\n";
+	
+	Array2D<GLfloat> A = Array2D<GLfloat>(M,K);
+	makeRandMatrix(A);
+	Array2D<GLfloat> B = Array2D<GLfloat>(K,N);
+	makeRandMatrix(B);
 
-	cout << endl << endl;
-	cout << "beginning matrix multiply test...\n";
+	Matrix Amat = Matrix(A);
+	Matrix Bmat = Matrix(B);
+	Matrix Cmat = Matrix(M,N);
 
-	todisplay = Matrix(d,d);
-	todisplay.getData();
+	Amat = Matrix(A);
 	sw.reset(); sw.start();
-	todisplay += 0.1;
-	sw.stop(); cout << "adding cost " << sw.timeMS() << endl;
-	todisplay.getData();
+	for(int i=0; i<numIters; i++)
+		Amat = Matrix(A);
+	sw.stop();
+	cout << "average time loading " << M << "x" << K << " matrix was " << sw.timeMS()/(double)numIters << endl << endl;
 
-	return;
-	other = Matrix(d,d);
+	Amat.matrixMultiplyDoNothing(Bmat, Cmat);
+	sw.reset(); sw.start();
+	for(int i=0; i<1; i++)
+		Amat.matrixMultiplyDoNothing(Bmat, Cmat);	
+	sw.stop();
+	cout << "average time doing nothing " << M << "x" << N << " matrix was " << sw.timeMS()/(double)numIters << endl << endl;
 
-	//todisplay = Matrix(d,d,4.0,false);
-	//other = Matrix(d,d,3.0,false);
-	Matrix res = Matrix(d,d,0.0,false);
-
-	sw.reset();
-	sw.start();
-	//res = todisplay*other;
+	Amat.matrixMultiplyFaster(Bmat, Cmat);	
+	sw.reset(); sw.start();
+	for(int i=0; i<1; i++)
+		Amat.matrixMultiplyFaster(Bmat, Cmat);	
 	sw.stop();
 	timeGPU = sw.timeMS();
-	cout << "operator* " << timeGPU << "\n";
+	timeGPU /= (float)(numIters+0.5);
+	cout << "average time multiplying " << M << "x" << N << " matrix was " << timeGPU << endl << endl;
 
-	int numIters = 5;
-	todisplay.matrixMultiplyFaster(other, res);
-	for(int i=0; i<numIters; i++){
-		sw.reset(); sw.start();
-		todisplay.matrixMultiplyFaster(other, res);	
-		sw.stop();
-		timeGPU += sw.timeMS();
-		cout << i << ") took " << sw.timeMS() << endl;
-	}
-	timeGPU /= numIters;
-
-	A = todisplay.getData();
-	B = other.getData();
-	C = res.getData();
-
+	C = Cmat.getData();	
+	sw.reset(); sw.start();
+	for(int i=0; i<numIters; i++)
+		C = Cmat.getData();	
+	sw.stop();
+	cout << "average time unloading " << M << "x" << N << " matrix was " << sw.timeMS()/(double)numIters << endl << endl;
+	
 	if(verbose){
 		cout << "matrix A (" << A.dim1() << ", " << A.dim2() << ") is: " << endl;
 		PrintArray(A);
@@ -174,18 +195,17 @@ void checkMatrixMultiply(){
 	}
 
 	if(errorCheck){
-		cout << "computing accurate result\n";
-		sw.reset();
-		sw.start();
-		D = A*B;
+		sw.reset(); sw.start();	
+		for(int i=0; i<numIters; i++)			
+			D = A*B;
 		sw.stop();
 		timeCPU = sw.timeMS();
+		cout << "average time CPU " << M << "x" << N << " matrix was " << sw.timeMS()/(double)numIters << endl << endl;
+		timeCPU /= (float)(numIters+0.5);
 
 		bool same = true;
 		int largestI = 0, largestJ = 0;
-		double currentError, largestError = 0;
-		double error = 0;
-		cout << "checking matricies...\n";
+		double currentError, largestError = 0, error = 0;
 		for(int i=0; i<C.dim1(); i++)
 			for(int j=0; j<C.dim2(); j++){
 				currentError = abs( (C(i,j)-D(i,j))/D(i,j) );
@@ -202,7 +222,7 @@ void checkMatrixMultiply(){
 			 << C(largestI,largestJ) << ", " << D(largestI,largestJ) << " with error " << largestError << endl;
 		error = error/(C.dim1()*C.dim2());
 		cout << "average rel error is " << error << endl;
-		printf("%5i GPU time: %6i CPU time: %6i factor: %8.4g error: %8.6g\n",d,timeGPU,timeCPU,(double)timeCPU/(double)timeGPU,error);
+		printf("GPU time = %6i\nCPU time = %6i\nfactor = %8.4g\n",timeGPU,timeCPU,(double)timeCPU/(double)timeGPU);
 		if(same){
 			cout << "(" << D.dim1() << ", " << D.dim2() << ") dimensional matrix multiplication a success" << endl;
 		} else {
@@ -212,12 +232,12 @@ void checkMatrixMultiply(){
 				PrintArray(D);
 			}
 		}
-	} else {
-		printf("%5i GPU time: %6i CPU time: %6i factor: %8.4g\n",d,timeGPU,timeCPU,(double)timeCPU/(double)timeGPU);
-	}
-	rows = res.getRows();
-	columns = res.getColumns();
+	} 
+
+	rows = Cmat.getRows();
+	columns = Cmat.getColumns();
 	perspective(false);
+	todisplay = Cmat;
 	todisplay.display();
 }
 
@@ -278,7 +298,6 @@ void matrixMultiplyTimings(int d){
 				sw.start();
 				square_dgemm(d,E,F,G);
 				sw.stop();
-				printf("l: %5i s: %5i CPU time: %6i factor: %8.4g\n",l,s,sw.timeMS(),(double)basic/(double)sw.timeMS());
 			}
 	} else {
 		int l = 256, s = 256;
@@ -317,56 +336,6 @@ void matrixMultiplyTimings(int d){
 	Amat.destroy(); Bmat.destroy(); Cmat.destroy();
 }
 
-void testTiming(){
-    Array2D<GLfloat> A,B,C,D;
-	Matrix Amat, Bmat, Cmat;
-	Stopwatch sw = Stopwatch();
-	long timeGPU, timeCPU;
-	int increment, largest;
-	
-	if(!true){
-		increment = 64;
-		largest = increment*24;
-	} else {
-		increment = 1000;
-		largest = increment;
-	}
-	
-	for(int testD = increment; testD <= largest; testD += increment){
-		Amat =	Matrix(testD,testD);
-		Bmat =	Matrix(testD,testD);
-		
-		sw.reset();
-		sw.start();
-		Cmat =	Amat *	Bmat;
-		sw.stop();
-		timeGPU	= sw.timeMS();
-
-		A =	Amat.getData();
-		B =	Bmat.getData();
-		C =	Cmat.getData();
-
-		sw.reset();
-		sw.start();
-		D =	A*B;
-		sw.stop();
-		timeCPU	= sw.timeMS();
-
-		bool same =	true;
-		double error = 0;
-		for(int	i=0; i<C.dim1(); i++)
-			for(int	j=0; j<C.dim2(); j++){
-				error += abs(C(i,j)-D(i,j));
-				if(	abs(C(i,j)-D(i,j)) > 0.001){
-					same = false;
-				}
-			}
-		error =	error/(C.dim1()*C.dim2());
-		printf("%5i GPU time: %6i CPU time: %6i factor: %8.4g error: %8.6f\n",testD,timeGPU,timeCPU,(double)timeCPU/(double)timeGPU,error);
-	}
-	cout << "done with test\n";
-}
-
 void keyboard(unsigned char key, int x, int y)
 {
 	switch (key) {
@@ -385,6 +354,16 @@ void keyboard(unsigned char key, int x, int y)
 		case '2':
 			checkMatrixMultiply();			
 			break;
+		case '3':
+			printf("%5s%20s%20s%20s%20s%20s\n","dim","simple (pointers)","Array2D","DGEMM","ATLAS","GPU");
+			if(true){			
+				for(int i=300; i<=1000; i+=100)
+					matrixMultiplyTimings(i);			
+			} else {
+				matrixMultiplyTimings(1000);
+			}	
+			cout << "done with matrixMultiplyTimings" << endl;
+			break;
 		case 'a':
 			todisplay += 0.1;
 			todisplay.display();
@@ -396,20 +375,6 @@ void keyboard(unsigned char key, int x, int y)
 		case 'n':
 			todisplay = todisplay * 0.9;
 			todisplay.display();
-			break;
-		
-		case 'v':
-			testTiming();			
-			break;
-		case 'c':
-			printf("%5s%20s%20s%20s%20s%20s\n","dim","simple (pointers)","Array2D","DGEMM","ATLAS","GPU");
-			if(true){			
-				for(int i=300; i<=1000; i+=100)
-					matrixMultiplyTimings(i);			
-			} else {
-				matrixMultiplyTimings(1000);
-			}	
-			cout << "done with matrixMultiplyTimings" << endl;
 			break;
 		case 'r':
 			todisplay = Matrix(rows,columns,1.0,8.0f);

@@ -17,6 +17,8 @@
 
 #include <sys/timeb.h>
 #include <sys/types.h>
+#include <Windows.h>
+#include <iostream>
 
 struct timezone {
     int tz_minuteswest;
@@ -32,10 +34,10 @@ struct timeval {
 #endif
 
 static void gettimeofday(struct timeval* t,void* timezone){
-		struct _timeb timebuffer;
-        _ftime( &timebuffer );
-        t->tv_sec=timebuffer.time;
-        t->tv_usec=1000*timebuffer.millitm;
+	struct _timeb timebuffer;
+    _ftime( &timebuffer );
+	t->tv_sec=timebuffer.time;
+    t->tv_usec=1000*timebuffer.millitm;
 }
 #else
 #include <sys/time.h>

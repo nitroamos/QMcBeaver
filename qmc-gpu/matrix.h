@@ -17,6 +17,7 @@
 
 using namespace std;
 
+#define NUM_REPS 100
 static bool PRINT = !true;
 static const char * textureMode = "rgba=32f doublebuffer texRECT rtt";
 
@@ -260,9 +261,16 @@ public:
 		}
 		//*
 		//textureData->BindBuffer(WGL_BACK_LEFT_ARB);
+		Stopwatch sw = Stopwatch();
+		sw.reset(); sw.start();
+		for(int j=0; j<NUM_REPS; j++){
 		textureData->Bind();
 		glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_RGBA32_NV, 
 					 w, h, 0, GL_RGBA, GL_FLOAT, pixelData);
+		}
+		glFinish();
+		sw.stop();
+		//cout << "loading took " << sw.timeMS()/(double)NUM_REPS << endl;
 		moveTextureToBuffer();
 		/*/
 		textureData->BeginCapture();
@@ -282,10 +290,17 @@ public:
 		glFinish();
 		
 		//this is a *lot* faster than glGetTexImage(textureData->GetTextureTarget(),0,GL_RGBA,GL_FLOAT,result);
-		textureData->BeginCapture();
-		glReadPixels(0,0,w,h,GL_RGBA,GL_FLOAT,pixelData);
-		textureData->EndCapture();
-		
+		Stopwatch sw = Stopwatch();
+		sw.reset(); sw.start();
+		for(int j=0; j<NUM_REPS; j++){
+			textureData->BeginCapture();
+			glReadPixels(0,0,w,h,GL_RGBA,GL_FLOAT,pixelData);
+			textureData->EndCapture();
+		}
+		glFinish();
+		sw.stop();
+		//cout << "unloading took " << sw.timeMS()/(double)NUM_REPS << endl;
+
 		if(print){
 			cout << "unloading data...\n";
 			//PrintRGBAPixelsColumn(result,w,h);
@@ -476,89 +491,9 @@ public:
 	GPU algorithms are able to get. some ideas:
 	1) shader in assembly
 	2) instead of using uniform parameters, hardcode the values into the shader program
+	
+	LHS = this*RHS
 	*/
-	Matrix operator*(const Matrix RHS){
-		if(columns != RHS.rows){
-			cout << "inncorrect dimensions for matrix multiply" << endl;
-			return Matrix(0,0);
-		}
-		CGprogram     fp;
-		CGparameter   accum, tLHS, tRHS, startOps, stopOps;
-		int resultR = textureData->GetHeight(), resultC = RHS.textureData->GetWidth();
-		int maxLoops;
-		glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_LOOP_COUNT_NV, &maxLoops);
-		int numLoops = textureData->GetWidth();
-		int numPasses = ceil((double)numLoops/maxLoops);
-		if(PRINT) cout << "numPasses is " << numPasses << endl;
-
-		fp = cgCreateProgram(g_cgContext, CG_SOURCE,
-                           matrixMultiply, g_cgProfile,
-                           "main", NULL);
-        if(fp != NULL){
-            cgGLLoadProgram(fp);
-			accum = cgGetNamedParameter(fp, "accum");     
-            tLHS = cgGetNamedParameter(fp, "texLHS");
-			tRHS = cgGetNamedParameter(fp, "texRHS");
-			startOps = cgGetNamedParameter(fp, "startOps");
-			stopOps = cgGetNamedParameter(fp, "stopOps");
-		} else {
-			cout << "error in matrixMultiply script" << endl;
-			return *this;
-		}
-
-
-		Matrix initial = Matrix(rows,RHS.columns,0.0,false);
-		RenderTexture * result[2] = {new RenderTexture(textureMode),initial.textureData};
-		result[0]->Initialize(resultC,resultR,true,false);
-		bool writingTexture = true;
-		//result[writingTexture]->BeginCapture();
-
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		int maxs = result[writingTexture]->GetMaxS();
-		int maxt = result[writingTexture]->GetMaxT();
-		for(int i=0; i<numPasses; i++){
-			writingTexture = !writingTexture;
-			//result[writingTexture]->BeginCapture(result[!writingTexture]);
-			result[writingTexture]->BeginCapture();
-
-			//i really think there should be a way of NOT binding the shader and NOT assigning the uniforms for every pass
-			//but it works reasonably and i can't get the other, more intuitive way to work
-			cgGLBindProgram(fp);
-			cgGLEnableProfile(g_cgProfile);
-			cgGLSetTextureParameter(tLHS, textureData->GetTextureID());
-			cgGLEnableTextureParameter(tLHS);
-			cgGLSetTextureParameter(tRHS, RHS.textureData->GetTextureID());
-			cgGLEnableTextureParameter(tRHS);
-			cgGLSetTextureParameter(accum, result[!writingTexture]->GetTextureID());
-			cgGLEnableTextureParameter(accum);
-
-			cgGLSetParameter1f(startOps, i*maxLoops);
-			cgGLSetParameter1f(stopOps, i<numPasses-1?(i+1)*maxLoops:numLoops);
-			glBegin(GL_QUADS);
-				glTexCoord2f(0.0,  0.0);   glVertex3f(-1.0, -1.0, 0.0);
-				glTexCoord2f(0.0,  maxt);  glVertex3f(-1.0, 1.0, 0.0);
-				glTexCoord2f(maxs, maxt);  glVertex3f(1.0, 1.0, 0.0);
-				glTexCoord2f(maxs, 0.0);   glVertex3f(1.0, -1.0, 0.0);
-			glEnd();
-			if(PRINT) cout << "pass number " << (i+1) << ": " << (i*maxLoops) << "-" << (i<numPasses-1?(i+1)*maxLoops:resultC) << " complete" << endl;
-			result[writingTexture]->EndCapture();
-		}
-		
-		glFinish();//~600 ms for 1000x1000. the card saves the actual calculations until this line.
-		glFlush();
-
-		cgGLDisableTextureParameter(accum);
-		cgGLDisableTextureParameter(tLHS);
-		cgGLDisableTextureParameter(tRHS);
-		cgGLDisableProfile(g_cgProfile);
-		
-		if(PRINT) cout << "multiplication complete\n";
-		getError("Error in matrix multiply");
-		return Matrix(rows,RHS.columns,result[writingTexture]);
-	}
-	//LHS = this*RHS
 	void matrixMultiplyFaster(Matrix &RHS, Matrix &LHS){
 		if(columns != RHS.rows){
 			cout << "inncorrect dimensions for matrix multiply" << endl;
@@ -570,9 +505,93 @@ public:
 		//glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_LOOP_COUNT_NV, &maxLoops);
 		const int numLoops = textureData->GetWidth();
 		const int numPasses = ceil((double)numLoops/maxLoops);
+		//const int numPasses = 2;
 		//const char * arg[] = {"fastprecision"};
 		fp = cgCreateProgram(g_cgContext, CG_SOURCE,matrixMultiply, g_cgProfile,"main", NULL);
         //fp = cgCreateProgram(g_cgContext, CG_SOURCE,testInputs, g_cgProfile,"main", NULL);
+
+		if(fp != NULL){
+            cgGLLoadProgram(fp);
+			accum = cgGetNamedParameter(fp, "accum");     
+            tLHS = cgGetNamedParameter(fp, "texLHS");
+			tRHS = cgGetNamedParameter(fp, "texRHS");
+			startOps = cgGetNamedParameter(fp, "startOps");
+			stopOps = cgGetNamedParameter(fp, "stopOps");
+		} else {
+			cout << "error in matrixMultiply script" << endl;
+			return;
+		}
+
+		RenderTexture * result = LHS.textureData;
+		result->BeginCapture();
+		cgGLBindProgram(fp);
+		cgGLEnableProfile(g_cgProfile);
+		textureData->BindBuffer(WGL_FRONT_LEFT_ARB);
+		cgGLSetTextureParameter(tLHS, textureData->GetTextureID());
+		cgGLEnableTextureParameter(tLHS);
+		RHS.textureData->BindBuffer(WGL_FRONT_LEFT_ARB);
+		cgGLSetTextureParameter(tRHS, RHS.textureData->GetTextureID());
+		cgGLEnableTextureParameter(tRHS);
+		cgGLSetTextureParameter(accum, result->GetTextureID());
+		cgGLEnableTextureParameter(accum);
+
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		if(numPasses%2 == 1) result->swapBuffers();
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		result->EndCapture();		
+		Stopwatch sw = Stopwatch();
+		sw.reset(); sw.start();
+		int maxs = result->GetMaxS();
+		int maxt = result->GetMaxT();
+		for(int i=0; i<numPasses; i++){
+			result->BeginCapture();
+			result->swapBuffers();
+			
+			cgGLSetParameter1f(startOps, i*maxLoops);
+			cgGLSetParameter1f(stopOps, i<numPasses-1?(i+1)*maxLoops:numLoops);
+			
+			for(int j=0; j<NUM_REPS; j++){
+			glBegin(GL_QUADS);
+				glTexCoord2f(0.0,  0.0);   glVertex3f(-1.0, -1.0, 0.0);
+				glTexCoord2f(0.0,  maxt);  glVertex3f(-1.0, 1.0, 0.0);
+				glTexCoord2f(maxs, maxt);  glVertex3f(1.0, 1.0, 0.0);
+				glTexCoord2f(maxs, 0.0);   glVertex3f(1.0, -1.0, 0.0);
+			glEnd();
+			}
+			result->EndCapture();			
+		}
+		glFinish();
+		glFlush();
+		sw.stop();
+		//cout << "multiplying took " << sw.timeMS()/(double)NUM_REPS << endl;
+
+		
+		cgGLDisableTextureParameter(accum);
+		cgGLDisableTextureParameter(tLHS);
+		cgGLDisableTextureParameter(tRHS);
+		cgGLDisableProfile(g_cgProfile);
+		//LHS.unloadMatrix(true);
+		//unloadMatrix(true);
+		//RHS.unloadMatrix(true);
+		getError("Error in matrix multiply");
+	}
+
+		//LHS = this*RHS
+	void matrixMultiplyDoNothing(Matrix &RHS, Matrix &LHS){
+		if(columns != RHS.rows){
+			cout << "inncorrect dimensions for matrix multiply" << endl;
+			return;
+		}
+		CGprogram     fp;
+		CGparameter   accum, tLHS, tRHS, startOps, stopOps;
+		const int maxLoops = 255;
+		//glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_LOOP_COUNT_NV, &maxLoops);
+		const int numLoops = textureData->GetWidth();
+		const int numPasses = ceil((double)numLoops/maxLoops);
+		//const char * arg[] = {"fastprecision"};
+        fp = cgCreateProgram(g_cgContext, CG_SOURCE,testInputs, g_cgProfile,"main", NULL);
 
 		if(fp != NULL){
             cgGLLoadProgram(fp);
@@ -614,12 +633,14 @@ public:
 			
 			cgGLSetParameter1f(startOps, i*maxLoops);
 			cgGLSetParameter1f(stopOps, i<numPasses-1?(i+1)*maxLoops:numLoops);
+			for(int j=0; j<NUM_REPS; j++){
 			glBegin(GL_QUADS);
 				glTexCoord2f(0.0,  0.0);   glVertex3f(-1.0, -1.0, 0.0);
 				glTexCoord2f(0.0,  maxt);  glVertex3f(-1.0, 1.0, 0.0);
 				glTexCoord2f(maxs, maxt);  glVertex3f(1.0, 1.0, 0.0);
 				glTexCoord2f(maxs, 0.0);   glVertex3f(1.0, -1.0, 0.0);
 			glEnd();
+			}
 			
 			result->EndCapture();			
 		}
