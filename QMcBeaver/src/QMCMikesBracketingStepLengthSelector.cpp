@@ -171,7 +171,8 @@ void QMCMikesBracketingStepLengthSelector::bracket(QMCObjectiveFunction *OF,
           cout << "Bracket Stepping Closer --------------" << endl;
 
           //make search direction vector smaller
-          scale=scale*pow(2,-1.0*(steps-2));
+          //adding explicit type helped windows identify which overloaded pow to choose 
+          scale=scale*pow(2.0,(double)(-1.0*(steps-2)));
           
           //try to bracket with smaller steps from x0
           bracket(OF,position,searchDirection,alphas(0),scale,

@@ -57,6 +57,9 @@ void qmcbeaver(int argc, char ** argv)
   if(argc < 2)
     {
       cerr << "ERROR: No input file given" << endl;
+#ifdef _WIN32
+      getchar();
+#endif  
       exit(1);
     }
 

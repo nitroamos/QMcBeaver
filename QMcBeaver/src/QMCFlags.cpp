@@ -477,7 +477,11 @@ void QMCFlags::set_filenames(string runfile)
   base_file_name    = file_name;
 
   char my_rank_string[32];
+#ifdef _WIN32
+  _snprintf( my_rank_string, 32, "%d", my_rank );
+#else    
   snprintf( my_rank_string, 32, "%d", my_rank );
+#endif
   config_file_name = temp_dir + base_file_name + "."+my_rank_string + ".cfgs";
 
   basename = file_name;

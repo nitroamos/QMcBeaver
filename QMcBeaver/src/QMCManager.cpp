@@ -286,7 +286,11 @@ void QMCManager::run()
     {
       // Create the file name
       char my_rank_str[32];
-      snprintf( my_rank_str, 32, "%d", Input.flags.my_rank);
+#ifdef _WIN32
+	  _snprintf( my_rank_str, 32, "%d", Input.flags.my_rank);
+#else    
+	  snprintf( my_rank_str, 32, "%d", Input.flags.my_rank);
+#endif
       string filename = Input.flags.base_file_name + ".energy." + 
 	my_rank_str;
       
