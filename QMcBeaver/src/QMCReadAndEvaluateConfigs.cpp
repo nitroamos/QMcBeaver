@@ -56,7 +56,6 @@ void QMCReadAndEvaluateConfigs::read_next_config()
   for(int i=0; i<Nelectrons; i++)
     {
       config_in_stream >> itemp;
-
       config_in_stream >> R(i,0);
       config_in_stream >> R(i,1);
       config_in_stream >> R(i,2);
@@ -143,7 +142,6 @@ void QMCReadAndEvaluateConfigs::rootCalculateProperties(
 
   //this function does all the dirty work of reading in the configs
   //and analyzing them and puts the results in local_properties
-
   locally_CalculateProperties(Params,local_properties);
 
   //reduce on this properties
@@ -254,7 +252,6 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
     }
 
   // read configurations until the file is empty
-
   while( !config_in_stream.eof() )
     {
       // read the next configuration
@@ -318,10 +315,19 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
       Weight  = MAXIMUM_WEIGHT_VALUE;
     }
 
-  // place the results into the properties
+  /* On some computers, it seems this class was reading one extra config in, assiging
+     zeros to all the parameters. Why was it doing this? Probably some compilers had
+     a different definition of eof() or something like that. Anyway, assuming that
+     the check for J=0 identifies these (it does on QSC) then this fix should work.
 
-  Properties.energy.newSample(E_Local,Weight);
-  Properties.logWeights.newSample(log(Weight),1.0);
+     If the config is valid, place the results into the properties.
+  */
+  if(J == 0){
+    cerr << "ERROR: Rejecting config (J=0) with E_Local " << E_Local << endl;
+  } else {
+    Properties.energy.newSample(E_Local,Weight);
+    Properties.logWeights.newSample(log(Weight),1.0);
+  }
 }
 
 // Calculate the local energy of the current configuration with the currently
@@ -424,5 +430,14 @@ void QMCReadAndEvaluateConfigs::MPI_reduce(
     }
 #endif
 }
+
+
+
+
+
+
+
+
+
 
 
