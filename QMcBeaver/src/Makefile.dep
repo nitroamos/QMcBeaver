@@ -1,1361 +1,1293 @@
 AtomicOrbitalInverter.o: AtomicOrbitalInverter.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/AtomicOrbitalInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LinearSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/DistributionInverter.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/AtomicOrbitalInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LinearSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/DistributionInverter.h
 
 
 CKGeneticAlgorithm1.o: CKGeneticAlgorithm1.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CKGeneticAlgorithm1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/SortedParameterScorePairList.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ParameterScorePair.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationAlgorithm.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CKGeneticAlgorithm1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/SortedParameterScorePairList.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ParameterScorePair.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationAlgorithm.h
 
 
 Complex.o: Complex.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h
 
 
 CubicSpline.o: CubicSpline.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h
 
 
 CubicSplineWithGeometricProgressionGrid.o:  \
  CubicSplineWithGeometricProgressionGrid.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h
 
 
 DistributionInverter.o: DistributionInverter.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/DistributionInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LinearSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/DistributionInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LinearSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h
 
 
 Exception.o: Exception.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h
 
 
 FixedCuspPadeCorrelationFunction.o: FixedCuspPadeCorrelationFunction.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h
 
 
-LU.o: LU.cpp /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h
+LU.o: LU.cpp /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h
 
 
 LinearSpline.o: LinearSpline.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LinearSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LinearSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h
 
 
 MathFunctions.o: MathFunctions.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/MathFunctions.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/MathFunctions.h
 
 
 PadeCorrelationFunction.o: PadeCorrelationFunction.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h
 
 
 ParameterScorePair.o: ParameterScorePair.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ParameterScorePair.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ParameterScorePair.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h
 
 
 Polynomial.o: Polynomial.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h
 
 
 QMCBFGSQuasiNewtonLineSearch.o: QMCBFGSQuasiNewtonLineSearch.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBFGSQuasiNewtonLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionAlgorithm.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBFGSQuasiNewtonLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionAlgorithm.h
 
 
 QMCBasisFunction.o: QMCBasisFunction.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h
 
 
 QMCBasisFunctionCoefficients.o: QMCBasisFunctionCoefficients.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h
 
 
 QMCCopyright.o: QMCCopyright.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCopyright.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCopyright.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h
 
 
 QMCCorrelatedSamplingVMCOptimization.o:  \
  QMCCorrelatedSamplingVMCOptimization.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelatedSamplingVMCOptimization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBracketingStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWolfeStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCSteepestDescent.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBFGSQuasiNewtonLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CKGeneticAlgorithm1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/SortedParameterScorePairList.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ParameterScorePair.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelatedSamplingVMCOptimization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBracketingStepLengthSelector.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWolfeStepLengthSelector.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCSteepestDescent.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBFGSQuasiNewtonLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CKGeneticAlgorithm1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/SortedParameterScorePairList.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ParameterScorePair.h
 
 
 QMCCorrelationFunctionFactory.o: QMCCorrelationFunctionFactory.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h
 
 
 QMCCorrelationFunctionParameters.o: QMCCorrelationFunctionParameters.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h
 
 
 QMCDerivativeProperties.o: QMCDerivativeProperties.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCDerivativeProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCDerivativeProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h
 
 
 QMCFlags.o: QMCFlags.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h
 
 
 QMCFunctions.o: QMCFunctions.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCSlater.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPotential_Energy.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFunctions.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCSlater.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPotential_Energy.h
 
 
 QMCInitializeWalkerFactory.o: QMCInitializeWalkerFactory.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalkerFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesJackedWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalker.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBetterWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/AtomicOrbitalInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LinearSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/DistributionInverter.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalkerFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesJackedWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalker.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBetterWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/AtomicOrbitalInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LinearSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/DistributionInverter.h
 
 
 QMCInput.o: QMCInput.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h
 
 
 QMCJastrow.o: QMCJastrow.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h
 
 
 QMCJastrowElectronElectron.o: QMCJastrowElectronElectron.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h
 
 
 QMCJastrowElectronNuclear.o: QMCJastrowElectronNuclear.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h
 
 
 QMCJastrowParameters.o: QMCJastrowParameters.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h
 
 
 QMCLineSearch.o: QMCLineSearch.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionAlgorithm.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionAlgorithm.h
 
 
 QMCLineSearchStepLengthSelectionFactory.o:  \
  QMCLineSearchStepLengthSelectionFactory.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBracketingStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWolfeStepLengthSelector.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBracketingStepLengthSelector.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWolfeStepLengthSelector.h
 
 
 QMCManager.o: QMCManager.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCManager.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCRun.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWalker.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCSlater.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPotential_Energy.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalkerFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesJackedWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalker.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBetterWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/AtomicOrbitalInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LinearSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/DistributionInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/MathFunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStopwatches.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Stopwatch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCDerivativeProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelatedSamplingVMCOptimization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBracketingStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWolfeStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCSteepestDescent.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBFGSQuasiNewtonLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CKGeneticAlgorithm1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/SortedParameterScorePairList.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ParameterScorePair.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCopyright.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCManager.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCRun.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWalker.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFunctions.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCSlater.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPotential_Energy.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalkerFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesJackedWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalker.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBetterWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/AtomicOrbitalInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LinearSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/DistributionInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/MathFunctions.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStopwatches.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Stopwatch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCDerivativeProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelatedSamplingVMCOptimization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBracketingStepLengthSelector.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWolfeStepLengthSelector.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCSteepestDescent.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBFGSQuasiNewtonLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CKGeneticAlgorithm1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/SortedParameterScorePairList.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ParameterScorePair.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCopyright.h
 
 
 QMCMikesBetterWalkerInitialization.o:  \
  QMCMikesBetterWalkerInitialization.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBetterWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalker.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/AtomicOrbitalInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LinearSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/DistributionInverter.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBetterWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalker.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/AtomicOrbitalInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LinearSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/DistributionInverter.h
 
 
 QMCMikesBracketingStepLengthSelector.o:  \
  QMCMikesBracketingStepLengthSelector.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBracketingStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h
-
-
-QMCMikesBracketingStepLengthSelector.o:  \
- QMCMikesBracketingStepLengthSelector.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBracketingStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBracketingStepLengthSelector.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h
 
 
 QMCMikesJackedWalkerInitialization.o:  \
  QMCMikesJackedWalkerInitialization.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesJackedWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalker.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesJackedWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalker.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h
 
 
 QMCMolecule.o: QMCMolecule.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h
 
 
 QMCObjectiveFunction.o: QMCObjectiveFunction.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h
 
 
 QMCObjectiveFunctionResult.o: QMCObjectiveFunctionResult.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h
 
 
 QMCOptimizationFactory.o: QMCOptimizationFactory.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBracketingStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWolfeStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCSteepestDescent.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBFGSQuasiNewtonLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CKGeneticAlgorithm1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/SortedParameterScorePairList.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ParameterScorePair.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBracketingStepLengthSelector.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWolfeStepLengthSelector.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCSteepestDescent.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBFGSQuasiNewtonLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CKGeneticAlgorithm1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/SortedParameterScorePairList.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ParameterScorePair.h
 
 
 QMCPolynomial.o: QMCPolynomial.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h
 
 
 QMCPotential_Energy.o: QMCPotential_Energy.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPotential_Energy.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPotential_Energy.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h
 
 
 QMCProperties.o: QMCProperties.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h
 
 
 QMCProperty.o: QMCProperty.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h
 
 
 QMCReadAndEvaluateConfigs.o: QMCReadAndEvaluateConfigs.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h
 
 
 QMCRun.o: QMCRun.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCRun.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWalker.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCSlater.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPotential_Energy.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalkerFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesJackedWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalker.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBetterWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/AtomicOrbitalInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LinearSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/DistributionInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/MathFunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStopwatches.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Stopwatch.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCRun.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWalker.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFunctions.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCSlater.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPotential_Energy.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalkerFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesJackedWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalker.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBetterWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/AtomicOrbitalInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LinearSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/DistributionInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/MathFunctions.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStopwatches.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Stopwatch.h
 
 
 QMCSlater.o: QMCSlater.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCSlater.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCSlater.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h
 
 
 QMCStatistic.o: QMCStatistic.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h
 
 
 QMCSteepestDescent.o: QMCSteepestDescent.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCSteepestDescent.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionAlgorithm.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCSteepestDescent.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionAlgorithm.h
 
 
 QMCStopwatches.o: QMCStopwatches.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStopwatches.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Stopwatch.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStopwatches.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Stopwatch.h
 
 
 QMCWalker.o: QMCWalker.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWalker.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCSlater.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPotential_Energy.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalkerFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesJackedWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalker.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBetterWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/AtomicOrbitalInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LinearSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/DistributionInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/MathFunctions.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWalker.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFunctions.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCSlater.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPotential_Energy.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalkerFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesJackedWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalker.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBetterWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/AtomicOrbitalInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LinearSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/DistributionInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/MathFunctions.h
 
 
 QMCWavefunction.o: QMCWavefunction.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h
 
 
 QMCWolfeStepLengthSelector.o: QMCWolfeStepLengthSelector.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWolfeStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWolfeStepLengthSelector.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h
 
 
 QMcBeaver.o: QMcBeaver.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCManager.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCRun.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWalker.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCSlater.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array2D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array3D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LU.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInput.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCFlags.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMolecule.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSplineWithGeometricProgressionGrid.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CubicSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBasisFunctionCoefficients.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWavefunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrow.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronNuclear.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCJastrowElectronElectron.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCPotential_Energy.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalkerFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesJackedWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCInitializeWalker.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBetterWalkerInitialization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/AtomicOrbitalInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/LinearSpline.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/DistributionInverter.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCProperty.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStatistic.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/MathFunctions.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCStopwatches.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Stopwatch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCDerivativeProperties.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelatedSamplingVMCOptimization.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCObjectiveFunctionResult.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCReadAndEvaluateConfigs.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCOptimizationAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCMikesBracketingStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCWolfeStepLengthSelector.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCSteepestDescent.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCBFGSQuasiNewtonLineSearch.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/CKGeneticAlgorithm1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/SortedParameterScorePairList.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ParameterScorePair.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCopyright.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCManager.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCRun.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWalker.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFunctions.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCSlater.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPotential_Energy.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalkerFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesJackedWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInitializeWalker.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBetterWalkerInitialization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/AtomicOrbitalInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/LinearSpline.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/DistributionInverter.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/MathFunctions.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStopwatches.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Stopwatch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCDerivativeProperties.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelatedSamplingVMCOptimization.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCObjectiveFunctionResult.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCOptimizationAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionFactory.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearchStepLengthSelectionAlgorithm.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMikesBracketingStepLengthSelector.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWolfeStepLengthSelector.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCSteepestDescent.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBFGSQuasiNewtonLineSearch.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/CKGeneticAlgorithm1.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/SortedParameterScorePairList.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ParameterScorePair.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCopyright.h
 
 
 SortedParameterScorePairList.o: SortedParameterScorePairList.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/SortedParameterScorePairList.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ParameterScorePair.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/SortedParameterScorePairList.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ParameterScorePair.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h
 
 
 Stopwatch.o: Stopwatch.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Stopwatch.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Stopwatch.h
 
 
 StringManipulation.o: StringManipulation.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h
 
 
 XMLElement.o: XMLElement.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/XMLElement.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/XMLParseException.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/XMLElement.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/XMLParseException.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h
 
 
 XMLParseException.o: XMLParseException.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/XMLParseException.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/StringManipulation.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Exception.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/XMLParseException.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h
 
 
 ZeroCorrelationFunction.o: ZeroCorrelationFunction.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/Complex.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h
 
 
 fastfunctions.o: fastfunctions.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/fastfunctions.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/fastfunctions.h
 
 
 random.o: random.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver-dev/include/random.h
+  /users/drkent/Projects/QMcBeaver/QMcBeaver/include/random.h
 
 

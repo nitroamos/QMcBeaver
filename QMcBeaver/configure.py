@@ -1,5 +1,41 @@
 #!/usr/bin/env python
 
+#            QMcBeaver
+#
+#         Constructed by 
+#
+#     Michael Todd Feldmann 
+#              and 
+#   David Randall "Chip" Kent IV
+#
+# Copyright 2000.  All rights reserved.
+#
+# drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
+
+
+#/**************************************************************************
+# This SOFTWARE has been authored or contributed to by an employee or 
+# employees of the University of California, operator of the Los Alamos 
+# National Laboratory under Contract No. W-7405-ENG-36 with the U.S. 
+# Department of Energy.  The U.S. Government has rights to use, reproduce, 
+# and distribute this SOFTWARE.  Neither the Government nor the University 
+# makes any warranty, express or implied, or assumes any liability or 
+# responsibility for the use of this SOFTWARE.  If SOFTWARE is modified 
+# to produce derivative works, such modified SOFTWARE should be clearly 
+# marked, so as not to confuse it with the version available from LANL.   
+#
+# Additionally, this program is free software; you can distribute it and/or 
+# modify it under the terms of the GNU General Public License. Accordingly, 
+# this program is  distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A  PARTICULAR PURPOSE.  See the GNU General Public License 
+# for more details. 
+#**************************************************************************/
+
+
+
+
+
 # A class containing all of the information necessary to build the code
 
 import os
@@ -24,12 +60,12 @@ class ControlMake:
         print '\tlinux'
         print '\titanium'
         print '\tteragrid'
-        print '\tinsure'
         print '\tsgi'
-        print '\tllnl'
-        print '\tlanl'
+        print '\taix'
+        print '\ttru64'
 	print '\tcplant'
         print '\tccmalloc'
+        print '\tinsure'
         print
         print 'Compilation Options'
         print '\t--{no}optimize'
@@ -63,12 +99,16 @@ class ControlMake:
         self.VER = str( getVersionNumber() )
 
     def testSysValidity(self):
-        if self.SYS != 'default' and self.SYS != 'linux' and \
-           self.SYS != 'itanium' and self.SYS != 'teragrid' and \
-           self.SYS != 'insure' and self.SYS != 'sgi' and \
-           self.SYS != 'llnl' and self.SYS != 'lanl' and \
-	   self.SYS != 'cplant' and \
-           self.SYS != 'ccmalloc':
+        if self.SYS != 'default' and \
+               self.SYS != 'linux' and \
+               self.SYS != 'itanium' and \
+               self.SYS != 'teragrid' and \
+               self.SYS != 'sgi' and \
+               self.SYS != 'aix' and \
+               self.SYS != 'tru64' and \
+               self.SYS != 'cplant' and \
+               self.SYS != 'ccmalloc'and \
+               self.SYS != 'insure':
             print 'Incorrect system specified!'
             self.printHelp()
             sys.exit(0)
@@ -130,28 +170,6 @@ class ControlMake:
         elif self.SYS == 'sgi':
             self.MAKE = 'gmake'
             self.EXE  = ''
-            self.CXX  = 'CC -LANG:std -ansi'
-            self.DEP  = '-M'
-            self.setOptimize()
-            self.DBG  = ''
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-            
-        elif self.SYS == 'llnl':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            self.CXX  = 'newmpCC'
-            self.DEP  = '-M'
-            self.setOptimize()
-            self.DBG  = ''
-            self.PFL  = ''
-            self.setParallel()
-            self.LNK  = '-lm'
-
-        elif self.SYS == 'lanl':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
             self.CXX  = 'CC -64 -LANG:std -ansi'
             self.DEP  = '-M'
             self.setOptimize()
@@ -159,7 +177,28 @@ class ControlMake:
             self.PFL  = ''
             self.PLL  = ''
             self.LNK  = '-lm'
-            self.setParallel()
+            
+        elif self.SYS == 'aix':
+            self.MAKE = 'gmake'
+            self.EXE  = ''
+            self.CXX  = 'newmpCC'
+            self.DEP  = '-M'
+            self.setOptimize()
+            self.DBG  = ''
+            self.PFL  = ''
+            self.PLL  = ''
+            self.LNK  = '-lm'
+
+        elif self.SYS == 'tru64':
+            self.MAKE = 'gmake'
+            self.EXE  = ''
+            self.CXX  = 'cxx -ieee'
+            self.DEP  = '-M'
+            self.setOptimize()
+            self.DBG  = ''
+            self.PFL  = ''
+            self.PLL  = ''
+            self.LNK  = '-lm'
 
         elif self.SYS == 'cplant':
             self.MAKE = 'gmake'
@@ -171,7 +210,6 @@ class ControlMake:
             self.PFL  = ''
             self.PLL  = ''
             self.LNK  = '-lm'
-            self.setParallel()
 
         elif self.SYS == 'ccmalloc':
             self.MAKE = 'gmake'
@@ -205,14 +243,13 @@ class ControlMake:
 
     def setOptimize(self):
         if self.SYS == 'linux':
-            #self.OPT = '-O3 -felide-constructors -fnonnull-objects -ffast-math'
-            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated' #-lm' #--without-shared' # -ltheotherstl'
+            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated' 
 
         elif self.SYS == 'itanium':
-            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated' #-lm'
+            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated'
 
         elif self.SYS == 'teragrid':
-            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated' #-lm'
+            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated'
 
         elif self.SYS == 'insure':
             self.OPT = '-O3'
@@ -220,11 +257,11 @@ class ControlMake:
         elif self.SYS == 'sgi':
             self.OPT = '-O3'
             
-        elif self.SYS == 'llnl':
+        elif self.SYS == 'aix':
             self.OPT = '-O3'
 
-        elif self.SYS == 'lanl':
-            self.OPT = '-O3'
+        elif self.SYS == 'tru64':
+            self.OPT = '-fast'
 
 	elif self.SYS == 'cplant':
 	    self.OPT = '-O3'
@@ -256,10 +293,10 @@ class ControlMake:
         elif self.SYS == 'sgi':
             self.DBG = '-g'
             
-        elif self.SYS == 'llnl':
+        elif self.SYS == 'aix':
             self.DBG = '-g'
 
-        elif self.SYS == 'lanl':
+        elif self.SYS == 'tru64':
             self.DBG = '-g'
 
 	elif self.SYS == 'cplant':
@@ -296,17 +333,18 @@ class ControlMake:
                        + 'lam-6.3.2/lib'
 
         elif self.SYS == 'sgi':
+            self.PLL = self.PLL + ' -DMPI_NO_CPPBIND'
             self.LNK = self.LNK + ' -lmpi'
+
+        elif self.SYS == 'tru64':
+            self.INC = self.INC + ' $(MPI_COMPILE_FLAGS)'
+            self.LNK = self.LNK + ' $(MPI_LD_FLAGS) -lmpi'
 
         elif self.SYS == 'ccmalloc':
             self.INC = self.INC + ' -I/usr/local/lam-6.3.2/include/mpi2c++ ' \
                        + '-I/usr/local/lam-6.3.2/include'
             self.LNK = self.LNK + ' -L/usr/local/lam-6.3.2/lib -lmpi++ ' \
                        + '-lmpio -lmpi -ltstdio -ltrillium -largs -lt'
-
-        elif self.SYS == 'lanl':
-            self.PLL = self.PLL + ' -DMPI_NO_CPPBIND'
-            self.LNK = self.LNK + ' -lmpi'
 
         elif self.SYS == 'cplant':
             self.INC = self.INC + ' -I/usr/local/cplant/west/current/include'
@@ -328,10 +366,10 @@ class ControlMake:
         elif self.SYS == 'sgi':
             self.PFL = '-p'
             
-        elif self.SYS == 'llnl':
+        elif self.SYS == 'aix':
             self.PFL = '-p'
 
-        elif self.SYS == 'lanl':
+        elif self.SYS == 'tru64':
             self.PFL = '-p'
 
 	elif self.SYS == 'cplant':
@@ -362,7 +400,7 @@ class ControlMake:
         text = text + 'PLL = ' + self.PLL + '\n'
         text = text + 'LINK = ' + self.LNK + '\n'
         text = text + 'CXX = ' + self.CXX + \
-               ' -DVERSION=$(VER) $(OPT) $(DBG) $(PFL) $(PLL)\n'
+               ' -DVERSION=$(VER) $(DBG) $(PFL) $(PLL)\n'
         return text
 
     def parseInput(self,inputflags):

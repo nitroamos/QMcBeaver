@@ -10,6 +10,26 @@
 //
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
+/**************************************************************************
+This SOFTWARE has been authored or contributed to by an employee or 
+employees of the University of California, operator of the Los Alamos 
+National Laboratory under Contract No. W-7405-ENG-36 with the U.S. 
+Department of Energy.  The U.S. Government has rights to use, reproduce, 
+and distribute this SOFTWARE.  Neither the Government nor the University 
+makes any warranty, express or implied, or assumes any liability or 
+responsibility for the use of this SOFTWARE.  If SOFTWARE is modified 
+to produce derivative works, such modified SOFTWARE should be clearly 
+marked, so as not to confuse it with the version available from LANL.   
+
+Additionally, this program is free software; you can distribute it and/or 
+modify it under the terms of the GNU General Public License. Accordingly, 
+this program is  distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY;  without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A  PARTICULAR PURPOSE.  See the GNU General Public License 
+for more details. 
+**************************************************************************/
+
+
 #include "QMCSlater.h"
 
 void QMCSlater::operator=(const QMCSlater & rhs )
@@ -53,6 +73,10 @@ void QMCSlater::allocate(int N)
  Laplacian_D.allocate(N,N);
  Grad_D.allocate(N,N,3);
  Grad_PsiRatio.allocate(N,3);
+
+  Chi1D.allocate(WF->getNumberBasisFunctions());
+  Chi2D.allocate(WF->getNumberBasisFunctions(),3);
+  Grad1e.allocate(3);
 }
 
 void QMCSlater::setStartAndStopElectronPositions(int StartEl, int StopEl)
@@ -99,74 +123,110 @@ void QMCSlater::update_Ds(int electron, Array2D<double> &X)
 
 void QMCSlater::update_D(int electron, Array2D<double> &X)
 {
-  Array1D<double> Chi(WF->getNumberBasisFunctions());
+  int nBasisFunc = WF->getNumberBasisFunctions();
 
   // calculate the value of the basis functions evaluated at the
   // current electron position
-  for(int i=0; i<WF->getNumberBasisFunctions(); i++)
+  for(int i=0; i<nBasisFunc; i++)
     {
-      Chi(i) = BF->getPsi(i,X,electron);
+      Chi1D(i) = BF->getPsi(i,X,electron);
     }
 
   //Calculate the new orbital values at the trial position
-  for(int i=0; i<D.dim2(); i++)
+
+  int offset = electron-Start;
+  int dim2   = D.dim2();
+  double **dArray = D.array();
+  double **wfCoeffsArray = WF->Coeffs.array();
+  double *chi1DArray = Chi1D.array();
+
+  for(int i=0; i<dim2; i++)
     {
-      D(electron-Start,i) = 0;
-      for(int k=0; k<WF->getNumberBasisFunctions(); k++)
+      double temp = 0.0;
+
+      for(int k=0; k<nBasisFunc; k++)
 	{
-	  D(electron-Start,i) += WF->Coeffs(k,i)
-	    *Chi(k);
+	  temp += wfCoeffsArray[k][i]*chi1DArray[k];
 	}
+
+      dArray[offset][i] = temp;
     }
 }  
 
 void QMCSlater::update_Laplacian_D(int electron, Array2D<double> &X)
 {
-  Array1D<double> Chi(WF->getNumberBasisFunctions());
+  int nBasisFunc = WF->getNumberBasisFunctions();
 
   // calculate the value of the basis functions evaluated at the
   // current electron position
-  for(int i=0; i<WF->getNumberBasisFunctions(); i++)
+  for(int i=0; i<nBasisFunc; i++)
     {
-      Chi(i) = BF->getLaplacianPsi(i,X,electron);
+      Chi1D(i) = BF->getLaplacianPsi(i,X,electron);
     }
 
   //Calculate the new orbital values at the trial position
-  for(int i=0; i<Laplacian_D.dim2(); i++)
+
+  int offset = electron-Start;
+  int dim2   = Laplacian_D.dim2();
+  double **laplacianDArray = Laplacian_D.array();
+  double **wfCoeffsArray = WF->Coeffs.array();
+  double *chi1DArray = Chi1D.array();
+
+
+  for(int i=0; i<dim2; i++)
     {
-      Laplacian_D(electron-Start,i) = 0;
-      for(int k=0; k<WF->getNumberBasisFunctions(); k++)
+      double temp = 0.0;
+
+      for(int k=0; k<nBasisFunc; k++)
 	{
-	  Laplacian_D(electron-Start,i) += WF->Coeffs(k,i)
-	    *Chi(k);
+	  temp += wfCoeffsArray[k][i]*chi1DArray[k];
 	}
+
+      laplacianDArray[offset][i] = temp;     
     }
 }  
 
 void QMCSlater::update_Grad_D(int electron, Array2D<double> &X)
 {
-  Array2D<double> Chi(WF->getNumberBasisFunctions(),3);
-  Array1D<double> Temp(3);
+  int nBasisFunc = WF->getNumberBasisFunctions();
 
   //calculate the value of the basis functions evaluated at the
   //trial electron position
-  for(int i=0; i<WF->getNumberBasisFunctions(); i++)
+  for(int i=0; i<nBasisFunc; i++)
     {
-      Temp = BF->getGradPsi(i,X,electron);
+      BF->getGradPsi(i,X,electron, Grad1e);
+
       for(int j=0; j<3; j++)
-	Chi(i,j) = Temp(j);
+	{
+	  Chi2D(i,j) = Grad1e(j);
+	}
     }
 
   //Calculate the new orbital values at the trial position
-  for(int i=0; i<Grad_D.dim2(); i++)
+
+  int offset = electron-Start;
+  int dim2   = Grad_D.dim2();
+
+  double **gradDArray = Grad_D.array()[offset];
+
+  for(int i=0; i<dim2; i++)
     {
       for(int j=0; j<3; j++)
+      {
+	gradDArray[i][j] = 0.0;
+      }
+    }
+
+  double **wfCoeffsArray = WF->Coeffs.array();
+  double **chi2DArray = Chi2D.array();
+
+  for(int k=0; k<nBasisFunc; k++)
+    {
+      for(int i=0; i<dim2; i++)
 	{
-	  Grad_D(electron-Start,i,j) = 0;
-	  for(int k=0; k<WF->getNumberBasisFunctions(); k++)
+	  for(int j=0; j<3; j++)
 	    {
-	      Grad_D(electron-Start,i,j) += WF->Coeffs(k,i)
-		*Chi(k,j);
+	      gradDArray[i][j] += wfCoeffsArray[k][i]*chi2DArray[k][j];
 	    }
 	}
     }

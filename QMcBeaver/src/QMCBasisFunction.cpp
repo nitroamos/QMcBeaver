@@ -10,6 +10,27 @@
 //
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
+/**************************************************************************
+This SOFTWARE has been authored or contributed to by an employee or 
+employees of the University of California, operator of the Los Alamos 
+National Laboratory under Contract No. W-7405-ENG-36 with the U.S. 
+Department of Energy.  The U.S. Government has rights to use, reproduce, 
+and distribute this SOFTWARE.  Neither the Government nor the University 
+makes any warranty, express or implied, or assumes any liability or 
+responsibility for the use of this SOFTWARE.  If SOFTWARE is modified 
+to produce derivative works, such modified SOFTWARE should be clearly 
+marked, so as not to confuse it with the version available from LANL.   
+
+Additionally, this program is free software; you can distribute it and/or 
+modify it under the terms of the GNU General Public License. Accordingly, 
+this program is  distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY;  without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A  PARTICULAR PURPOSE.  See the GNU General Public License 
+for more details. 
+**************************************************************************/
+
+
+
 #include "QMCBasisFunction.h"
 
 QMCBasisFunction::QMCBasisFunction()
@@ -215,10 +236,13 @@ double QMCBasisFunction::radialFunction
 {
   double temp = 0.0;
 
-  for(int i=0; i<BFC.N_Gauss(orbital); i++)
+  int nGaussians = BFC.N_Gauss(orbital);
+
+  double **coeffs = BFC.Coeffs.array()[orbital];
+
+  for(int i=0; i<nGaussians; i++)
     {
-      temp += BFC.Coeffs(orbital,i,1)
-	*exp(-BFC.Coeffs(orbital,i,0)*r_sq);
+      temp += coeffs[i][1]*exp(-coeffs[i][0]*r_sq);
     }
 
   return temp;
@@ -264,9 +288,9 @@ double QMCBasisFunction::basis_function(int which_BFC,
   double r_sq = X(0)*X(0) + X(1)*X(1) + 
                 X(2)*X(2);
 
-  double xyz_term = fastPower(X(0),BFC.xyz_powers(orbital,0))
-    *fastPower(X(1),BFC.xyz_powers(orbital,1))
-    *fastPower(X(2),BFC.xyz_powers(orbital,2));
+  double xyz_term = pow(X(0),BFC.xyz_powers(orbital,0))
+    *pow(X(1),BFC.xyz_powers(orbital,1))
+    *pow(X(2),BFC.xyz_powers(orbital,2));
 
   if( use_radial_interpolation )
     {
@@ -282,22 +306,23 @@ double QMCBasisFunction::basis_function(int which_BFC,
   return psi;
 }
 
-Array1D <double> QMCBasisFunction::grad_basis_function(int which_BFC,
-	  QMCBasisFunctionCoefficients& BFC, int orbital, Array1D <double>& X)
+void QMCBasisFunction::grad_basis_function(int which_BFC,
+					   QMCBasisFunctionCoefficients& BFC, 
+					   int orbital, 
+					   Array1D <double>& X,
+					   Array1D <double> &grad)
 {
   int a = BFC.xyz_powers(orbital,0);
   int b = BFC.xyz_powers(orbital,1);
   int c = BFC.xyz_powers(orbital,2);
 
-  Array1D <double> Grad(3);
   double r_sq = X(0)*X(0) + X(1)*X(1) + X(2)*X(2);
 
-  Grad(0) = 0.0;
-  Grad(1) = 0.0;
-  Grad(2) = 0.0;
+  grad(0) = 0.0;
+  grad(1) = 0.0;
+  grad(2) = 0.0;
 
-  double xyz_term = fastPower(X(0),a)*fastPower(X(1),b)
-    *fastPower(X(2),c);
+  double xyz_term = pow(X(0),a)*pow(X(1),b)*pow(X(2),c);
 
   if( use_radial_interpolation )
     {
@@ -313,39 +338,31 @@ Array1D <double> QMCBasisFunction::grad_basis_function(int which_BFC,
 
       double r = sqrt(r_sq);
       
-      Grad(0) = xyz_term*(a/X(0) * radialFunctionValue + X(0)/r * 
+      grad(0) = xyz_term*(a/X(0) * radialFunctionValue + X(0)/r * 
 			  radialFunctionFirstDerivative);
 
-      Grad(1) = xyz_term*(b/X(1) * radialFunctionValue + X(1)/r *
+      grad(1) = xyz_term*(b/X(1) * radialFunctionValue + X(1)/r *
 			  radialFunctionFirstDerivative);
 
-      Grad(2) = xyz_term*(c/X(2) * radialFunctionValue + X(2)/r * 
+      grad(2) = xyz_term*(c/X(2) * radialFunctionValue + X(2)/r * 
 			  radialFunctionFirstDerivative);
     }
   else
     {
-      double exp_term = 0;
+      int nGaussians = BFC.N_Gauss(orbital);
 
-      for(int i=0; i<BFC.N_Gauss(orbital); i++)
+      double **coeffs = BFC.Coeffs.array()[orbital];
+
+      for(int i=0; i<nGaussians; i++)
 	{
-	  exp_term = BFC.Coeffs(orbital,i,1)
-	    *exp(-BFC.Coeffs(orbital,i,0)*r_sq);
+	  double exp_xyz_term = coeffs[i][1]*exp(-coeffs[i][0]*r_sq)*xyz_term;
+	  double temp = -2.0*coeffs[i][0];
 	  
-	  Grad(0) += (a/X(0)-2.0*
-			     BFC.Coeffs(orbital,i,0)*X(0))
-	                     *exp_term*xyz_term;
-	  
-	  Grad(1) += (b/X(1)-2.0*
-			     BFC.Coeffs(orbital,i,0)*X(1))
-	                     *exp_term*xyz_term;
-	  
-	  Grad(2) += (c/X(2)-2.0*
-			     BFC.Coeffs(orbital,i,0)*X(2))
-	                     *exp_term*xyz_term;
+	  grad(0) += (a/X(0)+temp*X(0))*exp_xyz_term;
+	  grad(1) += (b/X(1)+temp*X(1))*exp_xyz_term;
+	  grad(2) += (c/X(2)+temp*X(2))*exp_xyz_term;
 	}
     }
-
-  return Grad;
 }
 
 double QMCBasisFunction::laplacian_basis_function(int which_BFC,
@@ -361,8 +378,7 @@ double QMCBasisFunction::laplacian_basis_function(int which_BFC,
   int b = BFC.xyz_powers(orbital,1);
   int c = BFC.xyz_powers(orbital,2);
 
-  double xyz_term = fastPower(X(0),a)*fastPower(X(1),b)
-                    *fastPower(X(2),c);
+  double xyz_term = pow(X(0),a)*pow(X(1),b)*pow(X(2),c);
 
   double temp = 0;
 
@@ -393,14 +409,18 @@ double QMCBasisFunction::laplacian_basis_function(int which_BFC,
     }
   else
     {
-      for(int i=0; i<BFC.N_Gauss(orbital); i++)
+      int nGaussians = BFC.N_Gauss(orbital);
+
+      double **coeffs = BFC.Coeffs.array()[orbital];
+
+      for(int i=0; i<nGaussians; i++)
 	{
-	  temp += (a*(a-1)/x2 + b*(b-1)/y2 + c*(c-1)/z2
-		   -(4*(a+b+c)+6)*BFC.Coeffs(orbital,i,0)
-		   +4*(r_sq)*BFC.Coeffs(orbital,i,0)
-		   *BFC.Coeffs(orbital,i,0))
-	           *BFC.Coeffs(orbital,i,1)
-	           *exp(-BFC.Coeffs(orbital,i,0)*r_sq);
+	  double p0 = coeffs[i][0];
+	  double p1 = coeffs[i][1];
+
+	  temp += (a*(a-1.0)/x2 + b*(b-1.0)/y2 + c*(c-1.0)/z2
+		   -(4.0*(a+b+c)+6.0-4.0*(r_sq)*p0)*p0)*p1*exp(-p0*r_sq);
+	  
 	}
     }
 
@@ -423,9 +443,10 @@ double QMCBasisFunction::getPsi(int which_BF, Array2D <double>& X,
 			BFLookupTable(which_BF,1), Xcalc);
 }
 
-Array1D <double> QMCBasisFunction::getGradPsi(int which_BF, 
-					      Array2D <double>& X,
-					      int el_number)
+void QMCBasisFunction::getGradPsi(int which_BF, 
+				  Array2D <double>& X,
+				  int el_number, 
+				  Array1D <double>& grad)
 {
   for(int i=0; i<3; i++)
     {
@@ -434,9 +455,9 @@ Array1D <double> QMCBasisFunction::getGradPsi(int which_BF,
 	  BFLookupTable(which_BF,0),i);
     }
 
-  return grad_basis_function(BFLookupTable(which_BF,0),
-			    BFCoeffs(BFLookupTable(which_BF,0)),
-			    BFLookupTable(which_BF,1), Xcalc);
+  grad_basis_function(BFLookupTable(which_BF,0),
+		      BFCoeffs(BFLookupTable(which_BF,0)),
+		      BFLookupTable(which_BF,1), Xcalc, grad);
 }
 
 double QMCBasisFunction::getLaplacianPsi(int which_BF, Array2D <double>& X,

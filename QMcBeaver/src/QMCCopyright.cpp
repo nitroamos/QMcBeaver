@@ -86,6 +86,30 @@ ostream & operator<<(ostream & strm, QMCCopyright & rhs)
   text += "--------------------------------------------\n";
   text += "\n";
 
+  // LANL Copyright info
+  text += "This SOFTWARE has been authored or contributed to by an\n";
+  text += "employee or employees of the University of California,\n";
+  text += "operator of the Los Alamos National Laboratory under Contract\n";
+  text += "No. W-7405-ENG-36 with the U.S. Department of Energy.  The\n";
+  text += "U.S. Government has rights to use, reproduce, and distribute\n";
+  text += "this SOFTWARE.  Neither the Government nor the University\n";
+  text += "makes any warranty, express or implied, or assumes any\n";
+  text += "liability or responsibility for the use of this SOFTWARE.  If\n";
+  text += "SOFTWARE is modified to produce derivative works, such\n";
+  text += "modified SOFTWARE should be clearly marked, so as not to\n";
+  text += "confuse it with the version available from LANL.\n";
+  text += "\n";
+  text += "Additionally, this program is free software; you can\n";
+  text += "distribute it and/or modify it under the terms of the GNU\n";
+  text += "General Public License. Accordingly, this program is\n";
+  text += "distributed in the hope that it will be useful, but WITHOUT\n"; 
+  text += "ANY WARRANTY;  without even the implied warranty of\n";
+  text += "MERCHANTABILITY or FITNESS FOR A  PARTICULAR PURPOSE.  See\n";
+  text += "the GNU General Public License for more details.\n";
+  text += "\n";
+  text += "--------------------------------------------\n";
+  text += "\n";
+
   strm << text;
   return strm;
 }

@@ -10,6 +10,27 @@
 //
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
+/**************************************************************************
+This SOFTWARE has been authored or contributed to by an employee or 
+employees of the University of California, operator of the Los Alamos 
+National Laboratory under Contract No. W-7405-ENG-36 with the U.S. 
+Department of Energy.  The U.S. Government has rights to use, reproduce, 
+and distribute this SOFTWARE.  Neither the Government nor the University 
+makes any warranty, express or implied, or assumes any liability or 
+responsibility for the use of this SOFTWARE.  If SOFTWARE is modified 
+to produce derivative works, such modified SOFTWARE should be clearly 
+marked, so as not to confuse it with the version available from LANL.   
+
+Additionally, this program is free software; you can distribute it and/or 
+modify it under the terms of the GNU General Public License. Accordingly, 
+this program is  distributed in the hope that it will be useful, but WITHOUT 
+ANY WARRANTY;  without even the implied warranty of MERCHANTABILITY or 
+FITNESS FOR A  PARTICULAR PURPOSE.  See the GNU General Public License 
+for more details. 
+**************************************************************************/
+
+
+
 #ifndef Array2D_H
 #define Array2D_H
 
@@ -69,10 +90,10 @@ public:
   int size(){return n_1*n_2;}
 
   /**
-    Gets a pointer to an array containing the array elements.  The ordering of this
-    array is NOT specified.  
+    Gets a pointer to an array containing the array elements.  
+    The ordering of this array is NOT specified.  
     */
-  T* array(){return pArray;}
+  T** array(){return pArray;}
 
   /**
      Allocates memory for the array.
