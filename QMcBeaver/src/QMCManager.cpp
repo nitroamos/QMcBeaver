@@ -562,7 +562,7 @@ void QMCManager::writeXML(ostream & strm)
     {
       strm << "<iseed>\n" << -1*Input.flags.iseed << "\n</iseed>" << endl;
     }
-  else if (Input.flags.iseed < 0)
+  else if (Input.flags.iseed <= 0)
     {  
       strm << "<iseed>\n" << Input.flags.iseed << "\n</iseed>" << endl;
     }
