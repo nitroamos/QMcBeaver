@@ -45,5 +45,5 @@ libclean:
 testclean: 
 	-cd test; $(MAKE) clean
 
-cleanall: clean execlean testclean libclean
+cleanall: clean execlean testclean #libclean
 

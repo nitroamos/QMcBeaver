@@ -180,7 +180,8 @@ class ControlMake:
 
     def setOptimize(self):
         if self.SYS == 'linux':
-            self.OPT = '-O3 -felide-constructors -fnonnull-objects -ffast-math'
+            #self.OPT = '-O3 -felide-constructors -fnonnull-objects -ffast-math'
+            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated' #-lm' #--without-shared' # -ltheotherstl'
 
         elif self.SYS == 'insure':
             self.OPT = '-O3'
