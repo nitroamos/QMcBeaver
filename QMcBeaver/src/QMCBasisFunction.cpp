@@ -32,6 +32,7 @@ for more details.
 
 
 #include "QMCBasisFunction.h"
+#define TOOSMALL 1e-306
 
 QMCBasisFunction::QMCBasisFunction()
 {
@@ -334,6 +335,20 @@ void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X, int start,
 					chi_lap   += (a*(a-1.0)/x2 + b*(b-1.0)/y2 + c*(c-1.0)/z2
 								 - (4.0*(a+b+c)+6.0-4.0*r_sq*p0)*p0)*exp_term;
 				}
+
+				/*	This is important on some operating systems because if the values are too small,
+						they can cause a library like ATLAS to crash. (not entirely sure why...)*/
+				if(chi > 0 && chi <  TOOSMALL) chi = TOOSMALL;
+				if(chi < 0 && chi > -TOOSMALL) chi = -TOOSMALL;
+				if(chi_gradx > 0 && chi_gradx <  TOOSMALL) chi_gradx = TOOSMALL;
+				if(chi_gradx < 0 && chi_gradx > -TOOSMALL) chi_gradx = -TOOSMALL;
+				if(chi_grady > 0 && chi_grady <  TOOSMALL) chi_grady = TOOSMALL;
+				if(chi_grady < 0 && chi_grady > -TOOSMALL) chi_grady = -TOOSMALL;
+				if(chi_gradz > 0 && chi_gradz <  TOOSMALL) chi_gradz = TOOSMALL;
+				if(chi_gradz < 0 && chi_gradz > -TOOSMALL) chi_gradz = -TOOSMALL;
+				if(chi_lap > 0 && chi_lap <  TOOSMALL) chi_lap = TOOSMALL;
+				if(chi_lap < 0 && chi_lap > -TOOSMALL) chi_lap = -TOOSMALL;
+
 				chi_value(el,bf)     = chi;
 				(chi_grad(0))(el,bf) = chi_gradx;
 				(chi_grad(1))(el,bf) = chi_grady;

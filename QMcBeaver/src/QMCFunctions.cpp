@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCFunctions.h"
+#define TOOSMALL 1e-306
 
 QMCFunctions::QMCFunctions()
 {
@@ -123,8 +124,14 @@ void QMCFunctions::calculate_Psi_quantities()
       SCF_Laplacian_PsiRatio += term_psi * ( (*alphaLaplacian)(i) + \
                                                          (*betaLaplacian)(i) );
     }
-
-  Psi = SCF_sum * Jastrow.getJastrow();
+	
+	/*  we end up doing a division with SCF_sum. Therefore, it seems to be critical
+			to make sure we aren't dividing by too small a number*/
+	if(SCF_sum > 0 && SCF_sum <  TOOSMALL) SCF_sum = TOOSMALL; 
+	if(SCF_sum < 0 && SCF_sum > -TOOSMALL) SCF_sum = -TOOSMALL;
+	if(SCF_sum == 0) SCF_sum = TOOSMALL;
+  
+	Psi = SCF_sum * Jastrow.getJastrow();
 
   Array2D<double>* JastrowGrad = Jastrow.getGradientLnJastrow();
 
