@@ -13,7 +13,33 @@
 #ifndef Stopwatch_H
 #define Stopwatch_H
 
+#ifdef _WIN32
+
+#include <sys/timeb.h>
+#include <sys/types.h>
+//#include <winsock.h> //timeval is defined here, but winsock's inclusion introduces stuff that conflicts elsewhere
+
+struct timezone {
+    int tz_minuteswest;
+    int tz_dsttime;
+};
+
+struct timeval {
+        long    tv_sec;         /* seconds */
+        long    tv_usec;        /* and microseconds */
+};
+
+static void gettimeofday(struct timeval* t,void* timezone){
+		struct _timeb timebuffer;
+        _ftime( &timebuffer );
+        t->tv_sec=timebuffer.time;
+        t->tv_usec=1000*timebuffer.millitm;
+}
+#else
 #include <sys/time.h>
+#endif
+
+
 #include <string>
 #include <strstream>
 #include <iostream>
