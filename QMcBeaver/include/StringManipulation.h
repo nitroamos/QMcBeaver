@@ -16,10 +16,12 @@
 #include <stdio.h>
 #include <string>
 #include <strstream>
-//#include <sstream>
 
-#ifndef streamsize
-typedef long streamsize;
+#ifdef _WIN32
+#define STREAMSIZE_TYPE (long)
+//typedef long streamsize;
+#else
+#define STREAMSIZE_TYPE
 #endif
 
 using namespace std;
