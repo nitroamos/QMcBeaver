@@ -1,3 +1,21 @@
+Wed, 7 Jul 2004, Daniel R. Fisher
+
+1.  Added QMCDansWalkerInitialization.  This initialization method requires
+    very few equilibration steps before statistics can be gathered.  To use it,
+    set the walker_initialization_method flag to dans_walker_initialization and
+    copy radial_dist_arrays and angle_dist_arrays from the QMcBeaver/src 
+    directory into the working directory.
+    As part of this method, I added some quaternion operations for calculating
+    rotations to Array1D.h.
+
+2.  Added an equilibration Stopwatch to QMCStopwatches.  The time spent
+    equilibrating the chain is now referred to as "equilibration time" and is
+    recorded by the equilibration Stopwatch.  The Stopwatch that used to record
+    this time was called the initialization Stopwatch.  This Stopwatch now 
+    records the time spent generating an initial configuration for the 
+    electrons.    
+
+
 Thu, 1 Jul 2004, Daniel R. Fisher
 
 1.  In QMCManager and QMCFlags, I made sure the iseed is always a negative
