@@ -551,7 +551,7 @@ double QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
 
       for(int i=0; i<3; i++)
 	{
-	  double temp = TrialWalker->R(electron,i) - 
+	  double temp = OriginalWalker->R(electron,i) - 
 	    ( Input->Molecule.Atom_Positions(nearestNucleus,i) + 
 	      radialCoordinate * radialUnitVector(i) + 
 	      zCoordinate * zUnitVector(i) );
@@ -565,7 +565,7 @@ double QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
       
       for(int i=0; i<3; i++)
 	{
-	  double temp = TrialWalker->R(electron,i) -
+	  double temp = OriginalWalker->R(electron,i) -
 	    Input->Molecule.Atom_Positions(nearestNucleus,i);
 
 	  distance2Sq += temp*temp;
