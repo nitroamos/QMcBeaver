@@ -22,6 +22,7 @@
 #include <iostream>
 #include <string>
 #include <math.h>
+#include <iomanip>
 
 #ifdef PARALLEL
 #include <mpi.h>

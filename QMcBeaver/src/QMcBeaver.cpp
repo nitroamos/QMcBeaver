@@ -52,6 +52,7 @@ void qmcbeaver(int argc, char ** argv)
 {
   Stopwatch timer;
   timer.start();
+  int width = 17;
 
   if(argc < 2)
     {
@@ -70,6 +71,10 @@ void qmcbeaver(int argc, char ** argv)
   if( TheMan.getInputData()->flags.my_rank == 0 )
     {
       cout << "***************  TheMan.run();" << endl;
+      cout << setw(10) << "iteration" << setw(width) << "Eavg" << setw(width) << "Estd" << setw(width)
+	<< "Eavg-Estd" << setw(width) << "Eavg+Estd" << setw(width) << "Num. Walkers" 
+	<< setw(width) << "Trial Energy" << setw(width) << "Eff. dt"
+	<< setw(width) << "Weights" << endl;
     }
 
   TheMan.run();
@@ -90,7 +95,7 @@ void qmcbeaver(int argc, char ** argv)
     {
       if( TheMan.getInputData()->flags.my_rank == 0 )
 	{
-	  cout << "***************  TheMan.optimize();" << endl;
+	  cout << "***************  TheMan.optimize(), iteration: "  << (optloops+1) << ";" << endl;
 	}
 
       TheMan.optimize();
@@ -100,6 +105,10 @@ void qmcbeaver(int argc, char ** argv)
 	  TheMan.writeRestart();
 	  
 	  cout << "***************  TheMan.run();" << endl;
+	  cout << setw(10) << "iteration" << setw(width) << "Eavg" << setw(width) << "Estd" << setw(width)
+	    << "Eavg-Estd" << setw(width) << "Eavg+Estd" << setw(width) << "Num. Walkers" 
+	    << setw(width) << "Trial Energy" << setw(width) << "Eff. dt"
+	    << setw(width) << "Weights" << endl;
 	}
 
       TheMan.zeroOut();

@@ -158,28 +158,28 @@ void QMCProperties::readXML(istream& strm)
 
 ostream& operator <<(ostream& strm, QMCProperties &rhs)
 {
-  strm << "----------------- Energy --------------------" << endl;
+  strm << endl << "----------------- Energy --------------------" << endl;
   strm << rhs.energy;
 
-  strm << "-------------- Kinetic Energy ---------------" << endl;
+  strm << endl << "-------------- Kinetic Energy ---------------" << endl;
   strm << rhs.kineticEnergy;
 
-  strm << "------------ Potential Energy ---------------" << endl;
+  strm << endl << "------------ Potential Energy ---------------" << endl;
   strm << rhs.potentialEnergy;
 
-  strm << "----------- AcceptanceProbability -----------" << endl;
+  strm << endl << "----------- AcceptanceProbability -----------" << endl;
   strm << rhs.acceptanceProbability;
 
 
-  strm << "----------- DistanceMovedAccepted -----------" << endl;
+  strm << endl << "----------- DistanceMovedAccepted -----------" << endl;
   strm << rhs.distanceMovedAccepted;
 
 
-  strm << "------------ DistanceMovedTrial -------------" << endl;
+  strm << endl << "------------ DistanceMovedTrial -------------" << endl;
   strm << rhs.distanceMovedTrial;
 
 
-  strm << "---------------- logWeights -----------------" << endl;
+  strm << endl << "---------------- logWeights -----------------" << endl;
   strm << rhs.logWeights;
 
   return strm;

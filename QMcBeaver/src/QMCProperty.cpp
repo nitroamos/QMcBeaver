@@ -589,8 +589,6 @@ ostream& operator <<(ostream& strm, QMCProperty &rhs)
 {
   strm << rhs.getAverage() << " +/- " << rhs.getStandardDeviation() << endl;
 
-  strm << endl;
-
   /*
   double a = rhs.stdevFittingParameters[0] * rhs.stdevFittingParameters[0];
   double b = rhs.stdevFittingParameters[1] * rhs.stdevFittingParameters[1];
@@ -605,22 +603,25 @@ ostream& operator <<(ostream& strm, QMCProperty &rhs)
   strm << endl;
   */
 
-  strm << "DeCorr_depth\tsamples\t\tAve\t\tStd\t\tStdStd\t\tVar\t\tVarStd"
-       << endl;
+  int width = 16;
+  strm << setw(width) << "DeCorr_depth" << setw(width) << "samples" << setw(width) << "Ave" 
+       << setw(width) << "Std" << setw(width) << "StdStd" << setw(width) << "Var" 
+       << setw(width) << "VarStd" << endl;
+  strm.precision(10);
+  
   for(int i=0;i<DCL;i++)
     {
       if( rhs.DeCorr[i].getNumberSamples() > 0 )
 	{
-	  strm << i << "\t\t" << rhs.DeCorr[i].getNumberSamples() << "\t"
-	       << rhs.DeCorr[i].getAverage() << "\t";
+          strm << setw(width) << i << setw(width) << rhs.DeCorr[i].getNumberSamples() 
+	       << setw(width) << rhs.DeCorr[i].getAverage();
 
 	  if( rhs.DeCorr[i].getNumberSamples() > 1 )
 	    {
-	      strm << rhs.getBlockStandardDeviation(i) << "\t"
-		   << rhs.getBlockStandardDeviationStandardDeviation(i) 
-		   << "\t"
-		   << rhs.getBlockVariance(i) << "\t"
-		   << rhs.getBlockVarianceStandardDeviation(i);
+	      strm << setw(width) << rhs.getBlockStandardDeviation(i)
+                   << setw(width) << rhs.getBlockStandardDeviationStandardDeviation(i)
+                   << setw(width) << rhs.getBlockVariance(i)
+                   << setw(width) << rhs.getBlockVarianceStandardDeviation(i);
 	    }
 
 	  strm << endl;

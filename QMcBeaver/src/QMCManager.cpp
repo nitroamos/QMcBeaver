@@ -536,17 +536,19 @@ void QMCManager::equilibration_step()
 void QMCManager::writeEnergyResultsSummary(ostream & strm)
 {
   // Print one iteration out
-
+  int width = 17;
   double Eave = Properties_total.energy.getAverage();
   double Estd = Properties_total.energy.getStandardDeviation();
+  if( Estd > 1.0e6 )
+    Estd = 0.0;
 
-  if( Estd > 1.0e6 ) Estd = 0.0;
-
-  strm << iteration << "\t" << Eave << "\t" << Estd << "\t" 
-       << Eave-Estd << "\t" << Eave+Estd << "\t" 
-       << QMCnode.getNumberOfWalkers() << "\t" << Input.flags.energy_trial
-       << "\t" << Input.flags.dt_effective << "\t" << QMCnode.getWeights()
-       << "\t" << Properties_total.energy.getNumberSamples() << endl;
+  strm << setw(10) << iteration;
+  strm << setprecision(10);
+  strm << setw(width) << Eave << setw(width) << Estd << setw(width) << Eave-Estd
+       << setw(width) << Eave+Estd << setw(width) << QMCnode.getNumberOfWalkers() 
+       << setw(width) << Input.flags.energy_trial << setw(width) << Input.flags.dt_effective
+       << setw(width) << QMCnode.getWeights() << endl;
+  strm << setprecision(15);
 }
 
 void QMCManager::writeTransientProperties(int label)
