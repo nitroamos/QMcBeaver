@@ -60,10 +60,11 @@ class ControlMake:
         print '\taix'
         print '\ttru64'
         print '\tmac'
-	print '\tcplant'
+        print '\tcplant'
         print '\tccmalloc'
         print '\tcray_x1'
         print '\tinsure'
+        print '\tcygwin'
         print
         print 'Compilation Options'
         print '\t--{no}optimize'
@@ -99,6 +100,7 @@ class ControlMake:
     def testSysValidity(self):
         if self.SYS != 'default' and \
                self.SYS != 'linux' and \
+               self.SYS != 'cygwin' and \
                self.SYS != 'itanium' and \
                self.SYS != 'teragrid' and \
                self.SYS != 'sgi' and \
@@ -125,6 +127,17 @@ class ControlMake:
     def setBase(self):
         if   self.SYS == 'linux':
             self.MAKE = 'gmake'
+            self.EXE  = ''
+            self.CXX  = 'g++ -Wall -Wno-deprecated'
+            self.DEP  = '-MM'
+            self.setOptimize()
+            self.DBG  = ''
+            self.PFL  = ''
+            self.PLL  = ''
+            self.LNK  = '-lm'
+
+        elif   self.SYS == 'cygwin':
+            self.MAKE = 'make'
             self.EXE  = ''
             self.CXX  = 'g++ -Wall -Wno-deprecated'
             self.DEP  = '-MM'
@@ -273,6 +286,9 @@ class ControlMake:
         if self.SYS == 'linux':
             self.OPT = '-O3 -felide-constructors -ffast-math' 
 
+        elif self.SYS == 'cygwin':
+            self.OPT = '-O3 -felide-constructors -ffast-math' 
+
         elif self.SYS == 'itanium':
             self.OPT = '-O3 -felide-constructors -ffast-math'
 
@@ -294,8 +310,8 @@ class ControlMake:
         elif self.SYS == 'mac':
             self.OPT = '-O3 -felide-constructors -ffast-math'
 
-	elif self.SYS == 'cplant':
-	    self.OPT = '-O3'
+        elif self.SYS == 'cplant':
+            self.OPT = '-O3'
 
         elif self.SYS == 'ccmalloc':
             self.OPT = '-O3 -felide-constructors -fnonnull-objects -ffast-math'
@@ -315,6 +331,9 @@ class ControlMake:
 
     def setDebug(self):
         if self.SYS == 'linux':
+            self.DBG = '-g'
+
+        elif self.SYS == 'cygwin':
             self.DBG = '-g'
 
         elif self.SYS == 'itanium':
@@ -338,8 +357,8 @@ class ControlMake:
         elif self.SYS == 'mac':
             self.DBG = '-g'
 
-	elif self.SYS == 'cplant':
-	    self.DBG = '-g'
+        elif self.SYS == 'cplant':
+            self.DBG = '-g'
 
         elif self.SYS == 'ccmalloc':
             self.DBG = '-g'
@@ -359,6 +378,10 @@ class ControlMake:
         self.PLL = '-DPARALLEL'
 
         if self.SYS == 'linux':
+            self.CXX = 'mpiCC -Wall -Wno-deprecated'
+            self.DEP = '-M'
+
+        elif self.SYS == 'cygwin':
             self.CXX = 'mpiCC -Wall -Wno-deprecated'
             self.DEP = '-M'
 
@@ -396,10 +419,13 @@ class ControlMake:
 
         elif self.SYS == 'cplant':
             self.INC = self.INC + ' -I/usr/local/cplant/west/current/include'
-	    self.LNK = self.LNK + ' -lmpi'
+            self.LNK = self.LNK + ' -lmpi'
 
     def setProfile(self):
         if self.SYS == 'linux':
+            self.PFL = '-p'
+
+        elif self.SYS == 'cygwin':
             self.PFL = '-p'
 
         elif self.SYS == 'itanium':
@@ -423,8 +449,8 @@ class ControlMake:
         elif self.SYS == 'mac':
             self.PFL = '-p'
 
-	elif self.SYS == 'cplant':
-	    self.PFL = '-p'
+        elif self.SYS == 'cplant':
+            self.PFL = '-p'
 
         elif self.SYS == 'ccmalloc':
             self.PFL = '-p'
@@ -442,7 +468,7 @@ class ControlMake:
         text = text + 'VER = ' + self.VER + '\n'
         text = text + 'HOME = ' + self.HOME + '\n'
         text = text + 'INC = ' + self.INC + '\n'
-	text = text + 'DIROBJ = obj_$(SYS)\n'
+        text = text + 'DIROBJ = obj_$(SYS)\n'
         text = text + 'MAKE = ' + self.MAKE + '\n'
         text = text + 'EXE = ' + self.EXE + '\n'
         text = text + 'DEP = ' + self.DEP + '\n'
