@@ -33,6 +33,7 @@
 #**************************************************************************/
 
 # A class containing all of the information necessary to build the code
+# The executable now has tags: s for serial, p for parallel, d for debug, a for atlas
 
 import os
 import os.path
@@ -51,6 +52,7 @@ class ControlMake:
     # self.VER  -- version number of the software
     
     def printHelp(self):
+		print 'Syntax: ./configure.py system [option1 [option2 etc]]'
         print 'System Options'
         print '\tdefault'
         print '\tlinux'
@@ -120,10 +122,17 @@ class ControlMake:
         self.INC = '-I'+self.HOME+'/include'
 
     def setEXE(self):
+		self.EXTRA = '';
         if self.EXE == '':
-            self.EXE = 'QMcBeaver.' + self.SYS
             if self.PLL != '':
-                self.EXE = 'p' + self.EXE
+                self.EXTRA = 'p' + self.EXTRA
+			else:
+				self.EXTRA = 's' + self.EXTRA
+			if self.DBG != '':
+				self.EXTRA = 'd' + self.EXTRA
+			if self.LIB != '':
+				self.EXTRA = 'a' + self.EXTRA
+			self.EXE = 'QMcBeaver.' + self.EXTRA + '.' + self.SYS
 
     def setBase(self):
         self.LIB = ''
@@ -467,16 +476,17 @@ class ControlMake:
             sys.exit(0)
 
     def printString(self):
-		text = '\n#NOTICE! ***************************************************************************'
-        text = text +  '#the ATLAS option requires the libcblas.a and libatlas.a to be in the lib directory!'
-        text = text + '#NOTICE! ***************************************************************************\n'    
+        text = '#the ATLAS option requires the libcblas.a and libatlas.a to be in the lib directory!\n'
         text = text + 'SYS = ' + self.SYS + '\n'
         text = text + 'VER = ' + self.VER + '\n'
         text = text + 'HOME = ' + self.HOME + '\n'
         text = text + 'INC = ' + self.INC + '\n'
         text = text + 'LIB = ' + self.LIB + '\n'
-        text = text + 'DIROBJ = obj_$(SYS)\n'
-        text = text + 'MAKE = ' + self.MAKE + '\n'
+		if self.EXTRA != '':
+			text = text + 'DIROBJ = obj_' + self.EXTRA + '_$(SYS)\n'
+		else:
+			text = text + 'DIROBJ = obj_$(SYS)\n'
+		text = text + 'MAKE = ' + self.MAKE + '\n'
         text = text + 'EXE = ' + self.EXE + '\n'
         text = text + 'DEP = ' + self.DEP + '\n'
         text = text + 'OPT = ' + self.OPT + '\n'
