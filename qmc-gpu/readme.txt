@@ -1,0 +1,3 @@
+this module was created so that it is easy to share this code with others who may want to modify it. (so i don't have to email it or whatever) it is by no means even close to complete. eventually, we might create a branch in QMcBeaver itself for this type of stuff
+
+also, of course, i make no promises about the quality of this code. it was named "playtime" for a reason... once things have been better figured out, i'll work on firming it up, commenting, separating header files from code, etc.
