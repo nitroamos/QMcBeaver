@@ -46,12 +46,13 @@ Makefile.dep: $(DEPFILES)
 	@cat $(DEPFILES) > Makefile.dep
 
 include Makefile.dep
+#include $(DEPFILES)
 
 .cpp.o:
 	$(CXX) $(OPT) $(INC) -c $<
 
 d.files/%.d: %.cpp ../include/%.h
-	@$(CXX) $(INC) $(DEP) $< >> $@
+	$(CXX) $(INC) $(DEP) $< >> $@
 	@echo "" >> $@
 	@echo "" >> $@
 

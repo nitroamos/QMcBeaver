@@ -336,13 +336,16 @@ class ControlMake:
         self.PLL = '-DPARALLEL'
 
         if self.SYS == 'linux':
-            self.CXX = 'mpiCC'
+            self.CXX = 'mpiCC -Wall -Wno-deprecated'
+            self.DEP = '-M'
 
         elif self.SYS == 'itanium':
-            self.CXX = 'mpiCC'
+            self.CXX = 'mpiCC -Wall -Wno-deprecated'
+            self.DEP = '-M'
 
         elif self.SYS == 'teragrid':
-            self.CXX = 'mpiCC'
+            self.CXX = 'mpiCC -Wall -Wno-deprecated'
+            self.DEP = '-M'
 
         elif self.SYS == 'insure':
             self.LNK = self.LNK + ' -lm -lmpi++ -lmpio -lmpi -ltstdio ' \
@@ -360,7 +363,7 @@ class ControlMake:
             self.LNK = self.LNK + ' $(MPI_LD_FLAGS) -lmpi'
 
         elif self.SYS == 'mac':
-            self.CXX = 'mpiCC'
+            self.CXX = 'mpiCC -Wall -Wno-deprecated -Wno-long-double'
 
         elif self.SYS == 'ccmalloc':
             self.INC = self.INC + ' -I/usr/local/lam-6.3.2/include/mpi2c++ ' \
