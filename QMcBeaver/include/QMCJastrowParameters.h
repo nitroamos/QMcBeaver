@@ -51,36 +51,29 @@ class QMCJastrowParameters
 public:
   /**
     Creates an instance of the class.
-    */
-
+  */
   QMCJastrowParameters();
-
 
   /** 
     Creates an instance of the class that is identical to another instance
     of the class.
 
     @param rhs object to copy
-    */
-
+  */
   QMCJastrowParameters(const QMCJastrowParameters & rhs);
-
 
   /**
     Sets the parameters describing the particle-particle interactions.
 
     @param params new set of parameters
-    */
-
+  */
   void setParameterVector(Array1D<double> & params);
-
 
   /**
     Gets the parameters describing the particle-particle interactions.
 
     @return parameters describing particle-particle interactions.
-    */
-
+  */
   Array1D<double> getParameters();
 
   /**
@@ -95,8 +88,7 @@ public:
     interactions.
 
     @return up-down electron interaction parameters
-    */
-
+  */
   QMCCorrelationFunctionParameters * getElectronUpElectronDownParameters();
 
 
@@ -105,8 +97,7 @@ public:
     interactions.
 
     @return up-up electron interaction parameters
-    */
-
+  */
   QMCCorrelationFunctionParameters * getElectronUpElectronUpParameters();
 
 
@@ -115,8 +106,7 @@ public:
     interactions.
 
     @return down-down electron interaction parameters
-    */
-
+  */
   QMCCorrelationFunctionParameters * getElectronDownElectronDownParameters();
 
 
@@ -125,8 +115,7 @@ public:
     up electron-nuclear interactions.
 
     @return up electron-nuclear interaction parameters
-    */
-
+  */
   Array1D<QMCCorrelationFunctionParameters> * getElectronUpNuclearParameters();
 
 
@@ -135,28 +124,22 @@ public:
     down electron-nuclear interactions.
 
     @return down electron-nuclear interaction parameters
-    */
-
+  */
   Array1D<QMCCorrelationFunctionParameters> * 
-    getElectronDownNuclearParameters();
+                                            getElectronDownNuclearParameters();
  
-  
   /**
     Gets an array which is a list of all the different types of nuclei
     in the molecule being calculated.
-    */
-
+  */
   Array1D<string> * getNucleiTypes();
-
 
   /**
     Sets two QMCJastrowParameters objects equal.
 
     @param rhs object to set this object eqal to
-    */
-
+  */
   void operator=( const QMCJastrowParameters & rhs );
- 
 
   /**
     Loads the state of the object from a file.
@@ -167,16 +150,13 @@ public:
     @param nelup number of up spin electrons
     @param neldn numer of down spin electrons
     @param runfile name of the file to be loaded
-    */
-
+  */
   void read(Array1D<string> & nucleitypes, bool linkparams, int nelup, 
 	    int neldn, string runfile);
 
-
   /**
     Writes the state of the object to an output stream.
-    */
-
+  */
   friend ostream & operator<<(ostream &strm, QMCJastrowParameters & rhs);
     
 private:

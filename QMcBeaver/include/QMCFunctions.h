@@ -13,7 +13,6 @@
 #ifndef QMCFUNCTIONS_H
 #define QMCFUNCTIONS_H
 
-
 #include <iostream>
 
 #include "QMCSlater.h"
@@ -30,7 +29,7 @@ using namespace std;
 
   The wavefunction is assumed to be of the form
   \f[
-  \Psi_{QMC} = D_{\uparrow}D_{\downarrow}J
+  \Psi_{QMC} = J\sum_{i}D_{\uparrow,i}D_{\downarrow,i}
   \f]
   where
   \f[

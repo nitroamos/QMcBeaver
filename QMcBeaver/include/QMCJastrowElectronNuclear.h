@@ -24,7 +24,7 @@ using namespace std;
 
 /**
   This class calculates the value of the electron-nuclear part of the 
-  Jastrow function and it's first two derivatives.
+  Jastrow function and its first two derivatives.
 
   The wavefunction is assumed to be of the form
   \f[
@@ -49,20 +49,17 @@ public:
     
     @param input input data for the calculation
     */
-
   void initialize(QMCInput * input);
 
   /**
-    Evaluates the electron-nuclear Jastrow function and it's 
-    derivatives at X using a
-    given set of QMCJastrowParameters.
+    Evaluates the electron-nuclear Jastrow function and its derivatives at X 
+    using a given set of QMCJastrowParameters.
 
     @param JP Jastrow parameters to use during the evaluation
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
     */
   void evaluate( QMCJastrowParameters & JP, Array2D<double> & X);
-
 
   /**
     Gets the value of the natural log of the electron-nuclear Jastrow 
@@ -73,10 +70,8 @@ public:
     @return natural log of the electron-nuclear Jastrow function 
     (\f$\ln(J)=\sum{u_{i,j}(r_{i,j})}\f$)
     */
-
   double getLnJastrow();
   
-
   /**
     Gets the gradient of the natural log of the electron-nuclear 
     Jastrow function with
@@ -87,9 +82,7 @@ public:
     @return gradient natural log of the electron-nuclear Jastrow function 
     (\f$\nabla\ln(J)=\nabla\sum{u_{i,j}(r_{i,j})}\f$)
     */
-
   Array2D<double> * getGradientLnJastrow();
-
   
   /**
     Gets the laplacian of the natural log of the electron-nuclear 
