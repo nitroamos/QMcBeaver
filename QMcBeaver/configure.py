@@ -60,7 +60,7 @@ class ControlMake:
         self.setBase()
         self.parseInput(inputflags)
         self.setEXE()
-        self.VER = str( self.getVersionNumber() )
+        self.VER = str( getVersionNumber() )
 
     def testSysValidity(self):
         if self.SYS != 'default' and self.SYS != 'linux' and \
@@ -419,103 +419,102 @@ class ControlMake:
                 sys.exit(0)
 
 
-    '''
-    Gets the most recent date a file was modified in this directory.  The date
-    is returned in the QMcBeaver versioning format (yyyymmdd).
-    '''
+'''
+Gets the most recent date a file was modified in this directory.  The date
+is returned in the QMcBeaver versioning format (yyyymmdd).
+'''
 
-    def __getMostRecentCVSDateLocalDirectory(self,directory):
+def __getMostRecentCVSDateLocalDirectory(directory):
 
-        if os.path.isdir(directory):
-            directoryContents = os.listdir(directory)
-        else:
-            directoryContents = []
-            
-        mostRecentVersionNumber = 0
+    if os.path.isdir(directory):
+        directoryContents = os.listdir(directory)
+    else:
+        directoryContents = []
+        
+    mostRecentVersionNumber = 0
 
-        # see if there is a CVS directory
+    # see if there is a CVS directory
     
-        if "CVS" in directoryContents:
+    if "CVS" in directoryContents:
 
-            # get the most recent file date from the CVS files
+        # get the most recent file date from the CVS files
 
-            data = open( directory + "CVS/Entries" ).readlines()
+        data = open( directory + "CVS/Entries" ).readlines()
 
-            for datum in data:
-                temp = string.split(datum,"/")
+        for datum in data:
+            temp = string.split(datum,"/")
 
-                if len(temp) > 3:
+            if len(temp) > 3:
 
-                    date = temp[-3]
-                    date = string.split(date)
+                date = temp[-3]
+                date = string.split(date)
                 
-                    if len(date) > 1:
-                        day   = string.atoi(date[2])
-                        month = date[1]
-                        year  = string.atoi(date[4])
+                if len(date) > 1:
+                    day   = string.atoi(date[2])
+                    month = date[1]
+                    year  = string.atoi(date[4])
 
-                        if month == 'Jan': month = 1
-                        elif month == 'Feb': month = 2
-                        elif month == 'Mar': month = 3
-                        elif month == 'Apr': month = 4
-                        elif month == 'May': month = 5
-                        elif month == 'Jun': month = 6
-                        elif month == 'Jul': month = 7
-                        elif month == 'Aug': month = 8
-                        elif month == 'Sep': month = 9
-                        elif month == 'Oct': month = 10
-                        elif month == 'Nov': month = 11
-                        elif month == 'Dec': month = 12
-                        else: print "ERROR: Unknown Month (", month,")!"
+                    if month == 'Jan': month = 1
+                    elif month == 'Feb': month = 2
+                    elif month == 'Mar': month = 3
+                    elif month == 'Apr': month = 4
+                    elif month == 'May': month = 5
+                    elif month == 'Jun': month = 6
+                    elif month == 'Jul': month = 7
+                    elif month == 'Aug': month = 8
+                    elif month == 'Sep': month = 9
+                    elif month == 'Oct': month = 10
+                    elif month == 'Nov': month = 11
+                    elif month == 'Dec': month = 12
+                    else: print "ERROR: Unknown Month (", month,")!"
 
-                        versionNumber = year * 10000 + month * 100 + day
-                    else:
-                        versionNumber = 0
-
-
-                    if versionNumber > mostRecentVersionNumber:
-                        mostRecentVersionNumber = versionNumber
-
-        else:
-            # no CVS directory so return a date of zero
-            pass
-
-        return mostRecentVersionNumber
+                    versionNumber = year * 10000 + month * 100 + day
+                else:
+                    versionNumber = 0
 
 
+                if versionNumber > mostRecentVersionNumber:
+                    mostRecentVersionNumber = versionNumber
 
-    '''
-    Gets the most recent date a file was modified in all subdirectories.
-    The date is returned in the QMcBeaver versioning format (yyyymmdd).
-    '''
+    else:
+        # no CVS directory so return a date of zero
+        pass
 
-    def __getMostRecentCVSDate(self,directory):
-
-        # get the version information for the local directory
-        mostRecentVersionNumber = \
-                        self.__getMostRecentCVSDateLocalDirectory(directory)
-
-        if os.path.isdir(directory):
-            directoryContents = os.listdir(directory)
-        else:
-            directoryContents = []
-
-        for item in directoryContents:
-            versionNumber = \
-                          self.__getMostRecentCVSDate( directory + item + "/" )
-
-            if versionNumber > mostRecentVersionNumber:
-                mostRecentVersionNumber = versionNumber
-
-        return mostRecentVersionNumber
+    return mostRecentVersionNumber
 
 
-    '''
-    Gets the correct version number of the software.
-    '''
 
-    def getVersionNumber(self):
-        return self.__getMostRecentCVSDate("./")
+'''
+Gets the most recent date a file was modified in all subdirectories.
+The date is returned in the QMcBeaver versioning format (yyyymmdd).
+'''
+
+def __getMostRecentCVSDate(directory):
+
+    # get the version information for the local directory
+    mostRecentVersionNumber = \
+                            __getMostRecentCVSDateLocalDirectory(directory)
+
+    if os.path.isdir(directory):
+        directoryContents = os.listdir(directory)
+    else:
+        directoryContents = []
+
+    for item in directoryContents:
+        versionNumber = __getMostRecentCVSDate( directory + item + "/" )
+
+        if versionNumber > mostRecentVersionNumber:
+            mostRecentVersionNumber = versionNumber
+
+    return mostRecentVersionNumber
+
+
+'''
+Gets the correct version number of the software.
+'''
+
+def getVersionNumber():
+    return __getMostRecentCVSDate("./")
 
 
 
