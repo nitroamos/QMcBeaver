@@ -1,3 +1,14 @@
+Mon, 30 August 2004, Daniel R. Fisher
+
+1.  Changed configure.py to include settings for the cray_x1 computer.
+
+2.  Added the class QMCGreensRatioComponent.  The Greens function
+    calculations were causing numerical overflow problems for large
+    molecules.  This class keeps track of a quantity of the form
+    k*a^b*exp(c), which is the form of the Greens function components
+    in the importance sampling parts of the code.
+
+
 Thurs, 29 July 2004, Chip Kent
 
 1. Included Amos Anderson's changes to improve the formatting of
@@ -20,11 +31,13 @@ Wed, 21 July 2004, Daniel R. Fisher
     the original positions, which was causing a very high acceptance 
     probability.  
 
+
 Thurs, 15 July 2004, Daniel R. Fisher
 
 1.  Changed the call to isnan() in QMCEquilibrationArray to come from 
     the IeeeMath class instead of <math.h>.  The previous function was not 
     compiling on some systems.
+
 
 Fri, 9 Jul 2004, Daniel R. Fisher
 
@@ -45,6 +58,7 @@ Fri, 9 Jul 2004, Daniel R. Fisher
     should be skipped.  
     To use the equilibration array, set the flag
     use_equilibration_array to 1.
+
 
 Wed, 7 Jul 2004, Daniel R. Fisher
 
