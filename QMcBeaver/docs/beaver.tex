@@ -1,0 +1,720 @@
+\documentclass{article}
+\begin{document}
+\title{Getting to know the Beaver: QMcBeaver for Novices and Experts
+  Alike}
+\author{Chip Kent, Mike Feldmann, Rick Muller, Amos Anderson, and Dan Fisher}
+\maketitle
+
+\section{Introduction: What is QMcBeaver?}
+% Do we need to make a general introduction paragraph to QMC here?
+QMcBeaver is a finite, all electron variational and diffusion quantum
+Monte Carlo program.  It was written by Chip Kent and Mike Feldmann at
+Bill Goddard's Materials and Process Simulation Center at the
+California Institute of Technology as part of their thesis work. The
+program is currently being developed by Amos Anderson and Dan Fisher
+at Caltech, with consultation by Mike and Chip. The code is currently
+being distributed under the Gnu General Public License.
+
+Several features distinguish QMcBeaver from other QMC programs:
+\begin{itemize}
+\item As already mentioned, the code is distributed free of charge
+  under the GPL, which allows anyone to use or to modify the code, and
+  also makes the algorithms that QMcBeaver uses open for review by
+  anyone.
+\item The code runs on massively parallel architectures, and has a
+  highly efficient decorrelation algorithm to properly decorrelate the
+  data from different processors~\ref{DDDA}.
+\item The code uses a Manager-Worker based parallelization scheme
+  which allows the efficient use of heterogeneous clusters~\ref{QMC-MW}.
+\item The code is written in modern object-oriented C++, and is clean,
+  and easily understood and modified.
+
+% Guys: do you want to list anything more here? The MC stuff?
+
+\end{itemize}
+
+This document will serve as a guide to getting started using
+QMcBeaver. We assume that the user has some familiarity with basic
+quantum chemistry methods such as Hatree-Fock (HF) or Density
+Functional Theory (DFT). Additionally, some familiarity with the
+techniques of variational and diffusion QMC will be required to
+appreciate this guide.
+
+\section{Simple Atomic Calculations: Helium}
+% The idea here is to introduce the program in the simplest way, and
+% with only the most important functions. More complicated examples,
+% to follow, will show more of the breadth of the available options.
+We will start with a simple example: Helium atom using a 6-31G basis
+set. Helium is one of the few system whose exact answer is known
+(-2.9037 h), and so provides a good test of how well QMC is working.
+\subsection{Generating a Trial Wave Function}
+\subsubsection{Using GAMESS to Generate a Trial Wave Function}
+Our first step is to run a GAMESS calculation for He. A sample GAMESS
+input deck looks like
+\begin{verbatim}
+ $CONTRL SCFTYP=RHF RUNTYP=ENERGY COORD=CART UNITS=ANGS $END
+ $BASIS  GBASIS=N31 NGAUSS=6 $END
+ $GUESS  GUESS=HUCKEL $END
+ $DATA
+He ground state
+Dnh 2
+
+He   2.0       0.0000     0.0000     0.0000 
+ $END
+\end{verbatim}
+The GAMESS RHF calculation converges with an energy of -2.8552 h.
+
+We can then run the script 
+\begin{verbatim}
+% (QMcBeaver)/bin/gamess2qmcbeaver.py he.out
+\end{verbatim}
+The variable \verb-QMcBeaver- should be set to the root 
+directory of the QMcBeaver program.  This script will convert the GAMESS
+output to a \verb-he.ckmf- input file for QMcBeaver. This file is
+described below. 
+
+\subsubsection{Using Jaguar to Generate a Trial Wave Function}
+A Jaguar input file to do the same He calculation looks like
+\begin{verbatim}
+&gen
+basis=6-31G
+ip164=2
+&
+&zmat
+He1     0.0000000000000   0.0000000000000   0.0000000000000
+&
+\end{verbatim}
+
+The flag \verb-ip164=2- tells Jaguar to write a he.bas file with the
+basis set for the calculation, which is needed to create the QMcBeaver
+input.  We can then run the script
+\begin{verbatim}
+% (QMcBeaver)/bin/jaguar2qmcbeaver.py he.01.in
+\end{verbatim}
+For Jaguar calculations, the argument is the restart file, not the
+output file.
+
+\subsection{Structure of the simple he.ckmf input file}
+The \verb-he.ckmf- file produced by the QMcBeaver conversion scripts
+has the form
+\begin{verbatim}
+&flags
+atoms
+ 1
+charge
+ 0
+energy
+ -2.8551604262
+norbitals
+ 2
+nbasisfunc
+ 2
+run_type
+ variational
+chip_and_mike_are_cool
+ Yea_Baby!
+&
+&geometry
+HE      2       0.000000        0.000000        0.000000
+&
+&basis
+HE      2       3
+        3       s
+                38.4216340      0.040139739346
+                5.7780300       0.261246097041
+                1.2417740       0.79318462463
+        1       s
+                0.2979640       1.0
+&
+&wavefunction
+1 1
+        0.592081                0.513586        
+
+0 0
+        -1.149818               1.186959        
+
+Alpha Occupation
+1       0       
+
+Beta Occupation
+1       0       
+
+CI Coeffs
+1.0
+
+&
+
+&Jastrow
+
+ParticleTypes: Electron_Up Electron_Down
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 3.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: 0.5
+
+ParticleTypes: Electron_Up HE
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 100.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: -2.0
+
+ParticleTypes: Electron_Down HE
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 100.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: -2.0
+
+&Jastrow
+\end{verbatim}
+This file is mostly self-explanatory, but we'll cover a few points
+that are worth emphasizing nonetheless.
+
+The \emph{flags} section contains general input parameters, including
+the number of atoms, the molecular charge, the number of orbitals and
+basis functions. Note that it also contains the \emph{run\_type} flag,
+currently set to \emph{variational}, indicating that we will first be
+doing VQMC calculations.  The \emph{flags} section contains all of the
+parameters that the user specifies to control the calculation.  The
+flags what they do are described in a later section.
+
+The \emph{geometry} section contains the geometry of the molecule.
+Cartesian coordinates in atomic units (Bohr) are given for each nucleus.
+The \emph{basis} section defines the two basis functions we will be
+using, and the \emph{wavefunction} section describes the coefficients
+of the trial molecular orbitals in terms of these basis functions.
+
+The \emph{Jastrow} section is worth describing in slightly more
+detail. This section details the correlation functions we will use in
+the QMC calculations to follow.  A correlation function is defined for
+each pair of particles in the molecule.  In the case of the He atom,
+we have electron-up-electron-down, electron-up-He, and
+electron-down-He correlation functions.  If there were more than one
+up electron, there would be an electron-up-electron-up correlation
+function, and so on.   
+
+In this example, all functions are set to the \emph{FixedCuspPade}
+form, and guesses as to the appropriate parameters are included. 
+The format for the constants and paramters in this and other available
+correlation function forms will be demonstrated in later sections of
+this manual.
+
+\subsection{Running a VQMC Calculation}
+A variational QMC calculation allows us to statistically sample the
+input wave function, including the Jastrow terms. By running several
+of these calculations, we can optimize the parameters in the Jastrow
+function and get a more accurate approximation to the true energy.
+
+We can run a simple VQMC calculation via the command
+\begin{verbatim}
+% $(QMcBeaver)/bin/QMcBeaver.linux he.ckmf
+\end{verbatim}
+
+This command will run 1,000,000 steps of VQMC using the Jastrow
+parameters specified in the input ckmf file, and will then write
+several files, including a log of various quantities every 1000 steps
+of the simulation (he.qmc), a summary of the statistics for the run
+(he.rslts), and a new input file (he.01.ckmf) and a checkpoint file
+that can be used to restart the calculation.
+
+This example calculation is only an evaluation of the trial
+wavefunction defined in the .ckmf file.  The optimization parts of the
+code are turned off, so all of the parameters are fixed at their
+default values.  
+
+Several points are worth investigating in the he.rslts. We first
+consider the energy, which is reported to be $-2.6337228773 \pm
+0.1738595133$ h. This is significantly worse than either the HF
+(-2.855) or exact (-2.903) energies for several reasons. First, the
+statistics aren't converged, as indicated by the variance estimate of
+$\pm 0.1738595133$. The size of this number indicates that not even
+the first decimal place of the total energy is converged, and that we
+will have to run a significantly longer calculation to obtain higher
+precision. 
+
+If we simply want higher precision, we can restart the VQMC
+calculation using the command
+\begin{verbatim}
+% $(QMcBeaver)/bin/QMcBeaver.linux he.01.ckmf
+\end{verbatim}
+% This gave garbage: Is it not the thing to do?
+
+Another statistic that is reported in the he.rslts file is the Virial
+Ratio. From the Virial Theorem we know that in a system of particles
+interracting through a Coulomb potential, the ratio of the average
+potential energy to the average kinetic energy,
+$-\langle V\rangle/\langle T \rangle$, is 2. The fact that the program
+reports this ratio as $2.6311988719 \pm 0.3675653079$ is another sign
+that the statistics are not sufficiently converged.
+
+But the most important cause of error in this result is the fact that
+we have not optimized the Jastrow parameters that go into the
+calculation, we simply used the guess values that the conversion
+program gave us.  Optimizing the parameters in the wavefunction is
+covered in later sections of the manual.
+
+\subsection{Running a DQMC Calculation}
+Once we have sufficiently converged the Jastrow parameters via VQMC,
+we are ready to begin a DQMC calculation that can further optimize the
+energy by allowing the walkers to breed/die or reweight themselves
+based upon the true potential. A good rule of thumb is that the
+Jastrow parameters have been sufficiently converged when the variance
+is 50\% of the variance from the HF input guess.
+% Is this estimate still roughly correct?
+
+% Put in an aside here about why Jastrow optimization is important 
+% before doing DQMC calculations
+
+% Edit the input file, changing 'variational' to 'diffusion'
+% Choose the type of branching
+% Run the calculation.
+% How can we tell when we're getting garbage?
+
+\section{A Slightly More Complicated Example: Water}
+To be completed.
+% The idea here is to gradually introduce more ideas and input options.
+
+% Any other examples to include?? I think we need to demonstrate all
+% of the features we want people to know about. Things that we might
+% want to detail include:
+%
+% Different initialization schemes
+% Three-body Jastrow functions
+% Multiconfigurational reference functions
+%  The MC functions might be a good way to do a hard calculation 
+%   like N2 dissociation.
+
+\section{The Flags}
+This section lists the flags that can be specified in the .ckmf file.
+
+\subsection{The Molecule}
+
+\begin{description}
+\item [Natoms] The number of atoms in the molecule.
+\item [charge] Charge of the system in atomic units ($+1$ if a neutral
+  molecule loses an electron).
+\item [energy] The initial trial energy in hartree au for the molecule.
+\end{description}
+
+\subsection{The Trial Wavefunction}
+
+\begin{description}
+
+\item [Norbitals] Total number of orbitals (occupied and unoccupied) in
+  the SCF part of the trial wavefunction.
+
+\item [Nbasisfunc] Number of basis functions used to create the
+  orbitals of the trial wavefunction. 
+
+\item [Ndeterminants] Number of Slater determinants in the SCF part of
+  the wavefunction.
+
+\end{description}
+
+\subsection{Sampling}
+
+\begin{description}
+
+\item [walker\_initialization\_method] Specifies the method by which the
+  initial electronic configurations for the walkers are generated.
+  The default option is \verb-mikes_jacked_walker_initialization-, which
+  assigns the electrons for each atom randomly to a spherical gaussian
+  centered on the atom.  The other option is
+  \verb-dans_walker_initialization-, which uses STRAW~\ref{STRAW} to
+  generate initial configurations that need very few equilibration
+  steps.
+
+\item [iseed] The initial seed for the random number generator.
+  The random number generator used in the program is ran1 from
+  Numerical Recipes~\ref{NumericalRecipes}.  This number must be a
+  negative integer.
+
+\item [sampling\_method] This is the method by which new configurations
+  are proposed and either accepted or rejected.  The first option is
+  \verb-no_importance_sampling-, which means that the displacement of
+  each electron in each direction is distributed with respect to a
+  Gaussian whose standard deviation is the square root of the time
+  step.  The second option is \verb-importance_sampling-, in which the
+  electrons are first displaced according to the quantum force and
+  then diffuse randomly.  The third option is
+  \verb-umrigar93_importance_sampling-, which uses Umrigar's
+  accelerated Metropolis method~\ref{Umrigar93}.  
+
+\item [QF\_modification\_type] \verb-none- if the quantum force,
+  $\frac{\nabla \Psi}{Psi}$, is not to be modified.  Other
+  possibilities are \verb-umrigar93_equalelectrons- and
+  \verb-umrigar93_unequalelectrons-, both of which are described
+  in~\ref{Umrigar93}.  
+
+\item [energy\_modification\_type] \verb-none- if the local energy
+  is not to be modified when weighting the walkers.  Other
+  possiblities are \verb-modified_umrigar93- and \verb-umrigar93-,
+  both of which are described in~\ref{Umrigar93}.
+
+\item [umrigar93\_equalelectrons\_parameter] If Umrigar's 1993 QMC
+  algorithm~\ref{Umrigar93} is used with the equal-electron
+  modifications to the local energy and quantum force, this is the
+  parameter describing how the modifications will occur.  This
+  parameter can be in the range $(0,1]$, and the default value is 0.5.
+
+\item [walker\_reweighting\_method] Algorithm used to reweight the
+  walkers after a time step.  The possibilities are
+  \verb-simple_symmetric-, \verb-simple_asymmetric-, and
+  \verb-umrigar93_probability_weighted-, all of which are described
+  in~\ref{Umrigrar93}. 
+
+\item [branching\_method] Method for branching walkers in DMC
+  calculations.  There is no branching in VMC.  Possible
+  methods are \verb-non_branching-, in which the weights are varied
+  instead of branching, \verb-unit_weight_branching-, in which the
+  walkers have integer weights~\ref{H+L}, and
+  \verb-nonunit_weight_branching-, which is described
+  in~\ref{Umrigar93}.   
+
+\item [branching\_threshold] If a walker's weight exceeds this
+  threshold, it will branch when the branching method allows the
+  walkers to have fractional weights.  The default value is 2.0.
+
+\item [fusion\_threshold] If a walker's weight is less than this
+  threshold, it will fuse with another low weight walker when the
+  branching method allows the walkers to have fractional weights.  The
+  default value is 0.5.
+
+\item [old\_walker\_acceptance\_parameter] Parameter which can be
+  used to prevent persistent configurations from interfering with a
+  calculation~\ref{Umrigar93}.
+
+\item [dt] This is the time step used for the propagation phase
+  of the calculation.  The default value is .001.
+
+\item [population\_control\_parameter] Parameter used in
+  controlling the number of walkers or total weight of all walkers
+  during a branching QMC calculation.  The default value is 1.
+
+\item [correct\_population\_size\_bias] 1 if the correction for the
+  population size bias for branching calculations is used, and 0
+  otherwise. See~\ref{Umrigar93}.
+
+\end{description}
+
+\subsection{Equilibration}
+
+\begin{description}
+
+\item [equilibration\_steps]  The number of equilibration steps that are
+  to be taken before statistics are gathered.  This is necessary to
+  allow the walkers to reach regions of high probability density, so
+  that their configurations reflect the desired distribution.  
+
+\item [dt\_equilibration]  The time step used during the equilibration
+  phase of the calculation.  The default value is 0.02.  
+
+\item [equilibration\_function]  The function used during the
+  equilibration phase of the calculation.  The first option is 
+  \verb-step-, in which the time step changes abruptly from
+  \emph{dt\_equilibration} during the equilibration phase to \emph{dt}
+  when equilibration is finished.  The second option is \verb-ramp-,
+  in which the time step changes linearly from \emph{dt\_equilibration}
+  to \emph{dt} during the equilibration phase.  The third option is
+  \verb-CKAnnealingEquilibration1-, which is the same as \verb-step-
+  except that for a certain number of steps, essentially every step
+  proposed is accepted.  If importance sampling is used, this allows
+  the walkers to reach high density regions very quickly.
+
+\item [CKAnnealingEquilibration1\_parameter]  If
+  \verb-CKAnnealingEquilibration1- is used, this is the number of
+  steps taken in which every proposed displacement is accepted.  This
+  number must be less than the number of equilibration steps.  
+ 
+\item [equilibrate\_first\_opt\_step] 1 if the first VMC calculation used
+  to generate correlated sampling configurations for optimization
+  equilibrates for the specified equilibration time, and 0 otherwise.
+  If a DMC calculation is performed, 1 if the calculation
+  equilibrates, and 0 otherwise.   
+
+\item [equilibrate\_every\_opt\_step] 1 if every VMC calculation used to
+  generate correlated sampling configurations for optimization
+  equilibrates, and 0 otherwise.  
+
+\item [use\_equilibration\_array] 1 if the equilibration array is to be
+  used and 0 otherwise.  This defines an array of statistics gathering
+  objects, in which the $ith$ element becomes active on the $2^{i}th$
+  iteration.  The object with the smallest standard deviation for the
+  energy is chosen, which automatically determines the correct number
+  of equilibration steps.  
+
+\end{description}
+
+\subsection{Controlling the Calculation}
+
+\begin{description}
+
+\item [run\_type] \verb-variational- or \verb-diffusion- QMC.
+
+\item [temp\_dir] The temporary directory where correlated
+  sampling configurations are to be written.
+
+\item [max\_time\_steps] The maximum number of propagation steps to be
+  carried out in the calculation.  In a parallel calculation, this is
+  the total number of propagation steps on \emph{all} processors. 
+
+\item [desired\_convergence] If the standard deviation of the energy in
+  the global results falls below this level, sampling stops.  
+
+\item [number\_of\_walkers] The number of walkers on each processor.  At
+  each time step, the statistics for the walkers on the processor are
+  preblocked.  That is, for each observable, the average over the
+  walkers on the processor becomes one sample.   
+
+\item [output\_interval] At this interval on the root node, a summary of
+  the global statistics are printed out.  Quantities reported include
+  the global energy, its standard deviation, and the total number of
+  samples collected. 
+
+\item [mpireduce\_interval] The interval at which the statistics are
+  collected by the root node.  This interval must be less than or
+  equal to the output\_interval.  The way in which the statistics from
+  different processors are combined is equivalent to \emph{appending}
+  the time steps from each processor to form one long run.     
+
+\item [mpipoll\_interval] The interval at which the worker nodes
+  check to see if there are any commands from the root node.  The
+  default value is 1.
+
+\item [checkpoint] 1 if checkpoint files for restarting the calculation
+  are to be written, 0 otherwise.  A checkpoint file contains the
+  entire state of the calculation on one processor, and contains the
+  rank of the processor in the file name.  Walker configurations,
+  weights, and accumulated statistics are all written to the file.  
+
+\item [checkpoint\_interval] The interval at which checkpoint files are
+  to be written.  New checkpoint files overwrite old ones.  
+
+\item [use\_available\_checkpoints] 1 if available checkpoint files are
+  to be used in restarting the calculation.
+
+\item [zero\_out\_checkpoint\_statistics] 1 if the the accumulated
+  statistics in the checkpoint file are to be discarded, 0 if they are
+  to be used.
+
+\item [print\_transient\_properties] 1 if the accumulated statistics
+  should be printed out during the calculation and 0 otherwise.
+
+\item [print\_transient\_properties\_interval] The interval at which the
+  accumulated statistics are printed out.
+
+\item [write\_all\_energies\_out] 1 if the local energy for each
+  walker at each time step should be written out and 0 otherwise.
+
+\item [calculate\_bf\_density] 1 if the basis function density should be
+  collected and written to a .density file.  This amounts to
+  calculating the expectation value for each basis function, which can
+  be used for fitting analytical densities to QMC
+  simulations~\ref{AnalyticalDensity}.
+
+\item [print\_configs] 1 if the electronic configurations are to be
+  written to a .cfgs file in the temp directory, 0 if not.
+  Configurations are always written if the wavefunction is being
+  optimized.  
+
+\item [print\_config\_frequency] The interval at which configurations are
+  written to the .cfgs file in the temp directory.  This number should
+  be chosen carefully- if it is too small, the .cfgs file will become
+  very large.  If it is too large, not enough configurations will be
+  written to meaningfully compare sets of parameters.  
+
+\end{description}
+
+\subsection{Optimization}
+
+\begin{description}
+
+\item [optimize\_Psi] 1 if the parameters in the Jastrow function are to
+  be optimized, 0 if not.  Optimization of the SCF part of the
+  wavefunction (CI coefficients, orbitals, basis functions) is not
+  implemented at this time.  
+
+\item [max\_optimize\_Psi\_steps] One step is defined as follows- A series
+  of configurations is generated with respect to the most accurate
+  trial function available and correlated sampling configurations are
+  written.  Then, using the configurations, several sets of parameters
+  are evaluated and a new trial wavefunction is generated.  Default
+  value is 10.  
+
+\item [optimize\_Psi\_criteria] Objective function to use in
+  comparing sets of parameters when optimizing a VMC wavefunction.
+  Possibilities are \verb-energy_variance-, \verb-energy_average-,
+  \verb-umrigar88-, which is described in~\ref{Umrigar88}, and
+  \verb-monkey_spank-, which is a combination of the variance of the
+  local energy and a penalty function when the parameters become
+  majorly different from the ones used in generating the correlated
+  sampling configurations.  
+
+\item [numerical\_derivative\_surface] Objective function to use
+  when calculating derivatives with respect to the parameters for
+  optimizing a VMC wavefunction.  Possibilities are the same as those
+  for \emph{optimize\_Psi\_criteria}.
+
+\item [optimize\_Psi\_barrier\_parameter] Objective function
+  parameter used in forming a barrier around a valid region of
+  parameter space for the \verb-monkey_spank- objective function.  A
+  valid region of parameter space is one where the wavefunction is not
+  majorly different from the one used to generate the walkers when
+  correlated sampling is used. 
+
+\item [optimize\_Psi\_method] Numerical optimization algorithm to
+  use when optimizing a VMC wavefunction.  Possibilities are
+  \verb-steepest_descent-, \verb-BFGSQuasiNewton-, and
+  \verb-CKGeneticAlgorithm1-. 
+
+\item [optimization\_max\_iterations] Maximum number of iterations
+  to use when optimizing a VMC wavefunction with one set of correlated
+  sampling configurations.  Default value is 100.
+
+\item [optimization\_error\_tolerance] Tolerance used to determine
+  when a numerical optimization with one set of correlated sampling
+  configurations has converged.  Default value is 0.001.
+
+\item [ch\_genetic\_algorithm\_1\_population\_size] Population size
+  used when the CKGeneticAlgorithm1 is used to optimize a VMC
+  wavefunction.  Default value is 30.
+
+\item [ck\_genetic\_algorithm\_1\_initial\_distribution\_deviation]
+  Standard deviation used when initializing the CKGeneticAlgorithm1.
+  Default value is 1.
+
+\item [ck\_genetic\_algorithm\_1\_mutation\_rate] Mutation rate used
+  when the CKGeneticAlgorithm1 is used to optimize a VMC
+  wavefunction.  Default value is 0.2.  
+ 
+\item [line\_search\_step\_length] Algorithm used to determine the
+  step length used when a line search algorithm is used to optimize a
+  VMC wavefunction.  Possibilities are \verb-MikesBracketing- and
+  \verb-Wolfe-.
+
+\item [singularity\_penalty\_function\_parameter] Parameter used
+  for the logarithmic barrier when D.R. Kent IV's algorithm for
+  optimizing possibly singular Jastrow functions is used.  This
+  parameter should be a small positive number.  The default value is
+  1.0e-6.
+
+\end{description}
+
+\subsection{The Jastrow Function}
+
+\begin{description}
+
+\item [link\_Jastrow\_parameters] 1 if the parameters for up and down
+  electrons are to be set equal to each other, 0 if not.  For example,
+  if this flag is on, parameters for the the electron-up-electron-up
+  and electron-down-electron-down correlation functions will be set
+  equal to each other.  This reduces the number of parameters that
+  have to be optimized and reduces spin contamination for singlet
+  states.  
+
+\item [scale\_Jastrow\_distances] 1 if distances in the Jastrow function
+  are to be scaled by by $R=frac{1-exp[-kr]}{k}$, where $k$ is a
+  positive adjustable parameter.  As $r \rightarrow \infty$, 
+  $R \rightarrow \frac{1}{k}$, which makes the function converge more
+  rapidly with powers of $r$. 
+
+\item [calc\_three\_body\_Jastrow] 1 if three body correlations are to be
+  calculated.  The three body Jastrow is of the form used by
+  Umrigar~\ref{ThreeBodyJastrow}.
+
+\end{description}
+
+\subsection{Misc}
+
+\begin{description}
+
+\item [chip\_and\_mike\_are\_cool] C'mon, throw them a bone.
+
+\end{description}
+
+\section{The Jastrow Function}
+
+Correlation functions are defined for each distinct pair of particles in the
+molecule in the \&Jastrow section of the .ckmf file.  An example of a
+correlation function is
+
+\begin{verbatim}
+ParticleTypes: Electron_Up Electron_Down
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 3.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: 0.5
+\end{verbatim}
+
+This is a correlation function for an up electron and a down
+electron.  A fixed cusp Pade function is used, which means that as
+these two particles approach each other, the function will approach
+the exact quantum mechanical solution for that collision.  The cusp
+condition for opposite spin electrons is 0.5, while the cusp condition
+for same spin electrons is 0.25 and the cusp condition for an electron
+and a nucleus is the opposite of the charge of the nucleus.
+
+The other possibilities function types are \verb-None-, in which the
+particles are not correlated and \verb-Pade-, in which the cusp condition
+is not fixed.  
+
+The fixed cusp Pade correlation function is a fraction of polynomials,
+and the parameters and constants are entered as follows:
+
+The number of parameter types equals 2 because there are parameters in
+the numerator and the denominator.  There are 0 numerator parameters
+and 1 denominator parameter.  The denominator parameter is the first
+degree coefficient of the polynomial, because the zeroth order
+coefficient is always one.  The number of constant types is one
+because there is only one constant, the cusp condition, which is the
+first order term in the numerator.  This function, therefore, is 
+\(
+U_{\uparrow \downarrow}(r)=\frac{0.5r}{1+3.0r}
+\)
+.  The only adjustable parameter is the 3.0 in the denominator. 
+
+More powers of $r$ can be added to the function by changing the
+parameters part of the definition.  For example, the following
+definition
+\begin{verbatim}
+ParticleTypes: Electron_Up Electron_Down
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 2 3
+Parameters: 3.0 1.5 0.75 0.4 0.2
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: 0.5
+\end{verbatim}
+would define the function 
+\(
+U_{\uparrow \downarrow}(r)
+=\frac{0.5r+3.0r^{2}+1.5r^{3}}{1+0.75r+0.4r^{2}+0.2r^{3}}
+\)
+.  
+
+For the Pade correlation function, the part of the definition dealing
+with the constants is ignored, and the function is defined entirely
+with the parameters.
+
+When the wavefunction is optimized, parameters are varied and the
+contants are not.  
+
+\section{Optimization Methods}
+
+
+\end{document}
+
