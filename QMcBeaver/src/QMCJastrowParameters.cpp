@@ -591,7 +591,8 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 	      if( NumberOfElectronsUp < 1 || NumberOfElectronsDown < 1 )
 		{
 		  cerr << "ERROR: Electron_up-Electron_down correlation "
-		       << "function loaded when one does not belong!" << endl;
+		       << "function loaded when one does not belong!" << endl
+		       << "Maybe you are using an old ckmf file?" << endl;
 		  exit(0);
 		}
 

@@ -421,7 +421,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
   int Norbitals  = Input->flags.Norbitals;
   int Nbasisfunc = Input->flags.Nbasisfunc;
 
-  Array2D<double> Scratch(Input->WF.Coeffs);
+  Array2D<qmcfloat> Scratch(Input->WF.Coeffs);
 
   // Square MO coefficients.
 

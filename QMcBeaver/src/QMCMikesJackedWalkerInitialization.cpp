@@ -262,7 +262,7 @@ Array2D <double> QMCMikesJackedWalkerInitialization::electrons_and_radii()
 {
     int Norbitals  = Input->flags.Norbitals;
     int Nbasisfunc = Input->flags.Nbasisfunc;
-    Array2D <double> Scratch(Input->WF.Coeffs);
+    Array2D <qmcfloat> Scratch(Input->WF.Coeffs);
     double sum;
     
     //Square MO coefficients

@@ -156,7 +156,12 @@ void QMCSlater::update_D_inverse_and_Psi()
 */
 void QMCSlater::update_Ds(Array2D<double> &X){
   int numOrbs;
-  BF->evaluateBasisFunctions(X,Start,Stop,Chi,Chi_gradient,Chi_laplacian);
+  BF->evaluateBasisFunctions(X,Start,Stop,
+			     Chi,
+			     Chi_gradient(0),
+			     Chi_gradient(1),
+			     Chi_gradient(2),
+			     Chi_laplacian);
   
   for(int i=0; i<WF->getNumberDeterminants(); i++){
     
@@ -190,6 +195,8 @@ void QMCSlater::update_Ds(Array2D<double> &X){
    here, then the calculation of the ratios turns into a sort of dot product, which not only does ATLAS
    know how to do it, it makes the code look neater. the hand-coded dot product probably doesn't
    save much time.
+   At this time, D_inv and Grad_D and Laplacian_D are all qmcfloat type. The explicit typecast
+   when creating the final result (double) should emphasize this.
 */
 void QMCSlater::calculate_DerivativeRatios()
 {
@@ -198,12 +205,12 @@ void QMCSlater::calculate_DerivativeRatios()
     {
       double** grad_psiratioArray = Grad_PsiRatio.array()[i];
       
-      Laplacian_PsiRatio(i) = (Laplacian_D(i)).dotAllElectrons(D_inv(i));
+      Laplacian_PsiRatio(i) = (double)((Laplacian_D(i)).dotAllElectrons(D_inv(i)));
       
       for(int j=0; j<numElectrons; j++){
-	grad_psiratioArray[j][0] = (Grad_D(i,0)).dotOneElectron(D_inv(i),j);
-	grad_psiratioArray[j][1] = (Grad_D(i,1)).dotOneElectron(D_inv(i),j);
-	grad_psiratioArray[j][2] = (Grad_D(i,2)).dotOneElectron(D_inv(i),j);
+	grad_psiratioArray[j][0] = (double)((Grad_D(i,0)).dotOneElectron(D_inv(i),j));
+	grad_psiratioArray[j][1] = (double)((Grad_D(i,1)).dotOneElectron(D_inv(i),j));
+	grad_psiratioArray[j][2] = (double)((Grad_D(i,2)).dotOneElectron(D_inv(i),j));
       }
     }
 }

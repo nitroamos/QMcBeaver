@@ -11,7 +11,6 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCFunctions.h"
-#define TOOSMALL 1e-306
 
 QMCFunctions::QMCFunctions()
 {
@@ -82,7 +81,7 @@ void QMCFunctions::calculate_Psi_quantities()
   QMCGreensRatioComponent SCF_sum = 0;
   SCF_Laplacian_PsiRatio = 0.0;
   Laplacian_PsiRatio = 0.0;
-
+  
   Array1D<QMCGreensRatioComponent> termPsi = Array1D<QMCGreensRatioComponent>(Input->WF.getNumberDeterminants());
   Array1D<double>* alphaPsi = Alpha.getPsi();
   Array1D<double>* alphaLaplacian = Alpha.getLaplacianPsiRatio();
@@ -143,7 +142,7 @@ void QMCFunctions::calculate_Psi_quantities()
 void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X)
 {
   // Call this after calculate_Grad_PsiRatio() is called
-
+  
   if( Input->flags.QF_modification_type == "none" )
     {
       // do not modify the quantum force
@@ -153,9 +152,9 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X)
     {
       // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 34.
       // The QF for each electron is changed by the same factor
-
+      
       double a = Input->flags.umrigar93_equalelectrons_parameter;
-
+      
       if( a>1 || a<=0 )
 	{
 	  cerr << "ERROR: Improper value for " 
@@ -164,7 +163,7 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X)
 	       << endl;
 	  exit(0);
 	}
-
+      
       // Calculate the magnitude squared of the Grad_PsiRatio
       double magsqQF = 0.0;
       for(int i=0; i<Grad_PsiRatio.dim1(); i++)
@@ -174,10 +173,10 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X)
 	      magsqQF += Grad_PsiRatio(i,j) * Grad_PsiRatio(i,j);
 	    }
 	}
-
+      
       double factor = ( -1.0 + sqrt( 1.0 + 2*a*magsqQF*Input->flags.dt )) /
 	( a*magsqQF*Input->flags.dt);
-
+      
       Modified_Grad_PsiRatio = Grad_PsiRatio;
       Modified_Grad_PsiRatio *= factor;
     }
@@ -185,9 +184,9 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X)
     {
       // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 35-36.
       // The QF for each electron is changed by a different factor
-
+      
       Modified_Grad_PsiRatio = Grad_PsiRatio;
-
+      
       for(int i=0; i<Modified_Grad_PsiRatio.dim1(); i++)
 	{
 	  // Find the closest nucleus to electron i
@@ -203,13 +202,13 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X)
 	      
 	      closest_nucleus_distance_squared += temp * temp;
 	    }
-
+	  
 	  // now we have the closest nucleus identified
-
+	  
 	  // Charge of this nucleus
 	  int closest_nucleus_Z = 
 	    Input->Molecule.Z(closest_nucleus_index);
-
+	  
 	  // Unit vector from nearest nucleus to the electron
 	  Array1D<double> closest_nucleus_to_electron_norm_vector(3);
 	  for(int xyz=0; xyz<3; xyz++)
@@ -219,9 +218,9 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X)
 		Input->Molecule.Atom_Positions(closest_nucleus_index,xyz);
 	    }
 	  closest_nucleus_to_electron_norm_vector *= 1.0/sqrt(
-	       closest_nucleus_to_electron_norm_vector * 
-	       closest_nucleus_to_electron_norm_vector);
-
+		     closest_nucleus_to_electron_norm_vector * 
+		     closest_nucleus_to_electron_norm_vector);
+	  
 	  // Unit vector in the direction of electron velocity
 	  Array1D<double> electron_velocity_norm_vector(3);
 	  for(int xyz=0; xyz<3; xyz++)

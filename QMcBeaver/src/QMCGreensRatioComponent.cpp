@@ -125,8 +125,6 @@ double QMCGreensRatioComponent::getValue() const
 
 QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatioComponent & denom)
 {
-  // Get resulting exp(stuff) -> get "stuff left over
-  double EXP_EXP = c-denom.c;
   // Handle pow(a,b)/pow(d.a,d.b)
   double POW_A, POW_B;
   SimplifyRatioPowers(a,b,denom.a,denom.b,POW_A,POW_B);

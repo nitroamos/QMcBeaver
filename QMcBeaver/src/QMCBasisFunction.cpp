@@ -40,254 +40,261 @@ QMCBasisFunction::QMCBasisFunction()
 
 void QMCBasisFunction::initialize(QMCFlags * FLAGS, QMCMolecule * MOL)
 {
-	flags = FLAGS; 
-	Molecule = MOL; 
-	Xcalc.allocate(3);
+  flags = FLAGS; 
+  Molecule = MOL; 
+  Xcalc.allocate(3);
 }
 
 void QMCBasisFunction::initializeInterpolations()
 {
-	use_radial_interpolation = false;
-
-	if( flags->use_basis_function_interpolation == 0 )
+  use_radial_interpolation = false;
+  
+  if( flags->use_basis_function_interpolation == 0 )
+    {
+      // Don't need to do anything ...
+    }
+  else if( flags->use_basis_function_interpolation == 1 )
+    {
+      // Determine the maximum number of orbitals 
+      int norb = 0;
+      
+      for(int i=0; i<BFCoeffs.dim1(); i++)
 	{
-		// Don't need to do anything ...
+	  if( BFCoeffs(i).getNumberBasisFunctions() > norb )
+	    {
+	      norb = BFCoeffs(i).getNumberBasisFunctions();
+	    }
 	}
-	else if( flags->use_basis_function_interpolation == 1 )
+      
+      // Allocate the splines
+      RadialFunctionInterpolation.allocate(BFCoeffs.dim1(),norb);
+      RadialFunctionFirstDerivativeInterpolation.allocate(BFCoeffs.dim1(),
+							  norb);
+      RadialFunctionSecondDerivativeInterpolation.allocate(BFCoeffs.dim1(),
+							   norb);
+      
+      for(int bfc_number=0; bfc_number<BFCoeffs.dim1(); bfc_number++)
 	{
-		// Determine the maximum number of orbitals 
-		int norb = 0;
-
-		for(int i=0; i<BFCoeffs.dim1(); i++)
-		{
-			if( BFCoeffs(i).getNumberBasisFunctions() > norb )
-			{
-				norb = BFCoeffs(i).getNumberBasisFunctions();
-			}
-		}
-
-		// Allocate the splines
-		RadialFunctionInterpolation.allocate(BFCoeffs.dim1(),norb);
-		RadialFunctionFirstDerivativeInterpolation.allocate(BFCoeffs.dim1(),
-			norb);
-		RadialFunctionSecondDerivativeInterpolation.allocate(BFCoeffs.dim1(),
-			norb);
-
-		for(int bfc_number=0; bfc_number<BFCoeffs.dim1(); bfc_number++)
-		{
-			for( int orbital=0; 
-				orbital<BFCoeffs(bfc_number).getNumberBasisFunctions(); 
-				orbital++)
-			{
-				initializeInterpolation(bfc_number,orbital,
-					RadialFunctionInterpolation(bfc_number,orbital),0);
-				initializeInterpolation(bfc_number,orbital,
-					RadialFunctionFirstDerivativeInterpolation(bfc_number,orbital),1);
-				initializeInterpolation(bfc_number,orbital,
-					RadialFunctionSecondDerivativeInterpolation(bfc_number,orbital),2);
-			}
-		}
-
-		// This must be set after the splines are initialized or else
-		// it will try to evaluate the spline to initialize the spline
-		use_radial_interpolation = true;
+	  for( int orbital=0; 
+	       orbital<BFCoeffs(bfc_number).getNumberBasisFunctions(); 
+	       orbital++)
+	    {
+	      initializeInterpolation(bfc_number,orbital,
+				      RadialFunctionInterpolation(bfc_number,orbital),0);
+	      initializeInterpolation(bfc_number,orbital,
+				      RadialFunctionFirstDerivativeInterpolation(bfc_number,orbital),1);
+	      initializeInterpolation(bfc_number,orbital,
+				      RadialFunctionSecondDerivativeInterpolation(bfc_number,orbital),2);
+	    }
 	}
-	else
-	{
-		cerr << "ERROR: Incorrect value for use_basis_function_splines input!" 
-			<< endl;
-		exit(0);
-	}
+      
+      // This must be set after the splines are initialized or else
+      // it will try to evaluate the spline to initialize the spline
+      use_radial_interpolation = true;
+    }
+  else
+    {
+      cerr << "ERROR: Incorrect value for use_basis_function_splines input!" 
+	   << endl;
+      exit(0);
+    }
 }
 
-void QMCBasisFunction::initializeInterpolation(int bfc_number,int orbital, 
-											   CubicSplineWithGeometricProgressionGrid & S,
-											   int whichDerivative)
+void QMCBasisFunction::
+initializeInterpolation(int bfc_number,int orbital, 
+			CubicSplineWithGeometricProgressionGrid & S,
+			int whichDerivative)
 {
-	Array1D<double> x(flags->number_basis_function_interpolation_grid_points);
-	Array1D<double> y(flags->number_basis_function_interpolation_grid_points);
-
-	// Determine the grid parameter
-	// The maximum distance is determined by the parameter
-	const double maxDistance = 60.0;
-	const double beta = pow(maxDistance/
-		flags->basis_function_interpolation_first_point,
-		2.0/flags->number_basis_function_interpolation_grid_points);
-
-	// Determine the BF Coefficients
-	QMCBasisFunctionCoefficients * BFC = &BFCoeffs(bfc_number);
-
-	// generate x and y
-
-	for(int i=0; i<x.dim1(); i++)
+  Array1D<double> x(flags->number_basis_function_interpolation_grid_points);
+  Array1D<double> y(flags->number_basis_function_interpolation_grid_points);
+  
+  // Determine the grid parameter
+  // The maximum distance is determined by the parameter
+  const double maxDistance = 60.0;
+  const double beta = pow(maxDistance/
+			  flags->basis_function_interpolation_first_point,
+			  2.0/flags->number_basis_function_interpolation_grid_points);
+  
+  // Determine the BF Coefficients
+  QMCBasisFunctionCoefficients * BFC = &BFCoeffs(bfc_number);
+  
+  // generate x and y
+  
+  for(int i=0; i<x.dim1(); i++)
+    {
+      // geometric type grid
+      x(i) = pow(beta,i) * (flags->basis_function_interpolation_first_point * 
+			    flags->basis_function_interpolation_first_point);
+      
+      switch( whichDerivative )
 	{
-		// geometric type grid
-		x(i) = pow(beta,i) * (flags->basis_function_interpolation_first_point * 
-			flags->basis_function_interpolation_first_point);
-
-		switch( whichDerivative )
-		{
-		case 0:
-			y(i) = radialFunction(*BFC,orbital,x(i));
-			break;
-		case 1:
-			y(i) = radialFunctionFirstDerivative(*BFC,orbital,x(i));
-			break;
-		case 2:
-			y(i) = radialFunctionSecondDerivative(*BFC,orbital,x(i));
-			break;
-		default:
-			cerr << "ERROR: Trying to calculate unavailable derivatives in "
-				<< "QMCBasisFunction::initializeInterpolation(...)" << endl;
-			exit(0);
-		}
+	case 0:
+	  y(i) = radialFunction(*BFC,orbital,x(i));
+	  break;
+	case 1:
+	  y(i) = radialFunctionFirstDerivative(*BFC,orbital,x(i));
+	  break;
+	case 2:
+	  y(i) = radialFunctionSecondDerivative(*BFC,orbital,x(i));
+	  break;
+	default:
+	  cerr << "ERROR: Trying to calculate unavailable derivatives in "
+	       << "QMCBasisFunction::initializeInterpolation(...)" << endl;
+	  exit(0);
 	}
-
-	S.setGridParameters(x(0),beta);
-	S.initializeWithFunctionValues(x,y,0,0);
+    }
+  
+  S.setGridParameters(x(0),beta);
+  S.initializeWithFunctionValues(x,y,0,0);
 }
 
 void QMCBasisFunction::operator=( const QMCBasisFunction & rhs )
 {
-	N_BasisFunctions = rhs.N_BasisFunctions;
-	flags            = rhs.flags;
-	Molecule         = rhs.Molecule;
-	Xcalc            = rhs.Xcalc;
-	BFCoeffs         = rhs.BFCoeffs;
-	BFLookupTable    = rhs.BFLookupTable;
-
-	RadialFunctionInterpolation = rhs. RadialFunctionInterpolation;
-	RadialFunctionFirstDerivativeInterpolation = 
-		rhs.RadialFunctionFirstDerivativeInterpolation;
-	RadialFunctionSecondDerivativeInterpolation = 
-		rhs.RadialFunctionSecondDerivativeInterpolation;
-
-	use_radial_interpolation = rhs.use_radial_interpolation;
+  N_BasisFunctions = rhs.N_BasisFunctions;
+  flags            = rhs.flags;
+  Molecule         = rhs.Molecule;
+  Xcalc            = rhs.Xcalc;
+  BFCoeffs         = rhs.BFCoeffs;
+  BFLookupTable    = rhs.BFLookupTable;
+  
+  RadialFunctionInterpolation = rhs. RadialFunctionInterpolation;
+  RadialFunctionFirstDerivativeInterpolation = 
+    rhs.RadialFunctionFirstDerivativeInterpolation;
+  RadialFunctionSecondDerivativeInterpolation = 
+    rhs.RadialFunctionSecondDerivativeInterpolation;
+  
+  use_radial_interpolation = rhs.use_radial_interpolation;
 }
 
 int QMCBasisFunction::getNumberBasisFunctions(int i)
 {
-	return BFCoeffs(i).getNumberBasisFunctions();
+  return BFCoeffs(i).getNumberBasisFunctions();
 }
 
 istream& operator >>(istream &strm, QMCBasisFunction &rhs)
 {
-	rhs.BFCoeffs.allocate(rhs.flags->Natoms);
+  rhs.BFCoeffs.allocate(rhs.flags->Natoms);
+  
+  for(int i=0; i<rhs.flags->Natoms; i++) strm >> rhs.BFCoeffs(i);
+  
+  rhs.N_BasisFunctions = 0;
+  for(int i=0; i<rhs.flags->Natoms; i++)
+    rhs.N_BasisFunctions += rhs.BFCoeffs(i).getNumberBasisFunctions();
+  
+  rhs.BFLookupTable.allocate(rhs.N_BasisFunctions,2);
 
-	for(int i=0; i<rhs.flags->Natoms; i++) strm >> rhs.BFCoeffs(i);
-
-	rhs.N_BasisFunctions = 0;
-	for(int i=0; i<rhs.flags->Natoms; i++)
-		rhs.N_BasisFunctions += rhs.BFCoeffs(i).getNumberBasisFunctions();
-
-	rhs.BFLookupTable.allocate(rhs.N_BasisFunctions,2);
-
-	int ii = 0;
-	int Atom = 0;
-	while(ii < rhs.N_BasisFunctions)
+  int ii = 0;
+  int Atom = 0;
+  while(ii < rhs.N_BasisFunctions)
+    {
+      for(int Orbital=0; Orbital < 
+	    rhs.BFCoeffs(Atom).getNumberBasisFunctions(); Orbital++)
 	{
-		for(int Orbital=0; Orbital < 
-			rhs.BFCoeffs(Atom).getNumberBasisFunctions(); Orbital++)
-		{
-			rhs.BFLookupTable(ii,0) = Atom;
-			rhs.BFLookupTable(ii,1) = Orbital;
-			ii++;
-		}
-		Atom++;
+	  rhs.BFLookupTable(ii,0) = Atom;
+	  rhs.BFLookupTable(ii,1) = Orbital;
+	  ii++;
 	}
-
-	rhs.initializeInterpolations();
-
-	return strm;
+      Atom++;
+    }
+  
+  rhs.initializeInterpolations();
+  
+  return strm;
 }
 
 ostream& operator <<(ostream& strm,QMCBasisFunction& rhs)
 {
-	strm << "&basis" << endl;
-	for(int i=0; i<rhs.flags->Natoms; i++)
-		strm << rhs.BFCoeffs(i);
-	strm << "&" << endl;
-	return strm;
+  strm << "&basis" << endl;
+  for(int i=0; i<rhs.flags->Natoms; i++)
+    strm << rhs.BFCoeffs(i);
+  strm << "&" << endl;
+  return strm;
 }
 
 void QMCBasisFunction::read(string runfile)
 {
-	ifstream input_file(runfile.c_str());
-
-	if(!input_file)
-	{
-		cerr << "ERROR: Could not open " << runfile << "!" << endl;
-		exit(1);
-	}
-
-	string temp_string;
-	input_file >> temp_string;
-	while((temp_string != "&basis") && (input_file.eof() != 1))
-	{
-		input_file >> temp_string;
-	}
-
-	if(temp_string == "&basis") input_file >> *this;
+  ifstream input_file(runfile.c_str());
+  
+  if(!input_file)
+    {
+      cerr << "ERROR: Could not open " << runfile << "!" << endl;
+      exit(1);
+    }
+  
+  string temp_string;
+  input_file >> temp_string;
+  while((temp_string != "&basis") && (input_file.eof() != 1))
+    {
+      input_file >> temp_string;
+    }
+  
+  if(temp_string == "&basis") input_file >> *this;
 }
 
-double QMCBasisFunction::radialFunction
-(QMCBasisFunctionCoefficients& BFC, int orbital, double r_sq)
+double QMCBasisFunction::
+radialFunction(QMCBasisFunctionCoefficients& BFC,
+	       int orbital, double r_sq)
 {
-	double temp = 0.0;
-
-	int nGaussians = BFC.N_Gauss(orbital);
-
-	double **coeffs = BFC.Coeffs.array()[orbital];
-
-	for(int i=0; i<nGaussians; i++)
-	{
-		temp += coeffs[i][1]*exp(-coeffs[i][0]*r_sq);
-	}
-
-	return temp;
+  double temp = 0.0;
+  
+  int nGaussians = BFC.N_Gauss(orbital);
+  
+  qmcfloat **coeffs = BFC.Coeffs.array()[orbital];
+  
+  for(int i=0; i<nGaussians; i++)
+    {
+      temp += coeffs[i][1]*exp(-coeffs[i][0]*r_sq);
+    }
+  
+  return temp;
 }
 
-double QMCBasisFunction::radialFunctionFirstDerivative
-(QMCBasisFunctionCoefficients& BFC, int orbital, double r_sq)
+double QMCBasisFunction::
+radialFunctionFirstDerivative(QMCBasisFunctionCoefficients& BFC,
+			      int orbital, double r_sq)
 {
-	double temp = 0.0;
-
-	for(int i=0; i<BFC.N_Gauss(orbital); i++)
-	{
-		temp += BFC.Coeffs(orbital,i,1)*BFC.Coeffs(orbital,i,0)
-			*exp(-BFC.Coeffs(orbital,i,0)*r_sq);
-	}
-
-	temp *= (-2*sqrt(r_sq));
-
-	return temp;
+  double temp = 0.0;
+  
+  for(int i=0; i<BFC.N_Gauss(orbital); i++)
+    {
+      temp += BFC.Coeffs(orbital,i,1)*BFC.Coeffs(orbital,i,0)
+	*exp(-BFC.Coeffs(orbital,i,0)*r_sq);
+    }
+  
+  temp *= (-2*sqrt(r_sq));
+  
+  return temp;
 }
 
 double QMCBasisFunction::radialFunctionSecondDerivative
 (QMCBasisFunctionCoefficients& BFC, int orbital, double r_sq)
 {
-	double temp = 0.0;
-
-	for(int i=0; i<BFC.N_Gauss(orbital); i++)
-	{
-		temp += ( -2*BFC.Coeffs(orbital,i,0) + 4 * BFC.Coeffs(orbital,i,0) *
-			BFC.Coeffs(orbital,i,0) * r_sq ) * BFC.Coeffs(orbital,i,1) *
-			exp(-BFC.Coeffs(orbital,i,0)*r_sq);
-	}
-
-	return temp;
+  double temp = 0.0;
+  
+  for(int i=0; i<BFC.N_Gauss(orbital); i++)
+    {
+      temp += ( -2*BFC.Coeffs(orbital,i,0) + 4 * BFC.Coeffs(orbital,i,0) *
+		BFC.Coeffs(orbital,i,0) * r_sq ) * BFC.Coeffs(orbital,i,1) *
+	exp(-BFC.Coeffs(orbital,i,0)*r_sq);
+    }
+  
+  return temp;
 }
 
-void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X, int start,
-					      int stop, Array2D<double>& chi_value, Array1D< Array2D<double> >& chi_grad,
-					      Array2D<double>& chi_laplacian)
+void QMCBasisFunction::
+evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
+		       Array2D<qmcfloat>& chi_value,
+		       Array2D<qmcfloat>& chi_grx,
+		       Array2D<qmcfloat>& chi_gry,
+		       Array2D<qmcfloat>& chi_grz,
+		       Array2D<qmcfloat>& chi_laplacian)
 {
   int el = 0;
   int a, b, c, nGaussians;
   int numBF;
-  double x, y, z, x2, y2, z2, r_sq, xyz;
-  double p0, p1, exp_term, temp;
-  double chi, chi_gradx, chi_grady, chi_gradz, chi_lap;
+  qmcfloat x, y, z, x2, y2, z2, r_sq, xyz;
+  qmcfloat p0, p1, exp_term, temp;
+  qmcfloat chi, chi_gradx, chi_grady, chi_gradz, chi_lap;
   for (int index=start; index<=stop; index++)
     {
       int bf = 0;
@@ -313,7 +320,7 @@ void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X, int start,
 	      
 	      xyz = pow(x,a)*pow(y,b)*pow(z,c);
 	      
-	      double** coeffs = BFCoeffs(atom).Coeffs.array()[j];
+	      qmcfloat** coeffs = BFCoeffs(atom).Coeffs.array()[j];
 	      
 	      nGaussians = BFCoeffs(atom).N_Gauss(j);
 	      chi       = 0;
@@ -347,11 +354,11 @@ void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X, int start,
 	      if(chi_lap > 0 && chi_lap < TOOSMALL) chi_lap = TOOSMALL;
 	      if(chi_lap < 0 && chi_lap > -1.0*TOOSMALL) chi_lap = -1.0*TOOSMALL;
 	      
-	      chi_value(el,bf)     = chi;
-	      (chi_grad(0))(el,bf) = chi_gradx;
-	      (chi_grad(1))(el,bf) = chi_grady;
-	      (chi_grad(2))(el,bf) = chi_gradz;
-	      chi_laplacian(el,bf) = chi_lap;
+	      chi_value(el,bf)     = (qmcfloat)chi;
+	      chi_grx(el,bf)       = (qmcfloat)chi_gradx;
+	      chi_gry(el,bf)       = (qmcfloat)chi_grady;
+	      chi_grz(el,bf)       = (qmcfloat)chi_gradz;
+	      chi_laplacian(el,bf) = (qmcfloat)chi_lap;
 	      bf++;
 	    }
 	}
