@@ -9,10 +9,34 @@ norbitals
  46
 nbasisfunc
  58
-run_type
- variational
 chip_and_mike_are_cool
  Yea_Baby!
+run_type
+ variational
+sampling_method
+ umrigar93_importance_sampling
+QF_modification_type
+ umrigar93_unequalelectrons
+energy_modification_type
+ umrigar93
+use_available_checkpoints
+ 0
+output_interval
+ 10
+mpireduce_interval
+ 10
+dt
+ 1.0e-4
+dt_equilibration
+ 1.0e-4
+
+number_of_walkers
+ 10
+max_time_steps
+ 3000
+equilibration_steps
+ 1000
+
 &
 &geometry
 Kr	36	0.0	0.0	4.16684573783	
@@ -1228,64 +1252,52 @@ Kr	29	4
 	0.000000000000000	
 
 &
-&particle_type_list
-number_of_particle_types	 3 
 
-particle_name	electron_up
-spin	 0.500000 
-charge	 -1.000000
-symmetry	 -1
-mass	 1
-moveable 1	 
+&Jastrow
 
-particle_name	electron_down
-spin	 -0.500000 
-charge	 -1.000000
-symmetry	 -1
-mass	 1
-moveable 1	 
+ParticleTypes: Electron_Up Electron_Down
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 3.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: 0.5
 
-particle_name	Kr
-spin	 1.000000 
-charge	 36.000000
-symmetry	 1
-mass	 153984
-moveable 0	 
+ParticleTypes: Electron_Up Electron_Up
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 100.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: 0.25
 
-&particle_type_list
-&Jastrow_2_part
-number_of_particle_types	 3 
+ParticleTypes: Electron_Down Electron_Down
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 100.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: 0.25
 
-number_of_Jastrow_2_part	 5 
+ParticleTypes: Electron_Up Kr
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 100.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: -36
 
-particle_types	electron_up	electron_up
-Jastrow_type	 0
-type_1_params	 1
-type_2_params	 1
-parameters	 0.000000 0.000000 
+ParticleTypes: Electron_Down Kr
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 100.0
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: -36
 
-particle_types	electron_up	electron_down
-Jastrow_type	 0
-type_1_params	 1
-type_2_params	 1
-parameters	 0.000000 0.000000 
-
-particle_types	electron_up	Kr
-Jastrow_type	 0
-type_1_params	 1
-type_2_params	 1
-parameters	 0.000000 0.000000 
-
-particle_types	electron_down	electron_down
-Jastrow_type	 0
-type_1_params	 1
-type_2_params	 1
-parameters	 0.000000 0.000000 
-
-particle_types	electron_down	Kr
-Jastrow_type	 0
-type_1_params	 1
-type_2_params	 1
-parameters	 0.000000 0.000000 
-
-&Jastrow_2_part
+&Jastrow
