@@ -1,3 +1,15 @@
+Tues, 1 Feb 2005, Amos Anderson
+1.  Changed some of the behavior of configure.py. Now, you can easily keep all the objective
+    files for several different Makefile.config choices. e.g. serial debug objective files are seperate
+    from parallel debug files are seperate from serial atlas debug files. Also, I changed the naming
+    of the executable files so you can tell some of the options they were compiled with just by
+    looking at the name. Not sure if i need to modify this to make sure it stays under 16 characters...
+
+2.  Added numerical stability checks to QMCGreensRatioComponent.cpp, QMCBasisFunction.cpp, and
+    QMCFunctions.cpp. The code now runs on LANL's QSC with or without ATLAS, on H2O, He, HMX.
+    Note: according to the ATLAS website errata, the ATLAS library can not be threaded on Dec Alphas...
+    I don't know how serious that is...
+
 Thurs, 30 Dec 2004, Daniel R. Fisher
 
 1.  Added a << function to Array3D.h so that the program would compile on QSC.
@@ -60,187 +72,4 @@ Tues, 23 Dec 2004, Amos Anderson
     4 times faster on my G4 laptop, and uses about 10 mb memory. The streamlining non-ATLAS
     version is about 2 times faster.
 
-Tues, 14 Dec 2004, Daniel R. Fisher
-
-1.  Updated the .ckmf files for the test and example calculations to have the 
-    new wavefunction format.  Also added two multideterminant calculations to
-    the examples.  
-
-
-Wed, 8 Dec 2004, Daniel R. Fisher
-
-1.  Fixed the gamess2qmcbeaver.py script to handle MCSCF geometry 
-    optimizations.
-
-2.  Changed the comments in the parts of the code that deal with the
-    wavefunction to include multideterminant wavefunctions.
-
-
-Thurs, 2 Dec 2004, Daniel R. Fisher
-
-1.  Implemented multi determinant wavefunctions for the SCF part of the trial
-    function.  The most substantial changes are in QMCSlater and QMCFunctions.
-    MSCSF trial functions can be calculated using GAMESS with CANONC=.FALSE. in
-    the $MCSCF section.
-
-
-Wed, 27 Oct 2004, Amos Anderson
-1) fixed a bug in Array2D.h in the matrix-matrix multiply function
-
-2) finally submitted all the changes necessary to run QMcBeaver on Windows. I
-   also added a folder "windows" in the top directory containing Visual Studio 
-   project files. I tried my best to make sure that all the paths in those 
-   files are relative...
-   The project files will run the simple ..\examples\H2_hf_631Gss-vmc.ckmf 
-   example I also added. To change which input file to use, change the entry in
-   the menu bar at Project/QMcBeaver 
-   Properties/Configuration Properties/Debugging/Command Arguments
-
-  *note: I spent some time trying to force Visual Studio to make the CVS code 
-  format nicely.
-  There is a significant discrepancy between how VS and Emacs interpret tabs in
-  the code. I tried to make as few formatting changes possible so as not to 
-  mess up the code for everyone else...
-
-
-Sat, 16 Oct 2004, Daniel R Fisher
-
-1. Fixed the comments in the AngleDistributions, RadialDistributions, Array1D, 
-   QMCDansWalkerInitialization, QMCEquilibrationArray, QMCExtendedProperties, 
-   QMCGreensRatioComponent, QMCProperties, QMCProperty, QMCRun, and QMCWalker 
-   classes to work with the JavaDoc documentation.
-
-Thr, 14 Oct 2004, Chip Kent
-
-1. Improved the output formatting.  For some cases, the columns of 
-   numbers would run together.
-
-2. Added Doxygen documentation to the files generated for a release.
-
-3. Added support for GCC 3.4.
-
-Wed, 13 Oct 2004, Chip Kent
-
-1. Improved the script to build official releases so that it appends the
-   version number to the directory.
-
-2. Added an example input file directory with a few entries.
-
-Wed, 8 Sept 2004, Daniel R. Fisher
-
-1.  In the constructor function for QMCWalker, set the trial step size, dR2,
-    to 0.  It was being used uninitialized and causing problems with the 
-    calculation of the effective time step.
-
-2.  In QMCManager::writeEnergyResultsSummary(ostream & strm), added the total
-    number of samples collected to the results summary.  
-
-3.  In QMcBeaver.cpp, added a Total Samples heading for the column with the 
-    total number of samples in the global results. 
-
-
-Mon, 30 August 2004, Daniel R. Fisher
-
-1.  Got rid of the need to read the distributions from files in 
-    QMCDansWalkerInitialization by using CubicSplines.  The resulting method is
-    much faster.  The distributions are now stored in the AngleDistributions 
-    and RadialDistributions classes.
-
-
-Mon, 30 August 2004, Daniel R. Fisher
-
-1.  Changed configure.py to include settings for the cray_x1 computer.
-
-2.  Added the class QMCGreensRatioComponent.  The Greens function
-    calculations were causing numerical overflow problems for large
-    molecules.  This class keeps track of a quantity of the form
-    k*a^b*exp(c), which is the form of the Greens function components
-    in the importance sampling parts of the code.
-
-
-Thurs, 29 July 2004, Chip Kent
-
-1. Included Amos Anderson's changes to improve the formatting of
-   the output.  These changes make the output much easier to read.
-
-
-Thurs, 29 July 2004, Chip Kent
-
-1. Included Amos Anderson's changes to the build procedure.  These changes
-   make it possible to remove the annoying src/Makefile.dep file which 
-   constantly changes in CVS.  In addition, the new build procedure makes
-   it possible to build for multiple systems using the same code base.
-
-
-Wed, 21 July 2004, Daniel R. Fisher
-
-1.  Submitted changes on behalf of Amos Anderson fixing 
-    calculateReverseGreensFunctionUmrigar93ImportanceSampling() in QMCWalker.
-    The distances were being calculated from the proposed positions instead of
-    the original positions, which was causing a very high acceptance 
-    probability.  
-
-
-Thurs, 15 July 2004, Daniel R. Fisher
-
-1.  Changed the call to isnan() in QMCEquilibrationArray to come from 
-    the IeeeMath class instead of <math.h>.  The previous function was not 
-    compiling on some systems.
-
-
-Fri, 9 Jul 2004, Daniel R. Fisher
-
-1.  Added QMCEquilibrationArray.  This defines an array of
-    QMCExtendedProperties objects, each of which consists of a
-    QMCProperties object and equilibration and propagation
-    Stopwatches.  The ith element of the array starts collecting
-    statistics on the (2^i)th iteration of the run.  When the
-    properties are gathered, the element of the array with the
-    smallest standard deviation for the total energy is chosen and
-    sent to the root processor.  
-    When the timing information is collected, the propagation and
-    equilibration timers from the appropriate QMCExtendedProperties
-    object are added to the localTimers and sent to the root
-    processor.
-    When correlated sampling configurations are read, each processor
-    determines how many configurations from the beginning of the file
-    should be skipped.  
-    To use the equilibration array, set the flag
-    use_equilibration_array to 1.
-
-
-Wed, 7 Jul 2004, Daniel R. Fisher
-
-1.  Added QMCDansWalkerInitialization.  This initialization method requires
-    very few equilibration steps before statistics can be gathered.  To use it,
-    set the walker_initialization_method flag to dans_walker_initialization and
-    copy radial_dist_arrays and angle_dist_arrays from the QMcBeaver/src 
-    directory into the working directory.
-    As part of this method, I added some quaternion operations for calculating
-    rotations to Array1D.h.
-
-2.  Added an equilibration Stopwatch to QMCStopwatches.  The time spent
-    equilibrating the chain is now referred to as "equilibration time" and is
-    recorded by the equilibration Stopwatch.  The Stopwatch that used to record
-    this time was called the initialization Stopwatch.  This Stopwatch now 
-    records the time spent generating an initial configuration for the 
-    electrons.    
-
-
-Thu, 1 Jul 2004, Daniel R. Fisher
-
-1.  In QMCManager and QMCFlags, I made sure the iseed is always a negative
-    integer whenever an input, restart, or checkpoint file is written or read.
-    Previously, when a checkpoint or restart file was written, the current
-    value of iseed, which during a run is a positive integer, was written.
-    This was a problem for restarting parallel jobs from checkpoints because
-    ran1() sets the iseed to 1 if it is positive, so all the processors were
-    getting the same sequence of numbers.
-    When writing restarts and checkpoints, -1*iseed is written out if
-    iseed is positive.  I was careful not to change the value of iseed itself.
-
-2.  In QMCManager, I fixed the conditional statement for writing out
-    correlated sampling configurations.  Previously, it was writing out
-    configs on every iteration, which caused very large files in the temp
-    directory and very slow line search optimizations.  Now it writes out
-    configs at the proper interval.
+Tues, 14 Dec 2004, Daniel R. Fisher  1.  Updated the .ckmf files for the test and example calculations to have the      new wavefunction format.  Also added two multideterminant calculations to     the examples.     Wed, 8 Dec 2004, Daniel R. Fisher  1.  Fixed the gamess2qmcbeaver.py script to handle MCSCF geometry      optimizations.  2.  Changed the comments in the parts of the code that deal with the     wavefunction to include multideterminant wavefunctions.   Thurs, 2 Dec 2004, Daniel R. Fisher  1.  Implemented multi determinant wavefunctions for the SCF part of the trial     function.  The most substantial changes are in QMCSlater and QMCFunctions.     MSCSF trial functions can be calculated using GAMESS with CANONC=.FALSE. in     the $MCSCF section.   Wed, 27 Oct 2004, Amos Anderson 1) fixed a bug in Array2D.h in the matrix-matrix multiply function  2) finally submitted all the changes necessary to run QMcBeaver on Windows. I    also added a folder "windows" in the top directory containing Visual Studio     project files. I tried my best to make sure that all the paths in those     files are relative...    The project files will run the simple ..\examples\H2_hf_631Gss-vmc.ckmf     example I also added. To change which input file to use, change the entry in    the menu bar at Project/QMcBeaver     Properties/Configuration Properties/Debugging/Command Arguments    *note: I spent some time trying to force Visual Studio to make the CVS code    format nicely.   There is a significant discrepancy between how VS and Emacs interpret tabs in   the code. I tried to make as few formatting changes possible so as not to    mess up the code for everyone else...   Sat, 16 Oct 2004, Daniel R Fisher  1. Fixed the comments in the AngleDistributions, RadialDistributions, Array1D,     QMCDansWalkerInitialization, QMCEquilibrationArray, QMCExtendedProperties,     QMCGreensRatioComponent, QMCProperties, QMCProperty, QMCRun, and QMCWalker     classes to work with the JavaDoc documentation.  Thr, 14 Oct 2004, Chip Kent  1. Improved the output formatting.  For some cases, the columns of     numbers would run together.  2. Added Doxygen documentation to the files generated for a release.  3. Added support for GCC 3.4.  Wed, 13 Oct 2004, Chip Kent  1. Improved the script to build official releases so that it appends the    version number to the directory.  2. Added an example input file directory with a few entries.  Wed, 8 Sept 2004, Daniel R. Fisher  1.  In the constructor function for QMCWalker, set the trial step size, dR2,     to 0.  It was being used uninitialized and causing problems with the      calculation of the effective time step.  2.  In QMCManager::writeEnergyResultsSummary(ostream & strm), added the total     number of samples collected to the results summary.    3.  In QMcBeaver.cpp, added a Total Samples heading for the column with the      total number of samples in the global results.    Mon, 30 August 2004, Daniel R. Fisher  1.  Got rid of the need to read the distributions from files in      QMCDansWalkerInitialization by using CubicSplines.  The resulting method is     much faster.  The distributions are now stored in the AngleDistributions      and RadialDistributions classes.   Mon, 30 August 2004, Daniel R. Fisher  1.  Changed configure.py to include settings for the cray_x1 computer.  2.  Added the class QMCGreensRatioComponent.  The Greens function     calculations were causing numerical overflow problems for large     molecules.  This class keeps track of a quantity of the form     k*a^b*exp(c), which is the form of the Greens function components     in the importance sampling parts of the code.   Thurs, 29 July 2004, Chip Kent  1. Included Amos Anderson's changes to improve the formatting of    the output.  These changes make the output much easier to read.   Thurs, 29 July 2004, Chip Kent  1. Included Amos Anderson's changes to the build procedure.  These changes    make it possible to remove the annoying src/Makefile.dep file which     constantly changes in CVS.  In addition, the new build procedure makes    it possible to build for multiple systems using the same code base.   Wed, 21 July 2004, Daniel R. Fisher  1.  Submitted changes on behalf of Amos Anderson fixing      calculateReverseGreensFunctionUmrigar93ImportanceSampling() in QMCWalker.     The distances were being calculated from the proposed positions instead of     the original positions, which was causing a very high acceptance      probability.     Thurs, 15 July 2004, Daniel R. Fisher  1.  Changed the call to isnan() in QMCEquilibrationArray to come from      the IeeeMath class instead of <math.h>.  The previous function was not      compiling on some systems.   Fri, 9 Jul 2004, Daniel R. Fisher  1.  Added QMCEquilibrationArray.  This defines an array of     QMCExtendedProperties objects, each of which consists of a     QMCProperties object and equilibration and propagation     Stopwatches.  The ith element of the array starts collecting     statistics on the (2^i)th iteration of the run.  When the     properties are gathered, the element of the array with the     smallest standard deviation for the total energy is chosen and     sent to the root processor.       When the timing information is collected, the propagation and     equilibration timers from the appropriate QMCExtendedProperties     object are added to the localTimers and sent to the root     processor.     When correlated sampling configurations are read, each processor     determines how many configurations from the beginning of the file     should be skipped.       To use the equilibration array, set the flag     use_equilibration_array to 1.   Wed, 7 Jul 2004, Daniel R. Fisher  1.  Added QMCDansWalkerInitialization.  This initialization method requires     very few equilibration steps before statistics can be gathered.  To use it,     set the walker_initialization_method flag to dans_walker_initialization and     copy radial_dist_arrays and angle_dist_arrays from the QMcBeaver/src      directory into the working directory.     As part of this method, I added some quaternion operations for calculating     rotations to Array1D.h.  2.  Added an equilibration Stopwatch to QMCStopwatches.  The time spent     equilibrating the chain is now referred to as "equilibration time" and is     recorded by the equilibration Stopwatch.  The Stopwatch that used to record     this time was called the initialization Stopwatch.  This Stopwatch now      records the time spent generating an initial configuration for the      electrons.       Thu, 1 Jul 2004, Daniel R. Fisher  1.  In QMCManager and QMCFlags, I made sure the iseed is always a negative     integer whenever an input, restart, or checkpoint file is written or read.     Previously, when a checkpoint or restart file was written, the current     value of iseed, which during a run is a positive integer, was written.     This was a problem for restarting parallel jobs from checkpoints because     ran1() sets the iseed to 1 if it is positive, so all the processors were     getting the same sequence of numbers.     When writing restarts and checkpoints, -1*iseed is written out if     iseed is positive.  I was careful not to change the value of iseed itself.  2.  In QMCManager, I fixed the conditional statement for writing out     correlated sampling configurations.  Previously, it was writing out     configs on every iteration, which caused very large files in the temp     directory and very slow line search optimizations.  Now it writes out     configs at the proper interval. 
