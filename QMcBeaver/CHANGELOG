@@ -1,16 +1,28 @@
+Thurs, 2 Dec 2004, Daniel R. Fisher
+
+1.  Implemented multi determinant wavefunctions for the SCF part of the trial
+    function.  The most substantial changes are in QMCSlater and QMCFunctions.
+    MSCSF trial functions can be calculated using GAMESS with CANONC=.FALSE. in
+    the $MCSCF section.
+
+
 Wed, 27 Oct 2004, Amos Anderson
 1) fixed a bug in Array2D.h in the matrix-matrix multiply function
 
 2) finally submitted all the changes necessary to run QMcBeaver on Windows. I
-   also added a folder "windows" in the top directory containing Visual Studio project
-   files. I tried my best to make sure that all the paths in those files are relative...
-   The project files will run the simple ..\examples\H2_hf_631Gss-vmc.ckmf example
-   I also added. To change which input file to use, change the entry in the menu bar at
-   Project/QMcBeaver Properties/Configuration Properties/Debugging/Command Arguments
+   also added a folder "windows" in the top directory containing Visual Studio 
+   project files. I tried my best to make sure that all the paths in those 
+   files are relative...
+   The project files will run the simple ..\examples\H2_hf_631Gss-vmc.ckmf 
+   example I also added. To change which input file to use, change the entry in
+   the menu bar at Project/QMcBeaver 
+   Properties/Configuration Properties/Debugging/Command Arguments
 
-*note: I spent some time trying to force Visual Studio to make the CVS code format nicely.
-There is a significant discrepancy between how VS and Emacs interpret tabs in the code. I tried
-to make as few formatting changes possible so as not to mess up the code for everyone else...
+  *note: I spent some time trying to force Visual Studio to make the CVS code 
+  format nicely.
+  There is a significant discrepancy between how VS and Emacs interpret tabs in
+  the code. I tried to make as few formatting changes possible so as not to 
+  mess up the code for everyone else...
 
 
 Sat, 16 Oct 2004, Daniel R Fisher

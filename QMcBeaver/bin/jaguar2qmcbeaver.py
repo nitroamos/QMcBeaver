@@ -235,6 +235,7 @@ OUT.write("charge\n %i\n"%(Charge))
 OUT.write("energy\n %s\n"%(Energy))
 OUT.write("norbitals\n %i\n"%(len(Wavefunction)))
 OUT.write("nbasisfunc\n %i\n"%(len(Wavefunction[0][1])))
+OUT.write("ndeterminants\n 1\n")
 OUT.write("run_type\n variational\n")
 OUT.write("chip_and_mike_are_cool\n Yea_Baby!\n")
 OUT.write("&\n")
@@ -342,16 +343,14 @@ nalpha = 0
 nbeta  = 0
 OUT.write("&wavefunction\n")
 for i in range(len(Wavefunction)):
-    # Write Occupation
+    # Get Occupation
     if (string.atof(Wavefunction[i][0][0]) == 1.0):
-        OUT.write("1 1\n\t")
         nalpha = nalpha + 1
         nbeta  = nbeta + 1
     elif (string.atof(Wavefunction[i][0][0]) == 0.5):
-        OUT.write("1 0\n\t")
         nalpha = nalpha + 1
     elif (string.atof(Wavefunction[i][0][0]) == 0.0):
-        OUT.write("0 0\n\t")
+        continue
     else:
         OUT.write("ERROR\n\t")
 
@@ -360,7 +359,23 @@ for i in range(len(Wavefunction)):
         OUT.write("%s\t" % (Wavefunction[i][1][j]))
         if( j%3 == 2 ): OUT.write("\n\t")
     OUT.write("\n\n")
+
+OUT.write("Alpha Occupation\n")
+for i in range(nalpha):
+    OUT.write("1\t")
+for i in range(len(Wavefunction)-nalpha):
+    OUT.write("0\t")
+OUT.write("\n\n")
+
+OUT.write("Beta Occupation")
+for i in range(nbeta):
+    OUT.write("1\t")
+for i in range(len(Wavefunction)-nbeta):
+    OUT.write("0\t")
+OUT.write("\n\n")
+
 OUT.write("&\n")
+
 # End Write Wavefunction
 
 

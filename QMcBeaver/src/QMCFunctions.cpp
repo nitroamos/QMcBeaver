@@ -38,7 +38,9 @@ void QMCFunctions::operator=(const QMCFunctions & rhs )
  
   Psi                    = rhs.Psi;
   Laplacian_PsiRatio     = rhs.Laplacian_PsiRatio;
+  SCF_Laplacian_PsiRatio = rhs.SCF_Laplacian_PsiRatio;
   Grad_PsiRatio          = rhs.Grad_PsiRatio;
+  SCF_Grad_PsiRatio      = rhs.SCF_Grad_PsiRatio;
   Modified_Grad_PsiRatio = rhs.Modified_Grad_PsiRatio;
   E_Local                = rhs.E_Local;
 }
@@ -47,14 +49,16 @@ void QMCFunctions::initialize(QMCInput *INPUT)
 {
   Input = INPUT;
 
-  Alpha.initialize(Input,0,Input->WF.getNumberAlphaElectrons()-1);
+  Alpha.initialize(Input,0,Input->WF.getNumberAlphaElectrons()-1,\
+                                                    Input->WF.AlphaOccupation);
   Beta.initialize(Input,Input->WF.getNumberAlphaElectrons(),
-		  Input->WF.getNumberElectrons()-1);
+                    Input->WF.getNumberElectrons()-1,Input->WF.BetaOccupation);
 
   PE.initialize(Input);
   Jastrow.initialize(Input);
   
   Grad_PsiRatio.allocate(Input->WF.getNumberElectrons(),3);
+  SCF_Grad_PsiRatio.allocate(Input->WF.getNumberElectrons(),3);
 }
 
 void QMCFunctions::evaluate(Array2D<double> &X)
@@ -65,48 +69,81 @@ void QMCFunctions::evaluate(Array2D<double> &X)
   Jastrow.evaluate(X);
   PE.evaluate(X);
 
-  calculate_Psi();
-  calculate_Grad_PsiRatio();
+  calculate_Psi_quantities();
   calculate_Modified_Grad_PsiRatio(X);
-  calculate_Laplacian_PsiRatio();
   calculate_E_Local();
 }
 
-void QMCFunctions::calculate_Psi()
+void QMCFunctions::calculate_Psi_quantities()
 {
-  Psi = Alpha.getPsi() * Beta.getPsi() * Jastrow.getJastrow();
-}
+  double SCF_sum = 0.0;
+  SCF_Laplacian_PsiRatio = 0.0;
+  Laplacian_PsiRatio = 0.0;
 
-void QMCFunctions::calculate_Grad_PsiRatio()
-{
-  for(int i=0; i<Input->WF.getNumberAlphaElectrons(); i++)
+  Array1D<double>* alphaPsi = Alpha.getPsi();
+  Array1D<double>* alphaLaplacian = Alpha.getLaplacianPsiRatio();
+  Array3D<double>* alphaGrad = Alpha.getGradPsiRatio();
+
+  Array1D<double>* betaPsi = Beta.getPsi();
+  Array1D<double>* betaLaplacian = Beta.getLaplacianPsiRatio();
+  Array3D<double>* betaGrad = Beta.getGradPsiRatio();
+
+  for (int i=0; i<Input->WF.getNumberElectrons(); i++)
+    for (int j=0; j<3; j++)
+      {
+	SCF_Grad_PsiRatio(i,j) = 0.0;
+	Grad_PsiRatio(i,j) = 0.0;
+      }
+
+  for (int i=0; i<Input->WF.getNumberDeterminants(); i++)
     {
-      Array2D<double> * AlphaGrad = Alpha.getGradPsiRatio();
-      for(int j=0; j<3; j++)
-	{
-	  Grad_PsiRatio(i,j) = (*AlphaGrad)(i,j);
-	}
+      double term_psi = 0.0;
+      
+      term_psi = Input->WF.CI_coeffs(i) * (*alphaPsi)(i) * (*betaPsi)(i);
+
+      SCF_sum += term_psi;
+
+      double** term_AlphaGrad = (*alphaGrad).array()[i];
+
+      for (int j=0; j<Input->WF.getNumberAlphaElectrons(); j++)
+	for (int k=0; k<3; k++)
+	  {
+	    SCF_Grad_PsiRatio(j,k) += term_psi * term_AlphaGrad[j][k];
+	  }
+
+      double** term_BetaGrad = (*betaGrad).array()[i];
+
+      for (int j=0; j<Input->WF.getNumberBetaElectrons(); j++)
+	for (int k=0; k<3; k++)
+	  {
+	    SCF_Grad_PsiRatio(Input->WF.getNumberAlphaElectrons()+j,k) += \
+                                                term_psi * term_BetaGrad[j][k];
+	  }
+
+      SCF_Laplacian_PsiRatio += term_psi * ( (*alphaLaplacian)(i) + \
+                                                         (*betaLaplacian)(i) );
     }
 
-  for(int i=0; i<Input->WF.getNumberBetaElectrons(); i++)
-    {
-      Array2D<double> * BetaGrad = Beta.getGradPsiRatio();
-      for(int j=0; j<3; j++)
-	{
-	  Grad_PsiRatio(i+Input->WF.getNumberAlphaElectrons(),j) = 
-	    (*BetaGrad)(i,j);
-	}
-    }
+  Psi = SCF_sum * Jastrow.getJastrow();
 
-  Array2D<double> * grad_jastrow_ratio = Jastrow.getGradientLnJastrow();
+  Array2D<double>* JastrowGrad = Jastrow.getGradientLnJastrow();
+
+  for (int i=0; i<Input->WF.getNumberElectrons(); i++)
+    for (int j=0; j<3; j++)
+      {
+	SCF_Grad_PsiRatio(i,j) = SCF_Grad_PsiRatio(i,j) / SCF_sum;
+	Grad_PsiRatio(i,j) = SCF_Grad_PsiRatio(i,j) + (*JastrowGrad)(i,j);
+      }
+
+  SCF_Laplacian_PsiRatio = SCF_Laplacian_PsiRatio / SCF_sum;
+  Laplacian_PsiRatio = SCF_Laplacian_PsiRatio+Jastrow.getLaplacianLnJastrow();
 
   for(int i=0; i<Input->WF.getNumberElectrons(); i++)
-    {
-      for(int j=0; j<3; j++)
-	{
-	  Grad_PsiRatio(i,j) += (*grad_jastrow_ratio)(i,j);
-	}
-    }
+    for(int j=0; j<3; j++)
+      {
+	Laplacian_PsiRatio += (*JastrowGrad)(i,j) *
+	                          (2*Grad_PsiRatio(i,j) - (*JastrowGrad)(i,j));
+      }
 }
 
 void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X)
@@ -140,8 +177,7 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X)
 	{
 	  for(int j=0; j<Grad_PsiRatio.dim2(); j++)
 	    {
-	      magsqQF += Grad_PsiRatio(i,j) * 
-		Grad_PsiRatio(i,j);
+	      magsqQF += Grad_PsiRatio(i,j) * Grad_PsiRatio(i,j);
 	    }
 	}
 
@@ -231,25 +267,6 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X)
     }
 }
 
-void QMCFunctions::calculate_Laplacian_PsiRatio()
-{
-  // must calculate Grad_PsiRatio before calling this
-
-  Laplacian_PsiRatio = Alpha.getLaplacianPsiRatio() +
-    Beta.getLaplacianPsiRatio() + Jastrow.getLaplacianLnJastrow();
-
-  Array2D<double> * grad_jastrow_ratio = Jastrow.getGradientLnJastrow();
-
-  for(int i=0; i<Input->WF.getNumberElectrons(); i++)
-    {
-      for(int j=0; j<3; j++)
-	{
-	  Laplacian_PsiRatio += (*grad_jastrow_ratio)(i,j) *
-	    (2*Grad_PsiRatio(i,j) - (*grad_jastrow_ratio)(i,j));
-	}
-    }
-}
-
 void QMCFunctions::calculate_E_Local()
 {
   // must calculate Laplacian_PsiRatio before calling this
@@ -291,31 +308,20 @@ void QMCFunctions::writeCorrelatedSamplingConfiguration(ostream& strm)
 {
   // Print the sum of the laplacians from the alpha and beta electrons
   strm << "D1" << endl;
-  strm << "\t" << (Alpha.getLaplacianPsiRatio()+ Beta.getLaplacianPsiRatio()) 
-       << endl;
+  strm << "\t" << SCF_Laplacian_PsiRatio << endl;
 
   // print the GradPsiRatio excluding the Jastrow
   strm << "D2" << endl;
 
-  Array2D<double> * TempGrad = Alpha.getGradPsiRatio();
-
-  for(int i=0; i<Input->WF.getNumberAlphaElectrons(); i++)
+  for(int i=0; i<Input->WF.getNumberElectrons(); i++)
     {
       for(int j=0; j<3; j++)
 	{
-	  strm << "\t" << (*TempGrad)(i,j);
+	  strm << "\t" << SCF_Grad_PsiRatio(i,j);
 	}
       strm << endl;
     }
 
-  TempGrad = Beta.getGradPsiRatio();
-  for(int i=0; i<Input->WF.getNumberBetaElectrons(); i++)
-    {
-      for(int j=0; j<3; j++)
- 	strm << "\t" << (*TempGrad)(i,j);
-      strm << endl;
-    }
-  
   strm << "J\t" << endl;
   strm << "\t" << Jastrow.getJastrow() << endl;
   strm << "PE\t" << endl;
@@ -328,10 +334,7 @@ bool QMCFunctions::isSingular()
     {
       return true;
     }
-  else
-    {
-      return false;
-    }
+  else return false;
 }
 
 

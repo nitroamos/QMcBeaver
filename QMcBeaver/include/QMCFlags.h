@@ -330,6 +330,11 @@ class QMCFlags
   int Nbasisfunc;
 
   /**
+     Number of determinants in the SCF part of the wavefunction.
+  */
+  int Ndeterminants;
+
+  /**
      Trial energy used for branching QMC calculations.
   */
   double energy_trial;

@@ -312,8 +312,8 @@ Array2D <double> QMCMikesJackedWalkerInitialization::electrons_and_radii()
   double rv;  //uniform [0,1) random variable
   for(int i=0; i<Norbitals; i++)
     {
-      for(int j=0; j<(Input->WF.AlphaOccupation(i) 
-		      + Input->WF.BetaOccupation(i)); j++)
+      for(int j=0; j<(Input->WF.AlphaOccupation(0,i) 
+		      + Input->WF.BetaOccupation(0,i)); j++)
 	{
 	  sum = 0;
 	  rv = ran1(&Input->flags.iseed);

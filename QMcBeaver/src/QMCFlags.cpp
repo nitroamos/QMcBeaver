@@ -294,6 +294,11 @@ void QMCFlags::read_flags(string InFileName)
 	  input_file >> temp_string;
 	  Nbasisfunc = atoi(temp_string.c_str());
 	}
+      else if(temp_string == "ndeterminants")
+	{
+	  input_file >> temp_string;
+	  Ndeterminants = atoi(temp_string.c_str());
+	}
       else if(temp_string == "energy")
 	{
 	  input_file >> temp_string;
@@ -477,11 +482,7 @@ void QMCFlags::set_filenames(string runfile)
   base_file_name    = file_name;
 
   char my_rank_string[32];
-#ifdef _WIN32
-  _snprintf( my_rank_string, 32, "%d", my_rank );
-#else    
   snprintf( my_rank_string, 32, "%d", my_rank );
-#endif
   config_file_name = temp_dir + base_file_name + "."+my_rank_string + ".cfgs";
 
   basename = file_name;
@@ -590,6 +591,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
  strm << "charge\n " << flags.charge << endl;
  strm << "norbitals\n " << flags.Norbitals << endl;
  strm << "nbasisfunc\n " << flags.Nbasisfunc << endl;
+ strm << "ndeterminants\n " << flags.Ndeterminants << endl;
  strm << "energy\n " << flags.energy_trial << endl;
  strm << "correct_population_size_bias\n " 
       << flags.correct_population_size_bias << endl;

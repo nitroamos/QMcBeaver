@@ -59,9 +59,7 @@ class QMCBasisFunction
   /**
     Creates an instance of the class.
     */
-
   QMCBasisFunction();
-
 
   /**
     Initializes the class with data input to control the calculation and
@@ -70,81 +68,38 @@ class QMCBasisFunction
     @param flags input control information
     @param molecule information about the specific molecule
     */
-
   void initialize(QMCFlags * flags, QMCMolecule * molecule);
 
-
   /**
-    Calculates the value of a basis function.
-
-    @param whichBF which basis function to evaluate
-    @param X \f$3N\f$ dimensional configuration of electrons represented by 
-    a \f$N \times 3\f$ matrix
-    @param elNumber which electron in X to calculate the basis function for
-    @return basis function value
-    */
-
-  double getPsi(int whichBF, Array2D <double>& X, int elNumber);
-
-
-  /**
-    Calculates the gradient of a basis function.
-
-    @param whichBF which basis function to evaluate
-    @param X \f$3N\f$ dimensional configuration of electrons represented by 
-    a \f$N \times 3\f$ matrix
-    @param elNumber which electron in X to calculate the basis function for
-    @param grad basis function gradient value is returned here
-    */
-
-  void getGradPsi(int whichBF, Array2D <double>& X, int elNumber,
-		  Array1D<double> &grad);
-
-
-  /**
-    Calculates the laplacian of a basis function.
-
-    @param whichBF which basis function to evaluate
-    @param X \f$3N\f$ dimensional configuration of electrons represented by 
-    a \f$N \times 3\f$ matrix
-    @param elNumber which electron in X to calculate the basis function for
-    @return basis function laplacian value
-    */
-  double getLaplacianPsi(int whichBF, Array2D <double>& X, int elNumber);
-
+    Calculates the value, gradient, and Laplacian of a basis funcion.
+  */
+  void evaluateBasisFunction(int whichBF, Array2D<double>& X, int elNumber, 
+                        double& Psi, Array1D<double>& Grad, double& Laplacian);
 
   /**
     Sets two QMCBasisFunctions objects equal.
 
     @param rhs object to set this object equal to
     */
-
   void operator=( const QMCBasisFunction & rhs );
-
 
   /** 
     Loads the state of the object from a file.
 
     @param runfile file to load
     */
-
   void read(string runfile);
-
 
   /**
     Loads the state of the object from an input stream.
     */
-
   friend istream& operator >>(istream& strm,  
       QMCBasisFunction &rhs);    //read in coefficients
-
 
   /**
     Writes the state of the object to an output stream.
     */
-
   friend ostream& operator <<(ostream& strm,QMCBasisFunction& rhs);
-
 
   /**
     Returns how many basis functions are located on a specific atom.  
@@ -154,7 +109,6 @@ class QMCBasisFunction
     @param i index of atom
     @return number of basis functions on the atom
     */
-
   int getNumberBasisFunctions(int i);
   
 private:
@@ -164,12 +118,10 @@ private:
 
   int N_BasisFunctions;
 
-
   /**
     Array containing the QMCBasisFunctionCoefficients for all the atoms.
     Each element is for a different atom.
     */
-
   Array1D<QMCBasisFunctionCoefficients> BFCoeffs;  // Container for Coeffs
 
 
@@ -179,52 +131,38 @@ private:
                                 // BFLookupTable[BF_number][0=atom#,1=orb#]
 
   /**
-     Radial part of a basis function.  A basis function 
+     Radial part of a basis function.  A basis function
      can be factored into \f$x^{i}y^{j}z^{k}\theta(r)\f$ where \f$\theta(r)\f$
      is the radial portion of the basis function.  The function is in
-     terms of \f$r^2\f$ instead of \f$r\f$ to make it's evaluation faster.  
+     terms of \f$r^2\f$ instead of \f$r\f$ to make it's evaluation faster.
      To evaluate \f$\theta(r)\f$, evaluate the function at \f$r^2\f$.
   */
-  static double radialFunction(QMCBasisFunctionCoefficients& BFC, int orbital, 
-			double r_sq);
+  static double radialFunction(QMCBasisFunctionCoefficients& BFC, int orbital,
+                        double r_sq);
 
   /**
-     First derivative of the radial part of a basis function.  A basis 
-     function can be factored into \f$x^{i}y^{j}z^{k}\theta(r)\f$ where 
-     \f$\theta(r)\f$ is the radial portion of the basis function.  
-     The function is in terms of \f$r^2\f$ instead of \f$r\f$ to make it's 
-     evaluation faster.  To evaluate \f$\theta'(r)\f$, evaluate the 
+     First derivative of the radial part of a basis function.  A basis
+     function can be factored into \f$x^{i}y^{j}z^{k}\theta(r)\f$ where
+     \f$\theta(r)\f$ is the radial portion of the basis function.
+     The function is in terms of \f$r^2\f$ instead of \f$r\f$ to make it's
+     evaluation faster.  To evaluate \f$\theta'(r)\f$, evaluate the
      function at \f$r^2\f$.
   */
   static double radialFunctionFirstDerivative(
-				       QMCBasisFunctionCoefficients& BFC, 
-				       int orbital, double r_sq);
+                                       QMCBasisFunctionCoefficients& BFC,
+                                       int orbital, double r_sq);
 
   /**
-     Second derivative of the radial part of a basis function.  A basis 
-     function can be factored into \f$x^{i}y^{j}z^{k}\theta(r)\f$ where 
-     \f$\theta(r)\f$ is the radial portion of the basis function.  
-     The function is in terms of \f$r^2\f$ instead of \f$r\f$ to make it's 
-     evaluation faster.  To evaluate \f$\theta'(r)\f$, evaluate the 
+     Second derivative of the radial part of a basis function.  A basis
+     function can be factored into \f$x^{i}y^{j}z^{k}\theta(r)\f$ where
+     \f$\theta(r)\f$ is the radial portion of the basis function.
+     The function is in terms of \f$r^2\f$ instead of \f$r\f$ to make it's
+     evaluation faster.  To evaluate \f$\theta'(r)\f$, evaluate the
      function at \f$r^2\f$.
   */
   static double radialFunctionSecondDerivative(
-					QMCBasisFunctionCoefficients& BFC, 
-					int orbital, double r_sq);
-
-  double basis_function(int which_BFC, 
-			QMCBasisFunctionCoefficients& BFC, 
-			int orbital, Array1D <double>& X);
-
-  void grad_basis_function(int which_BFC, 
-			   QMCBasisFunctionCoefficients& BFC, 
-			   int orbital, Array1D <double>& X, 
-			   Array1D <double>& grad);
-
-  double laplacian_basis_function(int which_BFC,
-				  QMCBasisFunctionCoefficients& BFC, 
-				  int orbital, Array1D <double>& X);
-
+                                        QMCBasisFunctionCoefficients& BFC,
+                                        int orbital, double r_sq);
 
   /**
      Interpolation of the radial part of a basis function.  A basis function 

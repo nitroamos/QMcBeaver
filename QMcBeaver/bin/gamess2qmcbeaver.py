@@ -1,123 +1,180 @@
-#!/usr/bin/env python
-
-#            QMcBeaver
-#
-#         Constructed by 
-#
-#     Michael Todd Feldmann 
-#              and 
-#   David Randall "Chip" Kent IV
-#
-# Copyright 2000.  All rights reserved.
-#
-# drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
+#!usr/bin/env python
 
 import sys
 import string
-from double_factorial import *
 
-Infile=sys.argv[1]
-IN=open(Infile,'r')
-gamesdata=IN.readlines()
+PI = 3.14159265359
+
+def normalize( xexp, yexp, zexp, precoeff, expcoeff):
+    precoeff = string.atof(precoeff)
+    expcoeff = string.atof(expcoeff)
+
+    value = 0
+    if xexp == 0 and yexp == 0 and zexp == 0:
+        value = 2.0 * expcoeff**(3.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
+    elif xexp == 1 and yexp == 0 and zexp == 0:
+        value = 4.0 * expcoeff**(5.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
+    elif xexp == 0 and yexp == 1 and zexp == 0:
+        value = 4.0 * expcoeff**(5.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
+    elif xexp == 0 and yexp == 0 and zexp == 1:
+        value = 4.0 * expcoeff**(5.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
+    elif xexp == 2 and yexp == 0 and zexp == 0:
+        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                3.0**(-0.5)
+    elif xexp == 0 and yexp == 2 and zexp == 0:
+        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                3.0**(-0.5)
+    elif xexp == 0 and yexp == 0 and zexp == 2:
+        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                3.0**(-0.5)
+    elif xexp == 1 and yexp == 1 and zexp == 0:
+        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
+    elif xexp == 1 and yexp == 0 and zexp == 1:
+        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
+    elif xexp == 0 and yexp == 1 and zexp == 1:
+        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
+    elif xexp == 3 and yexp == 0 and zexp == 0:
+        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                15.0**(-0.5)
+    elif xexp == 0 and yexp == 3 and zexp == 0:
+        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                15.0**(-0.5)
+    elif xexp == 0 and yexp == 0 and zexp == 3:
+        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                15.0**(-0.5)
+    elif xexp == 2 and yexp == 1 and zexp == 0:
+        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                15.0**(-0.5)
+    elif xexp == 2 and yexp == 0 and zexp == 1:
+        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                15.0**(-0.5)
+    elif xexp == 1 and yexp == 2 and zexp == 0:
+        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                15.0**(-0.5)
+    elif xexp == 0 and yexp == 2 and zexp == 1:
+        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                15.0**(-0.5)
+    elif xexp == 1 and yexp == 0 and zexp == 2:
+        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                15.0**(-0.5)
+    elif xexp == 0 and yexp == 1 and zexp == 2:
+        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
+                15.0**(-0.5)
+    elif xexp == 1 and yexp == 1 and zexp == 1:
+        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
+    else:
+        print "ERROR in normalize!"
+        value = 0
+    return value * precoeff
+
+Infile = sys.argv[1]
+IN = open(Infile,'r')
+gamess_output = IN.readlines()
 IN.close()
 
-Outfile=sys.argv[1][0:len(sys.argv[1])-4]+".ckmf"
-OUT=open(Outfile,'w')
+Datafile = sys.argv[1][0:len(sys.argv[1])-7] + "dat"
+IN2 = open(Datafile,'r')
+gamess_data = IN2.readlines()
+IN2.close()
+                       
+Outfile = sys.argv[1][0:len(sys.argv[1])-7] + "ckmf"
+OUT = open(Outfile,'w')
+
+# Get the SCF type and run type of the calculation.  Usable SCF types are RHF,
+# ROHF, and MCSCF.  Usable run types are ENERGY and OPTIMIZE.
+
+run_type = "ENERGY"
+scf_type = "RHF"
+
+# Get run type and scf type
+
+for line in gamess_output:
+    if string.find(line,'$CONTRL') != -1:
+        control_line = string.split(line)
+        for element in control_line:
+            if string.find(element,'SCFTYP=') != -1:
+                scf_type = element[7:len(element)]
+            elif string.find(element,'RUNTYP=') != -1:
+                run_type = element[7:len(element)]
+
+#################### EXTRACT GEOMETRY: START ####################
+
+# Find where the geometry is stored.
+
+if run_type == "ENERGY":
+    for i in range(len(gamess_output)):
+        if string.find(gamess_output[i], 'RUN TITLE') != -1:
+            start_geometry = i
+        if string.find(gamess_output[i], 'INTERNUCLEAR DISTANCES') != -1:
+            end_geometry = i
+            break
+
+elif run_type == "OPTIMIZE":
+    for i in range(len(gamess_output)):
+        if string.find(gamess_output[i],'EQUILIBRIUM GEOMETRY LOCATED') != -1:
+            start_geometry = i
+            for j in range(i,len(gamess_output)):
+                if string.find(gamess_output[j],'INTERNUCLEAR DISTANCES') !=-1:
+                    end_geometry = j
+                    break
+            break    
+
+geom_data = gamess_output[start_geometry:end_geometry]
+geometry = []
+
+start = 0
+
+if run_type == "ENERGY":
+    for line in geom_data:
+        if start: geometry = geometry + [line]
+        if string.find(line,'CHARGE') != -1: start = 1
+
+elif run_type == "OPTIMIZE":
+    for line in geom_data:
+        if start == 2: geometry = geometry + [line]
+        if string.find(line,'CHARGE') != -1: start = start + 1
+
+geometry = geometry[:len(geometry)-1]
+
+#split up the data
+for i in range(len(geometry)):
+    geometry[i] = string.split(geometry[i])
+    for j in range(2,5):
+        geometry[i][j] = string.atof(geometry[i][j])
+
+#convert from ANGs to BOHR if necessary
 
 ANGtoBOHRconversion = 1.0/0.529177249
 
-##################  EXTRACT GEOMETRY: START #########################
-
-# determine if single point or geometry opt
-geopt = 0
-for line in gamesdata:
-    if string.find(line,'RUNTYP=OPTIMIZE') != -1: geopt = 1
-
-if geopt == 0:
-    # extract the initial geometry in BOHR
-    for i in range(len(gamesdata)):
-        if string.find(gamesdata[i], 'RUN TITLE') != -1:
-            start = i
-        if string.find(gamesdata[i], 'INTERNUCLEAR DISTANCES') != -1:
-            end = i
-            break
-    data = gamesdata[start:end]
-    geometry = []
-    start = 0
-    for line in data:
-        if start : geometry = geometry + [line]
-        if string.find(line,'CHARGE') != -1: start = 1
-    geometry = geometry[:len(geometry)-1]
-
-    # split up the data
-    for i in range(len(geometry)):
-        geometry[i] = string.split(geometry[i])
-        for j in range(2,5):
-            geometry[i][j] = string.atof(geometry[i][j])
-
-if geopt == 1:
-    # extract the optimized geometry in ANG
-    start = 10000000; end = 0
-    for i in range(len(gamesdata)):
-        if string.find(gamesdata[i], 'EQUILIBRIUM GEOMETRY LOCATED') != -1:
-            start = i
-        if string.find(gamesdata[i], 'INTERNUCLEAR DISTANCES') != -1 \
-           and i > start:
-            end = i
-            break
-    data = gamesdata[start:end]
-    geometry = []
-    start = 0
-    for line in data:
-        print line
-        if start == 2 : geometry = geometry + [line]
-        if string.find(line,'CHARGE') != -1: start = start + 1
-    geometry = geometry[1:len(geometry)-1]
-    print geometry
-    
-    # split up the data
-    for i in range(len(geometry)):
-        print i
-        geometry[i] = string.split(geometry[i])
-        for j in range(2,5):
-            print j
-            geometry[i][j] = string.atof(geometry[i][j])
-
-    # convert from ANGS to BOHR if necessary
-    changeunits = 0
-    for line in data:
-        print line
-        if string.find(line,'(ANGS)') != -1: changeunits = 1
-    if changeunits == 1:
+for line in geom_data:
+    if string.find(line,'ANGS') != -1:
         for i in range(len(geometry)):
-            print i
             for j in range(2,5):
-                print j
                 geometry[i][j] = geometry[i][j] * ANGtoBOHRconversion
 
-##################  EXTRACT GEOMETRY: END  #########################
+#################### EXTRACT GEOMETRY: END ######################
 
-##################  EXTRACT BASIS SET: BEGIN #######################
+#################### EXTRACT BASIS SET: BEGIN ###################
 
-start = 0
+start_basis = 0
+end_basis = 0
+for i in range(len(gamess_output)):
+    if string.find(gamess_output[i], 'ATOMIC BASIS SET') != -1:
+        start_basis = i
+    if string.find(gamess_output[i], '$CONTRL OPTIONS') != -1:
+        end_basis = i
+        break
+basisdata = gamess_output[start_basis:end_basis]
+
 end = 0
-for i in range(len(gamesdata)):
-    if string.find(gamesdata[i], 'ATOMIC BASIS SET') != -1:
-        start = i
-    if string.find(gamesdata[i], '$CONTRL OPTIONS') != -1:
+for i in range(len(basisdata)):
+    if string.find(basisdata[i],'TOTAL NUMBER OF SHELLS') != -1 :
         end = i
         break
-data = gamesdata[start:end]
-
-end = 0
-for i in range(len(data)) :
-    if string.find(data[i],'TOTAL NUMBER OF SHELLS') != -1 :
+    if string.find(basisdata[i],'TOTAL NUMBER OF BASIS SET SHELLS') != -1 :
         end = i
         break
-    if string.find(data[i],'TOTAL NUMBER OF BASIS SET SHELLS') != -1 :
-        end = i
-        break
-basisdata = data[7:end]
+basisdata = basisdata[7:end]
 
 basis = []
 atom = []
@@ -152,116 +209,194 @@ atom = atom + [bf]
 basis = basis + [atom]
 
 # extract some flags data from this section
-for line in data:
+for line in gamess_output:
     if string.find(line,'TOTAL NUMBER OF BASIS FUNCTIONS') !=-1 :
-        nbasisfunc = string.split(line)[6]
+        nbasisfunc = string.atoi(string.split(line)[6])
     if string.find(line,'NUMBER OF CARTESIAN GAUSSIAN BASIS FUNCTIONS') !=-1 :
-        nbasisfunc = string.split(line)[7]
+        nbasisfunc = string.atoi(string.split(line)[7])
     if string.find(line,'CHARGE OF MOLECULE') !=-1 :
-        charge = string.split(line)[4]
+        charge = string.atoi(string.split(line)[4])
     if string.find(line,'TOTAL NUMBER OF ATOMS') !=-1 :
-        atoms = string.split(line)[5]
+        atoms = string.atoi(string.split(line)[5])
     if string.find(line,'NUMBER OF OCCUPIED ORBITALS (ALPHA)') != -1 :
         nalpha = string.atoi(string.split(line)[6])
     if string.find(line,'NUMBER OF OCCUPIED ORBITALS (BETA )') != -1 :
         nbeta = string.atoi(string.split(line)[7])
 
-##################  EXTRACT BASIS SET: END #######################
+#################### EXTRACT BASIS SET: END #######################
 
-##################  EXTRACT WAVEFUNCTION: BEGIN ##################
+#################### EXTRACT WAVEFUNCTION: BEGIN ##################
 
-start = -1
-end = -1
-for i in range(len(gamesdata)):
-    if string.find(gamesdata[i],'MOLECULAR ORBITALS') !=-1 :
-        start = i
-    if string.find(gamesdata[i],'EIGENVECTORS') !=-1 :
-        start = i
-    if string.find(gamesdata[i],'ENERGY COMPONENTS') != -1 :
-        end = i - 2
-data = gamesdata[start+2:end]
-for i in range(len(data)) :
-    if string.find(data[i],'......') !=-1 :
-        end = i
-        data = data[:end]
-        break
-data = data + ['\n']
+# Find where the wavefunction is in the .dat file.
 
-temp = []
-oldbreak = 0
-for i in range(len(data)) :
-    if data[i] == '\n' :
-        newbreak = i
-        temp = temp + [data[oldbreak+4:newbreak]]
-        oldbreak = newbreak
+if scf_type == "RHF":
 
-for i in range(len(temp)) :
-    for j in range(len(temp[i])) :
-        temp[i][j] = string.split(temp[i][j])
-        if temp[i][j][2] == 'XXX' or \
-           temp[i][j][2] == 'YYY' or \
-           temp[i][j][2] == 'ZZZ' or \
-           temp[i][j][2] == 'XXY' or \
-           temp[i][j][2] == 'XXZ' or \
-           temp[i][j][2] == 'YYX' or \
-           temp[i][j][2] == 'YYZ' or \
-           temp[i][j][2] == 'ZZX' or \
-           temp[i][j][2] == 'ZZY' or \
-           temp[i][j][2] == 'XYZ' :
-            end = 3
-        else : end = 4
-        temp[i][j] = temp[i][j][end:]
-temp = temp[1:]
+    for i in range(len(gamess_data)):
+        if string.find(gamess_data[i],'E(RHF)=') != -1:
+            energy_data = string.split(gamess_data[i])
+            for j in range(len(energy_data)):
+                if (energy_data[j] == "E(RHF)="):
+                    energy = energy_data[j+1]
+                    energy = energy[0:len(energy)-1]
+                    break
+            break
+
+    for i in range(len(gamess_data)):
+        if string.find(gamess_data[i],'$VEC') != -1:
+            start_wavefunction = i+1
+            break
+    for j in range(start_wavefunction,len(gamess_data)):
+        if string.find(gamess_data[j],'$END') != -1:
+            end_wavefunction = j
+            break
+
+elif scf_type == "MCSCF":
+
+    for i in range(len(gamess_data)):
+
+        if string.find(gamess_data[i],'NATURAL ORBITALS') != -1:
+            start_mc = i
+
+    for j in range(start_mc,len(gamess_data)):
+        if string.find(gamess_data[j],'E(MCSCF)=') != -1:
+            energy_line = string.split(gamess_data[j])
+            for k in range(len(energy_line)):
+                if (energy_line[k] == "E(MCSCF)="):
+                    energy = energy_line[k+1]
+                    energy = energy[0:len(energy)-1]
+                    break
+            break
+
+    for j in range(start_mc,len(gamess_data)):
+        if string.find(gamess_data[j],'$VEC') != -1:
+            start_wavefunction = j+1
+            for k in range(j,len(gamess_data)):
+                if string.find(gamess_data[k],'$END') != -1:
+                    end_wavefunction = k
+                    break
+            break
+
+# Get the wavefunction parameters from the .dat file.
+                        
+orbital_coeffs = [] 
+for n in range(start_wavefunction, end_wavefunction):
+    len_line = len(gamess_data[n])
+    number_of_entries = len_line/15
+    line_data = range(number_of_entries)
+    for i in range(number_of_entries):
+        line_data[number_of_entries-i-1] = \
+                   gamess_data[n][len_line-15*(i+1)-1:len_line-15*i-1]
+    for j in range(len(line_data)):
+        line_data[j] = string.atof(line_data[j])
+    orbital_coeffs.append(line_data)
 
 wavefunction = []
-line = []
-for i in range(string.atoi(nbasisfunc)) :
-    for j in range(len(temp)) :
-        line = line + temp[j][i]
-    wavefunction = wavefunction + [line]
-    line = []
 
-norbitals = len(wavefunction[0])
-        
-##################  EXTRACT WAVEFUNCTION: END   ##################
+current_index = 1
+m = start_wavefunction+1
+temp_coeffs = orbital_coeffs[0]
+while 1:
+    wavefunction_line = string.split(gamess_data[m])
+    if string.atoi(wavefunction_line[0]) == current_index:
+        temp_coeffs = temp_coeffs + orbital_coeffs[m-start_wavefunction]
+    else:
+        wavefunction.append(temp_coeffs)
+        current_index = current_index+1
+        temp_coeffs = orbital_coeffs[m-start_wavefunction]
+    if m == end_wavefunction-1:
+        wavefunction.append(temp_coeffs)
+        break
+    else:
+        m = m+1
+norbitals = len(wavefunction)
 
-##################  EXTRACT ENERGY: BEGIN  #######################
+# Get the occupation and CI coefficents.
 
-start = -1
-for i in range(len(gamesdata)):
-    if string.find(gamesdata[i],'ENERGY COMPONENTS') !=-1 :
-        start = i
-for line in gamesdata[start:start+20]:
-    if string.find(line,'TOTAL ENERGY') !=-1 :
-        energy = string.split(line)[3]
-        
-##################  EXTRACT ENERGY: END   ########################
+if scf_type == "RHF":
+    AlphaOccupation = [0]
+    BetaOccupation = [0]
+    AlphaOccupation[0] = range(norbitals)
+    BetaOccupation[0] = range(norbitals)
 
-##################  SET RUN TYPE: BEGIN   ########################
+    for i in range(nalpha):
+        AlphaOccupation[0][i] = 1
+    for j in range(nalpha,norbitals):
+        AlphaOccupation[0][j] = 0
 
-run_type = 'variational'
+    for i in range(nbeta):
+        BetaOccupation[0][i] = 1
+    for j in range(nbeta,norbitals):
+        BetaOccupation[0][j] = 0
 
-##################  SET RUN TYPE: END     ########################
+    ndeterminants = 1
+    CI_coeffs = [1]
+
+elif scf_type == "MCSCF":
+    for i in range(len(gamess_output)):
+        if string.find(gamess_output[i],'NUMBER OF CORE ORBITALS') != -1:
+            core_line = string.split(gamess_output[i])
+            ncore = string.atoi(core_line[5])
+            break
+    for i in range(len(gamess_output)):
+        if string.find(gamess_output[i],'FINAL MCSCF ENERGY') != -1:
+            start_mc_data = i
+            break
+
+    for j in range(start_mc_data,len(gamess_output)):
+        if string.find(gamess_output[j],'ALPHA') != -1:
+            start_ci = j+2
+            break
+    
+    for i in range(start_ci,len(gamess_output)):
+        if string.find(gamess_output[i],'DENSITY MATRIX') != -1:
+            end_ci = i-1
+            break
+
+    ndeterminants = end_ci - start_ci
+
+    AlphaOccupation = range(ndeterminants)
+    BetaOccupation = range(ndeterminants)
+    CI_coeffs = range(ndeterminants)
+
+    for i in range(ndeterminants):
+        AlphaOccupation[i] = range(norbitals)
+        BetaOccupation[i] = range(norbitals)
+
+    for i in range(ndeterminants):
+        for j in range(ncore):
+            AlphaOccupation[i][j] = 1
+            BetaOccupation[i][j] = 1
+
+    for i in range(ndeterminants):
+        ci_line = string.split(gamess_output[i+start_ci])
+        CI_coeffs[i] = ci_line[4]
+        alpha_occ = ci_line[0]
+        beta_occ = ci_line[2]
+        for j in range(len(alpha_occ)):
+            AlphaOccupation[i][j+ncore] = string.atoi(alpha_occ[j])
+            BetaOccupation[i][j+ncore] = string.atoi(beta_occ[j])
 
 ##################  PRINT FLAGS: BEGIN    ########################
 
 OUT.write('&flags\n')
-OUT.write('atoms\n %s\n'%atoms)
-OUT.write('charge\n %s\n'%charge)
+OUT.write('atoms\n %i\n'%atoms)
+OUT.write('charge\n %i\n'%charge)
 OUT.write('energy\n %s\n'%energy)
-OUT.write('norbitals\n %s\n'%norbitals)
-OUT.write('nbasisfunc\n %s\n'%nbasisfunc)
-OUT.write('run_type\n %s\n'%run_type)
+OUT.write('norbitals\n %i\n'%norbitals)
+OUT.write('nbasisfunc\n %i\n'%nbasisfunc)
+OUT.write('ndeterminants\n %i\n'%ndeterminants)
+OUT.write('run_type\n variational\n')
 OUT.write('chip_and_mike_are_cool\n Yea_Baby!\n')
 OUT.write('&\n')
 
-##################  PRINT FLAGS: END      #######################        
+##################  PRINT FLAGS: END      #######################
 
 ##################  PRINT GEOMETRY: BEGIN #######################
 
 OUT.write('&geometry\n')
 for line in geometry:
-    OUT.write('%s\t%i\t%f\t%f\t%f\n'%(line[0],string.atof(line[1]),line[2],line[3],line[4]))
+    OUT.write('%s\t%i\t%f\t%f\t%f\n'\
+                       %(line[0],string.atof(line[1]),line[2],line[3],line[4]))
 OUT.write('&\n')
 
 ##################  PRINT GEOMETRY: END  ########################
@@ -389,12 +524,12 @@ for atom in geometry :
             OUT.write('\t%i\t%s\n'%(len(pbf),'py'))
             for gaussian in pbf :
                 OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,1,0,gaussian[3],gaussian[1])))   
+                             normalize(0,1,0,gaussian[3],gaussian[1])))
             OUT.write('\t%i\t%s\n'%(len(pbf),'pz'))
             for gaussian in pbf :
                 OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
                              normalize(0,0,1,gaussian[3],gaussian[1])))
-                
+
 OUT.write('&\n')
 
 ##################  PRINT BASIS: END     ########################
@@ -403,144 +538,35 @@ OUT.write('&\n')
 
 OUT.write('&wavefunction\n')
 
-for i in range(norbitals) :
-    if i < nalpha : OUT.write('1 ')
-    else : OUT.write('0 ')
-    if i < nbeta : OUT.write('1\n')
-    else : OUT.write('0\n')
-    for j in range(string.atoi(nbasisfunc)) :
-        OUT.write('\t%s'%wavefunction[j][i])
+for i in range(norbitals):
+    for j in range(nbasisfunc):
+        OUT.write('\t%s'%wavefunction[i][j])
         if (j+1)%3 == 0  : OUT.write('\n')
         else : OUT.write('\t')
     OUT.write('\n\n')
 
+OUT.write("Alpha Occupation\n")
+for i in range(ndeterminants):
+    for j in range(norbitals):
+        OUT.write('%i\t'%AlphaOccupation[i][j])
+    OUT.write('\n')
+OUT.write('\n')
+
+OUT.write("Beta Occupation\n")
+for i in range(ndeterminants):
+    for j in range(norbitals):
+        OUT.write('%i\t'%BetaOccupation[i][j])
+    OUT.write('\n')
+OUT.write('\n')
+
+OUT.write("CI Coeffs\n")
+for i in range(ndeterminants):
+    OUT.write('%s\n'%CI_coeffs[i])
+OUT.write('\n')
+
 OUT.write('&\n')
 
 ##################  PRINT WAVEFUNCTION: END   ###################
-
-
-def periodic_table(i):
-    mass=0.0
-    i=int(i)
-    if(i==1):
-        mass=1.0
-    elif(i==2):
-        mass=4.0
-    elif(i==3):
-        mass=7.0
-    elif(i==4):
-        mass=9.0
-    elif(i==5):
-        mass=11.0
-    elif(i==6):
-        mass=12.0
-    elif(i==7):
-        mass=14.0
-    elif(i==8):
-        mass=16.0
-    elif(i==9):
-        mass=19.0
-    elif(i==10):
-        mass=20.0
-    elif(i==11):
-        mass=23.0
-    elif(i==12):
-        mass=24.0
-    elif(i==13):
-        mass=27.0
-    elif(i==14):
-        mass=28.0
-    elif(i==15):
-        mass=31.0
-    elif(i==16):
-        mass=32.0
-    elif(i==17):
-        mass=35.0
-    elif(i==18):
-        mass=40.0
-    elif(i==19):
-        mass=39.0
-    elif(i==20):
-        mass=40.0
-    elif(i==21):
-        mass=45.0
-    elif(i==22):
-        mass=48.0
-    elif(i==23):
-        mass=51.0
-    elif(i==24):
-        mass=52.0
-    elif(i==25):
-        mass=55.0
-    elif(i==26):
-        mass=56.0
-    elif(i==27):
-        mass=59.0
-    elif(i==28):
-        mass=59.0
-    elif(i==29):
-        mass=64.0
-    elif(i==30):
-        mass=65.0
-    elif(i==31):
-        mass=70.0
-    elif(i==32):
-        mass=73.0
-    elif(i==33):
-        mass=75.0
-    elif(i==34):
-        mass=79.0
-    elif(i==35):
-        mass=80.0
-    elif(i==36):
-        mass=84.0
-    elif(i==37):
-        mass=85.0
-    elif(i==38):
-        mass=88.0
-    elif(i==39):
-        mass=89.0
-    elif(i==40):
-        mass=91.0
-    elif(i==41):
-        mass=93.0
-    elif(i==42):
-        mass=96.0
-    elif(i==43):
-        mass=98.0
-    elif(i==44):
-        mass=101.0
-    elif(i==45):
-        mass=103.0
-    elif(i==46):
-        mass=106.0
-    elif(i==47):
-        mass=108.0
-    elif(i==48):
-        mass=112.0
-    elif(i==49):
-        mass=115.0
-    elif(i==50):
-        mass=119.0
-    elif(i==51):
-        mass=122.0
-    elif(i==52):
-        mass=128.0
-    elif(i==53):
-        mass=127.0
-    elif(i==54):
-        mass=131.0
-    elif(i==55):
-        mass=133.0
-    elif(i==56):#this has become tiresome, finish later if needed
-        mass=138.0
-    else:
-        print "Need to pick a real atom type in periodic_table in GamesToCkMf.py"
-        exit(1)
-    conversion=1833.15038419
-    return mass*conversion
-
-
 
 ################## PRINT JASTROW: BEGIN ##############################
 
@@ -568,7 +594,7 @@ if nalpha > 0 and nbeta > 0:
     OUT.write('Parameters: 3.0\n')
     OUT.write('NumberOfConstantTypes: 1\n')
     OUT.write('NumberOfConstantsOfEachType: 1\n')
-    OUT.write('Constants: 0.5\n')      
+    OUT.write('Constants: 0.5\n')
     OUT.write('\n')
 
 # up up jastrow
@@ -580,9 +606,9 @@ if nalpha > 1:
     OUT.write('Parameters: 100.0\n')
     OUT.write('NumberOfConstantTypes: 1\n')
     OUT.write('NumberOfConstantsOfEachType: 1\n')
-    OUT.write('Constants: 0.25\n')      
+    OUT.write('Constants: 0.25\n')
     OUT.write('\n')
-    
+
 # down down jastrow
 if nbeta > 1:
     OUT.write('ParticleTypes: Electron_Down Electron_Down\n')
@@ -592,9 +618,9 @@ if nbeta > 1:
     OUT.write('Parameters: 100.0\n')
     OUT.write('NumberOfConstantTypes: 1\n')
     OUT.write('NumberOfConstantsOfEachType: 1\n')
-    OUT.write('Constants: 0.25\n')      
+    OUT.write('Constants: 0.25\n')
     OUT.write('\n')
-    
+
 # up nuclear jastrow
 if nalpha > 0:
     for i in range(len(atom_types)):
@@ -605,7 +631,7 @@ if nalpha > 0:
         OUT.write('Parameters: 100.0\n')
         OUT.write('NumberOfConstantTypes: 1\n')
         OUT.write('NumberOfConstantsOfEachType: 1\n')
-        OUT.write('Constants: -' + atom_type_charges[i] + '\n')      
+        OUT.write('Constants: -' + atom_type_charges[i] + '\n')
         OUT.write('\n')
 
 # down nuclear jastrow
@@ -618,10 +644,12 @@ if nbeta > 0:
         OUT.write('Parameters: 100.0\n')
         OUT.write('NumberOfConstantTypes: 1\n')
         OUT.write('NumberOfConstantsOfEachType: 1\n')
-        OUT.write('Constants: -' + atom_type_charges[i] + '\n')      
+        OUT.write('Constants: -' + atom_type_charges[i] + '\n')
         OUT.write('\n')
 
 OUT.write('&Jastrow\n')
 
 ################## PRINT JASTROW: END ################################
+
+
 

@@ -39,6 +39,7 @@ for more details.
 #include "Array1D.h"
 #include "Array2D.h"
 #include "Array3D.h"
+#include "Array4D.h"
 #include "LU.h"
 #include "QMCInput.h"
 
@@ -47,9 +48,9 @@ using namespace std;
 
 /** 
   A Slater determinant describing like spin electrons from a 3N dimensional 
-  wavefunction.  This class allows the function, it's gradient, and it's 
+  wavefunction.  This class allows the function, its gradient, and its 
   laplacian to be calculated.
-  */
+*/
 
 class QMCSlater
 {
@@ -64,20 +65,16 @@ public:
     @param input input data for the calculation
     @param startEl first particle in this determinant.
     @param stopEl last particle in this determinant.
-    */
-
-  void initialize(QMCInput *input, int startEl, int stopEl);
+  */
+  void initialize(QMCInput *input, int startEl, int stopEl, Array2D<int> occ);
 
   /**
-    Evaluates the slater determinant and it's first two derivatives at
+    Evaluates the slater determinant and its first two derivatives at
     X.
-
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
-    */
-
+  */
   void evaluate( Array2D<double> &X);
-
 
   /**
     Gets the value of the Slater determinant for the last evaluated 
@@ -85,69 +82,60 @@ public:
     Assuming the basis functions ued to make the determinant are normalized, 
     this value can be normalized by dividing it by \f$\sqrt{M!}\f$, where 
     \f$M\f$ is the number of electrons in this determinant.
-    */
-
-  double getPsi();
-
+  */
+  Array1D<double>* getPsi();
 
   /**
     Gets the ratio of the Slater determinant gradient over the Slater 
     determinant for the last evaluated electronic configuration.  This value 
     does not depend on the normalization of the Slater determinant.
-    */
-
-  Array2D<double> * getGradPsiRatio();
-
+  */
+  Array3D<double>* getGradPsiRatio();
 
   /**
     Gets the ratio of the Slater determinant laplacian over the Slater 
     determinant for the last evaluated electronic configuration.  This value 
     does not depend on the normalization of the Slater determinant.
-    */
-
-  double getLaplacianPsiRatio();
-
+  */
+  Array1D<double>* getLaplacianPsiRatio();
 
   /**
     Returns true if the Slater determinant is singular and false otherwise.
-    */
-
+  */
   bool isSingular();
-
 
   /**
     Sets two QMCSlater objects equal.
-
     @param rhs object to set this object equal to
     */
-
   void operator=(const QMCSlater & rhs );
-
 
  private:
   QMCInput *Input;
   QMCBasisFunction *BF;
   QMCWavefunction  *WF;
 
-  double Psi;
-  double Laplacian_PsiRatio;
-  Array2D<double> Grad_PsiRatio;
-  bool Singular;
+  Array1D<double> Psi;
+  Array1D<double> Laplacian_PsiRatio;
+  Array3D<double> Grad_PsiRatio;
+  Array1D<bool> Singular;
 
   int Start;
   int Stop;
+  Array2D<int> occupation;
 
   double PsiRatio_1electron;
 
-  Array2D <double> D;
-  Array2D <double> D_inv;
-  Array2D <double> Laplacian_D;
-  Array3D <double> Grad_D;
+  Array1D< Array2D<double> > D;
+  Array1D< Array2D<double> > D_inv;
+  Array3D<double> Laplacian_D;
+  Array4D<double> Grad_D;
 
   // Scratch Space
-  Array1D <double> Chi1D;
-  Array2D <double> Chi2D;
-  Array1D <double> Grad1e;
+  Array1D<double> Chi1D;
+  Array1D<double> Chi1D_laplacian;
+  Array2D<double> Chi2D;
+  Array1D<double> Grad1e;
 
   void allocate(int N);
 
@@ -159,10 +147,8 @@ public:
     
     @param startEl first particle in this determinant.
     @param stopEl last particle in this determinant.
-    */
-
+  */
   void setStartAndStopElectronPositions(int startEl, int stopEl); 
-
 
   void initialize_D(Array2D<double> &X);
   void initialize_Laplacian_D(Array2D<double> &X);
@@ -177,8 +163,7 @@ public:
   void calculate_Laplacian_PsiRatio();
   void calculate_Grad_PsiRatio();
 
-  void update_D_inverse_and_Psi();
-
+  void update_D_inverse_and_Psi(int i);
 };
 
 #endif

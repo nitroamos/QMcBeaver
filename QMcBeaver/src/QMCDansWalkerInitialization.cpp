@@ -11,9 +11,6 @@ QMCDansWalkerInitialization::QMCDansWalkerInitialization(QMCInput * INPUT)
   initializeArrays();
 }
 
-// This allocates the arrays that hold the CubicSplines for the distributions
-// for generating the coordinates.
-
 void QMCDansWalkerInitialization::initializeArrays()
 {
   phiSplines.allocate(19);
@@ -478,7 +475,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
   double rv;  //uniform [0,1] random variable
   for (int i=0; i<Norbitals; i++)
     {
-      if (Input->WF.AlphaOccupation(i) == 1)
+      if (Input->WF.AlphaOccupation(0,i) == 1)
 	{
           sum = 0.0;
           rv = ran1(&Input->flags.iseed);
@@ -495,7 +492,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 	    }
 	}
 
-      if (Input->WF.BetaOccupation(i) == 1)
+      if (Input->WF.BetaOccupation(0,i) == 1)
 	{
 	  sum = 0.0;
           rv = ran1(&Input->flags.iseed);
