@@ -22,6 +22,8 @@ class ControlMake:
         print 'System Options'
         print '\tdefault'
         print '\tlinux'
+        print '\titanium'
+        print '\tteragrid'
         print '\tinsure'
         print '\tsgi'
         print '\tllnl'
@@ -62,6 +64,7 @@ class ControlMake:
 
     def testSysValidity(self):
         if self.SYS != 'default' and self.SYS != 'linux' and \
+           self.SYS != 'itanium' and self.SYS != 'teragrid' and \
            self.SYS != 'insure' and self.SYS != 'sgi' and \
            self.SYS != 'llnl' and self.SYS != 'lanl' and \
 	   self.SYS != 'cplant' and \
@@ -81,6 +84,28 @@ class ControlMake:
 
     def setBase(self):
         if   self.SYS == 'linux':
+            self.MAKE = 'gmake'
+            self.EXE  = ''
+            self.CXX  = 'g++ -static -Wall'
+            self.DEP  = '-MM'
+            self.setOptimize()
+            self.DBG  = ''
+            self.PFL  = ''
+            self.PLL  = ''
+            self.LNK  = '-lm'
+
+        elif   self.SYS == 'itanium':
+            self.MAKE = 'gmake'
+            self.EXE  = ''
+            self.CXX  = 'g++ -static -Wall'
+            self.DEP  = '-MM'
+            self.setOptimize()
+            self.DBG  = ''
+            self.PFL  = ''
+            self.PLL  = ''
+            self.LNK  = '-lm'
+
+        elif   self.SYS == 'teragrid':
             self.MAKE = 'gmake'
             self.EXE  = ''
             self.CXX  = 'g++ -static -Wall'
@@ -183,6 +208,12 @@ class ControlMake:
             #self.OPT = '-O3 -felide-constructors -fnonnull-objects -ffast-math'
             self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated' #-lm' #--without-shared' # -ltheotherstl'
 
+        elif self.SYS == 'itanium':
+            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated' #-lm'
+
+        elif self.SYS == 'teragrid':
+            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated' #-lm'
+
         elif self.SYS == 'insure':
             self.OPT = '-O3'
             
@@ -211,6 +242,12 @@ class ControlMake:
 
     def setDebug(self):
         if self.SYS == 'linux':
+            self.DBG = '-g'
+
+        elif self.SYS == 'itanium':
+            self.DBG = '-g'
+
+        elif self.SYS == 'teragrid':
             self.DBG = '-g'
 
         elif self.SYS == 'insure':
@@ -245,6 +282,12 @@ class ControlMake:
         if self.SYS == 'linux':
             self.CXX = 'mpiCC'
 
+        elif self.SYS == 'itanium':
+            self.CXX = 'mpiCC'
+
+        elif self.SYS == 'teragrid':
+            self.CXX = 'mpiCC'
+
         elif self.SYS == 'insure':
             self.LNK = self.LNK + ' -lm -lmpi++ -lmpio -lmpi -ltstdio ' \
                        + '-ltrillium -largs -lt'
@@ -271,6 +314,12 @@ class ControlMake:
 
     def setProfile(self):
         if self.SYS == 'linux':
+            self.PFL = '-p'
+
+        elif self.SYS == 'itanium':
+            self.PFL = '-p'
+
+        elif self.SYS == 'teragrid':
             self.PFL = '-p'
 
         elif self.SYS == 'insure':

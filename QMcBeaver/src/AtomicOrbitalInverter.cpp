@@ -75,6 +75,7 @@ void AtomicOrbitalInverter::initialize(int Xn, int Yn, int Zn,Array1D<double> B,
   PHI_inp.allocate(npoints_phi);
   
   double rend1,rend2,rend3,dr1,dr2,dr3,dtheta,dphi,r,f;
+  r = 0.0;
   
   rend1 =  cutoff1;
   rend2 =  cutoff2;
@@ -220,6 +221,8 @@ double AtomicOrbitalInverter::invert_gaussians(long & iseed)
   double R=ran1(&iseed);
   double sum_b=0.0;
   int I,J;
+  I = 0;
+  J = 0;
   for(int i=0;i<b.dim1();i++)
     {
       for(int j=0;j<b.dim1();j++)
