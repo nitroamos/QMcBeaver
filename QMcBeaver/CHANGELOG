@@ -1,3 +1,10 @@
+Wed, 13 Oct 2004, Chip Kent
+
+1. Improved the script to build official releases so that it appends the
+   version number to the directory.
+
+2. Added an example input file directory with a few entries.
+
 Wed, 8 Sept 2004, Daniel R. Fisher
 
 1.  In the constructor function for QMCWalker, set the trial step size, dR2,
