@@ -33,31 +33,55 @@ include ../Makefile.config
 OBJECTS  := $(patsubst %.cpp,$(DIROBJ)/%.o,$(wildcard *.cpp))
 DEPFILES := $(patsubst %.cpp,$(DIROBJ)/%.d,$(wildcard *.cpp))
 
-all: QMcBeaver.e
+all: $(DIROBJ).e
 
-QMcBeaver.e: $(OBJECTS) $(LIB)
-	$(CXX) $(OPT) $(LIB) $(INC) -o ../bin/$(EXE) $^ $(LINK)
-
-$(DIROBJ)/Makefile.dep: $(DEPFILES)
-	@cat $(DEPFILES) > $(DIROBJ)/Makefile.dep
-
-include $(DIROBJ)/Makefile.dep
-
-$(LIB):
+#if we selected the updateall target, then we can't allow gmake to recreate the
+#dependency files because the config dependent options are all different
+ifneq ($(MAKECMDGOALS),updateall)
 
 $(DIROBJ)/%.d: %.cpp ../include/%.h
-	$(CXX) $(INC) $(DEP) $< | sed -e "s/$*\.o/$(DIROBJ)\/$*\.o/g" >> $@
-	@echo "	$(CXX) $(OPT) $(INC) -c -o $(patsubst %.cpp,$(DIROBJ)/%.o,$<) $*.cpp" >> $@
+	@rm -f $@
+	@echo "Writing $*.d"
+	@$(CXX) $(INC) $(DEP) $< | sed -e "s/$*\.o/$(DIROBJ)\/$*\.o/g" >> $@
+	@echo "	@echo Compiling $*.o" >> $@
+	@echo "	@$(CXX) $(OPT) $(INC) -c -o $(patsubst %.cpp,$(DIROBJ)/%.o,$<) $*.cpp" >> $@
 	@echo "" >> $@
 	@echo "" >> $@
 
 $(DIROBJ)/QMcBeaver.d: QMcBeaver.cpp
-	$(CXX) $(INC) $(DEP) $< | sed -e "s/QMcBeaver\.o/$(DIROBJ)\/QMcBeaver\.o/g" >> $@
-	@echo "	$(CXX) $(OPT) $(INC) -c -o $(DIROBJ)/QMcBeaver.o QMcBeaver.cpp" >> $@
+	@rm -f $@
+	@echo "Writing QMcBeaver.d"
+	@$(CXX) $(INC) $(DEP) $< | sed -e "s/QMcBeaver\.o/$(DIROBJ)\/QMcBeaver\.o/g" >> $@
+	@echo "	@echo Compiling QMcBeaver.o" >> $@
+	@echo "	@$(CXX) $(OPT) $(INC) -c -o $(DIROBJ)/QMcBeaver.o QMcBeaver.cpp" >> $@
 	@echo "" >> $@
 	@echo "" >> $@
+
+$(DIROBJ)/Makefile.dep: $(DEPFILES)
+	@cat $(DEPFILES) > $(DIROBJ)/Makefile.dep
+	@echo "$(DIROBJ).e: $(OBJECTS)" >> $@
+	@echo "	@echo Creating $(EXE)..." >> $@
+	@echo "	@$(CXX) $(OPT) $(INC) -o ../bin/$(EXE) $(OBJECTS) $(LINK)" >> $@
+
+#This if block makes sure not to update the .d files right before we delete them
+ifneq ($(MAKECMDGOALS),clean)
+-include $(DIROBJ)/Makefile.dep
+endif
+
+else
+
+DIRSET := $(wildcard *_$(SYS))
+include $(addsuffix /Makefile.dep, $(DIRSET))
+
+endif
+
+.PHONY:updateall
+updateall: $(addsuffix .e,$(DIRSET))
 
 .PHONY:clean
 clean:
 	rm -f *.o *~ *#
 	rm -rf ii_files d.files cxx_repository $(DIROBJ)
+
+
+

@@ -32,35 +32,49 @@ include Makefile.config
 
 # generic make procedure
 all: dep 
-	@echo "Compiling..."
-	-cd src; $(MAKE) 
+	@echo "Updating object files..."
+	@-cd src; $(MAKE) 
 
 # this works on some stubborn machines
 bruteforce:
 	@echo "Brute force make procedure..."
 	-cd src; $(CXX) $(OPT) $(INC) -o ../bin/$(EXE) *.cpp $(LINK)
 
-
 .PHONY:dep
 dep: src/$(DIROBJ)/Makefile.dep
-	@echo "Resolving dependencies..."
+	@echo "Updating dependency files..."
 	@mkdir -p src/$(DIROBJ)
-	-cd src; $(MAKE) $(DIROBJ)/Makefile.dep
+	@-cd src; $(MAKE) $(DIROBJ)/Makefile.dep
 
 src/$(DIROBJ)/Makefile.dep:
+
+#when executables are created the first time, the link command
+#was saved. this one command allows one to update all the different
+#executables created on the computer from all the different options
+#(e.g. debug, parallel) assuming that the dependency files haven't
+#changed.
+.PHONY:updateall
+updateall:
+	@echo "Updating all $(SYS) executables..."
+	@-cd src; $(MAKE) updateall
 
 test: all
 	-cd test; $(MAKE)
 
+#this target will remove the object files and dependency files
+#associated with the current Makefile.config
 .PHONY:clean
 clean:
 	-cd src; $(MAKE) clean
 	rm -f *~
+	rm -f bin/$(EXE)
 
-.PHONY:clean
+.PHONY:execlean
 execlean:
-	rm -f bin/QMcBeaver.* bin/pQMcBeaver.*
+	-cd bin
+	-rm -f *.$(SYS)
 
+.PHONY:testclean
 testclean: 
 	-cd test; $(MAKE) clean
 
