@@ -4,7 +4,7 @@
 #define EQ 30
 
 #include "QMCExtendedProperties.h"
-#include <math.h>
+#include "IeeeMath.h"
 
 using namespace std;
 
