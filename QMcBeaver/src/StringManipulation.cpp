@@ -186,7 +186,7 @@ string StringManipulation::longToString(long l)
 
 int StringManipulation::stringToInt(string & s)
 {
-  istrstream istr(s.c_str(),(std::streamsize)s.length());
+  istrstream istr(s.c_str(),(streamsize)s.length());
   int val;
   istr >> val;
   return val;
@@ -194,7 +194,7 @@ int StringManipulation::stringToInt(string & s)
 
 long StringManipulation::stringToLong(string & s)
 {  
-  istrstream istr(s.c_str(),(std::streamsize)s.length());
+  istrstream istr(s.c_str(),(streamsize)s.length());
   long val;
   istr >> val;
   return val;
@@ -202,7 +202,7 @@ long StringManipulation::stringToLong(string & s)
 
 int StringManipulation::hexstringToInt(string & s)
 {
-  istrstream istr(s.c_str(),(std::streamsize)s.length());
+  istrstream istr(s.c_str(),(streamsize)s.length());
   int val;
   istr >> hex >> val;
   return val;
@@ -210,7 +210,7 @@ int StringManipulation::hexstringToInt(string & s)
 
 double StringManipulation::stringToDouble(string & s)
 {
-  istrstream istr(s.c_str(),(std::streamsize)s.length());
+  istrstream istr(s.c_str(),(streamsize)s.length());
   double val;
   istr >> val;
   return val;
