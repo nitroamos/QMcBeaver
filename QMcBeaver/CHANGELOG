@@ -1,3 +1,60 @@
+Tues, 23 Dec 2004, Amos Anderson
+(note! i have not tested these changes anywhere but my G4 laptop. i'll do that soon)
+1.  Modified Dan's multi-determinant specific changes. With a small commenting flip
+    in QMCWavefunction.cpp, the new QMcBeaver can read the old input files.
+
+2.  Added some of the example files i've been using for profiling. This is purely
+    for convenience. Namely, my convenience in finding them again.
+
+3.  Now that I understand the derivative ratio calculations better, I discovered
+    that when calculating the transpose of inverse of the Slater matrix (a minor 
+    index switch) then creating the derivative ratios becomes a dot product.
+
+4.  ATLAS capabilities have now been added. Besides adding the required BLAS like
+    interface, all matrix-matrix multiplication math in QMcBeaver is now fully
+    moved into Array2D.h. Choosing whether to use ATLAS or not is handled by
+    configure.py. ATLAS only makes a difference for larger molecules. A new
+    lib directory to CVS to hold the required libraries with some instructions
+    on how to install them. I also added the required header files to CVS for
+    convenience.
+
+    Just some notes on compiling ATLAS:
+    Compiling ATLAS on cygwin went perfectly.
+    Compiling ATLAS on OSX required me to compile a new GNU compiler (non-Apple modified)
+    Compiling ATLAS on Linux P3 (wolfs) went perfectly.
+    Compiling ATLAS on Irix (origin) failed. I have not tried the online precompiled version.
+
+    Dan did the matrix-vector multiplication transformation to matrix-matrix
+    multiplication as well as some key streamlining modifications in
+    QMCBasisFunction.cpp and QMCSlater.cpp.
+
+    The chosen solution for the multideterminant wavefunction matrix multiplication is as
+    follows. The Slater matrix is dynamically composed before each multiplication using
+    memcpy. I read that memcpy is only 3 lines in assembly, so it should be fast...
+    This means that the multideterminant QMcBeaver requires very little additional
+    memory above the old version.
+
+5.  Array1D now has some of it's methods implemented in ATLAS.
+
+6.  I replaced some of the code in Array1D and Array2D to have them use some of
+    the C memory functions (e.g. memset). This probably helps.   
+
+7.  I have the code read in WF.Coeffs as the transpose of what it was before.
+    That is, nOrbitals is now the first dimension instead of nBasisFunctions.
+    This required very minor modifications in 2 of the initialization schemes.
+    Although ATLAS doesn't care whether multiplying a transpose or not, in princple
+    hand-coded versions are faster?
+
+8.  There were some type-casting warnings in several places of code I decided annoyed
+    me enough to do the casting explicitly.
+
+9.  I modified QMCJastrowElectronElectron.cpp and QMCJastrowElectronNuclear.cpp
+    with a very minor optimization.
+
+10. Some profiling results. With ATLAS on the HMX molecule, QMcBeaver is approximately
+    4 times faster on my G4 laptop, and uses about 10 mb memory. The streamlining non-ATLAS
+    version is about 2 times faster.
+
 Tues, 14 Dec 2004, Daniel R. Fisher
 
 1.  Updated the .ckmf files for the test and example calculations to have the 
