@@ -536,7 +536,7 @@ void QMCManager::equilibration_step()
 void QMCManager::writeEnergyResultsSummary(ostream & strm)
 {
   // Print one iteration out
-  int width = 17;
+  int width = 19;
   double Eave = Properties_total.energy.getAverage();
   double Estd = Properties_total.energy.getStandardDeviation();
   if( Estd > 1.0e6 )

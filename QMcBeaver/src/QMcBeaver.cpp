@@ -52,7 +52,7 @@ void qmcbeaver(int argc, char ** argv)
 {
   Stopwatch timer;
   timer.start();
-  int width = 17;
+  int width = 19;
 
   if(argc < 2)
     {

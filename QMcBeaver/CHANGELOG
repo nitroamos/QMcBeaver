@@ -1,3 +1,8 @@
+Thr, 14 Oct 2004, Chip Kent
+
+1. Improved the output formatting.  For some cases, the columns of 
+   numbers would run together.
+
 Wed, 13 Oct 2004, Chip Kent
 
 1. Improved the script to build official releases so that it appends the

@@ -603,7 +603,7 @@ ostream& operator <<(ostream& strm, QMCProperty &rhs)
   strm << endl;
   */
 
-  int width = 16;
+  int width = 19;
   strm << setw(width) << "DeCorr_depth" << setw(width) << "samples" << setw(width) << "Ave" 
        << setw(width) << "Std" << setw(width) << "StdStd" << setw(width) << "Var" 
        << setw(width) << "VarStd" << endl;

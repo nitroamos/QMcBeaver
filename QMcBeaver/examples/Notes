@@ -3,3 +3,7 @@ The example input files in this directory are just to
 provide complex input examples that run for relatively
 short periods of time.  The parameters are not configured
 to give good results in any reasonable period of time.
+
+The runs here are so short that error calculations are
+impossible and unstable.  Don't be surprised if you
+see NaN's appearing in these calculations.
