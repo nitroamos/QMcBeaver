@@ -24,8 +24,11 @@ void QMCFlags::read_flags(string InFileName)
   string temp_string;
 
   if(!input_file)
-    {
-      cerr << "ERROR: Can't open input file!" << endl;
+   {
+      cerr << "ERROR: Can't open input " << InFileName.c_str() << endl;
+#ifdef _WIN32
+		getchar();
+#endif  
       exit(1);
     }
 
@@ -45,7 +48,7 @@ void QMCFlags::read_flags(string InFileName)
   fusion_threshold = 0.5;
   old_walker_acceptance_parameter = 50;
   zero_out_checkpoint_statistics = 0;
-
+  Ndeterminants = 1;
   dt     = 0.001;
   dt_equilibration               = 0.02;
 
@@ -482,7 +485,11 @@ void QMCFlags::set_filenames(string runfile)
   base_file_name    = file_name;
 
   char my_rank_string[32];
-  snprintf( my_rank_string, 32, "%d", my_rank );
+#ifdef _WIN32
+	  _snprintf( my_rank_string, 32, "%d", my_rank );
+#else    
+	  snprintf( my_rank_string, 32, "%d", my_rank );
+#endif
   config_file_name = temp_dir + base_file_name + "."+my_rank_string + ".cfgs";
 
   basename = file_name;
