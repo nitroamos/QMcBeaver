@@ -15,8 +15,7 @@
 
 #include <iostream>
 
-extern "C" int isnan(double);
-
+#include "IeeeMath.h"
 #include "QMCLineSearchStepLengthSelectionAlgorithm.h"
 
 using namespace std;

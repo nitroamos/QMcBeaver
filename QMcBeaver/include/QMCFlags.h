@@ -233,7 +233,7 @@ class QMCFlags
   /**
      Number of time steps to take for the calculation to equilibrate.
   */
-  int equilibration_steps;
+  unsigned int equilibration_steps;
 
   /**
      Initial time step used during the equilibration of the calculation.
@@ -254,7 +254,7 @@ class QMCFlags
      sampling is used, this can rapidly reach a "good" section of
      configuration space.
   */
-  int CKAnnealingEquilibration1_parameter;
+  unsigned int CKAnnealingEquilibration1_parameter;
 
   /**
      Number of time steps taken on the root processor before the

@@ -867,7 +867,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double forwardGreens,
 
 
   // if the aratio is NaN then reject the move
-  if( isnan(p) != 0 )
+  if( IeeeMath::isnan(p) != 0 )
     {
       cerr << "WARNING: Rejecting trial walker with NaN aratio!" << endl;
       p = 0.0;

@@ -128,7 +128,7 @@ void QMCMikesBracketingStepLengthSelector::bracket(QMCObjectiveFunction *OF,
         {
           scores(i)=results(i).getScore();
 
-          if(isnan(scores(i)) != 0) 
+          if(IeeeMath::isnan(scores(i)) != 0) 
             {
               scores(i) = 1e30;
             }

@@ -13,8 +13,7 @@
 #ifndef QMCWALKER_H
 #define QMCWALKER_H
 
-extern "C" int isnan(double);
-
+#include "IeeeMath.h"
 #include "QMCFunctions.h"
 #include "QMCInitializeWalkerFactory.h"
 #include "QMCProperties.h"

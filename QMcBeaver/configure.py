@@ -128,7 +128,7 @@ class ControlMake:
         if   self.SYS == 'linux':
             self.MAKE = 'gmake'
             self.EXE  = ''
-            self.CXX  = 'g++ -Wall'
+            self.CXX  = 'g++ -Wall -Wno-deprecated'
             self.DEP  = '-MM'
             self.setOptimize()
             self.DBG  = ''
@@ -139,7 +139,7 @@ class ControlMake:
         elif   self.SYS == 'itanium':
             self.MAKE = 'gmake'
             self.EXE  = ''
-            self.CXX  = 'g++ -Wall'
+            self.CXX  = 'g++ -Wall -Wno-deprecated -Wno-long-double'
             self.DEP  = '-MM'
             self.setOptimize()
             self.DBG  = ''
@@ -150,7 +150,7 @@ class ControlMake:
         elif   self.SYS == 'teragrid':
             self.MAKE = 'gmake'
             self.EXE  = ''
-            self.CXX  = 'g++ -Wall'
+            self.CXX  = 'g++ -Wall -Wno-deprecated -Wno-long-double '
             self.DEP  = '-MM'
             self.setOptimize()
             self.DBG  = ''
@@ -205,7 +205,7 @@ class ControlMake:
         elif self.SYS == 'mac':
             self.MAKE = 'make'
             self.EXE  = ''
-            self.CXX  = 'g++ -Wall'
+            self.CXX  = 'g++ -Wall -Wno-deprecated -Wno-long-double'
             self.DEP  = '-MM'
             self.setOptimize()
             self.DBG  = ''
@@ -256,13 +256,13 @@ class ControlMake:
 
     def setOptimize(self):
         if self.SYS == 'linux':
-            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated' 
+            self.OPT = '-O3 -felide-constructors -ffast-math' 
 
         elif self.SYS == 'itanium':
-            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated'
+            self.OPT = '-O3 -felide-constructors -ffast-math'
 
         elif self.SYS == 'teragrid':
-            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated'
+            self.OPT = '-O3 -felide-constructors -ffast-math'
 
         elif self.SYS == 'insure':
             self.OPT = '-O3'
@@ -277,7 +277,7 @@ class ControlMake:
             self.OPT = '-fast'
 
         elif self.SYS == 'mac':
-            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated' 
+            self.OPT = '-O3 -felide-constructors -ffast-math'
 
 	elif self.SYS == 'cplant':
 	    self.OPT = '-O3'
