@@ -45,6 +45,14 @@ def generate_zip_file(version):
     command = "tar -zcvf QMcBeaver-%d.tar.gz QMcBeaver-%d"%(version,version)
     os.system(command)
 
+def generate_docs(version):
+    command = "cd QMcBeaver-%d && doxygen | tee doxy.log"%version
+    os.system(command)
+    command = "cd QMcBeaver-%d/docs/latex && make ps"%version
+    os.system(command)
+    command = "mv QMcBeaver-%d/docs/latex/refman.ps QMcBeaver-API_manual-%d.ps"%(version,version)
+    os.system(command)
+
 if __name__ == '__main__':
     import sys
 
@@ -61,3 +69,5 @@ if __name__ == '__main__':
     set_version_number(versionNumber)
 
     generate_zip_file(versionNumber)
+
+    generate_docs(versionNumber)
