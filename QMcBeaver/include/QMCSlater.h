@@ -29,8 +29,6 @@ FITNESS FOR A  PARTICULAR PURPOSE.  See the GNU General Public License
 for more details. 
 **************************************************************************/
 
-
-
 #ifndef QMCSLATER_H
 #define QMCSLATER_H
 
@@ -45,22 +43,20 @@ for more details.
 
 using namespace std;
 
-
 /** 
-  A Slater determinant describing like spin electrons from a 3N dimensional 
-  wavefunction.  This class allows the function, its gradient, and its 
-  laplacian to be calculated.
+  An array of Slater determinants describing like spin electrons from a 3N 
+  dimensional wavefunction.  This class allows the functions, their gradients, 
+  and their laplacians to be calculated.
 */
 
 class QMCSlater
 {
 public:
   /**
-    Initializes the class and 
-    sets which region of the \f$3N\f$ dimensional electronic configuration 
-    corresponds to electrons in this Slater determinant.  It is assumed 
-    that all electrons in a determinant are grouped together in the 
-    configuration.  
+    Initializes the class and sets which region of the \f$3N\f$ dimensional 
+    electronic configuration corresponds to electrons in these Slater 
+    determinants.  It is assumed that all electrons in a determinant are 
+    grouped together in the configuration.  
     
     @param input input data for the calculation
     @param startEl first particle in this determinant.
@@ -69,33 +65,34 @@ public:
   void initialize(QMCInput *input, int startEl, int stopEl, Array2D<int> occ);
 
   /**
-    Evaluates the slater determinant and its first two derivatives at
-    X.
+    Evaluates the slater determinants and their first two derivatives at X.
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
   */
   void evaluate( Array2D<double> &X);
 
   /**
-    Gets the value of the Slater determinant for the last evaluated 
-    electronic configuration.  The returned value is not normalized to one.  
+    Gets an array of values of the Slater determinants for the last evaluated 
+    electronic configuration.  The returned values are not normalized to one.  
     Assuming the basis functions ued to make the determinant are normalized, 
-    this value can be normalized by dividing it by \f$\sqrt{M!}\f$, where 
-    \f$M\f$ is the number of electrons in this determinant.
+    the values can be normalized by dividing by \f$\sqrt{M!}\f$, where 
+    \f$M\f$ is the number of electrons in the determinants.
   */
   Array1D<double>* getPsi();
 
   /**
-    Gets the ratio of the Slater determinant gradient over the Slater 
-    determinant for the last evaluated electronic configuration.  This value 
-    does not depend on the normalization of the Slater determinant.
+    Gets an array where each element is a ratio of the Slater determinant 
+    gradient over the Slater determinant for the last evaluated electronic 
+    configuration.  These values do not depend on the normalization of the 
+    Slater determinant.
   */
   Array3D<double>* getGradPsiRatio();
 
   /**
-    Gets the ratio of the Slater determinant laplacian over the Slater 
-    determinant for the last evaluated electronic configuration.  This value 
-    does not depend on the normalization of the Slater determinant.
+    Gets an array where each element is a ratio of the Slater determinant 
+    laplacian over the Slater determinant for the last evaluated electronic 
+    configuration.  These values do not depend on the normalization of the 
+    Slater determinant.
   */
   Array1D<double>* getLaplacianPsiRatio();
 
