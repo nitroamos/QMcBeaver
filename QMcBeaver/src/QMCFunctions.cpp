@@ -75,12 +75,15 @@ void QMCFunctions::evaluate(Array2D<double> &X)
   calculate_E_Local();
 }
 
+/*  we end up doing a division with SCF_sum. Therefore, it seems to be critical
+    to make sure we aren't dividing by too small a number*/
 void QMCFunctions::calculate_Psi_quantities()
 {
-  double SCF_sum = 0.0;
+  QMCGreensRatioComponent SCF_sum = 0;
   SCF_Laplacian_PsiRatio = 0.0;
   Laplacian_PsiRatio = 0.0;
 
+  Array1D<QMCGreensRatioComponent> termPsi = Array1D<QMCGreensRatioComponent>(Input->WF.getNumberDeterminants());
   Array1D<double>* alphaPsi = Alpha.getPsi();
   Array1D<double>* alphaLaplacian = Alpha.getLaplacianPsiRatio();
   Array3D<double>* alphaGrad = Alpha.getGradPsiRatio();
@@ -96,61 +99,45 @@ void QMCFunctions::calculate_Psi_quantities()
 	Grad_PsiRatio(i,j) = 0.0;
       }
 
+  for (int i=0; i<Input->WF.getNumberDeterminants(); i++){
+    termPsi(i) = Input->WF.CI_coeffs(i);
+    termPsi(i).multiplyBy((*alphaPsi)(i)).multiplyBy((*betaPsi)(i));
+    SCF_sum += termPsi(i);
+  }
+
   for (int i=0; i<Input->WF.getNumberDeterminants(); i++)
     {
-      double term_psi = 0.0;
-      
-      term_psi = Input->WF.CI_coeffs(i) * (*alphaPsi)(i) * (*betaPsi)(i);
-
-      SCF_sum += term_psi;
-
+      double psiRatio = termPsi(i)/SCF_sum;
       double** term_AlphaGrad = (*alphaGrad).array()[i];
+      double** term_BetaGrad  = (*betaGrad).array()[i];
 
       for (int j=0; j<Input->WF.getNumberAlphaElectrons(); j++)
 	for (int k=0; k<3; k++)
-	  {
-	    SCF_Grad_PsiRatio(j,k) += term_psi * term_AlphaGrad[j][k];
-	  }
-
-      double** term_BetaGrad = (*betaGrad).array()[i];
+	    SCF_Grad_PsiRatio(j,k) += psiRatio*term_AlphaGrad[j][k];
 
       for (int j=0; j<Input->WF.getNumberBetaElectrons(); j++)
 	for (int k=0; k<3; k++)
-	  {
-	    SCF_Grad_PsiRatio(Input->WF.getNumberAlphaElectrons()+j,k) += \
-                                                term_psi * term_BetaGrad[j][k];
-	  }
+	    SCF_Grad_PsiRatio(Input->WF.getNumberAlphaElectrons()+j,k) +=
+	      psiRatio*term_BetaGrad[j][k];
 
-      SCF_Laplacian_PsiRatio += term_psi * ( (*alphaLaplacian)(i) + \
-                                                         (*betaLaplacian)(i) );
+      SCF_Laplacian_PsiRatio += psiRatio*((*alphaLaplacian)(i) + (*betaLaplacian)(i));
     }
-	
-	/*  we end up doing a division with SCF_sum. Therefore, it seems to be critical
-			to make sure we aren't dividing by too small a number*/
-	if(SCF_sum > 0 && SCF_sum <  TOOSMALL) SCF_sum = TOOSMALL; 
-	if(SCF_sum < 0 && SCF_sum > -TOOSMALL) SCF_sum = -TOOSMALL;
-	if(SCF_sum == 0) SCF_sum = TOOSMALL;
   
-	Psi = SCF_sum * Jastrow.getJastrow();
+  QMCGreensRatioComponent jastrowValue = QMCGreensRatioComponent(1.0,1.0,1.0,Jastrow.getLnJastrow());
+  Psi = SCF_sum * jastrowValue;
 
   Array2D<double>* JastrowGrad = Jastrow.getGradientLnJastrow();
 
   for (int i=0; i<Input->WF.getNumberElectrons(); i++)
     for (int j=0; j<3; j++)
-      {
-	SCF_Grad_PsiRatio(i,j) = SCF_Grad_PsiRatio(i,j) / SCF_sum;
 	Grad_PsiRatio(i,j) = SCF_Grad_PsiRatio(i,j) + (*JastrowGrad)(i,j);
-      }
 
-  SCF_Laplacian_PsiRatio = SCF_Laplacian_PsiRatio / SCF_sum;
   Laplacian_PsiRatio = SCF_Laplacian_PsiRatio+Jastrow.getLaplacianLnJastrow();
-
   for(int i=0; i<Input->WF.getNumberElectrons(); i++)
     for(int j=0; j<3; j++)
-      {
 	Laplacian_PsiRatio += (*JastrowGrad)(i,j) *
-	                          (2*Grad_PsiRatio(i,j) - (*JastrowGrad)(i,j));
-      }
+	  (2*Grad_PsiRatio(i,j) - (*JastrowGrad)(i,j));
+
 }
 
 void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X)

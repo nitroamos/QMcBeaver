@@ -19,6 +19,7 @@
 #include "QMCInput.h"
 #include "QMCJastrow.h"
 #include "QMCPotential_Energy.h"
+#include "QMCGreensRatioComponent.h"
 
 using namespace std;
 

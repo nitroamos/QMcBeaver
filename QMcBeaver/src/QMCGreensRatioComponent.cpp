@@ -4,11 +4,13 @@ QMCGreensRatioComponent::QMCGreensRatioComponent()
 {
   initialize();
 }
+
 QMCGreensRatioComponent::QMCGreensRatioComponent(double value)
 {
   initialize();
   k = value;
 }
+
 QMCGreensRatioComponent::QMCGreensRatioComponent(double w, double x, double y,\
 						 double z)
 {
@@ -18,22 +20,18 @@ QMCGreensRatioComponent::QMCGreensRatioComponent(double w, double x, double y,\
   b = y;
   c = z;
 }
+
 QMCGreensRatioComponent::QMCGreensRatioComponent( const \
 						  QMCGreensRatioComponent & rhs )
 {
   *this = rhs;
 }
+
 QMCGreensRatioComponent::~QMCGreensRatioComponent()
 {
   // does nothing
 }
-void QMCGreensRatioComponent::operator=( const QMCGreensRatioComponent & rhs )
-{
-  k = rhs.k;
-  a = rhs.a;
-  b = rhs.b;
-  c = rhs.c;
-}
+
 void QMCGreensRatioComponent::initialize()
 {
   k = 1.0;
@@ -41,156 +39,6 @@ void QMCGreensRatioComponent::initialize()
   b = 1.0;
   c = 0.0;
 }
-double QMCGreensRatioComponent::getValue()
-{
-  return k*pow(a,b)*exp(c);
-}
-double QMCGreensRatioComponent::DivideBy(QMCGreensRatioComponent & denom)
-{
-  // Get resulting exp(stuff) -> get "stuff left over
-  double EXP_EXP = c-denom.c;
-  // Handle pow(a,b)/pow(d.a,d.b)
-  double POW_A, POW_B;
-  SimplifyRatioPowers(a,b,denom.a,denom.b,POW_A,POW_B);
-  // Get resulting BASE_LEFT(EXP_LEFT)
-  double BASE_LEFT, EXP_LEFT;
-  SimplifyRatioPowers(POW_A,POW_B,exp(1.0),-1.0*EXP_EXP,BASE_LEFT,EXP_LEFT);
-      
-  /* If the code has successfully handled largeness/smallness in other parts
-     of this class, then because forward/reverse green's functions have similar
-     magnitudes, there should be no need to protect any function here.*/
-  return k/denom.k * pow(BASE_LEFT,EXP_LEFT);
-}
-
-void QMCGreensRatioComponent::MultiplyBy(QMCGreensRatioComponent &X)
-{
-  double temp_k, temp_a, temp_b, temp_c;
-
-  /*If k and X.k are both very large or very small, their product could overflow or underflow
-    the temp_k variable. This is actually likely because several MultiplyBy iterations are called
-    for molecules with several molecules. If the configuration isn't equilibrated, then very
-    large/small values will start accumulating in the k degree of freedom. So, if this happens,
-    we need to shift the large/small exponents over to the c degree of freedom.*/
-  temp_k = k * X.k;
-  if(fabs(temp_k) > 1e300 || fabs(temp_k) < 1e-300){
-    c += log(k);
-    X.c += log(X.k);
-    k = 1.0;
-    X.k = 1.0;
-    temp_k = 1.0;
-  }
-
-  temp_c = c + X.c;
-
-  if ( fabs(a-1.0) < 1e-15 )
-    {
-      if ( fabs(X.a-1.0) < 1e-15 )
-	{
-	  temp_a = 1.0;
-	  temp_b = 0.0;
-	}
-      else
-	{
-	  temp_a = X.a;
-	  temp_b = X.b;
-	}
-    }
-  else if ( fabs(X.a-1.0) < 1e-15 )
-    {
-      if ( fabs(a-1.0) < 1e-15 )
-	{
-	  temp_a = 1.0;
-	  temp_b = 0.0;
-	}
-      else
-	{
-	  temp_a = a;
-	  temp_b = b;
-	}
-    }
-  else if ( fabs(a-X.a) < 1e-15 )
-    {
-      temp_a = a;
-      temp_b = b + X.b;
-    }
-  else if (a < X.a)
-    {
-      temp_a = X.a;
-      temp_b = X.b + b*log(a)/log(X.a);
-    }
-  else
-    {
-      temp_a = a;
-      temp_b = b + X.b*log(X.a)/log(a);
-    }
-  k = temp_k;
-  a = temp_a;
-  b = temp_b;
-  c = temp_c;
-}
-QMCGreensRatioComponent QMCGreensRatioComponent::operator + \
-(const QMCGreensRatioComponent &X)
-{
-  if(k == 0){
-    return X;
-  } else if(X.k == 0){
-    return *this;
-  }
-  
-  QMCGreensRatioComponent result;
-  double POW_A, POW_B, expArg = X.c - c;
-  double temp, value, dumb;
-  SimplifyRatioPowers(X.a,X.b,a,b,POW_A,POW_B);
- 
-  //exp(-690) ~= 1e-300
-  /* This if statement attempts to handle extreme cases by avoiding the explicit
-     evaluation of exp on very large/small numbers. It definitely represents the
-     "long way around", but I couldn't get the QSC at LANL to run without this
-     apparent (apparently not) extremism. I wanted to avoid correcting the
-     overflow/underflow possibilities by setting exp(large) = 690 because the
-     exponent is possibly important to the rest of the number. Anyway, as we try
-     larger and larger molecules, this code needs to be very robust.*/
-  if(fabs(expArg) > 690){
-
-    /* This next little section is very (i think) dumb. This is to correct a code
-       crash (on the QSC) when somehow, a value smaller than 1e-308 was assigned to
-       X.k (but somehow not caught by the X.k == 0 check above) which would crash
-       the evaluation of log(X.k). I don't understand how this is possible... but
-       this fixes it.*/
-    if(fabs(X.k) < 1e-300){
-      dumb = 1e100 * X.k;
-      expArg += log(dumb) + log(1e-100);
-    } else if(fabs(X.k) > 1e300){
-      dumb = 1e-100 * X.k;
-      expArg += log(dumb) + log(1e100);
-    } else {
-      expArg += log(X.k);
-    }
-
-    expArg += log(pow(POW_A,POW_B));
-    temp = log(k);
-    /* I want to allow for any possiblity in the comparison between temp
-       and expArg*/
-    if(fabs(temp - expArg) < 15){
-      result.k = 1.0 + exp(temp - expArg);
-      result.c = c + expArg;
-    } else if(expArg > temp){
-      result.k = 1.0;
-      result.c = c + expArg;
-    } else {
-      result.k = 1.0;
-      result.c = c + temp;
-    }
-  } else {
-    result.k = k + X.k * pow(POW_A,POW_B) * exp(expArg);
-    result.c = c;
-  }
-
-  result.a = a;
-  result.b = b;
-  return result;
-}
-  
 void QMCGreensRatioComponent::toXML(ostream & strm)
 {
   strm << "<QMCGreensRatioComponent>" << endl;
@@ -200,6 +48,7 @@ void QMCGreensRatioComponent::toXML(ostream & strm)
   strm << "\t<c>\t" << c << "\t</c>" << endl;
   strm << "</QMCGreensRatioComponent>\n" << endl;
 }
+
 // ra^rb = na^nb/da^db
 void QMCGreensRatioComponent::SimplifyRatioPowers(double na, double nb, \
 						  double da, double db, double &ra, double &rb)
@@ -268,3 +117,230 @@ void QMCGreensRatioComponent::SimplifyRatioPowers(double na, double nb, \
   cout << "----------------------------------------------------------" << endl;
 #endif
 }
+
+double QMCGreensRatioComponent::getValue() const
+{
+  return k*pow(a,b)*exp(c);
+}
+
+QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatioComponent & denom)
+{
+  // Get resulting exp(stuff) -> get "stuff left over
+  double EXP_EXP = c-denom.c;
+  // Handle pow(a,b)/pow(d.a,d.b)
+  double POW_A, POW_B;
+  SimplifyRatioPowers(a,b,denom.a,denom.b,POW_A,POW_B);
+      
+	k /= denom.k;
+	a = POW_A;
+	b = POW_B;
+	c -= denom.c;
+	return *this;
+}
+
+QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRatioComponent &X)
+{
+  double temp_k, temp_a, temp_b;
+  
+  /*If k and X.k are both very large or very small, their product could overflow or underflow
+    the temp_k variable. This is actually likely because several MultiplyBy iterations are called
+    for molecules with several molecules. If the configuration isn't equilibrated, then very
+    large/small values will start accumulating in the k degree of freedom. So, if this happens,
+    we need to shift the large/small exponents over to the c degree of freedom.*/
+  temp_k = k * X.k;
+  if(fabs(temp_k) > 1e300 || fabs(temp_k) < 1e-300){
+    c += log(fabs(k));
+    c += log(fabs(X.k));
+    k = k < 0 ? -1.0 : 1.0;
+    k = X.k < 0 ? -k : k;
+    temp_k = 1.0;
+  }
+  c += X.c;
+  k = temp_k;
+  
+  if ( fabs(a-1.0) < 1e-15 ){
+    if ( fabs(X.a-1.0) < 1e-15 ){
+      temp_a = 1.0;
+      temp_b = 0.0;
+    }	else {
+      temp_a = X.a;
+      temp_b = X.b;
+    }
+  }	else if ( fabs(X.a-1.0) < 1e-15 ){
+    if ( fabs(a-1.0) < 1e-15 ){
+      temp_a = 1.0;
+      temp_b = 0.0;
+    }	else {
+      temp_a = a;
+      temp_b = b;
+    }
+  }	else if ( fabs(a-X.a) < 1e-15 ){
+    temp_a = a;
+    temp_b = b + X.b;
+  }	else if (a < X.a){
+    temp_a = X.a;
+    temp_b = X.b + b*log(a)/log(X.a);
+  }	else {
+    temp_a = a;
+    temp_b = b + X.b*log(X.a)/log(a);
+  }
+  a = temp_a;
+  b = temp_b;
+  return *this;
+}
+
+QMCGreensRatioComponent & QMCGreensRatioComponent::add(const QMCGreensRatioComponent &X)
+{
+  if(k == 0){
+    *this = X;
+    return *this;
+  } else if(X.k == 0){
+    return *this;
+  }
+  
+  double POW_A, POW_B, expArg = X.c - c;
+  double temp, dumb, signK = k, signXk = X.k, signPOW;
+  SimplifyRatioPowers(X.a,X.b,a,b,POW_A,POW_B);
+  
+  //exp(-690) ~= 1e-300
+  /* This if statement attempts to handle extreme cases by avoiding the explicit
+     evaluation of exp on very large/small numbers. It definitely represents the
+     "long way around", but I couldn't get the QSC at LANL to run without this
+     apparent (apparently not) extremism. I wanted to avoid correcting the
+     overflow/underflow possibilities by setting exp(large) = 690 because the
+     exponent is possibly important to the rest of the number. Anyway, as we try
+     larger and larger molecules, this code needs to be very robust.*/
+  if(fabs(expArg) > 690){
+
+    /* This next little section is very (i think) dumb. This is to correct a code
+       crash (on the QSC) when somehow, a value smaller than 1e-308 was assigned to
+       X.k (but somehow not caught by the X.k == 0 check above) which would crash
+       the evaluation of log(X.k). I don't understand how this is possible... but
+       this fixes it.*/
+    if(fabs(X.k) < 1e-300){
+      dumb = 1e100 * X.k;
+      expArg += log(fabs(dumb)) + log(1e-100);
+    } else if(fabs(X.k) > 1e300){
+      dumb = 1e-100 * X.k;
+      expArg += log(fabs(dumb)) + log(1e100);
+    } else {
+      expArg += log(fabs(X.k));
+    }
+    
+    signPOW = pow(POW_A,POW_B);
+    expArg += log(fabs(signPOW));
+    temp = log(fabs(k));
+    /* allow for any possiblity in the comparison of temp and expArg*/
+    if(fabs(temp - expArg) < 15){
+      k = exp(temp - expArg);
+      k = signPOW < 0 ? -k : k;
+      k = signXk  < 0 ? -k : k;
+      k += signK   < 0 ? -1.0 : 1.0;
+      c += expArg;
+    } else if(expArg > temp){
+      k = 1.0;
+      k = signPOW < 0 ? -k : k;
+      k = signXk  < 0 ? -k : k;
+      c += expArg;
+    } else {
+      k = 1.0;
+      k = signK   < 0 ? -k : k;
+      c += temp;
+    }
+  } else {
+    k += X.k * pow(POW_A,POW_B) * exp(expArg);
+  }
+  return *this;
+}
+
+QMCGreensRatioComponent QMCGreensRatioComponent::operator + ( const QMCGreensRatioComponent & rhs ) const {
+  QMCGreensRatioComponent result = *this;
+  return result.add(rhs);
+}
+
+QMCGreensRatioComponent QMCGreensRatioComponent::operator - ( const QMCGreensRatioComponent & rhs ) const {
+  QMCGreensRatioComponent result = *this;
+  return result.add(rhs*-1.0);
+}
+
+QMCGreensRatioComponent QMCGreensRatioComponent::operator * ( const QMCGreensRatioComponent & rhs ) const {
+  QMCGreensRatioComponent result = *this;
+  return result.multiplyBy(rhs);
+}
+
+QMCGreensRatioComponent QMCGreensRatioComponent::operator / ( const QMCGreensRatioComponent & rhs ) const {
+  QMCGreensRatioComponent result = *this;
+  return result.divideBy(rhs);
+}
+
+void QMCGreensRatioComponent::operator += ( const QMCGreensRatioComponent & rhs ){
+  add(rhs);
+}
+
+void QMCGreensRatioComponent::operator -= ( const QMCGreensRatioComponent & rhs ){
+  add(rhs*-1.0);
+}  
+
+void QMCGreensRatioComponent::operator *= ( const QMCGreensRatioComponent & rhs ){
+  multiplyBy(rhs);
+}
+
+void QMCGreensRatioComponent::operator /= ( const QMCGreensRatioComponent & rhs ){
+  divideBy(rhs);
+}
+
+void QMCGreensRatioComponent::operator = ( const QMCGreensRatioComponent & rhs ){
+  k = rhs.k;
+  a = rhs.a;
+  b = rhs.b;
+  c = rhs.c;
+}
+
+QMCGreensRatioComponent QMCGreensRatioComponent::operator + ( const double & rhs ) const {
+  QMCGreensRatioComponent result = *this;
+  return result.add(QMCGreensRatioComponent(rhs));
+}
+
+QMCGreensRatioComponent QMCGreensRatioComponent::operator - ( const double & rhs ) const {
+  QMCGreensRatioComponent result = *this;
+  return result.add(QMCGreensRatioComponent(-1.0*rhs));
+}
+
+QMCGreensRatioComponent QMCGreensRatioComponent::operator * ( const double & rhs ) const {
+  QMCGreensRatioComponent result = *this;
+  return result.multiplyBy(QMCGreensRatioComponent(rhs));
+}
+
+QMCGreensRatioComponent QMCGreensRatioComponent::operator / ( const double & rhs ) const {
+  QMCGreensRatioComponent result = *this;
+  return result.divideBy(QMCGreensRatioComponent(rhs));
+}
+
+void QMCGreensRatioComponent::operator += ( const double & rhs ){
+  add(QMCGreensRatioComponent(rhs));
+}
+
+void QMCGreensRatioComponent::operator -= ( const double & rhs ){
+  add(QMCGreensRatioComponent(-1.0*rhs));
+}
+
+void QMCGreensRatioComponent::operator *= ( const double & rhs ){
+  multiplyBy(QMCGreensRatioComponent(rhs));
+}
+
+void QMCGreensRatioComponent::operator /= ( const double & rhs ){
+  divideBy(QMCGreensRatioComponent(rhs));
+}
+
+void QMCGreensRatioComponent::operator = ( double rhs ){
+  operator = (QMCGreensRatioComponent(rhs));
+}
+
+QMCGreensRatioComponent::operator double() const {
+  return getValue();
+}
+
+
+
+
+

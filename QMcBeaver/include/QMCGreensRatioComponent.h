@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <math.h>
+#include "IeeeMath.h"
 
 using namespace std;
 
@@ -10,7 +11,34 @@ using namespace std;
   Either the numerator or the denominator of a Greens function ratio.  The 
   purpose of this is to make the evaluation of ratios of very large or very 
   small numbers more stable.  
-  This object has the form k*a^b*exp(c)  
+  This object has the form k*a^b*exp(c)
+
+  Notes from Amos:
+  This class has been extended a bit from it's Green's function only usage.
+  This is now intended to be a general purpose class to hold and handle super
+  large or super small numbers. In particular, it is now used in QMCFunction.cpp
+  to handle super small psi multiplied by super huge jastrow term.
+  
+  The full set of math operators have been defined including a cast to double
+  operator. One word of warning, if GRC is a QMCGreensRatioComponent object,
+  then -1.0*GRC is not necessarily equal to GRC*-1.0. This is because the latter
+  calls the QMCGreensRatioComponent operator * (double) function, the former
+  casts GRC to a double (which *might* be a problem), then multiplies by -1.0. 
+
+  Perhaps in the future we will want to make this class even better. Specifically,
+  include a "balancing" function to shift large exponents out of the k degree of
+  freedom and into the c degree of freedom. Also maybe add checks in the divideBy
+  function.
+
+  Some class philosophy:
+  I sort of intend this class to be a data type... an ExtendedDouble type, with
+  all the appropriate overloaded operators.
+  It now has 3 different classes of math operators:
+  1) Ones that return by reference the object operated on
+  (divideBy, multiplyBy, add)
+  2) Ones that return nothing (the +=, *=, /=, etc)
+  3) Ones that return a new QMCGreensRatioComponent,
+  leaving the operands unaffected (*, +, /, etc)
 */
 
 class QMCGreensRatioComponent
@@ -20,104 +48,126 @@ class QMCGreensRatioComponent
   /**
     Creates a new uninitialized instance of this class.
   */
-
+  
   QMCGreensRatioComponent();
-
+  
   /**
-    Creates a new instance of this class with a total value of 'k.'
-    @param k total value for the new object.
+     Creates a new instance of this class with a total value of 'k.'
+     @param k total value for the new object.
   */
-
+  
   QMCGreensRatioComponent(double k);
-
+  
   /** 
-    Creates a new instance of this class of the form k*a^b*c.
-    @param k coefficient
-    @param a base
-    @param b power
-    @param c exponent
+      Creates a new instance of this class of the form k*a^b*c.
+      @param k coefficient
+      @param a base
+      @param b power
+      @param c exponent
   */
-
+  
   QMCGreensRatioComponent(double k, double a, double b, double c);
-
+  
   /** 
-    Creates  new instance of this class and makes it equivalent to another 
-    instance of this class.
-    @param rhs object to set this equal to.
+      Creates  new instance of this class and makes it equivalent to another 
+      instance of this class.
+      @param rhs object to set this equal to.
   */
-
+  
   QMCGreensRatioComponent( const QMCGreensRatioComponent & rhs );
-
+  
   /** 
-    Deallocates the memory allocated by this object.
+      Deallocates the memory allocated by this object.
   */
-
+  
   ~QMCGreensRatioComponent();
-
-  /** 
-    Sets two QMCGreensRatioComponent objects equal.
-    @param rhs object to set this object equal to.
-  */
-
-  void operator=( const QMCGreensRatioComponent & rhs );
-
+  
   /**
-    Adds two QMCGreensRatioComponent objects together.
-    @param rhs object to add to this object.
-    @return sum of these two GreensRatioComponents. 
+     Divides this QMCGreensRatioComponent by another one and returns a double.
+     @param denom object to divide this object by
+     @return *this
   */
-
-  QMCGreensRatioComponent operator + ( const QMCGreensRatioComponent & rhs );
-
+  
+  QMCGreensRatioComponent & divideBy(const QMCGreensRatioComponent &denom);
+  
   /**
-    Divides this QMCGreensRatioComponent by another one and returns a double.
-    @param denom object to divide this object by
-    @return Greens function ratio of these two GreensRatioComponents.
+     Multiplies two QMCGreensRatioComponents together.
+     @param *this
   */
-
-  double DivideBy(QMCGreensRatioComponent &denom);
-
+  
+  QMCGreensRatioComponent & multiplyBy(const QMCGreensRatioComponent &rhs);
+  
   /**
-    Multiplies two QMCGreensRatioComponents together.
-    @param X object to multiply this object by
+     Adds two QMCGreensRatioComponents together.
+     @param *this
   */
-
-  void MultiplyBy(QMCGreensRatioComponent &X);
-
+  
+  QMCGreensRatioComponent & add(const QMCGreensRatioComponent &rhs);
+  
+  
+  QMCGreensRatioComponent operator + ( const QMCGreensRatioComponent & rhs ) const;
+  QMCGreensRatioComponent operator - ( const QMCGreensRatioComponent & rhs ) const;
+  QMCGreensRatioComponent operator * ( const QMCGreensRatioComponent & rhs ) const;
+  QMCGreensRatioComponent operator / ( const QMCGreensRatioComponent & rhs ) const;
+  void operator += ( const QMCGreensRatioComponent & rhs );
+  void operator -= ( const QMCGreensRatioComponent & rhs );  
+  void operator *= ( const QMCGreensRatioComponent & rhs );
+  void operator /= ( const QMCGreensRatioComponent & rhs );
+  void operator =  ( const QMCGreensRatioComponent & rhs );
+  
+  QMCGreensRatioComponent operator + ( const double & rhs ) const;
+  QMCGreensRatioComponent operator - ( const double & rhs ) const;
+  QMCGreensRatioComponent operator * ( const double & rhs ) const;
+  QMCGreensRatioComponent operator / ( const double & rhs ) const;
+  void operator += ( const double & rhs );
+  void operator -= ( const double & rhs );  
+  void operator *= ( const double & rhs );
+  void operator /= ( const double & rhs );
+  void operator =  ( double rhs );
+  
   /**
-    Writes the state of this object to an XML stream.
-    @param strm XML stream.
+     A typecasting function. Obviously, care must be taken for unintended
+     casting (see comments for the class, above), but this is quite a 
+     convenience I think. It just calls the getValue() function.
   */
 
+  operator double() const;
+  
+  /**
+     Writes the state of this object to an XML stream.
+     @param strm XML stream.
+  */
+  
   void toXML(ostream & strm);
-
+  
   /**
-    Gets the overall value of the object.
-    @return total value of this object.
+     Gets the overall value of the object.
+     @return total value of this object.
   */
-
-  double getValue();
-
+  
+  double getValue() const;
+  
  private:
-
+  
   /** 
-    This class has the form k*a^b*c.
+      This class has the form k*a^b*c.
   */
-
+  
   double k,a,b,c; 
-
+  
   /**
-    Initializes all of the data members.
+     Initializes all of the data members.
   */
-
+  
   void initialize();
-
+  
   /**
-    na^nb/da^db = ra^rb
+     na^nb/da^db = ra^rb
   */
-
+  
   void SimplifyRatioPowers(double na, double nb, double da, double db, 
 			   double &ra, double &rb);
 };
 
 #endif
+
