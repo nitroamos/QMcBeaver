@@ -1,3 +1,16 @@
+Wed, 8 Sept 2004, Daniel R. Fisher
+
+1.  In the constructor function for QMCWalker, set the trial step size, dR2,
+    to 0.  It was being used uninitialized and causing problems with the 
+    calculation of the effective time step.
+
+2.  In QMCManager::writeEnergyResultsSummary(ostream & strm), added the total
+    number of samples collected to the results summary.  
+
+3.  In QMcBeaver.cpp, added a Total Samples heading for the column with the 
+    total number of samples in the global results. 
+
+
 Mon, 30 August 2004, Daniel R. Fisher
 
 1.  Got rid of the need to read the distributions from files in 
