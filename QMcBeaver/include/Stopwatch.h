@@ -17,23 +17,32 @@
 
 #include <sys/timeb.h>
 #include <sys/types.h>
-//#include <winsock.h> //timeval is defined here, but winsock's inclusion introduces stuff that conflicts elsewhere
+#define USE_HIGH_PRECISION
 
 struct timezone {
     int tz_minuteswest;
     int tz_dsttime;
 };
-
+/*
 struct timeval {
-        long    tv_sec;         /* seconds */
-        long    tv_usec;        /* and microseconds */
+        long    tv_sec;
+        long    tv_usec;
 };
-
+*/
 static void gettimeofday(struct timeval* t,void* timezone){
-        struct _timeb timebuffer;
-        _ftime( &timebuffer );
-        t->tv_sec=(long)timebuffer.time;
-        t->tv_usec=1000*timebuffer.millitm;
+#ifdef USE_HIGH_PRECISION
+	LARGE_INTEGER timeLI, freqLI;
+	QueryPerformanceCounter(&timeLI);
+	QueryPerformanceFrequency(&freqLI);
+	t->tv_sec=0;
+	double temp = 1.0e6*(double)(timeLI.QuadPart)/freqLI.QuadPart;
+  t->tv_usec=(long)(temp + 0.5);
+#else
+  struct _timeb timebuffer;
+	_ftime( &timebuffer );
+  t->tv_sec=(long)timebuffer.time;
+  t->tv_usec=1000*timebuffer.millitm;
+#endif
 }
 #else
 #include <sys/time.h>
@@ -62,8 +71,8 @@ class Stopwatch
   bool running;
   struct timeval tp;
   struct timezone tz;
-  
- public:
+
+public:
   /**
     Creates an instance of the stopwatch that is zeroed and not running.
     */
