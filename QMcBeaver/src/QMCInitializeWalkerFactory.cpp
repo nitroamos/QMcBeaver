@@ -17,14 +17,19 @@ QMCInitializeWalker * QMCInitializeWalkerFactory::
 {
   QMCInitializeWalker * initializeWalker = 0;
 
-  if( Type == "mikes_jacked_initialization" )
+  if (Type == "mikes_jacked_initialization")
     {
       initializeWalker = new QMCMikesJackedWalkerInitialization(input);
     }
-   else if( Type == "mikes_better_initialization" )
+  else if (Type == "mikes_better_initialization")
     {
       initializeWalker = new QMCMikesBetterWalkerInitialization(input);
     }
+  else if (Type == "dans_walker_initialization")
+    {
+      initializeWalker = new QMCDansWalkerInitialization(input);
+    }
+
   else
     {
       cerr << "ERROR: Unknown walker initialization type (" 
