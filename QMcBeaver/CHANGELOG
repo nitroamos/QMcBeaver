@@ -1,7 +1,11 @@
+Thurs, 3 Feb 2005, Amos Anderson
+1.  I toyed with the makefiles, removing some mistakes/bugs and beautifying. They are now really cool.
+    I added a new target "updateall" which will update all the executables simultaneously.
+
 Tues, 1 Feb 2005, Amos Anderson
 1.  Changed some of the behavior of configure.py. Now, you can easily keep all the objective
     files for several different Makefile.config choices. e.g. serial debug objective files are seperate
-    from parallel debug files are seperate from serial atlas debug files. Also, I changed the naming
+    from parallel debug files are separate from serial atlas debug files. Also, I changed the naming
     of the executable files so you can tell some of the options they were compiled with just by
     looking at the name. Not sure if i need to modify this to make sure it stays under 16 characters...
 
