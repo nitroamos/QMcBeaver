@@ -19,6 +19,7 @@ QMCWalker::QMCWalker()
 
   weight = 1.0;
   age    = 0;
+  dR2 = 0.0;
 }
 
 QMCWalker::QMCWalker( const QMCWalker & rhs )
@@ -198,7 +199,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
     }
 
   // Calculate the square of the magnitude of the displacement
-  dR2 = 0;
+  dR2 = 0.0;
   for(int i=0; i<Displacement.dim1(); i++)
     {
       for(int j=0; j<Displacement.dim2(); j++)
@@ -247,7 +248,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
 QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 {
   double tau = Input->flags.dt;
-  QMCGreensRatioComponent GF = 1.0;
+  QMCGreensRatioComponent GF(1.0);
   dR2 = 0.0;
 
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
@@ -498,7 +499,7 @@ QMCGreensRatioComponent \
          QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
 {
   double tau = Input->flags.dt;
-  QMCGreensRatioComponent GF;
+  QMCGreensRatioComponent GF(1.0);
 
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
     {
