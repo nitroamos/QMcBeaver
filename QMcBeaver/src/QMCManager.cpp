@@ -52,7 +52,6 @@ void QMCManager::initialize(int argc, char **argv)
 
   done = false;
 
-
   iteration = 0;
 
   // Initialize the calculation state
@@ -187,10 +186,9 @@ void QMCManager::sendAllProcessorsACommand(int itag)
 
 void QMCManager::gatherProperties()
 {
+  Properties_total.zeroOut();
 #ifdef PARALLEL
   localTimers.getGatherPropertiesStopwatch()->start();
-
-  Properties_total.zeroOut();
 
   MPI_Reduce(QMCnode.getProperties(),&Properties_total,1,
 	     QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE,0,
@@ -309,9 +307,9 @@ void QMCManager::run()
        //each process keeps track of an iteration counter
        iteration++;
 	  
-       if(equilibrating) localTimers.getInitializationStopwatch()->start();
-       else              localTimers.getPropagationStopwatch()->start();
-	  
+       if(equilibrating) localTimers.getEquilibrationStopwatch()->start();
+       else localTimers.getPropagationStopwatch()->start();
+
        QMCnode.step();
 
        updateEstimatedEnergy();
@@ -338,15 +336,12 @@ void QMCManager::run()
 
        if(equilibrating) 
 	 {
-	   localTimers.getInitializationStopwatch()->stop();
+	   localTimers.getEquilibrationStopwatch()->stop();
 	   equilibrationProperties = equilibrationProperties + 
 	     *QMCnode.getProperties();
 	   QMCnode.zeroOut();
 	 }
-       else
-	 {
-	   localTimers.getPropagationStopwatch()->stop();
-	 }
+       else localTimers.getPropagationStopwatch()->stop();
 
        //--------------------------------------------------
 
@@ -403,9 +398,6 @@ void QMCManager::run()
 	 }    
 	  
      }
-
-
-
 
   if( Input.flags.optimize_Psi || Input.flags.print_configs == 1 )
     {
@@ -558,12 +550,12 @@ void QMCManager::writeRestart()
 void QMCManager::writeXML(ostream & strm)
 {
   // Write out the random seed
-  if (Input.flags.iseed > 0)
+  if (Input.flags.iseed > 0) 
     {
       strm << "<iseed>\n" << -1*Input.flags.iseed << "\n</iseed>" << endl;
     }
   else if (Input.flags.iseed <= 0)
-    {  
+    {
       strm << "<iseed>\n" << Input.flags.iseed << "\n</iseed>" << endl;
     }
 
@@ -633,6 +625,8 @@ void QMCManager::initializeCalculationState()
    // open the input stream
   ifstream qmcCheckpoint(filename.c_str());
 
+  localTimers.getInitializationStopwatch()->start();  
+
   if( qmcCheckpoint && Input.flags.use_available_checkpoints == 1 )
     {
       // There is a checkpoint file
@@ -643,6 +637,8 @@ void QMCManager::initializeCalculationState()
       // There is not a checkpoint file
       QMCnode.randomlyInitializeWalkers();
     }
+
+  localTimers.getInitializationStopwatch()->stop();
 
   qmcCheckpoint.close();
 }
