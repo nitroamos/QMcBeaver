@@ -30,6 +30,7 @@ QMCStopwatches::QMCStopwatches()
 void QMCStopwatches::stop()
 {
   if(Initialization.isRunning())        Initialization.stop();
+  if(Equilibration.isRunning())         Equilibration.stop();
   if(Propagation.isRunning())           Propagation.stop();
   if(Communication_send.isRunning())    Communication_send.stop();
   if(Communication_reduce.isRunning())  Communication_reduce.stop();
@@ -42,6 +43,7 @@ void QMCStopwatches::reset()
 {
   Total.reset();
   Initialization.reset();
+  Equilibration.reset();
   Propagation.reset();
   Communication_send.reset();
   Communication_reduce.reset();
@@ -53,6 +55,11 @@ void QMCStopwatches::reset()
 Stopwatch * QMCStopwatches::getInitializationStopwatch()
 {
   return &(this->Initialization);
+}
+
+Stopwatch * QMCStopwatches::getEquilibrationStopwatch()
+{
+  return &(this->Equilibration);
 }
 
 Stopwatch * QMCStopwatches::getPropagationStopwatch()
@@ -93,6 +100,7 @@ Stopwatch * QMCStopwatches::getTotalTimeStopwatch()
 void QMCStopwatches::operator =(const QMCStopwatches & rhs)
 {
   Initialization       = rhs.Initialization;
+  Equilibration        = rhs.Equilibration;
   Propagation          = rhs.Propagation;
   Communication_send   = rhs.Communication_send;
   Communication_reduce = rhs.Communication_reduce;
@@ -107,6 +115,7 @@ QMCStopwatches QMCStopwatches::operator+(QMCStopwatches & rhs)
   QMCStopwatches result;
 
   result.Initialization       = this->Initialization + rhs.Initialization;
+  result.Equilibration        = this->Equilibration + rhs.Equilibration;
   result.Propagation          = this->Propagation + rhs.Propagation;
   result.Communication_send   = this->Communication_send + 
                                   rhs.Communication_send;
@@ -127,6 +136,8 @@ ostream& operator <<(ostream& strm, QMCStopwatches & rhs)
   strm << "Total Time:             " << *rhs.getTotalTimeStopwatch() 
        << endl;
   strm << "Initialization Time:    " << *rhs.getInitializationStopwatch() 
+       << endl;
+  strm << "Equilibration Time:     " << *rhs.getEquilibrationStopwatch()
        << endl;
   strm << "Propagation Time:       " << *rhs.getPropagationStopwatch() << endl;
   strm << "Send Command Time:      " << *rhs.getSendCommandStopwatch() << endl;
@@ -158,7 +169,7 @@ void QMCStopwatches::buildMpiType()
 {
   QMCStopwatches indata;
 
-  const int numberDataTypes = 8;
+  const int numberDataTypes = 9;
 
   int          block_lengths[numberDataTypes];
   MPI_Aint     displacements[numberDataTypes];
@@ -173,6 +184,7 @@ void QMCStopwatches::buildMpiType()
   typelist[5] = Stopwatch::MPI_TYPE; 
   typelist[6] = Stopwatch::MPI_TYPE; 
   typelist[7] = Stopwatch::MPI_TYPE; 
+  typelist[8] = Stopwatch::MPI_TYPE;
  
   block_lengths[0] = 1;
   block_lengths[1] = 1;
@@ -182,16 +194,18 @@ void QMCStopwatches::buildMpiType()
   block_lengths[5] = 1;
   block_lengths[6] = 1;
   block_lengths[7] = 1;
+  block_lengths[8] = 1;
 
   MPI_Address(&indata, &addresses[0]);
   MPI_Address(&(indata.Initialization), &addresses[1]);
-  MPI_Address(&(indata.Propagation), &addresses[2]);
-  MPI_Address(&(indata.Communication_send), &addresses[3]);
-  MPI_Address(&(indata.Communication_reduce), &addresses[4]);
-  MPI_Address(&(indata.Communication_synch), &addresses[5]);
-  MPI_Address(&(indata.Communication_poll), &addresses[6]);
-  MPI_Address(&(indata.Optimization), &addresses[7]);
-  MPI_Address(&(indata.Total), &addresses[8]);
+  MPI_Address(&(indata.Equilibration), &addresses[2]);
+  MPI_Address(&(indata.Propagation), &addresses[3]);
+  MPI_Address(&(indata.Communication_send), &addresses[4]);
+  MPI_Address(&(indata.Communication_reduce), &addresses[5]);
+  MPI_Address(&(indata.Communication_synch), &addresses[6]);
+  MPI_Address(&(indata.Communication_poll), &addresses[7]);
+  MPI_Address(&(indata.Optimization), &addresses[8]);
+  MPI_Address(&(indata.Total), &addresses[9]);
 
   displacements[0] = addresses[1] - addresses[0];
   displacements[1] = addresses[2] - addresses[0];
@@ -201,6 +215,7 @@ void QMCStopwatches::buildMpiType()
   displacements[5] = addresses[6] - addresses[0];
   displacements[6] = addresses[7] - addresses[0];
   displacements[7] = addresses[8] - addresses[0];
+  displacements[8] = addresses[9] - addresses[0];
   
   MPI_Type_struct(numberDataTypes, block_lengths, displacements, typelist, 
                   &MPI_TYPE);
