@@ -15,7 +15,7 @@
 // to upper case
 string StringManipulation::toAllUpper(string & s)
 {
-  int size = s.size();
+  int size = (int)s.size();
   string result;
 
   for(int i=0; i<size; i++)
@@ -30,7 +30,7 @@ string StringManipulation::toAllUpper(string & s)
 // to lower case
 string StringManipulation::toAllLower(string & s)
 {
-  int size = s.size();
+  int size = (int)s.size();
   string result;
 
   for(int i=0; i<size; i++)
@@ -46,7 +46,7 @@ string StringManipulation::toAllLower(string & s)
 // capitialize first letter and lower all others
 string StringManipulation::toFirstUpperRestLower(string & s)
 {
-  int size = s.size();
+  int size = (int)s.size();
   string result;
 
   if( size < 1 )
@@ -186,15 +186,15 @@ string StringManipulation::longToString(long l)
 
 int StringManipulation::stringToInt(string & s)
 {
-  istrstream istr(s.c_str(),s.length());
+  istrstream istr(s.c_str(),(std::streamsize)s.length());
   int val;
   istr >> val;
   return val;
 }
 
 long StringManipulation::stringToLong(string & s)
-{
-  istrstream istr(s.c_str(),s.length());
+{  
+  istrstream istr(s.c_str(),(std::streamsize)s.length());
   long val;
   istr >> val;
   return val;
@@ -202,7 +202,7 @@ long StringManipulation::stringToLong(string & s)
 
 int StringManipulation::hexstringToInt(string & s)
 {
-  istrstream istr(s.c_str(),s.length());
+  istrstream istr(s.c_str(),(std::streamsize)s.length());
   int val;
   istr >> hex >> val;
   return val;
@@ -210,7 +210,7 @@ int StringManipulation::hexstringToInt(string & s)
 
 double StringManipulation::stringToDouble(string & s)
 {
-  istrstream istr(s.c_str(),s.length());
+  istrstream istr(s.c_str(),(std::streamsize)s.length());
   double val;
   istr >> val;
   return val;

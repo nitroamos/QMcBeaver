@@ -23,7 +23,7 @@ SortedParameterScorePairList::SortedParameterScorePairList(SortedParameterScoreP
 
 int SortedParameterScorePairList::size()
 {
-  return PSPList.size();
+  return (int)PSPList.size();
 }
 
 void SortedParameterScorePairList::add(const ParameterScorePair & PSP)

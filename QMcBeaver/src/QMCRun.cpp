@@ -416,7 +416,7 @@ QMCProperties * QMCRun::getProperties()
 
 int QMCRun::getNumberOfWalkers()
 {
-  return wlist.size();
+  return (int)wlist.size();
 }
 
 void QMCRun::step()

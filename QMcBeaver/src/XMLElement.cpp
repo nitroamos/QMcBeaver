@@ -87,7 +87,7 @@ void XMLElement::initialize(map<string,string> * entities,
 
 int XMLElement::countChildren()
 {
-  return this->children.size();
+  return (int)this->children.size();
 }
 
 void XMLElement::addChild(XMLElement & child)
@@ -744,7 +744,7 @@ void XMLElement::skipSpecialTag(int bracketLevel)
 
 bool XMLElement::checkLiteral(string literal)
 {
-  int length = literal.length();
+  int length = (int)literal.length();
 
   for (int i = 0; i < length; i += 1) 
     {

@@ -469,7 +469,7 @@ Array1D<Complex> QMCJastrowParameters::getPoles()
     }
 
   // pack up the results into a vector
-  Array1D<Complex> results( allPoles.size() );
+  Array1D<Complex> results( (int)allPoles.size() );
 
   int index = 0;
   for(list<Complex>::iterator it=allPoles.begin(); it!=allPoles.end(); ++it)

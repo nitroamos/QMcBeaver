@@ -124,7 +124,7 @@ void QMCMolecule::read(string runfile)
     }
   }
 
-  NucleiTypes.allocate( nuclei.size() );
+  NucleiTypes.allocate( (int)nuclei.size() );
   int Position = 0;
   for( list<string>::iterator it=nuclei.begin(); it!=nuclei.end(); ++it )
   {
