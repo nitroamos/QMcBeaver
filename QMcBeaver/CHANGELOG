@@ -1,5 +1,13 @@
 Mon, 30 August 2004, Daniel R. Fisher
 
+1.  Got rid of the need to read the distributions from files in 
+    QMCDansWalkerInitialization by using CubicSplines.  The resulting method is
+    much faster.  The distributions are now stored in the AngleDistributions 
+    and RadialDistributions classes.
+
+
+Mon, 30 August 2004, Daniel R. Fisher
+
 1.  Changed configure.py to include settings for the cray_x1 computer.
 
 2.  Added the class QMCGreensRatioComponent.  The Greens function
