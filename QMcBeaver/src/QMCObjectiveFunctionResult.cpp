@@ -72,7 +72,7 @@ double QMCObjectiveFunctionResult::getDerivativeScore()
 
 void QMCObjectiveFunctionResult::set_log_weights_ave(double wa)
 {
-  if(IeeeMath::isnan(wa) != 0) 
+  if(IeeeMath::isNaN(wa) != 0) 
     {
       log_weights_ave = MAX_RESULT_VALUE;
     }
@@ -88,7 +88,7 @@ void QMCObjectiveFunctionResult::set_log_weights_ave(double wa)
 
 void QMCObjectiveFunctionResult::set_log_weights_var(double wv)
 {
-  if(IeeeMath::isnan(wv) != 0) 
+  if(IeeeMath::isNaN(wv) != 0) 
     {
       log_weights_var = MAX_RESULT_VALUE;
     }
@@ -108,7 +108,7 @@ void QMCObjectiveFunctionResult::set_log_weights_var(double wv)
 
 void QMCObjectiveFunctionResult::set_energy_ave(double ea)
 {
-  if(IeeeMath::isnan(ea) != 0) 
+  if(IeeeMath::isNaN(ea) != 0) 
     {
       energy_ave = MAX_RESULT_VALUE;
     }
@@ -124,7 +124,7 @@ void QMCObjectiveFunctionResult::set_energy_ave(double ea)
 
 void QMCObjectiveFunctionResult::set_energy_var(double ev)
 {
-  if(IeeeMath::isnan(ev) != 0) 
+  if(IeeeMath::isNaN(ev) != 0) 
     {
       energy_var=MAX_RESULT_VALUE;
     }
@@ -294,10 +294,10 @@ double QMCObjectiveFunctionResult::mikes_penalty_scaler(double x)
   //once the LV goes beyond 1.3 with a steepness of 4 is rather
   //nutty and pushes machine precision much too far
 
-  if( IeeeMath::isnan(x) != 0 ) return MAX;
+  if( IeeeMath::isNaN(x) != 0 ) return MAX;
   if( fabs(x) >= MAX) return MAX;
 
-  if( IeeeMath::isnan(x) != 0 )
+  if( IeeeMath::isNaN(x) != 0 )
     {
       cerr << x << endl;
       cerr <<"ERROR QMCObjectiveFunctionResult::mikes_penalty_scaler(double x)"

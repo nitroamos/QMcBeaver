@@ -31,7 +31,7 @@ for more details.
 
 #include "IeeeMath.h"
 
-bool IeeeMath::isnan(double x)
+bool IeeeMath::isNaN(double x)
 {
   if( x != x )
     {

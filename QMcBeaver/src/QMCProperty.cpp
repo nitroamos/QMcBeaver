@@ -217,7 +217,7 @@ double QMCProperty::getStandardDeviation()
 
       for(int i=0; i<grad.dim1(); i++)
 	{
-	  if( IeeeMath.isnan( grad(i) ) != 0 )
+	  if( IeeeMath.isNaN( grad(i) ) != 0 )
 	    {
 	      grad(i) = 0.0;
 	    }

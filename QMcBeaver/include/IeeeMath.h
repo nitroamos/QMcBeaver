@@ -48,7 +48,7 @@ class IeeeMath
      @param x determines if this number is NaN
      @return true if x is NaN and false otherwise.
   */
-  static bool isnan(double x);
+  static bool isNaN(double x);
 };
 
 #endif
