@@ -66,93 +66,63 @@ QMCWavefunction QMCWavefunction::operator=( const QMCWavefunction & rhs )
     BetaOccupation  = rhs.BetaOccupation;
     return *this;
 }
-//*
-//This operator >> is for reading in MCSCF wavefunctions
+
+/** The QSC didn't like my little commenting trick, so I just got rid
+    of the old streaming operator -- the old files are still in CVS of course...
+
+    This operator >> will read input files in the multi configuration style.
+*/
 istream& operator >>(istream &strm,QMCWavefunction &rhs)
 {
-    rhs.Coeffs.allocate(rhs.Norbitals,rhs.Nbasisfunc);
-    rhs.AlphaOccupation.allocate(rhs.Ndeterminants,rhs.Norbitals);
-    rhs.BetaOccupation.allocate(rhs.Ndeterminants,rhs.Norbitals);
-    rhs.CI_coeffs.allocate(rhs.Ndeterminants);
+  rhs.Coeffs.allocate(rhs.Norbitals,rhs.Nbasisfunc);
+  rhs.AlphaOccupation.allocate(rhs.Ndeterminants,rhs.Norbitals);
+  rhs.BetaOccupation.allocate(rhs.Ndeterminants,rhs.Norbitals);
+  rhs.CI_coeffs.allocate(rhs.Ndeterminants);
     
-    string temp_string;
-    for(int i=0; i<rhs.Norbitals; i++)
-        for(int j=0; j<rhs.Nbasisfunc;j++)
-        {
-            strm >> rhs.Coeffs(i,j);
-        }
+  string temp_string;
+  for(int i=0; i<rhs.Norbitals; i++)
+    for(int j=0; j<rhs.Nbasisfunc;j++)
+      {
+	strm >> rhs.Coeffs(i,j);
+      }
             
-            strm >> temp_string;
-    strm >> temp_string;
+  strm >> temp_string;
+  strm >> temp_string;
     
-    for (int i=0; i<rhs.Ndeterminants; i++)
-        for (int j=0; j<rhs.Norbitals; j++)
-        {
-            strm >> rhs.AlphaOccupation(i,j);
-        }
+  for (int i=0; i<rhs.Ndeterminants; i++)
+    for (int j=0; j<rhs.Norbitals; j++)
+      {
+	strm >> rhs.AlphaOccupation(i,j);
+      }
             
-            strm >> temp_string;
-    strm >> temp_string;
+  strm >> temp_string;
+  strm >> temp_string;
     
-    for (int i=0; i<rhs.Ndeterminants; i++)
-        for (int j=0; j<rhs.Norbitals; j++)
-        {
-            strm >> rhs.BetaOccupation(i,j);
-        }  
+  for (int i=0; i<rhs.Ndeterminants; i++)
+    for (int j=0; j<rhs.Norbitals; j++)
+      {
+	strm >> rhs.BetaOccupation(i,j);
+      }  
             
-            strm >> temp_string;
-    strm >> temp_string;
+  strm >> temp_string;
+  strm >> temp_string;
     
-    for (int i=0; i<rhs.Ndeterminants; i++)
+  for (int i=0; i<rhs.Ndeterminants; i++)
     {
-        strm >> rhs.CI_coeffs(i);
+      strm >> rhs.CI_coeffs(i);
     }
     
-    rhs.Nalpha = 0;
-    rhs.Nbeta = 0;
-    for(int i=0; i<rhs.Norbitals; i++)
+  rhs.Nalpha = 0;
+  rhs.Nbeta = 0;
+  for(int i=0; i<rhs.Norbitals; i++)
     {
-        rhs.Nalpha += rhs.AlphaOccupation(0,i);
-        rhs.Nbeta += rhs.BetaOccupation(0,i);
+      rhs.Nalpha += rhs.AlphaOccupation(0,i);
+      rhs.Nbeta += rhs.BetaOccupation(0,i);
     } 
     
-    rhs.Nelectrons = rhs.Nalpha + rhs.Nbeta;
-    return strm;
+  rhs.Nelectrons = rhs.Nalpha + rhs.Nbeta;
+  return strm;
 }
-/*/
-//This operator >> is for compatibility with older input files
-istream& operator >>(istream &strm,QMCWavefunction &rhs)
-{
-    rhs.Coeffs.allocate(rhs.Norbitals,rhs.Nbasisfunc);
-    rhs.AlphaOccupation.allocate(rhs.Ndeterminants,rhs.Norbitals);
-    rhs.BetaOccupation.allocate(rhs.Ndeterminants,rhs.Norbitals);
-    rhs.CI_coeffs.allocate(rhs.Ndeterminants);
-    
-    string temp_string;
-    for(int i=0; i<rhs.Norbitals; i++)
-    {
-        strm >> rhs.AlphaOccupation(0,i) 
-        >> rhs.BetaOccupation(0,i);
-
-        for(int j=0; j<rhs.Nbasisfunc;j++)
-        {
-            strm >> rhs.Coeffs(i,j);
-        }
-    }
-
-    rhs.Nalpha = 0;
-    rhs.Nbeta = 0;
-    for(int i=0; i<rhs.Norbitals; i++)
-    {
-        rhs.Nalpha += rhs.AlphaOccupation(0,i);
-        rhs.Nbeta += rhs.BetaOccupation(0,i);
-    } 
-    
-    rhs.Nelectrons = rhs.Nalpha + rhs.Nbeta;
-    rhs.CI_coeffs(0) = 1.0;
-    return strm;
-}
-//*/
 
 void QMCWavefunction::read(int numberOrbitals, int numberBasisFunctions,
                            int numberDeterminants, string runfile)
