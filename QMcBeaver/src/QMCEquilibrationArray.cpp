@@ -94,7 +94,7 @@ int QMCEquilibrationArray::getDecorrObjectIndex()
       double test = Eq_Array[i].getProperties()->energy.getStandardDeviation()
  + Eq_Array[i].getProperties()->energy.getStandardDeviationStandardDeviation();
 
-      if (isnan(test)) continue;
+      if (IeeeMath::isNaN(test)) continue;
       if (test < value)
 	{
 	  value = test;
