@@ -15,6 +15,47 @@ static const char *matrixMultiply =
 "    return output;                                                 \n"
 "}                                                                  \n";
 
+static const char *matrixMultiply2 = 
+"float4 main(in float2 position : TEX0,                             \n"
+"            uniform int  startOps,                                 \n"
+"            uniform int  stopOps,                                  \n"
+"            uniform samplerRECT  accum,                            \n"
+"            uniform samplerRECT  texLHS,                           \n"
+"			 uniform samplerRECT  texRHS) : COLOR                   \n"
+"{																	\n"
+"	 float4 output = texRECT(accum, position); 						\n"
+"	 for (int i = startOps; i < stopOps; i++) {						\n"
+"		float4 a  = texRECT(texLHS, float2(i,position.y));          \n"
+"		float4 b  = texRECT(texRHS, float2(position.x,i));          \n"
+"		output += a.xxzz*b.xyxy;					                \n"
+"		output += a.yyww*b.zwzw;									\n"
+"    }																\n"
+"    return output;                                                 \n"
+"}                                                                  \n";
+
+static const char *testInputs = 
+"float4 main(in float2 position : TEX0,                             \n"
+"            uniform int  startOps,                                 \n"
+"            uniform int  stopOps,                                  \n"
+"            uniform samplerRECT  accum,                            \n"
+"            uniform samplerRECT  texLHS,                           \n"
+"			 uniform samplerRECT  texRHS) : COLOR                   \n"
+"{																	\n"
+"	 float4 a  = texRECT(texLHS, position);						    \n"
+"	 float4 b  = texRECT(texRHS, position);							\n"
+"    return a;										                \n"
+"}                                                                  \n";
+
+/*
+"		output.x += a.x*b.x;					            \n"
+"		output.x += a.y*b.z;					            \n"
+"		output.y += a.x*b.y;					            \n"
+"		output.y += a.y*b.w;					            \n"
+"		output.z += a.z*b.x;					            \n"
+"		output.z += a.w*b.z;					            \n"
+"		output.w += a.z*b.y;					            \n"
+"		output.w += a.w*b.w;					            \n"
+*/
 //what's the difference betwen samplerREXT and sampler2D? does samplerRECT only work with tex rect extension?
 static const char *addConstant = 
 "float4 main(in float2 coords : TEX0,                               \n"

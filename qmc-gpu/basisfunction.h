@@ -97,8 +97,6 @@ static const char *simpleVertex =
 "	        out float3 oe      : TEXCOORD7)		    				\n"
 "{																	\n"
 "	HPosition = mul(ModelViewProj, vpos);							\n"
-//"	HPosition = float4(vpos,0,0);									\n"
-//"   oe = float4(vpos.xy,epos.x,0);					                \n"
 "   oe = epos;										                \n"
 "}                                                                  \n";
 
@@ -148,9 +146,8 @@ public:
 
 private:
 	void calculateWithGPUText(Array2D<double> &R){
-		Stopwatch sw = Stopwatch();
 		GLfloat* texels = new GLfloat[dim*dim*4];
-		GLuint    texId[1];
+		GLuint texId[1];
 
 		int i, j, index;
 		for(i=0; i<dim; i++){
@@ -161,20 +158,13 @@ private:
                 texels[index +2] = R(i*dim+j,2);
                 texels[index +3] = 0;
             }
-        }
-		
+        }		
 
 		glGenTextures(1, texId);	
-
 		glActiveTextureARB(GL_TEXTURE0_ARB);
 		glBindTexture(GL_TEXTURE_RECTANGLE_NV, texId[0]);
-		sw.reset();
-		sw.start();
-		
 		glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_RGBA32_NV, 
-							dim, dim, 0, GL_RGBA, GL_FLOAT, texels);
-		sw.stop();
-		cout << "total uploading time " << sw.timeMS() << endl;
+					 dim, dim, 0, GL_RGBA, GL_FLOAT, texels);
 		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_WRAP_S, GL_CLAMP);
 		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_WRAP_T, GL_CLAMP);
 		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -182,20 +172,12 @@ private:
 
 		CGprogram fragProg;
 		CGparameter tex;
-		if(true){
-			fragProg = cgCreateProgram(g_cgContext, CG_SOURCE,
+		fragProg = cgCreateProgram(g_cgContext, CG_SOURCE,
                    generateBasisFunctionTexture, g_cgProfile,
                    "main", NULL);
-		} else {
-			fragProg = cgCreateProgram(g_cgContext, CG_SOURCE,
-                   inputCheck, g_cgProfile,
-                   "main", NULL);
-		}
 		
-		if(fragProg != NULL){
-			cgGLLoadProgram(fragProg);
-			tex = cgGetNamedParameter(fragProg, "epos");
-		}
+		cgGLLoadProgram(fragProg);
+		tex = cgGetNamedParameter(fragProg, "epos");
 
 		RenderTexture * result = new RenderTexture(textureMode);
 		result->Initialize(dim,dim,true,false);
@@ -204,14 +186,11 @@ private:
 		
 		cgGLEnableProfile(g_cgProfile);	
 		cgGLBindProgram(fragProg);
-		
 		cgGLSetTextureParameter(tex, texId[0]);
 		cgGLEnableTextureParameter(tex);
 
-
 		glClearColor(0.0f, 0.05f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		
 		int maxs = result->GetMaxS();
 		int maxt = result->GetMaxT(); 
@@ -232,11 +211,7 @@ private:
 		textureData = result;
 		rows = dim*2;
 		columns = dim*2;
-		sw.reset();
-		sw.start();
 		unloadMatrix(false);
-		sw.stop();
-		cout << "total unloading time " << sw.timeMS() << endl;
 	}
 
 	void calculateWithGPUVertex(Array2D<double> &R){
@@ -267,19 +242,11 @@ private:
 		vertProg = cgCreateProgram(g_cgContext, CG_SOURCE,
 	               simpleVertex, vertProfile,
 		           "main", NULL);
-
 		if(vertProg != NULL) cgGLLoadProgram(vertProg);
 
-		if(true){
-			fragProg = cgCreateProgram(g_cgContext, CG_SOURCE,
+		fragProg = cgCreateProgram(g_cgContext, CG_SOURCE,
                    generateBasisFunction, g_cgProfile,
                    "main", NULL);
-		} else {
-			fragProg = cgCreateProgram(g_cgContext, CG_SOURCE,
-                   inputCheck, g_cgProfile,
-                   "main", NULL);
-		}
-
         if(fragProg != NULL) cgGLLoadProgram(fragProg);
 
 		RenderTexture * result = new RenderTexture(textureMode);
@@ -293,33 +260,20 @@ private:
 		glClearColor(0.0f, 0.05f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		if(false){
-			int maxs = result->GetMaxS();
-			int maxt = result->GetMaxT(); 
-			glBegin(GL_QUADS);
-				glTexCoord2f(0.0,  0.0);   glVertex3f(-1.0, -1.0, 0.0);
-				glTexCoord2f(0.0,  maxt);  glVertex3f(-1.0, 1.0, 0.0);
-				glTexCoord2f(maxs, maxt);  glVertex3f(1.0, 1.0, 0.0);
-				glTexCoord2f(maxs, 0.0);   glVertex3f(1.0, -1.0, 0.0);
-			glEnd();
-		} else {
-			cgGLEnableProfile(vertProfile);
-			cgGLBindProgram(vertProg);
-			cgGLSetStateMatrixParameter(cgGetNamedParameter(vertProg, "ModelViewProj"),
-			CG_GL_MODELVIEW_PROJECTION_MATRIX,
-            CG_GL_MATRIX_IDENTITY);
-			CGparameter vpos = cgGetNamedParameter(vertProg, "vpos");
-			cgGLEnableClientState(vpos);
-			cgGLSetParameterPointer(vpos, 2, GL_FLOAT, 0, vertPos);		
-			CGparameter epos = cgGetNamedParameter(vertProg, "epos");
-			cgGLEnableClientState(epos);
-			cgGLSetParameterPointer(epos, 3, GL_FLOAT, 0, elecPos);
+		cgGLEnableProfile(vertProfile);
+		cgGLBindProgram(vertProg);
+		cgGLSetStateMatrixParameter(cgGetNamedParameter(vertProg, "ModelViewProj"),
+		CG_GL_MODELVIEW_PROJECTION_MATRIX, CG_GL_MATRIX_IDENTITY);
+		CGparameter vpos = cgGetNamedParameter(vertProg, "vpos");
+		cgGLEnableClientState(vpos);
+		cgGLSetParameterPointer(vpos, 2, GL_FLOAT, 0, vertPos);		
+		CGparameter epos = cgGetNamedParameter(vertProg, "epos");
+		cgGLEnableClientState(epos);
+		cgGLSetParameterPointer(epos, 3, GL_FLOAT, 0, elecPos);
 
-			glDrawArrays(GL_POINTS,0,numWalkers);
-
-			cgGLDisableClientState(vpos);
-			cgGLDisableClientState(epos);
-		}
+		glDrawArrays(GL_POINTS,0,numWalkers);
+		cgGLDisableClientState(vpos);
+		cgGLDisableClientState(epos);
 
 		result->EndCapture();
 		

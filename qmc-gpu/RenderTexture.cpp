@@ -79,6 +79,7 @@ RenderTexture::RenderTexture(const char *strMode)
     _iNumStencilBits(0),
     _bFloat(false),
     _bDoubleBuffered(false),
+    _bIsDrawingFront(true),
     _bPowerOf2(true),
     _bRectangle(false),
     _bMipmap(false),
@@ -609,6 +610,7 @@ bool RenderTexture::Reset(const char *strMode, ...)
     _iCurrentBoundBuffer = 0;
     _iNumDepthBits = 0; _iNumStencilBits = 0;
     _bDoubleBuffered = false;
+	_bIsDrawingFront = true;
     _bFloat = false; _bPowerOf2 = true;
     _bRectangle = false; _bMipmap = false; 
     _bShareObjects = false; _bCopyContext = false; 
@@ -722,6 +724,22 @@ bool RenderTexture::Resize(int iWidth, int iHeight)
     return Initialize(iWidth, iHeight, _bShareObjects, _bCopyContext);
 }
 
+bool RenderTexture::swapBuffers(){
+	if (_bIsDrawingFront)
+	{
+		//printf("drawing to front\n");
+		glDrawBuffer(GL_FRONT);
+		BindBuffer(WGL_BACK_LEFT_ARB); 
+	}
+	else
+	{
+		//printf("drawing to back\n");
+		glDrawBuffer(GL_BACK);
+		BindBuffer(WGL_FRONT_LEFT_ARB); 
+	}
+	_bIsDrawingFront = !_bIsDrawingFront;
+	return _bIsDrawingFront;
+}
 //---------------------------------------------------------------------------
 // Function     	: RenderTexture::BeginCapture
 // Description	    : 
@@ -2018,6 +2036,7 @@ RenderTexture::RenderTexture(int width, int height,
     _iNumDepthBits(0),
     _iNumStencilBits(0),
     _bDoubleBuffered(false),
+	_bIsDrawingFront(true),
     _bFloat(false),
     _bPowerOf2(true),
     _bRectangle(false),

@@ -105,13 +105,14 @@ void PrintArray(Array2D<GLfloat> matrix){
     printf("\n");
 }
 
-/**this just does matrix multiply on the GPU*/
+/**this just does matrix multiply on the GPU. used to make sure the matrix multiply
+is doing things correctly*/
 void checkMatrixMultiply(){
 	Array2D<GLfloat> A,B,C,D;
 	Stopwatch sw = Stopwatch();
-	long timeGPU, timeCPU;
+	long timeGPU=0, timeCPU=0;
 	bool verbose = false;
-	bool errorCheck = true;
+	bool errorCheck = false;
 	int d = 1000;
 
 	cout << endl << endl;
@@ -119,20 +120,34 @@ void checkMatrixMultiply(){
 
 	todisplay = Matrix(d,d);
 	other = Matrix(d,d);
-	A = todisplay.getData();
-	B = other.getData();
-	
+	Matrix res = Matrix(d,d,0.0,false);
+
 	sw.reset();
 	sw.start();
-	todisplay = todisplay * other;
+	//todisplay = todisplay*other;
 	sw.stop();
 	timeGPU = sw.timeMS();
-	
-	if(todisplay.isNull()) return;
+	cout << "operator* " << timeGPU << "\n";
+
+	sw.reset();
+	sw.start();
+	todisplay.matrixMultiplyFaster(other, res);
+	sw.stop();
+	timeGPU = sw.timeMS();
+	cout << "function " << timeGPU << "\n";
+
+	A = todisplay.getData();
+	B = other.getData();
+	//*
+	rows = res.getRows();
+	columns = res.getColumns();
+	C = res.getData();
+	/*/
 	rows = todisplay.getRows();
 	columns = todisplay.getColumns();
 	C = todisplay.getData();
-
+	//*/
+	
 	if(verbose){
 		cout << "matrix A (" << A.dim1() << ", " << A.dim2() << ") is: " << endl;
 		PrintArray(A);
@@ -142,14 +157,16 @@ void checkMatrixMultiply(){
 		PrintArray(C);
 	}
 	
-	cout << "computing accurate result\n";
-	sw.reset();
-	sw.start();
-	D = A*B;
-	sw.stop();
-	timeCPU = sw.timeMS();
+	
 	
 	if(errorCheck){
+		cout << "computing accurate result\n";
+		sw.reset();
+		sw.start();
+		D = A*B;
+		sw.stop();
+		timeCPU = sw.timeMS();
+
 		bool same = true;
 		int largestI = 0, largestJ = 0;
 		double currentError, largestError = 0;
@@ -157,7 +174,7 @@ void checkMatrixMultiply(){
 		cout << "checking matricies...\n";
 		for(int i=0; i<C.dim1(); i++)
 			for(int j=0; j<C.dim2(); j++){
-				currentError = abs( (C(i,j)-D(i,j))/C(i,j) );
+				currentError = abs( (C(i,j)-D(i,j))/D(i,j) );
 				if(currentError > largestError){
 					largestError = currentError;
 					largestI = i; largestJ = j;
@@ -357,6 +374,9 @@ void keyboard(unsigned char key, int x, int y)
 				testBasisFunction(1000);
 			}
 			break;
+		case '2':
+			checkMatrixMultiply();			
+			break;
 		case 'a':
 			todisplay += 0.1;
 			todisplay.display();
@@ -369,9 +389,7 @@ void keyboard(unsigned char key, int x, int y)
 			todisplay = todisplay * 0.9;
 			todisplay.display();
 			break;
-		case 'b':
-			checkMatrixMultiply();			
-			break;
+		
 		case 'v':
 			testTiming();			
 			break;
@@ -439,7 +457,6 @@ void initializeCg(){
     
 	// get the best profile for this hardware
 	g_cgProfile = cgGLGetLatestProfile(CG_GL_FRAGMENT);
-	//g_cgProfile = CG_PROFILE_FP30;
 	if(g_cgProfile == CG_PROFILE_FP40) cout << "Using fp40\n";
 	if(g_cgProfile == CG_PROFILE_FP30) cout << "Using fp30\n";
 	if(g_cgProfile == CG_PROFILE_FP20) cout << "Using fp20\n";
@@ -570,7 +587,7 @@ int main(int argc, char* argv[])
 {
 	init();
 	initializeCg();
-	srand( (unsigned)time( NULL ) );
+	//srand( (unsigned)time( NULL ) );
 	rows = 10;
 	columns = 20;
 

@@ -151,6 +151,7 @@ public: // interface
     // !Change the size of the render texture.
     bool Resize(int width, int height);
     
+	bool swapBuffers();
     // !Begin drawing to the texture. (i.e. use as "output" texture)
     bool BeginCapture();
     // !Ends drawing to 'current', begins drawing to this RenderTexture
@@ -314,6 +315,7 @@ protected: // data
     
     bool         _bFloat;
     bool         _bDoubleBuffered;
+	bool		 _bIsDrawingFront;
     bool         _bPowerOf2;
     bool         _bRectangle;
     bool         _bMipmap;

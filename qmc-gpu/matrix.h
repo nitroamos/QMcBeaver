@@ -16,8 +16,8 @@
 
 using namespace std;
 
-static bool PRINT = false;
-static const char * textureMode = "rgba=32f texRECT rtt";
+static bool PRINT = !true;
+static const char * textureMode = "rgba=32f doublebuffer texRECT rtt";
 
 /**
 justifications: 
@@ -382,7 +382,8 @@ public:
 
 	/*this function is supposed to take the texture out of the GPU's memory and make it accessible
 	to the rest of the c++ code by converting the texture to an Array2D object. the input print
-	can allow the data to be additionally displayed in the console*/
+	can allow the data to be additionally displayed in the console
+	calling this function will store the results in the data class variable.*/
 	void unloadMatrix(bool print){;
 		int h = textureData->GetHeight();
         int w = textureData->GetWidth();
@@ -579,6 +580,81 @@ public:
 		return Matrix(rows,RHS.columns,result[writingTexture]);
 	}
 
+	void matrixMultiplyFaster(Matrix &RHS, Matrix &LHS){
+		if(columns != RHS.rows){
+			cout << "inncorrect dimensions for matrix multiply" << endl;
+			return;
+		}
+		CGprogram     fp;
+		CGparameter   accum, tLHS, tRHS, startOps, stopOps;
+		const int maxLoops = 255;
+		//glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_LOOP_COUNT_NV, &maxLoops);
+		const int numLoops = textureData->GetWidth();
+		const int numPasses = ceil((double)numLoops/maxLoops);
+		//const char * arg[] = {"fastprecision"};
+		fp = cgCreateProgram(g_cgContext, CG_SOURCE,
+                           matrixMultiply2, g_cgProfile,
+                           "main", NULL);
+        if(fp != NULL){
+            cgGLLoadProgram(fp);
+			accum = cgGetNamedParameter(fp, "accum");     
+            tLHS = cgGetNamedParameter(fp, "texLHS");
+			tRHS = cgGetNamedParameter(fp, "texRHS");
+			startOps = cgGetNamedParameter(fp, "startOps");
+			stopOps = cgGetNamedParameter(fp, "stopOps");
+		} else {
+			cout << "error in matrixMultiply script" << endl;
+			return;
+		}
+		
+		RenderTexture * result = LHS.textureData;
+		result->BeginCapture();
+		cgGLBindProgram(fp);
+		cgGLEnableProfile(g_cgProfile);
+		textureData->BindBuffer(WGL_BACK_LEFT_ARB);
+		cgGLSetTextureParameter(tLHS, textureData->GetTextureID());
+		cgGLEnableTextureParameter(tLHS);
+		RHS.textureData->BindBuffer(WGL_BACK_LEFT_ARB);
+		cgGLSetTextureParameter(tRHS, RHS.textureData->GetTextureID());
+		cgGLEnableTextureParameter(tRHS);
+		cgGLSetTextureParameter(accum, result->GetTextureID());
+		cgGLEnableTextureParameter(accum);
+
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		if(numPasses%2 == 1) result->swapBuffers();
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		result->EndCapture();		
+
+		int maxs = result->GetMaxS();
+		int maxt = result->GetMaxT();
+		for(int i=0; i<numPasses; i++){
+			result->BeginCapture();
+			result->swapBuffers();
+
+			cgGLSetParameter1f(startOps, i*maxLoops);
+			cgGLSetParameter1f(stopOps, i<numPasses-1?(i+1)*maxLoops:numLoops);
+			glBegin(GL_QUADS);
+				glTexCoord2f(0.0,  0.0);   glVertex3f(-1.0, -1.0, 0.0);
+				glTexCoord2f(0.0,  maxt);  glVertex3f(-1.0, 1.0, 0.0);
+				glTexCoord2f(maxs, maxt);  glVertex3f(1.0, 1.0, 0.0);
+				glTexCoord2f(maxs, 0.0);   glVertex3f(1.0, -1.0, 0.0);
+			glEnd();
+
+			result->EndCapture();			
+		}
+
+		glFinish();
+		glFlush();
+		cgGLDisableTextureParameter(accum);
+		cgGLDisableTextureParameter(tLHS);
+		cgGLDisableTextureParameter(tRHS);
+		cgGLDisableProfile(g_cgProfile);
+
+		getError("Error in matrix multiply");
+	}
+
 	void operator=(const float C){
 		CGprogram     _fragmentProgram;
 		CGparameter   _valueParam;
@@ -692,6 +768,11 @@ public:
 	Array2D<GLfloat> getData(){
 		unloadMatrix(false);	
 		return data;
+	}
+
+	void setTexture(int _rows, int _columns, RenderTexture * newTex){
+		rows = _rows; columns = _columns;
+		textureData = newTex;
 	}
 
 protected:
