@@ -15,358 +15,376 @@
 
 #include <iostream>
 #include <math.h>
+#include "cppblas.h"
 
 using namespace std;
 
 /**
-  A 1-dimensional template for making arrays.  All of the memory allocation
-  and deallocation details are dealt with by the class.
+A 1-dimensional template for making arrays.  All of the memory allocation
+and deallocation details are dealt with by the class.
+
+Some of the methods can now be run with ATLAS. Some of the other methods (e.g. rotation)
+can also be sent to ATLAS, but these aren't bottlenecks...
 */
 
 template <class T> class Array1D
 {
- private:
+private:
 
-  /**
-    Number of elements in the array's first dimension.
-  */
+	/**
+	Number of elements in the array's first dimension.
+	*/
 
-  int n_1;
+	int n_1;
 
-  /**
-    Array containing the data.
-  */
+	/**
+	Array containing the data.
+	*/
 
-  T* pArray;
+	T* pArray;
 
- public:
+public:
 
-  /**
-    Gets the number of elements in the array's first dimension.
-    @return number of elements in the array's first dimension.
-  */
+	/**
+	Gets the number of elements in the array's first dimension.
+	@return number of elements in the array's first dimension.
+	*/
 
-  int dim1() { return n_1; }
+	int dim1() { return n_1; }
 
-  /**
-    Gets the total number of elements in the array.
-    @return total number of elements in the array.
-  */
+	/**
+	Gets the total number of elements in the array.
+	@return total number of elements in the array.
+	*/
 
-  int size() { return n_1; }
+	int size() { return n_1; }
 
-  /**
-    Gets a pointer to an array containing the array elements.  The ordering of
-    this array is NOT specified.  
-  */
+	/**
+	Gets a pointer to an array containing the array elements.  The ordering of
+	this array is NOT specified.  
+	*/
 
-  T* array() { return pArray; }
+	T* array() { return pArray; }
 
-  /**
-    Allocates memory for the array.
-    @param i size of the array's first dimension.
-  */
+	/**
+	Allocates memory for the array.
+	@param i size of the array's first dimension.
+	*/
 
-  void allocate(int i)
-    {
-      if( n_1 != i )
+	void allocate(int i)
 	{
-	  deallocate();
-	  n_1 = i;
-	  if(n_1 >= 1) 
-	    {
-	      pArray = new T[n_1];
-	    }
-	  else 
-	    {
-	      n_1 = 0;
-	      pArray = 0;
-	    }
-	}
-    }
-
-  /**
-    Deallocates memory for the array.
-  */
-
-  void deallocate()
-    {
-      if( n_1 > 0 )
-	{
-	  delete [] pArray;
-	  pArray = 0;
-	  n_1 = 0;
-	}
-    }
-
-  /**
-    Sets two arrays equal.
-  */
-
-  void operator=(const Array1D & rhs)
-    {
-       if(n_1 != rhs.n_1) allocate(rhs.n_1);
-
-       for(int i=0; i<n_1;i++) pArray[i] = rhs.pArray[i];
-    }
-
-  /**
-    Sets all of the elements in an array equal to the same value.
-  */
-
-  void operator=(const T C)
-    {
-      for(int i=0; i<n_1; i++)
-        {
-	  pArray[i] = C;
-        }
-    }
-
-  /**
-    Returns the dot product of two arrays.
-  */
-
-  T operator*( const Array1D & rhs)
-    {
-      if( n_1 != rhs.n_1 )
-	{
-	  cerr << "ERROR: incorrect sizes for two Array1D's in Array1D*"
-	       << "Array1D" << endl;
-	  exit(1);
-	}
-      if( n_1 <= 0 )
-	{
-	  cerr << "ERROR: Array1D of size 0 used in Array1D*Array1D" << endl;
-	  exit(1);
+		if( n_1 != i )
+		{
+			deallocate();
+			n_1 = i;
+			if(n_1 >= 1) 
+			{
+				pArray = new T[n_1];
+			}
+			else 
+			{
+				n_1 = 0;
+				pArray = 0;
+			}
+		}
 	}
 
-      T temp = 0.0;
-      for( int i=0; i<n_1; i++ )
+	/**
+	Deallocates memory for the array.
+	*/
+
+	void deallocate()
 	{
-	  temp += pArray[i] * rhs.pArray[i];
+		if( n_1 > 0 )
+		{
+			delete [] pArray;
+			pArray = 0;
+			n_1 = 0;
+		}
 	}
-      return temp;
-    }
 
-  /**
-    Returns the product of an array and a double.
-  */
-
-  Array1D operator*( const double rhs)
-    {
-      Array1D <T> A(n_1);
-      for( int i=0; i<n_1; i++ )
+#ifdef USEATLAS
+	T operator*( const Array1D<double> & rhs)
 	{
-	  A.pArray[i] = rhs*pArray[i];
+		return cblas_ddot(n_1, pArray, 1,rhs.pArray, 1);
 	}
-      return A;
-    }
 
-  /**
-    Returns the sum of two arrays.
-  */
-
-  Array1D operator+( const Array1D & rhs)
-    {
-      if( n_1 != rhs.n_1 )
+	T operator*( const Array1D<float> & rhs)
 	{
-	  cerr << "ERROR: incorrect sizes for two Array1D's in Array1D+"
-	       << "Array1D" << endl;
-	  exit(1);
+		return cblas_sdot(n_1, pArray, 1,rhs.pArray, 1);
 	}
-      if( n_1 <= 0 )
+
+	//this method has not been tested with ATLAS
+	Array1D operator+( const Array1D & rhs)
 	{
-	  cerr << "ERROR: Array1D of size 0 used in Array1D+Array1D" << endl;
-	  exit(1);
+		Array1D <T> A(rhs);
+		cblas_daxpy(n_1, 1.0, pArray,1, A.pArray, 1);
+		return A;
 	}
-      Array1D <T> A(n_1);
+#else
+	/**
+	Returns the dot product of two arrays.
+	*/
 
-      for( int i=0; i<n_1; i++ )
+	T operator*( const Array1D & rhs)
 	{
-	  A.pArray[i] = pArray[i] + rhs.pArray[i];
+		if( n_1 != rhs.n_1 )
+		{
+			cerr << "ERROR: incorrect sizes for two Array1D's in Array1D*"
+				<< "Array1D" << endl;
+			exit(1);
+		}
+		if( n_1 <= 0 )
+		{
+			cerr << "ERROR: Array1D of size 0 used in Array1D*Array1D" << endl;
+			exit(1);
+		}
+
+		T temp = 0.0;
+		for( int i=0; i<n_1; i++ )
+		{
+			temp += pArray[i] * rhs.pArray[i];
+		}
+		return temp;
 	}
-      return A;
-    }
 
-  /**
-    Returns the difference of two arrays.
-  */
+	/**
+	Returns the sum of two arrays.
+	*/
 
-  Array1D operator-( const Array1D & rhs)
-    {
-      if( n_1 != rhs.n_1 )
+	Array1D operator+( const Array1D & rhs)
 	{
-	  cerr << "ERROR: incorrect sizes for two Array1D's in Array1D-"
-	       << "Array1D" << endl;
-	  exit(1);
+		if( n_1 != rhs.n_1 )
+		{
+			cerr << "ERROR: incorrect sizes for two Array1D's in Array1D+"
+				<< "Array1D" << endl;
+			exit(1);
+		}
+		if( n_1 <= 0 )
+		{
+			cerr << "ERROR: Array1D of size 0 used in Array1D+Array1D" << endl;
+			exit(1);
+		}
+		Array1D <T> A(n_1);
+
+		for( int i=0; i<n_1; i++ )
+		{
+			A.pArray[i] = pArray[i] + rhs.pArray[i];
+		}
+		return A;
 	}
-      if( n_1 <= 0 )
+#endif
+	/**
+	Sets two arrays equal.
+	*/
+
+	void operator=(const Array1D & rhs)
 	{
-	  cerr << "ERROR: Array1D of size 0 used in Array1D-Array1D" << endl;
-	  exit(1);
-	}
-      Array1D <T> A(n_1);
+		if(n_1 != rhs.n_1) allocate(rhs.n_1);
 
-      for( int i=0; i<n_1; i++ )
+		for(int i=0; i<n_1;i++) pArray[i] = rhs.pArray[i];
+		//memcpy(pArray, rhs.pArray, sizeof(T)*n_1);
+	}
+
+	/**
+	Sets all of the elements in an array equal to the same value.
+	*/
+
+	void operator=(const T C)
 	{
-	  A.pArray[i] = pArray[i] - rhs.pArray[i];
+		if(C == 0) {
+			memset(pArray,0,sizeof(T)*n_1);
+			return;
+		}
+		for(int i=0; i<n_1; i++)
+			pArray[i] = C;
 	}
-      return A;
-    }
 
-  /**
-    Sets this array equal to itself times a scalar value.
-  */
+	/**
+	Returns the product of an array and a double.
+	*/
 
-  void operator*=(const T C)
-    {
-      for(int i=0;i<n_1;i++)
-        {
-	  pArray[i] *= C;
-        }
-    }
-
-  /**
-    Sets this array equal to itself divided by a scalar value.
-  */
-
-  void operator/=(const T C)
-    {
-      for(int i=0;i<n_1;i++)
-        {
-	  pArray[i] /= C;
-        }
-    }
-
-  /** 
-    Conjugates a quaternion.
-  */
-
-  void quaternion_conjugate()
-    {
-      if ( n_1 != 4 ) 
+	Array1D operator*( const double rhs)
 	{
-	  cerr << "ERROR: incorrect size for quaternion conjugate." << endl;
-	  exit(1);
+		Array1D <T> A(n_1);
+		for( int i=0; i<n_1; i++ )
+		{
+			A.pArray[i] = rhs*pArray[i];
+		}
+		return A;
 	}
-      for (int i=1; i<4; i++)
+
+	/**
+	Sets this array equal to itself times a scalar value.
+	*/
+
+	void operator*=(const T C)
 	{
-	  pArray[i] *= -1;
+		for(int i=0;i<n_1;i++)
+		{
+			pArray[i] *= C;
+		}
 	}
-    }
 
-  /**
-    Returns the product of two quaternions.
-    @param rhs quaternion to multiply by this quaternion.
-    @return product of these two quaternions.
-  */
+	/**
+	Sets this array equal to itself divided by a scalar value.
+	*/
 
-  Array1D quaternion_product( const Array1D & rhs )
-    {
-      if ( n_1 != 4 || rhs.n_1 != 4 )
+	void operator/=(const T C)
 	{
-	  cerr << "ERROR: incorrect size for quaternion product." << endl;
-	  exit(1);
+		T inv = 1.0/C;
+		operator*=(inv);
 	}
-      Array1D<T> product(4);
-      product.pArray[0] = pArray[0]*rhs.pArray[0] - pArray[1]*rhs.pArray[1] - 
-                          pArray[2]*rhs.pArray[2] - pArray[3]*rhs.pArray[3];
-      product.pArray[1] = pArray[0]*rhs.pArray[1] + pArray[1]*rhs.pArray[0] + 
-                          pArray[2]*rhs.pArray[3] - pArray[3]*rhs.pArray[2];
-      product.pArray[2] = pArray[0]*rhs.pArray[2] - pArray[1]*rhs.pArray[3] + 
-                          pArray[2]*rhs.pArray[0] + pArray[3]*rhs.pArray[1];
-      product.pArray[3] = pArray[0]*rhs.pArray[3] + pArray[1]*rhs.pArray[2] - 
-                          pArray[2]*rhs.pArray[1] + pArray[3]*rhs.pArray[0];
-      return product;
-    }
 
-  /**
-    Rotates a point by an angle about an axis.
-    @param angle 
-    @param axis 3D coords of axis of unit length about which we are rotating.
-  */
+	/**
+	Returns the difference of two arrays.
+	*/
 
-  void rotate(Array1D axis, double angle)
-    {
-      if (n_1 != 3)
+	Array1D operator-( const Array1D & rhs)
 	{
-	  cerr << "ERROR: incorrect size for rotating point." << endl;
-	  exit(1);
+		if( n_1 != rhs.n_1 )
+		{
+			cerr << "ERROR: incorrect sizes for two Array1D's in Array1D-"
+				<< "Array1D" << endl;
+			exit(1);
+		}
+		if( n_1 <= 0 )
+		{
+			cerr << "ERROR: Array1D of size 0 used in Array1D-Array1D" << endl;
+			exit(1);
+		}
+		Array1D <T> A(n_1);
+
+		for( int i=0; i<n_1; i++ )
+		{
+			A.pArray[i] = pArray[i] - rhs.pArray[i];
+		}
+		return A;
 	}
-      Array1D<T> q_point(4), q_axis(4), q1(4), q2(4);
-      q_point.pArray[0] = 0.0;
-      q_axis.pArray[0] = cos(angle/2);
-      for (int i=1; i<4; i++)
+
+	/** 
+	Conjugates a quaternion.
+	*/
+
+	void quaternion_conjugate()
 	{
-	  q_point.pArray[i] = pArray[i-1];
-	  q_axis.pArray[i] = axis.pArray[i-1]*sin(angle/2);
+		if ( n_1 != 4 ) 
+		{
+			cerr << "ERROR: incorrect size for quaternion conjugate." << endl;
+			exit(1);
+		}
+		for (int i=1; i<4; i++)
+		{
+			pArray[i] *= -1;
+		}
 	}
-      q1 = q_axis.quaternion_product(q_point);
-      q_axis.quaternion_conjugate();
-      q2 = q1.quaternion_product(q_axis);
-      for (int i=1; i<4; i++)
+
+	/**
+	Returns the product of two quaternions.
+	@param rhs quaternion to multiply by this quaternion.
+	@return product of these two quaternions.
+	*/
+
+	Array1D quaternion_product( const Array1D & rhs )
 	{
-	  pArray[i-1] = q2.pArray[i];
+		if ( n_1 != 4 || rhs.n_1 != 4 )
+		{
+			cerr << "ERROR: incorrect size for quaternion product." << endl;
+			exit(1);
+		}
+		Array1D<T> product(4);
+		product.pArray[0] = pArray[0]*rhs.pArray[0] - pArray[1]*rhs.pArray[1] - 
+			pArray[2]*rhs.pArray[2] - pArray[3]*rhs.pArray[3];
+		product.pArray[1] = pArray[0]*rhs.pArray[1] + pArray[1]*rhs.pArray[0] + 
+			pArray[2]*rhs.pArray[3] - pArray[3]*rhs.pArray[2];
+		product.pArray[2] = pArray[0]*rhs.pArray[2] - pArray[1]*rhs.pArray[3] + 
+			pArray[2]*rhs.pArray[0] + pArray[3]*rhs.pArray[1];
+		product.pArray[3] = pArray[0]*rhs.pArray[3] + pArray[1]*rhs.pArray[2] - 
+			pArray[2]*rhs.pArray[1] + pArray[3]*rhs.pArray[0];
+		return product;
 	}
-    }
 
-  /**
-    Creates an array.
-  */
+	/**
+	Rotates a point by an angle about an axis.
+	@param angle 
+	@param axis 3D coords of axis of unit length about which we are rotating.
+	*/
 
-  Array1D() { pArray = 0; n_1 = 0; }
-
-  /**
-    Creates an array and allocates memory.
-    @param i size of the array's first dimension.
-  */
-
-  Array1D(int i) { pArray = 0; n_1 = 0; allocate(i); }
-
-  /**
-    Creates an array and sets it equal to another array.
-    @param rhs array to set this array equal to.
-  */
-
-  Array1D(const Array1D & rhs)
-    {
-      n_1 = 0;
-      pArray = 0;
-      allocate(rhs.n_1);
-      for(int i=0; i<n_1; i++) pArray[i] = rhs.pArray[i];
-    }
-
-  /**
-    Destroys the array and cleans up the memory.
-  */
-
-  ~Array1D() { deallocate(); }
-
-  /**
-    Accesses element <code>(i)</code> of the array.
-  */
-
-  T& operator()(int i) { return pArray[i]; }
-
-  /**
-    Prints the array to a stream.
-  */
-
-  friend ostream& operator<<(ostream & strm, const Array1D<T> & rhs)
-    {
-      for( int i=0; i<rhs.n_1; i++ )  
+	void rotate(Array1D axis, double angle)
 	{
-	  strm << rhs.pArray[i] << "\t";
+		if (n_1 != 3)
+		{
+			cerr << "ERROR: incorrect size for rotating point." << endl;
+			exit(1);
+		}
+		Array1D<T> q_point(4), q_axis(4), q1(4), q2(4);
+		q_point.pArray[0] = 0.0;
+		q_axis.pArray[0] = cos(angle/2);
+		for (int i=1; i<4; i++)
+		{
+			q_point.pArray[i] = pArray[i-1];
+			q_axis.pArray[i] = axis.pArray[i-1]*sin(angle/2);
+		}
+		q1 = q_axis.quaternion_product(q_point);
+		q_axis.quaternion_conjugate();
+		q2 = q1.quaternion_product(q_axis);
+		for (int i=1; i<4; i++)
+		{
+			pArray[i-1] = q2.pArray[i];
+		}
 	}
-      strm << endl;
-      return strm;
-    }
+
+	/**
+	Creates an array.
+	*/
+
+	Array1D() { pArray = 0; n_1 = 0; }
+
+	/**
+	Creates an array and allocates memory.
+	@param i size of the array's first dimension.
+	*/
+
+	Array1D(int i) { pArray = 0; n_1 = 0; allocate(i); }
+
+	/**
+	Creates an array and sets it equal to another array.
+	@param rhs array to set this array equal to.
+	*/
+
+	Array1D(const Array1D & rhs)
+	{
+		n_1 = 0;
+		pArray = 0;
+		allocate(rhs.n_1);
+		for(int i=0; i<n_1; i++) pArray[i] = rhs.pArray[i];
+	}
+
+	/**
+	Destroys the array and cleans up the memory.
+	*/
+
+	~Array1D() { deallocate(); }
+
+	/**
+	Accesses element <code>(i)</code> of the array.
+	*/
+
+	T& operator()(int i) { return pArray[i]; }
+
+	/**
+	Prints the array to a stream.
+	*/
+
+	friend ostream& operator<<(ostream & strm, const Array1D<T> & rhs)
+	{
+		for( int i=0; i<rhs.n_1; i++ )  
+		{
+			strm << rhs.pArray[i] << "\t";
+		}
+		strm << endl;
+		return strm;
+	}
 };
 
 #endif
-
-
-
-
-
-

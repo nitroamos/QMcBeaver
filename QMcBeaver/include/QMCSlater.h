@@ -115,6 +115,7 @@ public:
   Array1D<double> Psi;
   Array1D<double> Laplacian_PsiRatio;
   Array3D<double> Grad_PsiRatio;
+
   Array1D<bool> Singular;
 
   int Start;
@@ -125,14 +126,15 @@ public:
 
   Array1D< Array2D<double> > D;
   Array1D< Array2D<double> > D_inv;
-  Array3D<double> Laplacian_D;
-  Array4D<double> Grad_D;
+  Array1D< Array2D<double> > Laplacian_D;
+  Array2D< Array2D<double> > Grad_D;
 
   // Scratch Space
-  Array1D<double> Chi1D;
-  Array1D<double> Chi1D_laplacian;
-  Array2D<double> Chi2D;
-  Array1D<double> Grad1e;
+  Array2D<double> Chi;
+  Array2D<double> Chi_laplacian;
+  Array1D< Array2D<double> > Chi_gradient;
+
+  Array2D<double> WF_coeffs;
 
   void allocate(int N);
 
@@ -147,20 +149,11 @@ public:
   */
   void setStartAndStopElectronPositions(int startEl, int stopEl); 
 
-  void initialize_D(Array2D<double> &X);
-  void initialize_Laplacian_D(Array2D<double> &X);
-  void initialize_Grad_D(Array2D<double> &X);
-
-  void update_Ds(int electron, Array2D<double> &X);
-  void update_D(int electron, Array2D<double> &X);
-  void update_Laplacian_D(int electron, Array2D<double> &X);
-  void update_Grad_D(int electron, Array2D<double> &X);
+  void update_Ds(Array2D<double> &X);
 
   void calculate_DerivativeRatios();
-  void calculate_Laplacian_PsiRatio();
-  void calculate_Grad_PsiRatio();
 
-  void update_D_inverse_and_Psi(int i);
+  void update_D_inverse_and_Psi();
 };
 
 #endif

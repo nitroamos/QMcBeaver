@@ -73,8 +73,9 @@ class QMCBasisFunction
   /**
     Calculates the value, gradient, and Laplacian of a basis funcion.
   */
-  void evaluateBasisFunction(int whichBF, Array2D<double>& X, int elNumber, 
-                        double& Psi, Array1D<double>& Grad, double& Laplacian);
+  void evaluateBasisFunctions(Array2D<double>& X, int start, int stop, 
+                         Array2D<double>& chi_value, Array1D< Array2D<double> >& chi_grad,
+                                               Array2D<double>& chi_laplacian);
 
   /**
     Sets two QMCBasisFunctions objects equal.
