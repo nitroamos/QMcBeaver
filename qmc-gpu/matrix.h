@@ -383,18 +383,22 @@ public:
 	/*this function is supposed to take the texture out of the GPU's memory and make it accessible
 	to the rest of the c++ code by converting the texture to an Array2D object. the input print
 	can allow the data to be additionally displayed in the console*/
-	Array2D<GLfloat> unloadMatrix(bool print){
+	void unloadMatrix(bool print){;
 		int h = textureData->GetHeight();
         int w = textureData->GetWidth();
 		int index;
-		GLfloat* result = (GLfloat*)malloc( sizeof(GLfloat) * h * w * 4);
-		Array2D<GLfloat> matrix(rows, columns);
-		GLfloat** mat = matrix.array();
-		
-		glFinish();
 
-		textureData->Bind();
-		glGetTexImage(textureData->GetTextureTarget(),0,GL_RGBA,GL_FLOAT,result);
+		GLfloat* result = (GLfloat*)malloc( sizeof(GLfloat) * h * w * 4);
+		data.allocate(rows,columns);
+		GLfloat** mat = data.array();
+			
+		glFinish();
+		
+		//this is a *lot* faster than glGetTexImage(textureData->GetTextureTarget(),0,GL_RGBA,GL_FLOAT,result);
+		textureData->BeginCapture();
+		glReadPixels(0,0,w,h,GL_RGBA,GL_FLOAT,result);
+		textureData->EndCapture();
+		
 		if(print){
 			//PrintRGBAPixelsColumn(result,w,h);
 			PrintRGBAPixelsBox(result,w,h);
@@ -402,6 +406,7 @@ public:
 
 		//  r   g    or    x   y
         //  b   a          z   w
+		//this section could be optimized, but this function doesn't spend much time here
         for(int i=0; i<h; i++){
             for(int j=0; j<w; j++){
 				index = mapping(i, j, h, w);
@@ -415,7 +420,6 @@ public:
             }
         }
 		getError("Error unloading matrix");
-		return matrix;
 	}
 
 	void operator+=(const Matrix RHS){
@@ -683,6 +687,12 @@ public:
 	int getRows(){ return rows; }
 	int getColumns(){ return columns; }
 	bool isNull(){ return (rows == 0 || columns == 0); }
+	
+	/*to do: implement method of testing whether unloadMatrix actually needs to be called*/
+	Array2D<GLfloat> getData(){
+		unloadMatrix(false);	
+		return data;
+	}
 
 protected:
 	Array2D<GLfloat> data;//at the end, eliminate this var so all mem is in texture?

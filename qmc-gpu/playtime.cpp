@@ -23,6 +23,9 @@ int rows, columns;
 void testBasisFunction(int dim){
 	Stopwatch sw = Stopwatch();
 	long timeGPU, timeCPU;
+	
+	//there has got to be a "more elegant" way of initializing an Array2D than this...
+	//problem is probably just that i'm dumb and forgot pointer stuff
 	Array2D<double> coeffs = Array2D<double>(8,2);
 	double temp[8][2] = {
 		{6.66500000E+03,	0.363584299905},
@@ -60,7 +63,7 @@ void testBasisFunction(int dim){
 	sw.stop();
 	timeGPU = sw.timeMS();
 	
-	if(false){
+	if(!false){
 		cout << "calculating errors...\n";
 		GLfloat gpuResult;
 		GLfloat cpuResult;
@@ -70,7 +73,7 @@ void testBasisFunction(int dim){
 		for(int i=0; i<numBF; i++){
 			bfGPU.getPsi(i,&gpuResult);
 			bfCPU.getPsi(i,&cpuResult);
-			error = (gpuResult - cpuResult)/gpuResult;
+			error = (gpuResult - cpuResult)/cpuResult;
 			avgError += error;
 			if(error > lrgError) lrgError = error;
 		}
@@ -116,8 +119,8 @@ void checkMatrixMultiply(){
 
 	todisplay = Matrix(d,d);
 	other = Matrix(d,d);
-	A = todisplay.unloadMatrix(false);
-	B = other.unloadMatrix(false);
+	A = todisplay.getData();
+	B = other.getData();
 	
 	sw.reset();
 	sw.start();
@@ -128,7 +131,7 @@ void checkMatrixMultiply(){
 	if(todisplay.isNull()) return;
 	rows = todisplay.getRows();
 	columns = todisplay.getColumns();
-	C = todisplay.unloadMatrix(false);
+	C = todisplay.getData();
 
 	if(verbose){
 		cout << "matrix A (" << A.dim1() << ", " << A.dim2() << ") is: " << endl;
@@ -314,9 +317,9 @@ void testTiming(){
 		sw.stop();
 		timeGPU	= sw.timeMS();
 
-		A =	Amat.unloadMatrix(false);
-		B =	Bmat.unloadMatrix(false);
-		C =	Cmat.unloadMatrix(false);
+		A =	Amat.getData();
+		B =	Bmat.getData();
+		C =	Cmat.getData();
 
 		sw.reset();
 		sw.start();
@@ -348,10 +351,10 @@ void keyboard(unsigned char key, int x, int y)
 		case '1':
 			printf("%10s%10s%10s%10s\n","Dim","#BF","CPU","GPU");
 			if(!true){
-				for(int i=100; i<=1500; i+=100)
+				for(int i=800; i<=900; i+=100)
 					testBasisFunction(i);
 			} else {
-				testBasisFunction(2000);
+				testBasisFunction(1000);
 			}
 			break;
 		case 'a':

@@ -42,6 +42,47 @@ static const char *generateBasisFunction =
 "   return output;	                                                \n"
 "}                                                                  \n";
 
+static const char *generateBasisFunctionTexture = 
+"float4 main(in float2 coords : TEX0,                               \n"
+"			 uniform samplerRECT  epos) : COLOR                     \n"
+"{																	\n"
+"   float3 r  = texRECT(epos, coords).xyz;	                        \n"
+"	float3 klm = float3(0,0,0);		    							\n"
+"	float3 center = float3(0,0,0);         							\n"
+"	float ngauss = 8;												\n"
+"	float4 output = float4(0,0,0,0);         						\n"
+"	float r_sq = 0;													\n"
+"	float xyz_term = 0;												\n"
+"	float coeffs[8][2] = {											\n"
+"		{6.66500000E+03,	0.363584299905},                        \n"
+"		{1.00000000E+03,	0.674985792448},						\n"
+"		{2.28000000E+02,	1.1316199392},							\n"
+"		{6.47100000E+01,	1.65300920982},							\n"
+"		{2.10600000E+01,	1.92382064638},							\n"
+"		{7.49500000E+00,	1.44727831645},							\n"
+"		{2.79700000E+00,	0.439163129646},						\n"
+"		{5.21500000E-01,	0.00664580366553}};						\n"
+"	r = r - center;													\n"
+"	r_sq = dot(r,r);												\n"
+"	xyz_term = pow(r.x,klm.x)*pow(r.y,klm.y)*pow(r.z,klm.z);		\n"	
+"	for(int j=0; j<ngauss; j++){									\n"
+"		output.x += coeffs[j][1]*exp(-coeffs[j][0]*r_sq);			\n"
+"	}																\n"
+"	output.x *= xyz_term;											\n"
+"																	\n"
+"	float exp_xyz_term = 0;											\n"
+"	float temp = 0;													\n"
+"	for(int j=0; j<ngauss; j++){									\n"
+"		exp_xyz_term = coeffs[j][1]*exp(-coeffs[j][0]*r_sq)*xyz_term; \n"
+"		temp = -2.0*coeffs[j][0];									\n"
+"																	\n"
+"		output.y += (klm.x/r.x + temp*r.x)*exp_xyz_term;			\n"
+"		output.z += (klm.y/r.y + temp*r.y)*exp_xyz_term;			\n"
+"		output.w += (klm.z/r.z + temp*r.z)*exp_xyz_term;			\n"
+"	}																\n"
+"   return output;	                                                \n"
+"}                                                                  \n";
+
 static const char *inputCheck = 
 "float4 main(in float3 r : TEX7) : COLOR							\n"
 "{																	\n"
@@ -64,6 +105,9 @@ static const char *simpleVertex =
 
 class BasisFunction : public Matrix {
 public:	
+	/*basically just the info for calculating a basis function. my idea is that 
+	eventually, most/all of these parameters would be "hard coded" into a char *
+	just like what is done in generateBasisFunction.*/
 	BasisFunction(int _numWalkers, Array2D<double> _Coeffs, int _K, int _L, int _M, 
 				int _N_Gauss, double _Xc, double _Yc, double _Zc, string _Type){
 		dim = sqrt((double)_numWalkers);//require a perfect square for now
@@ -75,7 +119,8 @@ public:
 		assert( R.dim1() == numWalkers );
 		calculated = true;
 		if(useGPU){
-			calculateWithGPU1(R);
+			//calculateWithGPUVertex(R);
+			calculateWithGPUText(R);
 		} else {
 			calculateWithCPU(R);
 		}
@@ -102,12 +147,10 @@ public:
 	}
 
 private:
-	void calculateWithGPU2(Array2D<double> &R){
-		return;
-		int texDim = dim;
+	void calculateWithGPUText(Array2D<double> &R){
 		Stopwatch sw = Stopwatch();
-
 		GLfloat* texels = new GLfloat[dim*dim*4];
+		GLuint    texId[1];
 
 		int i, j, index;
 		for(i=0; i<dim; i++){
@@ -119,18 +162,29 @@ private:
                 texels[index +3] = 0;
             }
         }
+		
 
-		RenderTexture * epos = new RenderTexture(textureMode);
-		epos->Initialize(dim,dim,true,false);
-		epos->BeginCapture();
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glDrawPixels(dim, dim, GL_RGBA, GL_FLOAT, texels);
-		epos->EndCapture();
+		glGenTextures(1, texId);	
+
+		glActiveTextureARB(GL_TEXTURE0_ARB);
+		glBindTexture(GL_TEXTURE_RECTANGLE_NV, texId[0]);
+		sw.reset();
+		sw.start();
+		
+		glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_RGBA32_NV, 
+							dim, dim, 0, GL_RGBA, GL_FLOAT, texels);
+		sw.stop();
+		cout << "total uploading time " << sw.timeMS() << endl;
+		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 		CGprogram fragProg;
+		CGparameter tex;
 		if(true){
 			fragProg = cgCreateProgram(g_cgContext, CG_SOURCE,
-                   generateBasisFunction, g_cgProfile,
+                   generateBasisFunctionTexture, g_cgProfile,
                    "main", NULL);
 		} else {
 			fragProg = cgCreateProgram(g_cgContext, CG_SOURCE,
@@ -138,26 +192,27 @@ private:
                    "main", NULL);
 		}
 		
-        if(fragProg != NULL) cgGLLoadProgram(fragProg);
-		CGparameter tex = cgGetNamedParameter(fragProg, "r");
-		sw.reset();
-		sw.start();
+		if(fragProg != NULL){
+			cgGLLoadProgram(fragProg);
+			tex = cgGetNamedParameter(fragProg, "epos");
+		}
 
 		RenderTexture * result = new RenderTexture(textureMode);
-		result->Initialize(texDim,texDim,true,false);
+		result->Initialize(dim,dim,true,false);
 		
 		result->BeginCapture();
 		
 		cgGLEnableProfile(g_cgProfile);	
 		cgGLBindProgram(fragProg);
 		
-		cgGLSetTextureParameter(tex, epos->GetTextureID());
+		cgGLSetTextureParameter(tex, texId[0]);
 		cgGLEnableTextureParameter(tex);
 
 
 		glClearColor(0.0f, 0.05f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		
 		int maxs = result->GetMaxS();
 		int maxt = result->GetMaxT(); 
 		glBegin(GL_QUADS);
@@ -167,26 +222,24 @@ private:
 			glTexCoord2f(maxs, 0.0);   glVertex3f(1.0, -1.0, 0.0);
 		glEnd();
 
-
-
 		result->EndCapture();
 		
 		glFinish();
 		glFlush();
 
-		getError("Error in runCg function");
+		getError("Error in calculateWithGPUText function");
 		if(textureData) delete textureData;
 		textureData = result;
-		rows = texDim*2;
-		columns = texDim*2;
-		data = unloadMatrix(false);
-		cout << "done calculating\n";
-		
+		rows = dim*2;
+		columns = dim*2;
+		sw.reset();
+		sw.start();
+		unloadMatrix(false);
 		sw.stop();
-		cout << "finishing time was " << sw.timeMS() << endl;
+		cout << "total unloading time " << sw.timeMS() << endl;
 	}
 
-	void calculateWithGPU1(Array2D<double> &R){
+	void calculateWithGPUVertex(Array2D<double> &R){
 		int texDim = dim;
 		GLfloat * vertPos = new GLfloat[2*numWalkers];
 		GLfloat * elecPos=  new GLfloat[3*numWalkers];
@@ -268,7 +321,6 @@ private:
 			cgGLDisableClientState(epos);
 		}
 
-
 		result->EndCapture();
 		
 		glFinish();
@@ -277,12 +329,12 @@ private:
 		cgGLDisableProfile(g_cgProfile);
 		cgGLDisableProfile(vertProfile);
 
-		getError("Error in runCg function");
+		getError("Error in calculateWithGPUVertex function");
 		if(textureData) delete textureData;
 		textureData = result;
 		rows = texDim*2;
 		columns = texDim*2;
-		//data = unloadMatrix(false);
+		unloadMatrix(false);
 	}
 
 	void calculateWithCPU(Array2D<double> &R){
