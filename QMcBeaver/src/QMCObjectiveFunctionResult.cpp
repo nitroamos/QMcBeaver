@@ -341,8 +341,12 @@ double QMCObjectiveFunctionResult::calculate_penalty_function(
 	{
 	  distance = poles(i).abs();
 	}
-
-      penalty -= log( distance );
+      if(distance <= 0){
+	cerr << "ERROR: distance from real axis is " << distance << "  in OFR, can\'t take log\n";
+	penalty = 1e100; 
+      } else {
+	penalty -= log( distance );
+      }
     }
 
   return penalty * Input->flags.singularity_penalty_function_parameter;
