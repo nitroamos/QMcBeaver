@@ -80,8 +80,8 @@ void QMCWalker::propagateWalker()
   QMCGreensRatioComponent reverseGreensFunction = \
                                               calculateReverseGreensFunction();
 
-  double GreensFunctionRatio = \
-                         reverseGreensFunction.DivideBy(forwardGreensFunction);
+  double GreensFunctionRatio =
+    reverseGreensFunction/forwardGreensFunction;
 
   calculateMoveAcceptanceProbability(GreensFunctionRatio);
 
@@ -402,7 +402,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 
       QMCGreensRatioComponent OneE = GaussianGF + SlaterGF;
 
-      GF.MultiplyBy(OneE);
+      GF *= OneE;
 
       // Update the distance attempted to move squared
 
@@ -612,7 +612,7 @@ QMCGreensRatioComponent \
 
       QMCGreensRatioComponent OneE = GaussianGF + SlaterGF;
 
-      GF.MultiplyBy(OneE);
+      GF *= OneE;
     }
   return GF;
 }
