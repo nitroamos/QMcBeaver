@@ -14,6 +14,7 @@
 #define Array1D_H
 
 #include <iostream>
+#include <math.h>
 
 using namespace std;
 
