@@ -32,7 +32,7 @@ for more details.
 
 
 #include "QMCBasisFunction.h"
-#define TOOSMALL 1e-306
+#define TOOSMALL 1e-300
 
 QMCBasisFunction::QMCBasisFunction()
 {
@@ -279,86 +279,84 @@ double QMCBasisFunction::radialFunctionSecondDerivative
 }
 
 void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X, int start,
-											  int stop, Array2D<double>& chi_value, Array1D< Array2D<double> >& chi_grad,
-											  Array2D<double>& chi_laplacian)
+					      int stop, Array2D<double>& chi_value, Array1D< Array2D<double> >& chi_grad,
+					      Array2D<double>& chi_laplacian)
 {
-	int el = 0;
-	int a, b, c, nGaussians;
-    int numBF;
-	double x, y, z, x2, y2, z2, r_sq, xyz;
-	double p0, p1, exp_term, temp;
-	double chi, chi_gradx, chi_grady, chi_gradz, chi_lap;
-	for (int index=start; index<=stop; index++)
+  int el = 0;
+  int a, b, c, nGaussians;
+  int numBF;
+  double x, y, z, x2, y2, z2, r_sq, xyz;
+  double p0, p1, exp_term, temp;
+  double chi, chi_gradx, chi_grady, chi_gradz, chi_lap;
+  for (int index=start; index<=stop; index++)
+    {
+      int bf = 0;
+      for (int atom=0; atom<flags->Natoms; atom++)
 	{
-		int bf = 0;
-		for (int atom=0; atom<flags->Natoms; atom++)
+	  for (int i=0; i<3; i++)
+	    {
+	      Xcalc(i) = X(index,i) - Molecule->Atom_Positions(atom,i);
+	    }
+	  x = Xcalc(0);
+	  y = Xcalc(1);
+	  z = Xcalc(2);
+	  x2 = x*x;
+	  y2 = y*y;
+	  z2 = z*z;
+	  r_sq = x2+y2+z2;
+	  numBF = BFCoeffs(atom).getNumberBasisFunctions();
+	  for (int j=0; j<numBF; j++)
+	    {
+	      a = BFCoeffs(atom).xyz_powers(j,0);
+	      b = BFCoeffs(atom).xyz_powers(j,1);
+	      c = BFCoeffs(atom).xyz_powers(j,2);
+	      
+	      xyz = pow(x,a)*pow(y,b)*pow(z,c);
+	      
+	      double** coeffs = BFCoeffs(atom).Coeffs.array()[j];
+	      
+	      nGaussians = BFCoeffs(atom).N_Gauss(j);
+	      chi       = 0;
+	      chi_gradx = 0;
+	      chi_grady = 0;
+	      chi_gradz = 0;
+	      chi_lap   = 0;
+	      for (int i=0; i<nGaussians; i++)
 		{
-			for (int i=0; i<3; i++)
-			{
-				Xcalc(i) = X(index,i) - Molecule->Atom_Positions(atom,i);
-			}
-			x = Xcalc(0);
-			y = Xcalc(1);
-			z = Xcalc(2);
-			x2 = x*x;
-			y2 = y*y;
-			z2 = z*z;
-			r_sq = x2+y2+z2;
-            numBF = BFCoeffs(atom).getNumberBasisFunctions();
-			for (int j=0; j<numBF; j++)
-			{
-				a = BFCoeffs(atom).xyz_powers(j,0);
-				b = BFCoeffs(atom).xyz_powers(j,1);
-				c = BFCoeffs(atom).xyz_powers(j,2);
-
-				xyz = pow(x,a)*pow(y,b)*pow(z,c);
-
-				double** coeffs = BFCoeffs(atom).Coeffs.array()[j];
-
-				nGaussians = BFCoeffs(atom).N_Gauss(j);
-				chi       = 0;
-				chi_gradx = 0;
-				chi_grady = 0;
-				chi_gradz = 0;
-				chi_lap   = 0;
-				for (int i=0; i<nGaussians; i++)
-				{
-					p0 = coeffs[i][0];
-					p1 = coeffs[i][1];
-					exp_term = p1*exp(-p0*r_sq)*xyz;
-					temp = -2.0*p0;
-
-					chi       += exp_term;
-					chi_gradx += (a/x + temp*x) * exp_term;
-					chi_grady += (b/y + temp*y) * exp_term;
-					chi_gradz += (c/z + temp*z) * exp_term;
-					chi_lap   += (a*(a-1.0)/x2 + b*(b-1.0)/y2 + c*(c-1.0)/z2
-								 - (4.0*(a+b+c)+6.0-4.0*r_sq*p0)*p0)*exp_term;
-				}
-
-				/*	This is important on some operating systems because if the values are too small,
-						they can cause a library like ATLAS to crash. (not entirely sure why...)*/
-				if(chi > 0 && chi <  TOOSMALL) chi = TOOSMALL;
-				if(chi < 0 && chi > -TOOSMALL) chi = -TOOSMALL;
-				if(chi_gradx > 0 && chi_gradx <  TOOSMALL) chi_gradx = TOOSMALL;
-				if(chi_gradx < 0 && chi_gradx > -TOOSMALL) chi_gradx = -TOOSMALL;
-				if(chi_grady > 0 && chi_grady <  TOOSMALL) chi_grady = TOOSMALL;
-				if(chi_grady < 0 && chi_grady > -TOOSMALL) chi_grady = -TOOSMALL;
-				if(chi_gradz > 0 && chi_gradz <  TOOSMALL) chi_gradz = TOOSMALL;
-				if(chi_gradz < 0 && chi_gradz > -TOOSMALL) chi_gradz = -TOOSMALL;
-				if(chi_lap > 0 && chi_lap <  TOOSMALL) chi_lap = TOOSMALL;
-				if(chi_lap < 0 && chi_lap > -TOOSMALL) chi_lap = -TOOSMALL;
-
-				chi_value(el,bf)     = chi;
-				(chi_grad(0))(el,bf) = chi_gradx;
-				(chi_grad(1))(el,bf) = chi_grady;
-				(chi_grad(2))(el,bf) = chi_gradz;
-				chi_laplacian(el,bf) = chi_lap;
-				bf++;
-			}
+		  p0 = coeffs[i][0];
+		  p1 = coeffs[i][1];
+		  exp_term = p1*exp(-p0*r_sq)*xyz;
+		  temp = -2.0*p0;
+		  
+		  chi       += exp_term;
+		  chi_gradx += (a/x + temp*x) * exp_term;
+		  chi_grady += (b/y + temp*y) * exp_term;
+		  chi_gradz += (c/z + temp*z) * exp_term;
+		  chi_lap   += (a*(a-1.0)/x2 + b*(b-1.0)/y2 + c*(c-1.0)/z2
+				- (4.0*(a+b+c)+6.0-4.0*r_sq*p0)*p0)*exp_term;
 		}
-		el++;
+
+	      if(chi > 0 && chi < TOOSMALL) chi = TOOSMALL;
+	      if(chi < 0 && chi > -1.0*TOOSMALL) chi = -1.0*TOOSMALL;
+	      if(chi_gradx > 0 && chi_gradx < TOOSMALL) chi_gradx = TOOSMALL;
+	      if(chi_gradx < 0 && chi_gradx > -1.0*TOOSMALL) chi_gradx = -1.0*TOOSMALL;
+	      if(chi_grady > 0 && chi_grady < TOOSMALL) chi_grady = TOOSMALL;
+	      if(chi_grady < 0 && chi_grady > -1.0*TOOSMALL) chi_grady = -1.0*TOOSMALL;
+	      if(chi_gradz > 0 && chi_gradz < TOOSMALL) chi_gradz = TOOSMALL;
+	      if(chi_gradz < 0 && chi_gradz > -1.0*TOOSMALL) chi_gradz = -1.0*TOOSMALL;
+	      if(chi_lap > 0 && chi_lap < TOOSMALL) chi_lap = TOOSMALL;
+	      if(chi_lap < 0 && chi_lap > -1.0*TOOSMALL) chi_lap = -1.0*TOOSMALL;
+	      
+	      chi_value(el,bf)     = chi;
+	      (chi_grad(0))(el,bf) = chi_gradx;
+	      (chi_grad(1))(el,bf) = chi_grady;
+	      (chi_grad(2))(el,bf) = chi_gradz;
+	      chi_laplacian(el,bf) = chi_lap;
+	      bf++;
+	    }
 	}
+      el++;
+    }
 }
 
 
