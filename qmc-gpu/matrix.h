@@ -35,7 +35,7 @@ for vector operations (e.g. vector-matrix multiplies)
 */
 class Matrix {
 public:
-	Matrix(){ rows = 0; columns = 0; textureData = 0;}
+	Matrix(){ rows = 0; columns = 0; textureData = 0; pixelData = 0; }
 
 	/**the number of rows and columns must be specified in this constructor because there is not a bijection between
 	data dimensions and texture dimensions*/
@@ -43,35 +43,23 @@ public:
 		columns = _col;
 		rows = _row;
 		textureData = data;
+		pixelData = (GLfloat*)malloc( sizeof(GLfloat) * textureData->GetHeight() * textureData->GetWidth() * 4);
 	}
 
 	/**i think we're going to want to look into ways of highly optimizing this process, it will probably be the most
 	used constructor*/
-	Matrix(Array2D<GLfloat> data){
+	Matrix(Array2D<GLfloat> & data){
 		columns = data.dim2();
 		rows = data.dim1();
-		int tw = columns/2.0;
-		int th = rows/2.0;
-		if(columns%2 != 0) tw += 1;
-		if(rows%2 != 0) th += 1;
-
-		textureData = new RenderTexture(textureMode);
-		textureData->Initialize(tw,th,true,false);	
+		setup();
 		loadMatrix(data);
 	}
 
 	Matrix(int _row, int _col, float param1, float param2){
 		columns = _col;
 		rows = _row;
-		int tw = columns/2.0;
-		int th = rows/2.0;
-		if(columns%2 != 0) tw += 1;
-		if(rows%2 != 0) th += 1;
-
-		textureData = new RenderTexture(textureMode);
-		textureData->Initialize(tw,th,true,false);
-		
-		data = Array2D<GLfloat>(rows,columns);
+		setup();
+		Array2D<GLfloat> data = Array2D<GLfloat>(rows,columns);
 		makeCheckerMatrix(data, param1, param2);
 		//makeRandMatrix(data);
 		loadMatrix(data);
@@ -80,15 +68,8 @@ public:
 	Matrix(int _row, int _col){
 		columns = _col;
 		rows = _row;
-		int tw = columns/2.0;
-		int th = rows/2.0;
-		if(columns%2 != 0) tw += 1;
-		if(rows%2 != 0) th += 1;
-
-		textureData = new RenderTexture(textureMode);
-		textureData->Initialize(tw,th,true,false);
-		
-		data = Array2D<GLfloat>(rows,columns);
+		setup();
+		Array2D<GLfloat> data = Array2D<GLfloat>(rows,columns);
 		makeRandMatrix(data);
 		loadMatrix(data);
 	}
@@ -98,16 +79,9 @@ public:
 	Matrix(int _row, int _col, float initial, bool diag){
 		columns = _col;
 		rows = _row;
-		int tw = columns/2.0;
-		int th = rows/2.0;
-		if(columns%2 != 0) tw += 1;
-		if(rows%2 != 0) th += 1;
-
-		textureData = new RenderTexture(textureMode);
-		textureData->Initialize(tw,th,true,false);
-		
+		setup();
 		if(diag){
-			data = Array2D<GLfloat>(rows,columns);
+			Array2D<GLfloat> data = Array2D<GLfloat>(rows,columns);
 			GLfloat** mat = data.array();
 			for(int i=0; i<rows; i++)
 				for(int j=0; j<columns; j++){
@@ -123,21 +97,27 @@ public:
 	Matrix(int dim, float param1, int param2){
 		rows = dim;
 		columns = dim;
-		int td = dim/2.0;
-		if(dim%2 != 0) td += 1;
-
-		textureData = new RenderTexture(textureMode);
-		textureData->Initialize(td,td,true,false);
-
-		data = Array2D<GLfloat>(rows,columns);
+		setup();
+		Array2D<GLfloat> data = Array2D<GLfloat>(rows,columns);
 		//makeCheckerMatrix(data, param1, param2);
 		makeRandMatrix(data);
 		loadMatrix(data);
 	}
 
+	void setup(){
+		int tw = columns/2.0;
+		int th = rows/2.0;
+		if(columns%2 != 0) tw += 1;
+		if(rows%2 != 0) th += 1;
+
+		textureData = new RenderTexture(textureMode);
+		textureData->Initialize(tw,th,true,false);
+		pixelData = (GLfloat*)malloc( sizeof(GLfloat) * th * tw * 4);
+	}
+
 	/**we really need a deconstructor. but i haven't quite figured out how to deconstruct a RenderTexture yet*/
 	void release(){
-		data.deallocate();
+		
 	}
 
 	/** there is a question of how to store 2D data in a 1D array, which is required by OpenGl. all other functions
@@ -169,11 +149,10 @@ public:
 		int h = textureData->GetHeight();
 		int w = textureData->GetWidth();
 		if(PRINT) cout << "data: " << rows << "x" << columns << ", texture: " << h << "x" << w << " dimensional\n";
-        GLfloat* texels = new GLfloat[h*w*4];
 		GLfloat** mat = matrix.array();
 
 		//trash is the arbitrary value assigned to pixel channels not used by actual data
-		//changing this shouldn't affect the validity of the actual answer
+		//changing this shouldn't affect the accuracy of the actual answer
 		GLfloat trash = 0.5;
 
 		/*there is a choice in how to represent a matrix in a texture. either in a box:
@@ -190,10 +169,10 @@ public:
 		for(i=0; i<h-1; i++){
             for(j=0; j<w-1; j++){
 				index = mapping(i, j, h, w);
-				texels[index   ] = mat[ i*2 ][ j*2 ];
-                texels[index +1] = mat[ i*2 ][j*2+1];
-                texels[index +2] = mat[i*2+1][ j*2 ];
-                texels[index +3] = mat[i*2+1][j*2+1];
+				pixelData[index   ] = mat[ i*2 ][ j*2 ];
+                pixelData[index +1] = mat[ i*2 ][j*2+1];
+                pixelData[index +2] = mat[i*2+1][ j*2 ];
+                pixelData[index +3] = mat[i*2+1][j*2+1];
             }
         }
 
@@ -203,25 +182,25 @@ public:
 		if(columns%2 != 0){
 			for(int i=0; i<h; i++){
 				index = mapping(i, j, h, w);
-				texels[index   ] = mat[ i*2 ][ j*2 ];
-                texels[index +1] = trash;
+				pixelData[index   ] = mat[ i*2 ][ j*2 ];
+                pixelData[index +1] = trash;
 				if(rows%2 == 0 || i<h-1)
-					texels[index +2] = mat[i*2+1][ j*2 ];
+					pixelData[index +2] = mat[i*2+1][ j*2 ];
 				else
-					texels[index +2] = trash;
-				texels[index +3] = trash;
+					pixelData[index +2] = trash;
+				pixelData[index +3] = trash;
 			}
 		} else {
 			for(int i=0; i<h; i++){
 				index = mapping(i, j, h, w);
-				texels[index   ] = mat[ i*2 ][ j*2 ];
-                texels[index +1] = mat[ i*2 ][j*2+1];
+				pixelData[index   ] = mat[ i*2 ][ j*2 ];
+                pixelData[index +1] = mat[ i*2 ][j*2+1];
 				if(rows%2 == 0 || i<h-1){
-					texels[index +2] = mat[i*2+1][ j*2 ];
-					texels[index +3] = mat[i*2+1][j*2+1];
+					pixelData[index +2] = mat[i*2+1][ j*2 ];
+					pixelData[index +3] = mat[i*2+1][j*2+1];
 				} else {
-					texels[index +2] = trash;
-					texels[index +3] = trash;
+					pixelData[index +2] = trash;
+					pixelData[index +3] = trash;
 				}
 			}
 		}
@@ -230,34 +209,38 @@ public:
 		if(rows%2 != 0){
 			for(int j=0; j<w; j++){
 				index = mapping(i, j, h, w);
-				texels[index   ] = mat[ i*2 ][ j*2 ];
+				pixelData[index   ] = mat[ i*2 ][ j*2 ];
 				if(columns%2 == 0 || j<w-1)
-					texels[index +1] = mat[ i*2 ][j*2+1];
+					pixelData[index +1] = mat[ i*2 ][j*2+1];
 				else
-					texels[index +2] = trash;
-				texels[index +2] = trash;
-                texels[index +3] = trash;
+					pixelData[index +2] = trash;
+				pixelData[index +2] = trash;
+                pixelData[index +3] = trash;
 			}
 		} else {
 			for(int j=0; j<w; j++){
 				index = mapping(i, j, h, w);
-				texels[index   ] = mat[ i*2 ][ j*2 ];
-                texels[index +2] = mat[i*2+1][ j*2 ];                
+				pixelData[index   ] = mat[ i*2 ][ j*2 ];
+                pixelData[index +2] = mat[i*2+1][ j*2 ];                
 				if(columns%2 == 0 || j<w-1){
-					texels[index +1] = mat[ i*2 ][j*2+1];
-					texels[index +3] = mat[i*2+1][j*2+1];
+					pixelData[index +1] = mat[ i*2 ][j*2+1];
+					pixelData[index +3] = mat[i*2+1][j*2+1];
 				} else {
-					texels[index +1] = trash;
-					texels[index +3] = trash;
+					pixelData[index +1] = trash;
+					pixelData[index +3] = trash;
 				}
 			}
 		}
 
+		textureData->Bind();
+		glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_RGBA32_NV, 
+					 w, h, 0, GL_RGBA, GL_FLOAT, pixelData);
+		/* the *wrong* way to do it...
 		textureData->BeginCapture();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glDrawPixels(w, h, GL_RGBA, GL_FLOAT, texels);
 		textureData->EndCapture();
-
+		*/
         getError("Error loading matrix");
 	}
 
@@ -386,40 +369,19 @@ public:
 	calling this function will store the results in the data class variable.*/
 	void unloadMatrix(bool print){;
 		int h = textureData->GetHeight();
-        int w = textureData->GetWidth();
-		int index;
-
-		GLfloat* result = (GLfloat*)malloc( sizeof(GLfloat) * h * w * 4);
-		data.allocate(rows,columns);
-		GLfloat** mat = data.array();
-			
+        int w = textureData->GetWidth();			
 		glFinish();
 		
 		//this is a *lot* faster than glGetTexImage(textureData->GetTextureTarget(),0,GL_RGBA,GL_FLOAT,result);
 		textureData->BeginCapture();
-		glReadPixels(0,0,w,h,GL_RGBA,GL_FLOAT,result);
+		glReadPixels(0,0,w,h,GL_RGBA,GL_FLOAT,pixelData);
 		textureData->EndCapture();
 		
 		if(print){
 			//PrintRGBAPixelsColumn(result,w,h);
-			PrintRGBAPixelsBox(result,w,h);
+			PrintRGBAPixelsBox(pixelData,w,h);
 		}
 
-		//  r   g    or    x   y
-        //  b   a          z   w
-		//this section could be optimized, but this function doesn't spend much time here
-        for(int i=0; i<h; i++){
-            for(int j=0; j<w; j++){
-				index = mapping(i, j, h, w);
-                mat[ i*2 ][ j*2 ] = result[index   ];
-				if(j*2+1 < columns)
-                mat[ i*2 ][j*2+1] = result[index +1];
-                if(i*2+1 < rows)
-				mat[i*2+1][ j*2 ] = result[index +2];
-				if(i*2+1 < rows && j*2+1 < columns)
-                mat[i*2+1][j*2+1] = result[index +3];
-            }
-        }
 		getError("Error unloading matrix");
 	}
 
@@ -764,9 +726,34 @@ public:
 	int getColumns(){ return columns; }
 	bool isNull(){ return (rows == 0 || columns == 0); }
 	
+	GLfloat& operator()(int i,int j){
+		return pixelData[mapping(i,j,textureData->GetHeight(),textureData->GetWidth())];
+	}
+
 	/*to do: implement method of testing whether unloadMatrix actually needs to be called*/
 	Array2D<GLfloat> getData(){
-		unloadMatrix(false);	
+		unloadMatrix(false);
+		int h = textureData->GetHeight();
+        int w = textureData->GetWidth();
+		int index;
+		Array2D<GLfloat> data = Array2D<GLfloat>(rows,columns);
+		GLfloat** mat = data.array();
+
+		//  r   g    or    x   y
+        //  b   a          z   w
+		//this section could be optimized
+        for(int i=0; i<h; i++){
+            for(int j=0; j<w; j++){
+				index = mapping(i, j, h, w);
+                mat[ i*2 ][ j*2 ] = pixelData[index   ];
+				if(j*2+1 < columns)
+                mat[ i*2 ][j*2+1] = pixelData[index +1];
+                if(i*2+1 < rows)
+				mat[i*2+1][ j*2 ] = pixelData[index +2];
+				if(i*2+1 < rows && j*2+1 < columns)
+                mat[i*2+1][j*2+1] = pixelData[index +3];
+            }
+        }
 		return data;
 	}
 
@@ -776,9 +763,17 @@ public:
 	}
 
 protected:
-	Array2D<GLfloat> data;//at the end, eliminate this var so all mem is in texture?
-    int rows, columns;
+	//implement this!
+	//bool pixelDataNeedsUpdate;
+
+	//there is no bijection between these numbers and the texture dimensions
+	int rows, columns;
+	
+	//eventually to be replaced with superbuffers!!
 	RenderTexture *textureData;
+
+	//making a buffer of GLfloat*'s available aleviates a huge memory leak problem
+	GLfloat* pixelData;
 };
 
 #endif

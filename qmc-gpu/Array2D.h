@@ -181,21 +181,42 @@ public:
 			exit(1);
 		}
 		Array2D<T> TEMP(n_1,rhs.n_2);
+		T sum;
 		for(int i=0;i<n_1;i++)
 		{
 			for(int j=0;j<rhs.n_2;j++)
 			{
-				TEMP.pArray[i][j] = 0;
+				sum = 0;				
 				for(int k=0;k<n_2;k++)
 				{
-					TEMP.pArray[i][j] += pArray[i][k] * rhs.pArray[k][j];
+					sum += pArray[i][k] * rhs.pArray[k][j];
 				}
+				TEMP.pArray[i][j] = sum;
 			}
 		}
 		return TEMP;
 	}
 
-
+	void matrixMultiply(const Array2D & rhs, Array2D & result){
+		if(n_2 != rhs.n_1){
+			cerr << "ERROR: Matrices of incorrect dimensions are being"
+				<< " multiplied!" << endl;
+			exit(1);
+		}
+		if(result.n_1 != n_1 || result.n_2 != rhs.n_2){
+			result.allocate(n_1,rhs.n_2);
+		}
+		T sum;
+		for(int i=0;i<n_1;i++){
+			for(int j=0;j<rhs.n_2;j++){
+				sum = 0;				
+				for(int k=0;k<n_2;k++){
+					sum += pArray[i][k] * rhs.pArray[k][j];
+				}
+				result.pArray[i][j] = sum;
+			}
+		}
+	}
 	/**
 	Returns the product of an array and a scalar.
 	*/

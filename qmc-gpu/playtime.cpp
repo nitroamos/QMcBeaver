@@ -22,7 +22,7 @@ int rows, columns;
 
 void testBasisFunction(int dim){
 	Stopwatch sw = Stopwatch();
-	long timeGPU, timeCPU;
+	long timeGPU=0, timeCPU=0;
 	
 	//there has got to be a "more elegant" way of initializing an Array2D than this...
 	//problem is probably just that i'm dumb and forgot pointer stuff
@@ -35,12 +35,12 @@ void testBasisFunction(int dim){
 		{2.10600000E+01,	1.92382064638},
 		{7.49500000E+00,	1.44727831645},
 		{2.79700000E+00,	0.439163129646},
-		{5.21500000E-01,	0.00664580366553}};
+		{5.21500000E-01,	0.00664580366553}
+	};
 	for(int i=0; i<coeffs.dim1(); i++)
 		for(int j=0; j<coeffs.dim2(); j++)
 			coeffs(i,j) = temp[i][j];
 
-	
 	int numBF = dim*dim;
 	Array2D<double> R = Array2D<double>(numBF,3);
 	double** mat = R.array();
@@ -57,12 +57,17 @@ void testBasisFunction(int dim){
 	sw.stop();
 	timeCPU = sw.timeMS();
 	
+	//int numIters = 10;
+	//for(int i=0; i<numIters; i++){
 	sw.reset();
 	sw.start();
 	bfGPU.calculateBasisFunctions(R,true);
 	sw.stop();
 	timeGPU = sw.timeMS();
-	
+	//cout << i << ") took " << sw.timeMS() << endl;
+	//}
+	//timeGPU /= numIters;
+
 	if(!false){
 		cout << "calculating errors...\n";
 		GLfloat gpuResult;
@@ -73,6 +78,10 @@ void testBasisFunction(int dim){
 		for(int i=0; i<numBF; i++){
 			bfGPU.getPsi(i,&gpuResult);
 			bfCPU.getPsi(i,&cpuResult);
+			if(i < 20 && true){
+				cout << "gpupsi " << gpuResult << " cpupsi " << cpuResult << endl;
+			}
+			if(abs(gpuResult - cpuResult) == 0) break;
 			error = (gpuResult - cpuResult)/cpuResult;
 			avgError += error;
 			if(error > lrgError) lrgError = error;
@@ -112,7 +121,7 @@ void checkMatrixMultiply(){
 	Stopwatch sw = Stopwatch();
 	long timeGPU=0, timeCPU=0;
 	bool verbose = false;
-	bool errorCheck = false;
+	bool errorCheck = true;
 	int d = 1000;
 
 	cout << endl << endl;
@@ -156,14 +165,13 @@ void checkMatrixMultiply(){
 		cout << "matrix C (" << C.dim1() << ", " << C.dim2() << ") is: " << endl;
 		PrintArray(C);
 	}
-	
-	
-	
+
 	if(errorCheck){
 		cout << "computing accurate result\n";
 		sw.reset();
 		sw.start();
-		D = A*B;
+		//D = A*B;
+		A.matrixMultiply(B,D);
 		sw.stop();
 		timeCPU = sw.timeMS();
 
@@ -587,7 +595,7 @@ int main(int argc, char* argv[])
 {
 	init();
 	initializeCg();
-	//srand( (unsigned)time( NULL ) );
+	srand( (unsigned)time( NULL ) );
 	rows = 10;
 	columns = 20;
 
