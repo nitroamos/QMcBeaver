@@ -355,9 +355,10 @@ for i in range(len(Wavefunction)):
         OUT.write("ERROR\n\t")
 
     # Write Orbital
+for i in range(len(Wavefunction)):
     for j in range(len(Wavefunction[i][1])):
-        OUT.write("%s\t" % (Wavefunction[i][1][j]))
-        if( j%3 == 2 ): OUT.write("\n\t")
+        OUT.write("\t%s" % (Wavefunction[i][1][j]))
+        if( j%3 == 2 ): OUT.write("\n")
     OUT.write("\n\n")
 
 OUT.write("Alpha Occupation\n")
@@ -367,7 +368,7 @@ for i in range(len(Wavefunction)-nalpha):
     OUT.write("0\t")
 OUT.write("\n\n")
 
-OUT.write("Beta Occupation")
+OUT.write("Beta Occupation\n")
 for i in range(nbeta):
     OUT.write("1\t")
 for i in range(len(Wavefunction)-nbeta):
