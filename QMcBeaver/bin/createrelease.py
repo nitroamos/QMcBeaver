@@ -4,6 +4,10 @@ import os
 import os.path
 import string
 
+def copy_qmcbeaver(version):
+    command = "cp -r QMcBeaver QMcBeaver-%d"%version
+    os.system(command)
+
 ''' 
 Delete the CVS directories.
 '''
@@ -19,10 +23,14 @@ def delete_cvs_directories(directory):
         if os.path.isdir(thing):
             delete_cvs_directories(directory+thing+"/")
 
-def set_version_number(version):
-    configure = open("./QMcBeaver/configure.py").readlines()
+def delete_cvs(version):
+    delete_cvs_directories("./QMcBeaver-%d/"%version)
 
-    out = open("./QMcBeaver/configure.py","w")
+
+def set_version_number(version):
+    configure = open("./QMcBeaver-%d/configure.py"%version).readlines()
+
+    out = open("./QMcBeaver-%d/configure.py"%version,"w")
 
     for line in configure:
         if string.find(line,"self.VER = ") != -1:
@@ -34,7 +42,7 @@ def set_version_number(version):
     out.close()
 
 def generate_zip_file(version):
-    command = "tar -zcvf QMcBeaver-%d.tar.gz QMcBeaver"%(version)
+    command = "tar -zcvf QMcBeaver-%d.tar.gz QMcBeaver-%d"%(version,version)
     os.system(command)
 
 if __name__ == '__main__':
@@ -43,10 +51,12 @@ if __name__ == '__main__':
     sys.path.append("./QMcBeaver/")
 
     import configure
-    
-    delete_cvs_directories("./QMcBeaver/")
 
     versionNumber = configure.getVersionNumber()
+
+    copy_qmcbeaver(versionNumber)
+    
+    delete_cvs(versionNumber)
 
     set_version_number(versionNumber)
 
