@@ -8,7 +8,28 @@
 QMCDansWalkerInitialization::QMCDansWalkerInitialization(QMCInput * INPUT)
 {
   Input = INPUT;
+  initializeArrays();
 }
+
+void QMCDansWalkerInitialization::initializeArrays()
+{
+  phiSplines.allocate(19);
+  phiSplinesMade.allocate(19);
+  phiSplinesMade = 0;
+
+  thetaSplines.allocate(19);
+  thetaSplinesMade.allocate(19);
+  thetaSplinesMade = 0;
+
+  radialSplines.allocate(18,3);
+  radialSplinesMade.allocate(18,3);
+  radialSplinesMade = 0;
+
+  x_array.allocate(21);
+  for (int i=0; i<21; i++) x_array(i) = i/20.0;
+}
+
+
 
 Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 {
@@ -562,57 +583,10 @@ dist_center(int atomic_charge, int n_e, int n_a, int n_b)
 Array2D<double> QMCDansWalkerInitialization::
 dist_energy_level(int Z, int n, int nalpha, int nbeta)
 {
-  // Get the radial array.
-  ifstream r_file ("radial_dist_arrays");
-  r_file.clear();
-  if (!r_file)
-    { cerr << "Error opening radial array file." << endl; exit(1); }
-  string temp_string;
-  int length = 0, skip = 0;
- find_ampersand:
-  do r_file >> temp_string; while (temp_string != "&");
-  r_file >> temp_string;
-  if (atoi(temp_string.c_str()) != Z) goto find_ampersand;
-  else if (atoi(temp_string.c_str()) == Z) 
-    {
-     find_n:
-      r_file >> temp_string;
-      if (atoi(temp_string.c_str()) != n) 
-	{
-          r_file >> temp_string;
-          skip = atoi(temp_string.c_str());
-          for (int i=0; i<2*skip; i++) r_file >> temp_string;
-          goto find_n; 
-	}     
-      else if (atoi(temp_string.c_str()) == n) 
-	{
-          r_file >> temp_string;
-          length = atoi(temp_string.c_str()); 
-	}
-      else
-	{ 
-	  cerr << "Error- no energy level " << n << "for Z = " << Z << endl;
-	  exit(1);
-	}
-    }
+  // Distribute radial distances.
 
-  // Read the array from the file.
-
-  Array2D<double> r_array(length,2);
-  for (int i=0; i<length; i++) 
-    {
-      r_file >> temp_string;
-      r_array(i,0) = atof(temp_string.c_str());
-      r_file >> temp_string;
-      r_array(i,1) = atof(temp_string.c_str()); 
-    }
-
-  r_file.close();	
-
-  // Distribute the radial points with respect to the distribution.
-
-  Array1D<double> r_locs(nalpha+nbeta); 
-  r_locs  = dist_wrt_array(nalpha+nbeta, r_array);
+  Array1D<double> r_locs;
+  r_locs = generateRadialDistances(Z,n,nalpha+nbeta);
 
   // The interval array determines which distribution will be retrieved from
   // the angle_dist_arrays file for each electron.  The intervals are assigned
@@ -650,77 +624,6 @@ dist_energy_level(int Z, int n, int nalpha, int nbeta)
       exit (1);
     }
 
-  // The angle distributions are stored in 2D arrays.
-
-  Array2D<double> a_phi_array(1001,nalpha+1);
-  Array2D<double> a_theta_array(501,nalpha+1);
-  Array2D<double> b_phi_array(1001,nbeta+1);
-  Array2D<double> b_theta_array(501,nbeta+1);
-
-  ifstream a_file("angle_dist_arrays");
-  a_file.clear();
-  if (!a_file)
-    { cerr << "Error opening angle array file." << endl; exit(1); }
-  do a_file >> temp_string; while (temp_string != "&");
-  for (int i=0; i<1001; i++)
-    {
-      a_file >> temp_string;
-      a_phi_array(i,0) = atof(temp_string.c_str());
-      for (int j=0; j<a_interval; j++) a_file >> temp_string;
-      for (int k=0; k<nalpha; k++)
-	{
-	  a_file >> temp_string;
-	  a_phi_array(i,k+1) = atof(temp_string.c_str());
-	}
-      for (int l=0; l<(19-a_interval-nalpha); l++) a_file >> temp_string;
-    }
-  do a_file >> temp_string; while (temp_string != "&");
-  for (int l=0; l<501; l++)
-    {
-      a_file >> temp_string;
-      a_theta_array(l,0) = atof(temp_string.c_str());
-      for (int m=0; m<a_interval; m++) a_file >> temp_string;
-      for (int n=0; n<nalpha; n++)
-	{
-	  a_file >> temp_string;
-	  a_theta_array(l,n+1) = atof(temp_string.c_str());
-	}
-      for (int p=0; p<(19-a_interval-nalpha); p++) a_file >> temp_string;
-    }
-  a_file.close();
-
-  ifstream b_file("angle_dist_arrays");
-  b_file.clear();
-  if (!b_file)
-    { cerr << "Error opening angle array file." << endl; exit(1); }
-  do b_file >> temp_string; while (temp_string != "&");
-  for (int i=0; i<1001; i++)
-    {
-      b_file >> temp_string;
-      b_phi_array(i,0) = atof(temp_string.c_str());
-      for (int j=0; j<b_interval; j++) b_file >> temp_string;
-      for (int k=0; k<nbeta; k++)
-	{
-	  b_file >> temp_string;
-	  b_phi_array(i,k+1) = atof(temp_string.c_str());
-	}
-      for (int l=0; l<(19-b_interval-nbeta); l++) b_file >> temp_string;
-    }
-  do b_file >> temp_string; while (temp_string != "&");
-  for (int l=0; l<501; l++)
-    {
-      b_file >> temp_string;
-      b_theta_array(l,0) = atof(temp_string.c_str());
-      for (int m=0; m<b_interval; m++) b_file >> temp_string;
-      for (int n=0; n<nbeta; n++)
-	{
-	  b_file >> temp_string;
-	  b_theta_array(l,n+1) = atof(temp_string.c_str());
-	}
-      for (int p=0; p<(19-b_interval-nbeta); p++) b_file >> temp_string;
-    }
-  b_file.close();
-
   Array1D<double> a_phi(nalpha);
   Array1D<double> b_phi(nbeta);
   Array1D<double> a_theta(nalpha);
@@ -730,14 +633,14 @@ dist_energy_level(int Z, int n, int nalpha, int nbeta)
 
   for (int i=0; i<nalpha; i++)
     {
-      a_phi(i) = dist_wrt_array(a_phi_array,i+1); 
-      a_theta(i) = dist_wrt_array(a_theta_array,i+1);
+      a_phi(i) = generatePhiCoordinate(a_interval+i);
+      a_theta(i) = generateThetaCoordinate(a_interval+i);
     }
 
   for (int j=0; j<nbeta; j++)
     {
-      b_phi(j) = dist_wrt_array(b_phi_array,j+1); 
-      b_theta(j) = dist_wrt_array(b_theta_array,j+1);
+      b_phi(j) = generatePhiCoordinate(b_interval+j);
+      b_theta(j) = generateThetaCoordinate(b_interval+j);
     }
 
   // Now we convert the spherical coordinates into cartesians.
@@ -780,92 +683,196 @@ dist_energy_level(int Z, int n, int nalpha, int nbeta)
   return crds;
 }
 
-Array1D<double> QMCDansWalkerInitialization::
-dist_wrt_array(int npts, Array2D<double> dist)
+double QMCDansWalkerInitialization::generatePhiCoordinate(int index)
 {
-  // Check to make sure this is a good distribution.
-  // y values should go from 0 to 1, both x and y should monotonically 
-  // increase.
-
-  int length = dist.dim1();
-  if (dist(0,1) != 0.0 || dist(length-1,1) > 1.0) 
+  // These distributions are uniform with respect to phi.
+  if (index == 0 || index == 1 || index == 2 || index == 5) 
     {
-      cerr << "Bad distribution passed to dist_wrt_array." << endl;
-      exit(1);
-    }
-
-  Array1D<double> x_values(npts);
-  double rv=0.0, remainder;
-  int lo, hi, mid;
-  double dx = (dist(length-1,0)-dist(0,0))/length;
-  for (int i=0; i<npts; i++)
-    { 
-      rv = ran1(&Input->flags.iseed);
-
-      // If the random number is greater than the greatest y value, the point
-      // is distributed exponentially.  
-
-      if (rv > dist(length-1,1))
-      {
-        remainder=(rv-dist(length-1,1))/(1-dist(length-1,1));
-        x_values(i) = dist(length-1,0) - dx*log(1-remainder);
-      }
-
-      // Otherwise a binary search algorithm determines which x value 
-      // corresponds to the random value.
-
-      else
-      {
-	lo = 0;
-        hi = length-1;
-	mid = (lo + hi)/2;
-        while (mid != lo)
-	{
-	  if (rv < dist(mid,1)) { hi = mid; }
-	  else if (rv >= dist(mid,1)) { lo = mid; }
-          mid = (lo + hi)/2;
-	}
-	remainder = (rv-dist(lo,1))/(dist(hi,1)-dist(lo,1));
-	x_values(i) = dist(lo,0) + dx*remainder;
-      }
-    }
-  return x_values;
-}
-
-   
-double QMCDansWalkerInitialization::
-dist_wrt_array(Array2D<double> dist, int index)
-{
-  int length = dist.dim1();
-  if (dist(0,index) != 0.0 || dist(length-1,index) > 1.0) 
-    {
-      cerr << "Bad distribution passed to dist_wrt_array." << endl;
-      exit(1);
-    }
-
-  double x_value;
-  double rv=0.0, remainder;
-  int lo, hi, mid;
-  double dx = (dist(length-1,0)-dist(0,0))/length;
-  rv = ran1(&Input->flags.iseed);
-  if (rv > dist(length-1,index))
-    {
-      remainder=(rv-dist(length-1,index))/(1-dist(length-1,index));
-      x_value = dist(length-1,0) - dx*log(1-remainder);
+      return ran1(&Input->flags.iseed)*2*PI;
     }
   else
     {
-      lo = 0;
-      hi = length-1;
-      mid = (lo + hi)/2;
-    while (mid != lo)
-      {
-        if (rv < dist(mid,index)) { hi = mid; }
-        else if (rv >= dist(mid,index)) { lo = mid; }
-        mid = (lo + hi)/2;
-      }
-      remainder = (rv-dist(lo,index))/(dist(hi,index)-dist(lo,index));
-      x_value = dist(lo,0) + dx*remainder;
+      // If no spline has been made for the distribution, we make one and then
+      // use it.
+      if (phiSplinesMade(index) == 0)
+	{
+	  // Some of the distributions are identical in phi, so we generate
+          // both splines at once.
+	  if (index == 15 || index == 12)
+	    {
+	      Array1D<double> phi_array; 
+	      phi_array = AngleDistributions::getPhiArray(12);
+	      double derivative=(phi_array(1)+phi_array(20)-phi_array(19))*10;
+	      phiSplines(12).initializeWithFunctionValues(x_array,phi_array,\
+							derivative,derivative);
+              phiSplines(15) = phiSplines(12);
+              phiSplinesMade(12) = 1;
+	      phiSplinesMade(15) = 1;
+	    }
+	  else if (index == 16 || index == 11)
+	    {
+	      Array1D<double> phi_array; 
+              phi_array = AngleDistributions::getPhiArray(11);
+	      double derivative=(phi_array(1)+phi_array(20)-phi_array(19))*10;
+	      phiSplines(11).initializeWithFunctionValues(x_array,phi_array,\
+							derivative,derivative);
+              phiSplines(16) = phiSplines(11);
+	      phiSplinesMade(11) = 1;
+              phiSplinesMade(16) = 1;
+	    }
+	  else if (index == 17 || index == 14)
+	    {
+	      Array1D<double> phi_array; 
+              phi_array = AngleDistributions::getPhiArray(14);
+	      double derivative=(phi_array(1)+phi_array(20)-phi_array(19))*10;
+	      phiSplines(14).initializeWithFunctionValues(x_array,phi_array,\
+							derivative,derivative);
+              phiSplines(17) = phiSplines(14);
+	      phiSplinesMade(14) = 1;
+              phiSplinesMade(17) = 1;
+	    }
+	  else if (index == 18 || index == 13)
+	    {
+	      Array1D<double> phi_array;
+              phi_array = AngleDistributions::getPhiArray(13);
+	      double derivative=(phi_array(1)+phi_array(20)-phi_array(19))*10;
+	      phiSplines(13).initializeWithFunctionValues(x_array,phi_array,\
+							derivative,derivative);
+              phiSplines(18) = phiSplines(13);
+	      phiSplinesMade(13) = 1;
+	      phiSplinesMade(18) = 1;
+	    }	      
+	  else
+	    {
+	      Array1D<double> phi_array;
+              phi_array = AngleDistributions::getPhiArray(index);
+	      double derivative=(phi_array(1)+phi_array(20)-phi_array(19))*10;
+	      phiSplines(index).initializeWithFunctionValues(x_array,\
+                                              phi_array,derivative,derivative);
+              phiSplinesMade(index) = 1;
+	    }
+	}
+      phiSplines(index).evaluate(ran1(&Input->flags.iseed));
+      return phiSplines(index).getFunctionValue();
     }
-  return x_value;
+}
+
+double QMCDansWalkerInitialization::generateThetaCoordinate(int index)
+{
+  // This distribution is uniform in theta.
+  if (index == 0)
+    {
+      return sindev(&Input->flags.iseed);
+    }
+  else
+    {
+      // If the spline has not been made yet, we make it and use it.
+      if (thetaSplinesMade(index) == 0)
+	{
+	  // Some distributions are identical in theta.  We generate both
+          // splines at the same time.
+	  if (index == 3 || index == 4)
+	    {
+	      Array1D<double> th_array;
+              th_array = AngleDistributions::getThetaArray(3);
+              double derivative = (th_array(1)+th_array(20)-th_array(19))*10;
+              thetaSplines(3).initializeWithFunctionValues(x_array,th_array,\
+							derivative,derivative);
+	      thetaSplines(4) = thetaSplines(3);
+	      thetaSplinesMade(3) = 1;
+	      thetaSplinesMade(4) = 1;
+	    }
+	  else if (index == 6 || index == 7)
+	    {
+	      Array1D<double> th_array;
+              th_array = AngleDistributions::getThetaArray(6);
+              double derivative = (th_array(1)+th_array(20)-th_array(19))*10;
+              thetaSplines(6).initializeWithFunctionValues(x_array,th_array,\
+							derivative,derivative);
+	      thetaSplines(7) = thetaSplines(6);
+	      thetaSplinesMade(6) = 1;
+	      thetaSplinesMade(7) = 1;
+	    }
+	  else if (index == 8 || index == 9 || index == 10)
+	    {
+	      Array1D<double> th_array = AngleDistributions::getThetaArray(8);
+              double derivative = (th_array(1)+th_array(20)-th_array(19))*10;
+              thetaSplines(8).initializeWithFunctionValues(x_array,th_array,\
+							derivative,derivative);
+	      thetaSplines(9) = thetaSplines(8);
+              thetaSplines(10) = thetaSplines(8);
+	      thetaSplinesMade(8) = 1;
+	      thetaSplinesMade(9) = 1;
+              thetaSplinesMade(10) = 1;
+	    }
+	  else if (index == 11 || index == 12 || index == 17 || index == 18)
+	    {
+	      Array1D<double> th_array; 
+	      th_array = AngleDistributions::getThetaArray(11);
+              double derivative = (th_array(1)+th_array(20)-th_array(19))*10;
+              thetaSplines(11).initializeWithFunctionValues(x_array,th_array,\
+							derivative,derivative);
+	      thetaSplines(12) = thetaSplines(11);
+	      thetaSplines(17) = thetaSplines(11);
+	      thetaSplines(18) = thetaSplines(11);
+	      thetaSplinesMade(11) = 1;
+	      thetaSplinesMade(12) = 1;
+	      thetaSplinesMade(17) = 1;
+	      thetaSplinesMade(18) = 1;
+	    }
+	  else if (index == 13 || index == 14 || index == 15 || index == 16)
+	    {
+	      Array1D<double> th_array;
+	      th_array = AngleDistributions::getThetaArray(13);
+              double derivative = (th_array(1)+th_array(20)-th_array(19))*10;
+              thetaSplines(13).initializeWithFunctionValues(x_array,th_array,\
+							derivative,derivative);
+	      thetaSplines(14) = thetaSplines(13);
+	      thetaSplines(15) = thetaSplines(13);
+	      thetaSplines(16) = thetaSplines(13);
+	      thetaSplinesMade(13) = 1;
+	      thetaSplinesMade(14) = 1;
+	      thetaSplinesMade(15) = 1;
+	      thetaSplinesMade(16) = 1;
+	    }
+          else
+	    {
+              Array1D<double> th_array;
+	      th_array = AngleDistributions::getThetaArray(index);
+	      double derivative = (th_array(1)+th_array(20)-th_array(19))*10;
+	      thetaSplines(index).initializeWithFunctionValues(x_array,
+					       th_array,derivative,derivative);
+	      thetaSplinesMade(index) = 1;
+	    }
+	}
+      thetaSplines(index).evaluate(ran1(&Input->flags.iseed));
+      return thetaSplines(index).getFunctionValue();
+    }
+}
+
+Array1D<double> QMCDansWalkerInitialization::\
+                              generateRadialDistances(int Z, int n, int nelecs)
+{
+  int atomicNumberIndex = Z-1;
+  int energyLevelIndex = n-1;
+  if (radialSplinesMade(atomicNumberIndex,energyLevelIndex) == 0)
+    {
+      Array1D<double> r_array;
+      r_array = RadialDistributions::getRadialArray(Z,n);
+      double derivativeAtZero = r_array(1)*20;
+      double derivativeAtOne = (r_array(20) - r_array(19))*20;
+      radialSplines(atomicNumberIndex,energyLevelIndex).\
+                                                  initializeWithFunctionValues\
+                            (x_array,r_array,derivativeAtZero,derivativeAtOne);
+      radialSplinesMade(atomicNumberIndex,energyLevelIndex) = 1;
+    }
+  Array1D<double> r_locs(nelecs);
+  for (int i=0; i<nelecs; i++)
+    {
+      radialSplines(atomicNumberIndex,energyLevelIndex).evaluate\
+                                                   (ran1(&Input->flags.iseed));
+      r_locs(i) = radialSplines(atomicNumberIndex,energyLevelIndex).\
+                                                            getFunctionValue();
+    }
+  return r_locs;
 }

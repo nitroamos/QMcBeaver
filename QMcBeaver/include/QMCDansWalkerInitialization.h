@@ -3,6 +3,9 @@
 
 #include "QMCInput.h"
 #include "QMCInitializeWalker.h"
+#include "CubicSpline.h"
+#include "AngleDistributions.h"
+#include "RadialDistributions.h"
 
 #include "Array1D.h"
 #include "Array2D.h"
@@ -11,11 +14,6 @@
 
 #include <fstream>
 #include <string>
-
-// Note: Using dans_walker_initialization requires that radial_dist_arrays and
-// angle_dist_arrays be copied from the /QMcBeaver/src/ directory to the 
-// working directory.  Radial arrays have been computed for atoms of atomic 
-// number up to 18.
 
 class QMCDansWalkerInitialization : public QMCInitializeWalker
 {
@@ -37,13 +35,31 @@ class QMCDansWalkerInitialization : public QMCInitializeWalker
 
   QMCInput * Input;
 
-  /** 
-    An overloaded function to distribute one or more points with respect to a 
-    distribution expressed as a 2D array or an element of a 2D array.
+  /**
+    These are the arrays of cubic splines made from the distribution data in 
+    the AngleDistributions and RadialDistributions classes.
+    The SplinesMade arrays indicate if a spline has been made for a 
+    distribution yet.  The element equals 0 if no spline has been made, and 1
+    if a spline has been made.
   */
   
-  Array1D<double> dist_wrt_array(int, Array2D<double>);
-  double dist_wrt_array(Array2D<double>, int);
+  Array1D<CubicSpline> phiSplines;
+  Array1D<int> phiSplinesMade;
+
+  Array1D<CubicSpline> thetaSplines;
+  Array1D<int> thetaSplinesMade;
+
+  Array2D<CubicSpline> radialSplines;
+  Array2D<int> radialSplinesMade;
+
+  /** 
+    The x_array goes from 0 to 1 in steps of .05 and is the same for all 
+    distributions.
+  */
+
+  Array1D<double> x_array;
+
+  void initializeArrays();
 
   /** 
     Distributes electrons in an energy level and gives them a random rotation.
@@ -63,6 +79,16 @@ class QMCDansWalkerInitialization : public QMCInitializeWalker
   */  
 
   Array2D<double> dist_center(int, int, int, int);
+
+  /** 
+    These functions generate coordinates with respect to the distribution 
+    indicated by the integer argument.  If no spline has been made yet for that
+    distribution, it is made.
+  */
+
+  double generatePhiCoordinate(int);
+  double generateThetaCoordinate(int);
+  Array1D<double> generateRadialDistances(int,int,int);
 
 };
 
