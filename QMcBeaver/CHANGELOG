@@ -1,0 +1,17 @@
+Thu, 1 Jul 2004, Daniel R. Fisher
+
+1.  In QMCManager and QMCFlags, I made sure the iseed is always a negative
+    integer whenever an input, restart, or checkpoint file is written or read.
+    Previously, when a checkpoint or restart file was written, the current
+    value of iseed, which during a run is a positive integer, was written.
+    This was a problem for restarting parallel jobs from checkpoints because
+    ran1() sets the iseed to 1 if it is positive, so all the processors were
+    getting the same sequence of numbers.
+    When writing restarts and checkpoints, -1*iseed is written out if
+    iseed is positive.  I was careful not to change the value of iseed itself.
+
+2.  In QMCManager, I fixed the conditional statement for writing out
+    correlated sampling configurations.  Previously, it was writing out
+    configs on every iteration, which caused very large files in the temp
+    directory and very slow line search optimizations.  Now it writes out
+    configs at the proper interval.
