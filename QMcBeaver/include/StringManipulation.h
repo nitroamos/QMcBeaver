@@ -18,6 +18,10 @@
 #include <strstream>
 //#include <sstream>
 
+#ifndef streamsize
+typedef long streamsize;
+#endif
+
 using namespace std;
 
 /**
