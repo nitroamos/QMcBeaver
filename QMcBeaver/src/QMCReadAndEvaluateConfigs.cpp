@@ -225,6 +225,7 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
 				      Array1D<QMCProperties> & Properties)
 {
   config_in_stream.open(Input->flags.config_file_name.c_str());
+  config_in_stream.clear();
 
   if( config_in_stream.bad() )
     {

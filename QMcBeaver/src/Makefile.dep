@@ -134,14 +134,6 @@ Polynomial.o: Polynomial.cpp \
   /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h
 
 
-Polynomial.o: Polynomial.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h
-
-
 QMCBFGSQuasiNewtonLineSearch.o: QMCBFGSQuasiNewtonLineSearch.cpp \
   /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBFGSQuasiNewtonLineSearch.h \
   /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCLineSearch.h \
@@ -488,23 +480,6 @@ QMCJastrowElectronNuclear.o: QMCJastrowElectronNuclear.cpp \
   /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
   /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
   /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h
-
-
-QMCJastrowParameters.o: QMCJastrowParameters.cpp \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
-  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h
 
 
 QMCJastrowParameters.o: QMCJastrowParameters.cpp \
@@ -961,6 +936,41 @@ QMCProperty.o: QMCProperty.cpp \
   /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
   /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
   /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h
+
+
+QMCReadAndEvaluateConfigs.o: QMCReadAndEvaluateConfigs.cpp \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCReadAndEvaluateConfigs.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array1D.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCInput.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCFlags.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCMolecule.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array2D.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/StringManipulation.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunction.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSplineWithGeometricProgressionGrid.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/CubicSpline.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/FunctionR1toR1.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCBasisFunctionCoefficients.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Array3D.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCWavefunction.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowParameters.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionParameters.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunctionFactory.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCCorrelationFunction.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Complex.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/ZeroCorrelationFunction.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/PadeCorrelationFunction.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCPolynomial.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Polynomial.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/Exception.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/FixedCuspPadeCorrelationFunction.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperties.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCProperty.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCStatistic.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/LU.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrow.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronNuclear.h \
+  /Users/drkent/Projects/QMcBeaver/QMcBeaver/include/QMCJastrowElectronElectron.h
 
 
 QMCReadAndEvaluateConfigs.o: QMCReadAndEvaluateConfigs.cpp \
