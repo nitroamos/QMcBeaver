@@ -425,9 +425,9 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 
   // Square MO coefficients.
 
-  for (int i=0; i<Nbasisfunc; i++)
+  for (int i=0; i<Norbitals; i++)
     {
-      for (int j=0; j<Norbitals; j++)
+      for (int j=0; j<Nbasisfunc; j++)
         {
           Scratch(i,j) = Scratch(i,j)*Scratch(i,j);
         }
@@ -440,11 +440,11 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
   for (int i=0; i<Norbitals; i++)
     {
       sum = 0.0;
-      for(int j=0; j<Nbasisfunc; j++) sum += Scratch(j,i);
+      for(int j=0; j<Nbasisfunc; j++) sum += Scratch(i,j);
 
       for(int j=0; j<Nbasisfunc; j++)
         {
-          Scratch(j,i) = Scratch(j,i)/sum;
+          Scratch(i,j) = Scratch(i,j)/sum;
         }
     }
 
@@ -482,7 +482,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 
           for (int j=0; j<Nbasisfunc; j++)
             {
-              sum += Scratch(j,i);
+              sum += Scratch(i,j);
               if (sum >= rv) 
 		{
 		  atom_occ(OrbPos(j),0) += 1;
@@ -499,7 +499,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 
 	  for (int k=0; k<Nbasisfunc; k++)
 	    {
-	      sum += Scratch(k,i);
+	      sum += Scratch(i,k);
 	      if (sum >= rv)
 		{
 		  atom_occ(OrbPos(k),0) += 1;
