@@ -34,10 +34,13 @@ def set_version_number(version):
     out.close()
 
 def generate_zip_file(version):
-    command = "tar -zcvf QMcBeaver-%d.tar.gz"%(version)
+    command = "tar -zcvf QMcBeaver-%d.tar.gz QMcBeaver"%(version)
     os.system(command)
 
 if __name__ == '__main__':
+    import sys
+
+    sys.path.append("./QMcBeaver/")
 
     import configure
     
@@ -47,4 +50,4 @@ if __name__ == '__main__':
 
     set_version_number(versionNumber)
 
-    generate_zip_file(version)
+    generate_zip_file(versionNumber)
