@@ -259,21 +259,6 @@ void matrixMultiplyTimings(int d){
 	basic = sw.timeMS();
 	printf("%20i",basic);
 
-	mytype * H = new mytype[d * d];
-	mytype * I = new mytype[d * d];
-	mytype * J = new mytype[d * d];
-	for(int i=0; i<d*d; i++){
-		H[i] = (mytype)(rand()/33000.0);
-		I[i] = (mytype)(rand()/33000.0);
-		J[i] = (mytype)0;
-	}
-	sw.reset();
-	sw.start();
-	basic_dgemmF(d,d,d,d,H,I,J);
-	sw.stop();
-	printf("%20i",sw.timeMS());
-	delete[] H; delete[] I;	delete[] J;
-
 	Array2D<mytype> A = Array2D<mytype>(d,d),B = Array2D<mytype>(d,d),C;
 	makeRandMatrix(A);
 	makeRandMatrix(B);
@@ -309,19 +294,27 @@ void matrixMultiplyTimings(int d){
 	sw.reset();
 	sw.start();
 	//for some reason, even though this line works, if i uncomment it, the debugger can't work! :-(
-	//cblas_dgemm(CBLAS_ORDER(CblasRowMajor),CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasNoTrans),d,d,d,1.0,E,d,F,d,0.0,G,d);
+	cblas_dgemm(CBLAS_ORDER(CblasRowMajor),CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasNoTrans),d,d,d,1.0,E,d,F,d,0.0,G,d);
 	sw.stop();
 	printf("%20i",sw.timeMS());
 	delete[] E; delete[] F;	delete[] G;
 
 	Matrix Amat = Matrix(d,d);
 	Matrix Bmat = Matrix(d,d);
-	sw.reset();
-	sw.start();
-	Amat = Amat * Bmat;
-	sw.stop();
-	printf("%20i\n",sw.timeMS());
-	Amat.destroy(); Bmat.destroy();
+	Matrix Cmat = Matrix(d,d);
+	int numIters = 5;
+	long timeGPU = 0;
+	Amat.matrixMultiplyFaster(Bmat, Cmat);
+	for(int i=0; i<numIters; i++){
+		sw.reset(); sw.start();
+		Amat.matrixMultiplyFaster(Bmat, Cmat);	
+		sw.stop();
+		timeGPU += sw.timeMS();
+		//cout << i << ") took " << sw.timeMS() << endl;
+	}
+	timeGPU /= numIters;
+	printf("%20i\n",timeGPU);
+	Amat.destroy(); Bmat.destroy(); Cmat.destroy();
 }
 
 void testTiming(){
@@ -382,7 +375,7 @@ void keyboard(unsigned char key, int x, int y)
 			break;
 		case '1':
 			printf("%10s%10s%10s%10s\n","Dim","#BF","CPU","GPU");
-			if(true){
+			if(!true){
 				for(int i=100; i<=1500; i+=100)
 					testBasisFunction(i);
 			} else {
@@ -409,9 +402,9 @@ void keyboard(unsigned char key, int x, int y)
 			testTiming();			
 			break;
 		case 'c':
-			printf("%5s%20s%20s%20s%20s%20s%20s\n","dim","simple (double)","simple (mytype)","Array2D (mytype)","DGEMM","ATLAS","GPU");
+			printf("%5s%20s%20s%20s%20s%20s\n","dim","simple (pointers)","Array2D","DGEMM","ATLAS","GPU");
 			if(true){			
-				for(int i=300; i<=1700; i+=100)
+				for(int i=300; i<=1000; i+=100)
 					matrixMultiplyTimings(i);			
 			} else {
 				matrixMultiplyTimings(1000);
@@ -570,14 +563,14 @@ void init(){
     {
         // problem: glewInit failed, something is seriously wrong
         fprintf(stderr, "GLEW Error: %s\n", glewGetErrorString(err));
-        exit(-1);
+        getchar();
+		exit(-1);
     }
 
     glutIdleFunc(idle);
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
     glutKeyboardFunc (keyboard);
-	
 	getError(0);
 }
 

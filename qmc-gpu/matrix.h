@@ -72,11 +72,11 @@ public:
 		setup();
 		Array2D<GLfloat> data = Array2D<GLfloat>(rows,columns);
 		makeRandMatrix(data);
-		Stopwatch sw = Stopwatch();
-		sw.reset(); sw.start();
+		//Stopwatch sw = Stopwatch();
+		//sw.reset(); sw.start();
 		loadMatrix(data);
-		sw.stop();
-		cout << "uploading took " << sw.timeMS() << " ms" << endl;
+		//sw.stop();
+		//cout << "uploading took " << sw.timeMS() << " ms" << endl;
 	}
 
 	/**the initial value is the value meant to initialize the texture. if diagonal matricies are a major
@@ -315,7 +315,7 @@ public:
 		cgGLBindProgram(fragProg);
 		cgGLEnableProfile(g_cgProfile);
 		textureData->swapBuffers();
-		//specTest();
+		specTest();
 
 		if(binaryOp){			
 			cgGLSetTextureParameter(param1, textureData->GetTextureID());			

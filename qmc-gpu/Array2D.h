@@ -151,7 +151,7 @@ public:
 	void operator=(const T C)
 	{
 		if(C == 0) {
-			memset(pArray,0.0,sizeof(T)*n_1*n_2);
+			memset(pArray,0,sizeof(T)*n_1*n_2);
 			return;
 		}
 		for(int i=0; i<n_1*n_2; i++)

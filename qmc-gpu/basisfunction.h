@@ -128,7 +128,8 @@ public:
 	}
 
 private:
-	void calculateWithGPU(Array2D<float> &R){		
+	void calculateWithGPU(Array2D<float> &R){	
+		Stopwatch sw = Stopwatch();
 		int i, j, index;
 		/*	for(i=0; i<dim; i++){
             for(j=0; j<dim; j++){
@@ -140,17 +141,20 @@ private:
             }
         }*/
 		
+		sw.reset(); sw.start();
 		GLuint texId[1];
 		glGenTextures(1, texId);	
 		glActiveTextureARB(GL_TEXTURE0_ARB);
 		glBindTexture(GL_TEXTURE_RECTANGLE_NV, texId[0]);
+		//maybe eventually look into a way to pass as 3 components
 		glTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_FLOAT_RGBA32_NV, 
 					 dim, dim, 0, GL_RGBA, GL_FLOAT, R.array());
 		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_WRAP_S, GL_CLAMP);
 		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_WRAP_T, GL_CLAMP);
 		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameterf(GL_TEXTURE_RECTANGLE_NV, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		
+		sw.stop(); cout << "\nuploading took " << sw.timeMS() << endl;
+		sw.reset(); sw.start();
 		textureData->BeginCapture();
 		
 		cgGLEnableProfile(g_cgProfile);	
@@ -173,12 +177,15 @@ private:
 		textureData->EndCapture();
 		glFinish();
 		glFlush();
-		
+		sw.stop(); cout << "calculation took " << sw.timeMS() << endl;
+
 		cgGLDisableTextureParameter(tex);
 		cgGLDisableProfile(g_cgProfile);
 		glDeleteTextures(1, texId);
 		getError("Error in calculateWithGPUText function");	
-		//unloadMatrix(false);
+		sw.reset(); sw.start();
+		unloadMatrix(false);
+		sw.stop(); cout << "unloading took " << sw.timeMS() << endl;
 	}
 
 	//a way needs to be created for this method to store data in double precision
