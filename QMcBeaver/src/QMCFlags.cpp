@@ -539,7 +539,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
  strm << "walker_initialization_combinations\n " 
       << flags.walker_initialization_combinations << endl;
  if (flags.iseed > 0) strm << "iseed\n " << -1*flags.iseed << endl;
- else if (flags.iseed < 0) strm << "iseed\n " << flags.iseed << endl;
+ else if (flags.iseed <= 0) strm << "iseed\n " << flags.iseed << endl;
  strm << "sampling_method\n " << flags.sampling_method << endl;
  strm << "QF_modification_type\n " << flags.QF_modification_type << endl;
  strm << "energy_modification_type\n " << flags.energy_modification_type 
