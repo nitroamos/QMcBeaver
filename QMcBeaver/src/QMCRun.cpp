@@ -19,7 +19,7 @@ QMCRun::QMCRun()
 
 void QMCRun::propagateWalkers()
 {
-  // Propigate all of the walkers
+  // Propagate all of the walkers
 
   for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
     {
@@ -64,14 +64,15 @@ void QMCRun::branchWalkers()
 
 void QMCRun::zeroOut()
 {
-  Properties.zeroOut();
+  if (Input->flags.use_equilibration_array == 1) EquilibrationArray.zeroOut();
+  else Properties.zeroOut();
 }
 
 void QMCRun::initialize(QMCInput *INPUT)
 {
   Input = INPUT;
-
-  Properties.zeroOut();
+  if (Input->flags.use_equilibration_array == 1) EquilibrationArray.zeroOut();
+  else Properties.zeroOut();
 }
 
 void QMCRun::randomlyInitializeWalkers()
@@ -91,7 +92,6 @@ void QMCRun::randomlyInitializeWalkers()
 void QMCRun::calculateObservables()
 {
   // Get the observables calculated in each walker
-
   // Pre block all of the statistics from one time step together
 
   QMCProperties timeStepProperties;
@@ -106,35 +106,43 @@ void QMCRun::calculateObservables()
 
   double totalWeights = getWeights() * populationSizeBiasCorrectionFactor;
 
-  // Calculate the Energy ...
-  Properties.energy.newSample( 
-	timeStepProperties.energy.getAverage(), totalWeights );
+  if (Input->flags.use_equilibration_array == 1)
+    {  
+      EquilibrationArray.newSample
+        (&timeStepProperties, totalWeights, getNumberOfWalkers()); 
+    }
+  else
+    {
+      // Calculate the Energy ...
+      Properties.energy.newSample(
+        timeStepProperties.energy.getAverage(), totalWeights );
 
-  // Calculate the Kinetic Energy
-  Properties.kineticEnergy.newSample( 
+      // Calculate the Kinetic Energy
+      Properties.kineticEnergy.newSample(
         timeStepProperties.kineticEnergy.getAverage(), totalWeights );
 
-  // Calculate the Potential Energy
-  Properties.potentialEnergy.newSample( 
-	timeStepProperties.potentialEnergy.getAverage(), totalWeights );
+      // Calculate the Potential Energy
+      Properties.potentialEnergy.newSample(
+        timeStepProperties.potentialEnergy.getAverage(), totalWeights );
 
-  // Calculate the Acceptance Probability ...
-  Properties.acceptanceProbability.newSample( 
-	timeStepProperties.acceptanceProbability.getAverage(), totalWeights );
+      // Calculate the Acceptance Probability ...
+      Properties.acceptanceProbability.newSample(
+        timeStepProperties.acceptanceProbability.getAverage(), totalWeights );
 
-  // Calculate the DistanceMovedAccepted this is the average distance
-  // moved on a step
-  Properties.distanceMovedAccepted.newSample( 
-	timeStepProperties.distanceMovedAccepted.getAverage(), totalWeights );
+      // Calculate the DistanceMovedAccepted this is the average distance
+      // moved on a step
+      Properties.distanceMovedAccepted.newSample(
+        timeStepProperties.distanceMovedAccepted.getAverage(), totalWeights );
 
-  // Calculate the DistanceMovedTrial this is the average step length for
-  // a trial move
-  Properties.distanceMovedTrial.newSample( 
-	timeStepProperties.distanceMovedTrial.getAverage(), totalWeights );
+      // Calculate the DistanceMovedTrial this is the average step length for
+      // a trial move
+      Properties.distanceMovedTrial.newSample(
+        timeStepProperties.distanceMovedTrial.getAverage(), totalWeights );
 
-  // Calculate the log of the weights
-  Properties.logWeights.newSample(
+      // Calculate the log of the weights
+      Properties.logWeights.newSample(
         timeStepProperties.logWeights.getAverage(), getNumberOfWalkers() );
+    }
 }
 
 void QMCRun::writeEnergies(ostream& strm)
@@ -323,7 +331,11 @@ void QMCRun::toXML(ostream& strm)
        << "\n</populationSizeBiasCorrectionFactor>" << endl;
 
   // writes out the properties
-  Properties.toXML(strm);
+  if (Input->flags.use_equilibration_array == 1) 
+    {
+      EquilibrationArray.toXML(strm);
+    }
+  else Properties.toXML(strm);
 
   //prints all the walkers
   strm << "<walkers>" << endl;
@@ -346,7 +358,11 @@ void QMCRun::readXML(istream& strm)
   strm >> temp;
 
   // read the properties
-  Properties.readXML(strm);
+  if (Input->flags.use_equilibration_array == 1) 
+    {
+      EquilibrationArray.readXML(strm);
+    }
+  else Properties.readXML(strm);
 
   // read the walkers
 
@@ -364,12 +380,38 @@ void QMCRun::readXML(istream& strm)
     }
 
   strm >> temp;
+}
 
+void QMCRun::startTimers()
+{
+  EquilibrationArray.startTimers();
+}
+
+void QMCRun::stopTimers()
+{
+  EquilibrationArray.stopTimers();
+}
+
+Stopwatch * QMCRun::getPropagationStopwatch()
+{
+  return EquilibrationArray.getPropagationStopwatch();
+}
+
+Stopwatch * QMCRun::getEquilibrationStopwatch()
+{
+  return EquilibrationArray.getEquilibrationStopwatch();
 }
 
 QMCProperties * QMCRun::getProperties()
 {
-  return &Properties;
+  if (Input->flags.use_equilibration_array == 1)
+    {
+      return EquilibrationArray.chooseDecorrObject();
+    }
+  else 
+    {
+      return &Properties;
+    }
 }
 
 int QMCRun::getNumberOfWalkers()

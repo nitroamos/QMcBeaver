@@ -16,14 +16,16 @@ QMCReadAndEvaluateConfigs::QMCReadAndEvaluateConfigs()
 {
 }
 
-QMCReadAndEvaluateConfigs::QMCReadAndEvaluateConfigs(QMCInput *In)
+QMCReadAndEvaluateConfigs::QMCReadAndEvaluateConfigs(QMCInput *In, 
+                                                             int cfgsToSkip)
 {
-  initialize(In);
+  initialize(In, cfgsToSkip);
 }
 
-void QMCReadAndEvaluateConfigs::initialize(QMCInput *In)
+void QMCReadAndEvaluateConfigs::initialize(QMCInput *In, int cfgsToSkip)
 {
   Input = In;
+  configsToSkip = cfgsToSkip;
 
   Jastrow.initialize(Input);
 
@@ -85,8 +87,7 @@ void QMCReadAndEvaluateConfigs::read_next_config()
 // Calculate the properites from the configs for all the parameters in params
 // using the root node
 void QMCReadAndEvaluateConfigs::rootCalculateProperties(
-			   Array1D < Array1D<double> > & Params, 
-			   Array1D<QMCProperties> & Properties)
+     Array1D < Array1D<double> > & Params, Array1D<QMCProperties> & Properties)
 {
   //Params holds all the vectors to be evaluated 
   //Their scores be returned in the end
@@ -221,11 +222,9 @@ void QMCReadAndEvaluateConfigs::workerCalculateProperties()
 // Calculate the properites from the configs for all the parameters in params
 // on the current node
 void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
-				      Array1D < Array1D<double> > &Params,
-				      Array1D<QMCProperties> & Properties)
+  Array1D < Array1D<double> > &Params, Array1D<QMCProperties> & Properties)
 {
   config_in_stream.open(Input->flags.config_file_name.c_str());
-  config_in_stream.clear();
 
   if( config_in_stream.bad() )
     {
@@ -234,12 +233,24 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
       exit(0);
     }
 
+  config_in_stream.clear();
+
   //zero out the properties
 
   Properties.allocate(Params.dim1());
   for(int j=0;j<Properties.dim1();j++)
     {
       Properties(j).zeroOut();
+    }
+
+  // Skip the appropriate number of configs from the beginning of the file.
+
+  //  cout << "On processor " << Input->flags.my_rank << ", skipping " 
+  //       << configsToSkip << " configs from the file." << endl;
+
+  for (int i=0; i<configsToSkip; i++)
+    {
+      read_next_config();
     }
 
   // read configurations until the file is empty

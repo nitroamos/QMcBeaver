@@ -49,8 +49,7 @@ public:
      @param input data input to control the calculation.
   */
 
-  QMCReadAndEvaluateConfigs(QMCInput *input);
-
+  QMCReadAndEvaluateConfigs(QMCInput *input, int cfgsToSkip);
 
   /**
      Initializes the object.
@@ -58,8 +57,7 @@ public:
      @param input data input to control the calculation.
   */
 
-  void initialize(QMCInput *input);
-
+  void initialize(QMCInput *input, int cfgsToSkip);
 
   /**
    Calculates properties (QMCProperties) for different parameter sets 
@@ -73,7 +71,7 @@ public:
   */
 
   void rootCalculateProperties(Array1D < Array1D<double> > &params, 
-			       Array1D<QMCProperties> & properties);
+		                          Array1D<QMCProperties> & properties);
 
   /**
    Calculates properties (QMCProperties) for different parameter sets 
@@ -90,6 +88,9 @@ private:
 
   // The Jastrow to be calculated
   QMCJastrow Jastrow;
+
+  // The number of configurations to be skipped.
+  int configsToSkip;
 
   int Nelectrons;
   int Natoms;
@@ -121,7 +122,7 @@ private:
   // Calculate the properites from the configs for all the parameters in params
   // on the current node
   void locally_CalculateProperties(Array1D < Array1D<double> > &Params, 
-			   Array1D<QMCProperties> & Properties);
+	                                  Array1D<QMCProperties> & Properties);
 
   // perform an mpi reduce operation on the properties collected on each
   // processor

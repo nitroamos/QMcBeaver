@@ -12,14 +12,14 @@
 
 #include "QMCObjectiveFunction.h"
 
-void QMCObjectiveFunction::initialize(QMCInput *Ip)
+void QMCObjectiveFunction::initialize(QMCInput *Ip, int configsToSkip)
 {
   Input   = Ip;
-  RAEC.initialize(Input);
+  RAEC.initialize(Input, configsToSkip);
 }
 
 Array1D<QMCObjectiveFunctionResult> QMCObjectiveFunction::evaluate(
-				     Array1D< Array1D<double> > & Params) 
+		                          Array1D< Array1D<double> > & Params) 
 { 
   // calculate properties from the configuration file
   Array1D<QMCProperties> Properties;
@@ -48,7 +48,7 @@ Array1D<QMCObjectiveFunctionResult> QMCObjectiveFunction::evaluate(
 
 // Return the result of the objective function evaluation
 QMCObjectiveFunctionResult QMCObjectiveFunction::evaluate(Array1D<double> &
-							   Params)
+						                        Params)
 {
   Array1D< Array1D<double> > P(1);
   P(0) = Params;
@@ -85,7 +85,7 @@ void QMCObjectiveFunction::numerical_grad(Array1D<double> &Params,
 					  Array1D<double> &GRAD)
 {
   //FIX this epsilon!!!!!!!! back to 0.001 or something 
-  double epsilon = 0.0001;
+  double epsilon = 0.001;
   int dimension  = Params.dim1();
 
   // Create a set of parameters displaced in every direction.

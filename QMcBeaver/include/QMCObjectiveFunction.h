@@ -41,7 +41,7 @@ class QMCObjectiveFunction
 
     @param input input data for the calculation
     */
-  void initialize(QMCInput *input);
+  void initialize(QMCInput *input, int configsToSkip);
 
   /**
     Evaluates and returns the result of the objective function 

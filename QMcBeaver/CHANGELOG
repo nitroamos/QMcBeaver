@@ -1,3 +1,23 @@
+Fri, 9 Jul 2004, Daniel R. Fisher
+
+1.  Added QMCEquilibrationArray.  This defines an array of
+    QMCExtendedProperties objects, each of which consists of a
+    QMCProperties object and equilibration and propagation
+    Stopwatches.  The ith element of the array starts collecting
+    statistics on the (2^i)th iteration of the run.  When the
+    properties are gathered, the element of the array with the
+    smallest standard deviation for the total energy is chosen and
+    sent to the root processor.  
+    When the timing information is collected, the propagation and
+    equilibration timers from the appropriate QMCExtendedProperties
+    object are added to the localTimers and sent to the root
+    processor.
+    When correlated sampling configurations are read, each processor
+    determines how many configurations from the beginning of the file
+    should be skipped.  
+    To use the equilibration array, set the flag
+    use_equilibration_array to 1.
+
 Wed, 7 Jul 2004, Daniel R. Fisher
 
 1.  Added QMCDansWalkerInitialization.  This initialization method requires

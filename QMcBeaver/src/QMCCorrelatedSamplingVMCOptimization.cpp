@@ -12,7 +12,8 @@
 
 #include "QMCCorrelatedSamplingVMCOptimization.h"
 
-void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input)
+void QMCCorrelatedSamplingVMCOptimization::
+optimize(QMCInput * input, int configsToSkip)
 {
   //put initial Jastrow parameters in as the guess
   Array1D<double> Guess_Jastrow_parameters = input->JP.getParameters();
@@ -21,7 +22,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input)
     {
       // initialize the objective function
       QMCObjectiveFunction ObjFunk;
-      ObjFunk.initialize(input);
+      ObjFunk.initialize(input, configsToSkip);
       
       // get which optimization algorithm to use
       QMCOptimizationAlgorithm * optAlg = 
@@ -47,7 +48,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input)
     {
 #ifdef PARALLEL
       // If you are a worker, wait for the root to give you work
-      QMCReadAndEvaluateConfigs RAEC(input);
+      QMCReadAndEvaluateConfigs RAEC(input, configsToSkip);
       
       while(true)
 	{

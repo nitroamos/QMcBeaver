@@ -59,6 +59,22 @@ double QMCProperty::getAverage()
 
 double QMCProperty::getStandardDeviation()
 {
+  int decorr_depth = getDecorrDepth();
+  if (decorr_depth == -2)
+    {
+      // return infinity
+      return 1.0e300;
+    }
+  else if (decorr_depth == -1)
+    {
+      // DDDA has not converged.
+      return 1000;
+    }
+  else return getBlockStandardDeviation(decorr_depth);
+}
+
+int QMCProperty::getDecorrDepth()
+{
   /*
     Fit the decorrelation standard deviation to 
     f(x;a) = a^2 * e^( c^2 * x + d^2 * x^2 )/(1 + b^2 * e^( c^2 * x + 
@@ -78,9 +94,7 @@ double QMCProperty::getStandardDeviation()
 
   if( getNumberSamples() < 100 )
     {
-      // return infinity
-
-      return 1.0e300;
+      return -2;
     }
 
   /******************** TEST **********************************/
@@ -99,7 +113,7 @@ double QMCProperty::getStandardDeviation()
 
       if( temp <= value )
 	{
-	  return getBlockStandardDeviation(block-1);
+	  return block-1;          
 	}
       else
 	{
@@ -109,7 +123,7 @@ double QMCProperty::getStandardDeviation()
       block++;
     }
 
-  return 1000;
+  return -1;
 
   /*********************************************************/
 
@@ -217,7 +231,7 @@ double QMCProperty::getStandardDeviation()
 
       for(int i=0; i<grad.dim1(); i++)
 	{
-	  if( IeeeMath.isNaN( grad(i) ) != 0 )
+	  if( isnan( grad(i) ) != 0 )
 	    {
 	      grad(i) = 0.0;
 	    }
@@ -292,6 +306,12 @@ double QMCProperty::getSeriallyCorrelatedStandardDeviation()
   return sqrt(getSeriallyCorrelatedVariance());
 }
 
+double QMCProperty::getStandardDeviationStandardDeviation()
+{
+  int decorr_depth = getDecorrDepth();
+  if (decorr_depth < 0) return 0.0;
+  else return getBlockStandardDeviationStandardDeviation(decorr_depth);
+}
 
 void QMCProperty::newSample(double s, double weight)
 {

@@ -56,6 +56,7 @@ void QMCFlags::read_flags(string InFileName)
   equilibration_steps            = 10000;
   equilibration_function         = "ramp";
   CKAnnealingEquilibration1_parameter = 500;
+  use_equilibration_array        = 0;
 
   correct_population_size_bias   = 0;
 
@@ -258,6 +259,11 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           CKAnnealingEquilibration1_parameter = atoi(temp_string.c_str());
         }
+      else if (temp_string == "use_equilibration_array")
+	{
+	  input_file >> temp_string;
+          use_equilibration_array = atoi(temp_string.c_str());
+	}
       else if(temp_string == "mpireduce_interval")
 	{
 	  input_file >> temp_string;
@@ -567,6 +573,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
  strm << "equilibration_function\n " << flags.equilibration_function << endl;
  strm << "CKAnnealingEquilibration1_parameter\n " 
       << flags.CKAnnealingEquilibration1_parameter << endl;
+ strm << "use_equilibration_array\n " << flags.use_equilibration_array << endl;
  strm << "number_of_walkers\n " << flags.number_of_walkers << endl;
  strm << "output_interval\n " << flags.output_interval << endl;
  strm << "mpireduce_interval\n " << flags.mpireduce_interval << endl;

@@ -257,6 +257,17 @@ class QMCFlags
   unsigned int CKAnnealingEquilibration1_parameter;
 
   /**
+     1 if QMCEquilibrationArray is to be used.  This defines an array of 
+     QMCProperties objects, where the ith element starts collecting statistics
+     on the (2^i)th iteration.  The element with the lowest standard deviation
+     for the total energy is chosen, automatically determining the correct
+     number of equilibrtion steps.
+     0 if all the statistics are to be collected into one QMCProperties object.
+  */
+
+  int use_equilibration_array;
+
+  /**
      Number of time steps taken on the root processor before the
      results are collected from all other processors.
   */

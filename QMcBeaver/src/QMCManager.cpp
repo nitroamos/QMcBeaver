@@ -147,6 +147,17 @@ void QMCManager::finalize()
   //stop timing and package up the timer data
   localTimers.stop();
 
+  if (Input.flags.use_equilibration_array == 1)
+    {
+      QMCnode.stopTimers();
+
+      *localTimers.getPropagationStopwatch() = 
+	*QMCnode.getPropagationStopwatch();
+      *localTimers.getEquilibrationStopwatch() = 
+	*localTimers.getEquilibrationStopwatch() + 
+	*QMCnode.getEquilibrationStopwatch();
+    }
+
 #ifdef PARALLEL
   MPI_Reduce(&localTimers,&globalTimers,1,QMCStopwatches::MPI_TYPE,
 	     QMCStopwatches::MPI_REDUCE,0,MPI_COMM_WORLD);
@@ -308,7 +319,11 @@ void QMCManager::run()
        iteration++;
 	  
        if(equilibrating) localTimers.getEquilibrationStopwatch()->start();
-       else localTimers.getPropagationStopwatch()->start();
+       else 
+	 {
+	   if (Input.flags.use_equilibration_array == 1) QMCnode.startTimers();
+           else localTimers.getPropagationStopwatch()->start();
+	 }
 
        QMCnode.step();
 
@@ -341,7 +356,11 @@ void QMCManager::run()
 	     *QMCnode.getProperties();
 	   QMCnode.zeroOut();
 	 }
-       else localTimers.getPropagationStopwatch()->stop();
+       else 
+	 {
+	   if (Input.flags.use_equilibration_array == 1) QMCnode.stopTimers();
+           else localTimers.getPropagationStopwatch()->stop();
+	 }
 
        //--------------------------------------------------
 
@@ -419,9 +438,23 @@ void QMCManager::optimize()
 {
   localTimers.getOptimizationStopwatch()->start();
 
+  int configsToSkip = 0;
+
+  if (Input.flags.use_equilibration_array == 1)
+    {
+      configsToSkip = 1 + ( iteration - Input.flags.equilibration_steps - 
+	QMCnode.getProperties()->energy.getNumberSamples() ) / 
+        Input.flags.print_config_frequency;
+
+      //      cout << "On node " << Input.flags.my_rank << ", iteration = "
+      //        << iteration << ", numberOfSamples = " 
+      //        << QMCnode.getProperties()->energy.getNumberSamples() 
+      //        << ", so configsToSkip = " << configsToSkip << endl;
+    }
+
   if( Input.flags.optimize_Psi )
     {
-      QMCCorrelatedSamplingVMCOptimization::optimize(&Input);
+      QMCCorrelatedSamplingVMCOptimization::optimize(&Input,configsToSkip);
 
       // Print out the optimized parameters
       if( Input.flags.my_rank == 0 )
@@ -513,7 +546,7 @@ void QMCManager::writeEnergyResultsSummary(ostream & strm)
        << Eave-Estd << "\t" << Eave+Estd << "\t" 
        << QMCnode.getNumberOfWalkers() << "\t" << Input.flags.energy_trial
        << "\t" << Input.flags.dt_effective << "\t" << QMCnode.getWeights()
-       << endl;
+       << "\t" << Properties_total.energy.getNumberSamples() << endl;
 }
 
 void QMCManager::writeTransientProperties(int label)
