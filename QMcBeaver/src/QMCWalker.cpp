@@ -72,11 +72,18 @@ void QMCWalker::operator=( const QMCWalker & rhs )
 void QMCWalker::propagateWalker()
 {
   createChildWalkers();
-  double forwardGreensFunction = TrialWalker->moveElectrons();
+
+  QMCGreensRatioComponent forwardGreensFunction = TrialWalker->moveElectrons();
+
   TrialWalker->evaluate();
-  double reverseGreensFunction = calculateReverseGreensFunction();
-  calculateMoveAcceptanceProbability(forwardGreensFunction,
-				     reverseGreensFunction);
+  QMCGreensRatioComponent reverseGreensFunction = \
+                                              calculateReverseGreensFunction();
+
+  double GreensFunctionRatio = \
+                         reverseGreensFunction.DivideBy(forwardGreensFunction);
+
+  calculateMoveAcceptanceProbability(GreensFunctionRatio);
+
   acceptOrRejectMove();
   reweight_walker();
   calculateObservables();
@@ -88,7 +95,7 @@ void QMCWalker::propagateWalker()
     }
 }
 
-double QMCWalker::moveElectrons()
+QMCGreensRatioComponent QMCWalker::moveElectrons()
 {
   // Make sure that dt is positive!
   if( Input->flags.dt <= 0 )
@@ -118,10 +125,11 @@ double QMCWalker::moveElectrons()
     }
 
   // should never reach this
-  return 0.0;
+  QMCGreensRatioComponent TRASH = QMCGreensRatioComponent();
+  return TRASH;
 }
 
-double QMCWalker::moveElectronsNoImportanceSampling()
+QMCGreensRatioComponent QMCWalker::moveElectronsNoImportanceSampling()
 {
   // Move the electrons of this walker
   double sigma = sqrt(Input->flags.dt);
@@ -162,10 +170,12 @@ double QMCWalker::moveElectronsNoImportanceSampling()
     }
 
   // Return the greens function for the forward move
-  return 1.0;
+
+  QMCGreensRatioComponent GF = QMCGreensRatioComponent(1.0);
+  return GF;
 }
 
-double QMCWalker::moveElectronsImportanceSampling()
+QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
 {
   // Move the electrons of this walker
   double sigma = sqrt(Input->flags.dt);
@@ -215,7 +225,12 @@ double QMCWalker::moveElectronsImportanceSampling()
 
   greens = greens/(2*tau);
 
-  greens = pow(2.0*3.14159265359*tau,-1.5*Displacement.dim1()) * exp(-greens);
+  double k = 1.0;
+  double a = 2.0*3.14159265359*tau;
+  double b = -1.5*Displacement.dim1();
+  double c = -greens;
+
+  QMCGreensRatioComponent GF(k,a,b,c);
 
   // Now update the R
   for(int i=0; i<Displacement.dim1(); i++)
@@ -226,13 +241,13 @@ double QMCWalker::moveElectronsImportanceSampling()
 	}
     }
 
-  return greens;
+  return GF;
 }
 
-double QMCWalker::moveElectronsUmrigar93ImportanceSampling()
+QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 {
   double tau = Input->flags.dt;
-  double greens = 1.0;
+  QMCGreensRatioComponent GF = 1.0;
   dR2 = 0.0;
 
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
@@ -282,7 +297,6 @@ double QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       radialComponentQF = sqrt(radialComponentQF);
       radialUnitVector /= radialComponentQF;
 
-
       // Calculate the gaussian drift components in cylindrical coordinates
       double zCoordinate = max(distanceFromNucleus + zComponentQF * tau,
 			       0.0);
@@ -295,9 +309,6 @@ double QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       double expParam = Input->Molecule.Z(nearestNucleus);
       expParam = expParam*expParam + 1.0/tau;
       expParam = sqrt(expParam);
-
-
-
 
       // Calculate the probability of moving the electron with respect
       // to a gaussian type distribution with a QF drift or a hydrogenic
@@ -351,8 +362,6 @@ double QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	  newPosition(2) += r*cos(theta);
 	}
 
-
-
       // Update the greens function
 
       double distance1Sq = 0.0;
@@ -367,7 +376,11 @@ double QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	  distance1Sq += temp*temp;
 	}
 
-      double g1 = pow(2*3.14159265359*tau,-1.5)*exp( -distance1Sq/(2*tau) );
+      double ga = 2*3.14159265359*tau;
+      double gb = -1.5;
+      double gc = -distance1Sq/(2*tau);
+
+      QMCGreensRatioComponent GaussianGF(probabilityGaussianTypeMove,ga,gb,gc);
 
       double distance2Sq = 0.0;
 
@@ -379,19 +392,22 @@ double QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	  distance2Sq += temp*temp;
 	}
 
-      double g2 = pow(expParam,3.0) / 3.14159265359 *
-	exp( -2.0 * expParam * sqrt( distance2Sq ) );
+      double sk = probabilitySlaterTypeMove/3.14159265359;
+      double sa = expParam;
+      double sb = 3.0;
+      double sc = -2.0*expParam*sqrt(distance2Sq);
 
-      greens *= (probabilityGaussianTypeMove * g1 + 
-		 probabilitySlaterTypeMove * g2 );
+      QMCGreensRatioComponent SlaterGF(sk,sa,sb,sc);
 
+      QMCGreensRatioComponent OneE = GaussianGF + SlaterGF;
+
+      GF.MultiplyBy(OneE);
 
       // Update the distance attempted to move squared
 
       for(int i=0; i<3; i++)
 	{
 	  double temp = newPosition(i) - R(electron,i);
-
 	  dR2 += temp*temp;
 	}
 
@@ -403,10 +419,10 @@ double QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	}
     }
 
-  return greens;
+  return GF;
 }
 
-double QMCWalker::calculateReverseGreensFunction()
+QMCGreensRatioComponent QMCWalker::calculateReverseGreensFunction()
 {
   // Make sure that dt is positive!
   if( Input->flags.dt <= 0 )
@@ -436,15 +452,20 @@ double QMCWalker::calculateReverseGreensFunction()
     }
 
   // should never reach this
-  return 0.0;
+
+  QMCGreensRatioComponent TRASH = QMCGreensRatioComponent();
+  return TRASH;
 }
 
-double QMCWalker::calculateReverseGreensFunctionNoImportanceSampling()
+QMCGreensRatioComponent \
+                QMCWalker::calculateReverseGreensFunctionNoImportanceSampling()
 {
-  return 1.0;
+  QMCGreensRatioComponent GF = QMCGreensRatioComponent(1.0);
+  return GF;
 }
 
-double QMCWalker::calculateReverseGreensFunctionImportanceSampling()
+QMCGreensRatioComponent \
+                  QMCWalker::calculateReverseGreensFunctionImportanceSampling()
 {
   double tau = Input->flags.dt;
 
@@ -465,13 +486,19 @@ double QMCWalker::calculateReverseGreensFunctionImportanceSampling()
 
   greens = pow(2*3.14159265359*tau,-1.5*R.dim1()) * exp(-greens);
 
-  return greens;
+  double k = 1.0;
+  double a = 2.0*3.14159265359*tau;
+  double b = -1.5*R.dim1();
+  double c = -greens;
+  QMCGreensRatioComponent GF = QMCGreensRatioComponent(k,a,b,c);
+  return GF;
 }
 
-double QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
+QMCGreensRatioComponent \
+         QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
 {
   double tau = Input->flags.dt;
-  double greens = 1.0;
+  QMCGreensRatioComponent GF;
 
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
     {
@@ -559,27 +586,34 @@ double QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
 	  distance1Sq += temp*temp;
 	}
 
-      double g1 = pow(2*3.14159265359*tau,-1.5)*exp( -distance1Sq/(2*tau) );
+      double ga = 2*3.14159265359*tau;
+      double gb = -1.5;
+      double gc = -distance1Sq/(2*tau);
+
+      QMCGreensRatioComponent GaussianGF(probabilityGaussianTypeMove,ga,gb,gc);
 
       double distance2Sq = 0.0;
       
       for(int i=0; i<3; i++)
 	{
-	  double temp = OriginalWalker->R(electron,i) -
+	  double temp = OriginalWalker->R(electron,i) - \
 	    Input->Molecule.Atom_Positions(nearestNucleus,i);
 
 	  distance2Sq += temp*temp;
 	}
 
-      double g2 = pow(expParam,3.0) / 3.14159265359 *
-	exp( -2.0 * expParam * sqrt( distance2Sq ) );
+      double sk = probabilitySlaterTypeMove/3.14159265359;
+      double sa = expParam;
+      double sb = 3.0;
+      double sc = -2.0*expParam*sqrt(distance2Sq);
 
-      greens *= (probabilityGaussianTypeMove * g1 + 
-		 probabilitySlaterTypeMove * g2 );
+      QMCGreensRatioComponent SlaterGF(sk,sa,sb,sc);
 
+      QMCGreensRatioComponent OneE = GaussianGF + SlaterGF;
+
+      GF.MultiplyBy(OneE);
     }
-
-  return greens;
+  return GF;
 }
 
 void QMCWalker::reweight_walker()
@@ -837,8 +871,7 @@ void QMCWalker::evaluate()
   QMF.evaluate(R);
 }
 
-void QMCWalker::calculateMoveAcceptanceProbability(double forwardGreens,
-						   double reverseGreens)
+void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
 {
   // This tells us the probability of accepting or rejecting a proposed move
 
@@ -856,8 +889,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double forwardGreens,
     }
 
   // calculate the probability of accepting the trial move
-  double p = PsiRatio * PsiRatio * reverseGreens / forwardGreens * 
-    MoveOldWalkerFactor;
+  double p = PsiRatio * PsiRatio * GreensRatio * MoveOldWalkerFactor;
 
   // Force the walker to move if it is too old
   if( age > 2*Input->flags.old_walker_acceptance_parameter )

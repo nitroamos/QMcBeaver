@@ -18,6 +18,7 @@
 #include "QMCInitializeWalkerFactory.h"
 #include "QMCProperties.h"
 #include "MathFunctions.h"
+#include "QMCGreensRatioComponent.h"
 
 using namespace std;
 
@@ -169,8 +170,7 @@ private:
 
   void evaluate();
   void createChildWalkers();
-  void calculateMoveAcceptanceProbability(double forwardGreens, 
-					  double reverseGreens);
+  void calculateMoveAcceptanceProbability(double GreensRatio);
   void acceptOrRejectMove();
 
   /**
@@ -179,7 +179,7 @@ private:
 
      @return Greens's function for the forward move of the electrons.
   */
-  double moveElectrons();
+  QMCGreensRatioComponent moveElectrons();
 
   /**
      Randomly moves the electrons to their new locations without using
@@ -187,7 +187,7 @@ private:
 
      @return Greens's function for the forward move of the electrons.
   */
-  double moveElectronsNoImportanceSampling();
+  QMCGreensRatioComponent moveElectronsNoImportanceSampling();
 
   /**
      Randomly moves the electrons to their new locations using
@@ -195,7 +195,7 @@ private:
 
      @return Greens's function for the forward move of the electrons.
   */
-  double moveElectronsImportanceSampling();
+  QMCGreensRatioComponent moveElectronsImportanceSampling();
 
   /**
      Randomly moves the electrons to their new locations using
@@ -203,7 +203,7 @@ private:
 
      @return Greens's function for the forward move of the electrons.
   */
-  double moveElectronsUmrigar93ImportanceSampling();
+  QMCGreensRatioComponent moveElectronsUmrigar93ImportanceSampling();
 
   /**
      Calculates the reverse Green's function for the proposed move of the
@@ -211,7 +211,7 @@ private:
 
      @return Green's function for the reverse move of the electrons.
   */
-  double calculateReverseGreensFunction();
+  QMCGreensRatioComponent calculateReverseGreensFunction();
 
   /**
      Calculates the reverse Green's function for the proposed move of the
@@ -219,7 +219,7 @@ private:
 
      @return Green's function for the reverse move of the electrons.
   */
-  double calculateReverseGreensFunctionNoImportanceSampling();
+  QMCGreensRatioComponent calculateReverseGreensFunctionNoImportanceSampling();
 
   /**
      Calculates the reverse Green's function for the proposed move of the
@@ -227,7 +227,7 @@ private:
 
      @return Green's function for the reverse move of the electrons.
   */
-  double calculateReverseGreensFunctionImportanceSampling();
+  QMCGreensRatioComponent calculateReverseGreensFunctionImportanceSampling();
 
   /**
      Calculates the reverse Green's function for the proposed move of the
@@ -235,7 +235,8 @@ private:
 
      @return Green's function for the reverse move of the electrons.
   */
-  double calculateReverseGreensFunctionUmrigar93ImportanceSampling();
+  QMCGreensRatioComponent \
+                   calculateReverseGreensFunctionUmrigar93ImportanceSampling();
 
   // reweight the walker after a move
   void reweight_walker();
