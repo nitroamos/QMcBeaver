@@ -254,13 +254,22 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
       // read the next configuration
 
       read_next_config();
-      
-      // loop over the input configurations and calculate the corresponding
-      // properties
 
-      for(int i=0; i<Params.dim1(); i++)
+      // On some computers, it seems this class was reading one extra config 
+      // in, assiging zeros to all the parameters. Why was it doing this? 
+      // Probably some compilers had a different definition of eof() or 
+      // something like that.  Anyway, assuming that the check for lnJ==0 
+      // identifies these (it does on QSC) then this fix should work.
+
+      if (lnJ != 0)
 	{
-	  AddNewConfigToProperites(Params(i),Properties(i));
+	  // loop over the input configurations and calculate the corresponding
+	  // properties
+
+	  for(int i=0; i<Params.dim1(); i++)
+	    {
+	      AddNewConfigToProperites(Params(i),Properties(i));
+	    }
 	}
     }
   config_in_stream.close();
@@ -314,24 +323,8 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
 
   // Place the results into the properties
 
-  // On some computers, it seems this class was reading one extra config in, 
-  // assiging zeros to all the parameters. Why was it doing this? Probably 
-  // some compilers had a different definition of eof() or something like that.
-  // Anyway, assuming that the check for J=0 identifies these (it does on QSC)
-  // then this fix should work.
-
-  // If the config is valid, place the results into the properties.
-
-  if (lnJ == 0)
-    {
-      cerr << "ERROR: Rejecting config (lnJ=0) with E_Local " << E_Local;
-      cerr << endl;
-    } 
-  else 
-    {
-      Properties.energy.newSample(E_Local,exp(logWeight));
-      Properties.logWeights.newSample(logWeight,1.0);
-    }
+  Properties.energy.newSample(E_Local,exp(logWeight));
+  Properties.logWeights.newSample(logWeight,1.0);
 }
 
 // Calculate the local energy of the current configuration with the currently

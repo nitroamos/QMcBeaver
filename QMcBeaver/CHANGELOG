@@ -1,4 +1,10 @@
-Friday, 11 Mar 2005, Daniel R. Fisher
+Sat, 12 Mar 2005, Daniel R. Fisher
+
+1.  I moved the (lnJ == 0) check in QMCReadAndEvaluateConfigs from after the 
+    local energy and logweight are calculated to after the config is read from
+    the file.  This keeps the extra configs from being evaluated. 
+
+Fri, 11 Mar 2005, Daniel R. Fisher
 
 1.  Fixed the jaguar2qmcbeaver.py script.  It was not printing the CI coefficients, so they were
     being initialized with garbage values.
