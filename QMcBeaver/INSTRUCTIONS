@@ -1,0 +1,11 @@
+
+These are the current QMcBeaver instructions.
+
+To run QMcBeaver on one processor:
+
+./bin/QMcBeaver.xxx file.ckmf >& file.output &
+
+To run QMcBeaver on many processors:
+
+mpirun -np numberprocessors ./bin/pQMcBeaver.xxx file.ckmf >& file.output &
+
