@@ -130,12 +130,12 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatio
   // Handle pow(a,b)/pow(d.a,d.b)
   double POW_A, POW_B;
   SimplifyRatioPowers(a,b,denom.a,denom.b,POW_A,POW_B);
-      
-	k /= denom.k;
-	a = POW_A;
-	b = POW_B;
-	c -= denom.c;
-	return *this;
+  
+  k /= denom.k;
+  a = POW_A;
+  b = POW_B;
+  c -= denom.c;
+  return *this;
 }
 
 QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRatioComponent &X)
@@ -148,42 +148,51 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRat
     large/small values will start accumulating in the k degree of freedom. So, if this happens,
     we need to shift the large/small exponents over to the c degree of freedom.*/
   temp_k = k * X.k;
-  if(fabs(temp_k) > 1e300 || fabs(temp_k) < 1e-300){
-    c += log(fabs(k));
-    c += log(fabs(X.k));
-    k = k < 0 ? -1.0 : 1.0;
-    k = X.k < 0 ? -k : k;
-    temp_k = 1.0;
-  }
+  if(fabs(temp_k) > 1e300 || fabs(temp_k) < 1e-300)
+    {
+      c += log(fabs(k));
+      c += log(fabs(X.k));
+      k = k < 0 ? -1.0 : 1.0;
+      k = X.k < 0 ? -k : k;
+      temp_k = 1.0;
+    }
   c += X.c;
   k = temp_k;
   
-  if ( fabs(a-1.0) < 1e-15 ){
-    if ( fabs(X.a-1.0) < 1e-15 ){
-      temp_a = 1.0;
-      temp_b = 0.0;
-    }	else {
-      temp_a = X.a;
-      temp_b = X.b;
-    }
-  }	else if ( fabs(X.a-1.0) < 1e-15 ){
-    if ( fabs(a-1.0) < 1e-15 ){
-      temp_a = 1.0;
-      temp_b = 0.0;
-    }	else {
-      temp_a = a;
-      temp_b = b;
-    }
-  }	else if ( fabs(a-X.a) < 1e-15 ){
-    temp_a = a;
-    temp_b = b + X.b;
-  }	else if (a < X.a){
-    temp_a = X.a;
-    temp_b = X.b + b*log(a)/log(X.a);
-  }	else {
-    temp_a = a;
-    temp_b = b + X.b*log(X.a)/log(a);
-  }
+  if ( fabs(a-1.0) < 1e-15 )
+    {
+      if ( fabs(X.a-1.0) < 1e-15 )
+	{
+	  temp_a = 1.0;
+	  temp_b = 0.0;
+	}	else {
+	  temp_a = X.a;
+	  temp_b = X.b;
+	}
+    }	else
+      if ( fabs(X.a-1.0) < 1e-15 )
+      {
+	if ( fabs(a-1.0) < 1e-15 ){
+	  temp_a = 1.0;
+	  temp_b = 0.0;
+	}	else {
+	  temp_a = a;
+	  temp_b = b;
+	}
+      }	else
+	if ( fabs(a-X.a) < 1e-15 )
+	  {
+	    temp_a = a;
+	    temp_b = b + X.b;
+	  } else
+	    if (a < X.a)
+	      {
+		temp_a = X.a;
+		temp_b = X.b + b*log(a)/log(X.a);
+	      }	else {
+		temp_a = a;
+		temp_b = b + X.b*log(X.a)/log(a);
+	      }
   a = temp_a;
   b = temp_b;
   return *this;
@@ -210,46 +219,68 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::add(const QMCGreensRatioCompo
      overflow/underflow possibilities by setting exp(large) = 690 because the
      exponent is possibly important to the rest of the number. Anyway, as we try
      larger and larger molecules, this code needs to be very robust.*/
-  if(fabs(expArg) > 690){
+  if(fabs(expArg) > 690)
+    {
+      
+      /* This next little section is very (i think) dumb. This is to correct a code
+	 crash (on the QSC) when somehow, a value smaller than 1e-308 was assigned to
+	 X.k (but somehow not caught by the X.k == 0 check above) which would crash
+	 the evaluation of log(X.k). I don't understand how this is possible... but
+	 this fixes it.*/
+      if(fabs(X.k) < 1e-300)
+	{
+	  dumb = 1e100 * X.k;
+	  expArg += log(fabs(dumb)) + log(1e-100);
+	} else
+	  if(fabs(X.k) > 1e300)
+	    {
+	      dumb = 1e-100 * X.k;
+	      expArg += log(fabs(dumb)) + log(1e100);
+	    } else {
+	      expArg += log(fabs(X.k));
+	    }
+      
+      signPOW = pow(POW_A,POW_B);
+      expArg += log(fabs(signPOW));
+      temp = log(fabs(k));
+      /* allow for any possiblity in the comparison of temp and expArg.
+	 the goal is to evaluate (e^a + e^b) or equivalently, (1 + e^(a-b))*e^b
 
-    /* This next little section is very (i think) dumb. This is to correct a code
-       crash (on the QSC) when somehow, a value smaller than 1e-308 was assigned to
-       X.k (but somehow not caught by the X.k == 0 check above) which would crash
-       the evaluation of log(X.k). I don't understand how this is possible... but
-       this fixes it.*/
-    if(fabs(X.k) < 1e-300){
-      dumb = 1e100 * X.k;
-      expArg += log(fabs(dumb)) + log(1e-100);
-    } else if(fabs(X.k) > 1e300){
-      dumb = 1e-100 * X.k;
-      expArg += log(fabs(dumb)) + log(1e100);
+	 case 1: if e^a and e^b are within 15 orders of magnitude (computer precision) then
+	 we should go ahead and evaluate the term as stated.
+
+	 case 2 and 3: if the 'if' fell through, then we know that one of the terms 
+	 is actually much larger than the other, and that we only have to include 
+	 the larger term to the final answer. the reason for going through this
+	 trouble is that if we evalate the final answer through cases 2 or 3, then
+	 we don't actually have to calculate the exp of a potentially very large or
+	 very small number -- instead we immediately shift the magnitude into the c
+	 degree of freedom.
+
+	 ln(1e15) = 34
+      */
+      if(fabs(temp - expArg) < 34)
+	{
+	  k = exp(temp - expArg);
+	  k = signPOW < 0 ? -k : k;
+	  k = signXk  < 0 ? -k : k;
+	  k += signK   < 0 ? -1.0 : 1.0;
+	  c += expArg;
+	} else
+	  if(expArg > temp)
+	    {
+	      k = 1.0;
+	      k = signPOW < 0 ? -k : k;
+	      k = signXk  < 0 ? -k : k;
+	      c += expArg;
+	    } else {
+	      k = 1.0;
+	      k = signK   < 0 ? -k : k;
+	      c += temp;
+	    }
     } else {
-      expArg += log(fabs(X.k));
+      k += X.k * pow(POW_A,POW_B) * exp(expArg);
     }
-    
-    signPOW = pow(POW_A,POW_B);
-    expArg += log(fabs(signPOW));
-    temp = log(fabs(k));
-    /* allow for any possiblity in the comparison of temp and expArg*/
-    if(fabs(temp - expArg) < 15){
-      k = exp(temp - expArg);
-      k = signPOW < 0 ? -k : k;
-      k = signXk  < 0 ? -k : k;
-      k += signK   < 0 ? -1.0 : 1.0;
-      c += expArg;
-    } else if(expArg > temp){
-      k = 1.0;
-      k = signPOW < 0 ? -k : k;
-      k = signXk  < 0 ? -k : k;
-      c += expArg;
-    } else {
-      k = 1.0;
-      k = signK   < 0 ? -k : k;
-      c += temp;
-    }
-  } else {
-    k += X.k * pow(POW_A,POW_B) * exp(expArg);
-  }
   return *this;
 }
 
