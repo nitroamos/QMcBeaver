@@ -1,3 +1,11 @@
+Wed, 21 July 2004, Daniel R. Fisher
+
+1.  Submitted changes on behalf of Amos Anderson fixing 
+    calculateReverseGreensFunctionUmrigar93ImportanceSampling() in QMCWalker.
+    The distances were being calculated from the proposed positions instead of
+    the original positions, which was causing a very high acceptance 
+    probability.  
+
 Thurs, 15 July 2004, Daniel R. Fisher
 
 1.  Changed the call to isnan() in QMCEquilibrationArray to come from 
