@@ -94,7 +94,7 @@ class QMCWavefunction
     It is assumed that the ordering of the coefficients is the same as
     the basisfunctions in the input file.
   */
-  Array2D<double> Coeffs;
+  Array2D<qmcfloat> Coeffs;
 
   /**
     Array containing the CI coefficients for a multideterminant wavefunction.

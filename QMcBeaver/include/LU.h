@@ -37,7 +37,7 @@ using namespace std;
   @param calcOK returns false if the calculation is singular and true otherwise
   */
 
-void ludcmp(Array2D <double>& a, int *indx, double *d, bool *calcOK);
+void ludcmp(Array2D <qmcfloat>& a, int *indx, double *d, bool *calcOK);
 
 
 /**
@@ -51,7 +51,7 @@ void ludcmp(Array2D <double>& a, int *indx, double *d, bool *calcOK);
   equations to solve
   */
 
-void lubksb(Array2D <double>& a, int *indx, Array1D<double>& b);
+void lubksb(Array2D <qmcfloat>& a, int *indx, Array1D<qmcfloat>& b);
 
 
 /**
@@ -64,7 +64,7 @@ void lubksb(Array2D <double>& a, int *indx, Array1D<double>& b);
   @return the determinant of a
   */
 
-double determinant(Array2D <double> a, bool *calcOK);
+double determinant(Array2D <qmcfloat> a, bool *calcOK);
 
 
 /**
@@ -76,7 +76,7 @@ double determinant(Array2D <double> a, bool *calcOK);
   @return the inverse of a
   */
 
-Array2D <double> inverse(Array2D <double> a, bool *calcOK);
+Array2D <qmcfloat> inverse(Array2D <qmcfloat> a, bool *calcOK);
 
 
 /**
@@ -90,7 +90,7 @@ Array2D <double> inverse(Array2D <double> a, bool *calcOK);
   @param calcOK returns false if the calculation is singular and true otherwise
   */
 
-void determinant_and_inverse(Array2D<double> a, Array2D<double> &inv, 
+void determinant_and_inverse(Array2D<qmcfloat> a, Array2D<qmcfloat> &inv, 
                              double& det, bool *calcOK);
 
 /**
@@ -104,7 +104,7 @@ void determinant_and_inverse(Array2D<double> a, Array2D<double> &inv,
   @param calcOK returns false if the calculation is singular and true otherwise
   */
 
-void linearsolver(Array2D<double>& a, Array1D<double> &b, bool *calcOK);
+void linearsolver(Array2D<qmcfloat>& a, Array1D<qmcfloat> &b, bool *calcOK);
 
 #endif
 

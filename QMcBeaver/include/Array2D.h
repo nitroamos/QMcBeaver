@@ -37,14 +37,20 @@ for more details.
 #include <assert.h>
 #include "Array1D.h"
 
+#ifdef SINGLEPRECISION
+typedef float  qmcfloat;
+#else
+typedef double qmcfloat; 
+#endif
+
 using namespace std;
 
 /**
-A 2-dimensional template for making arrays.  All of the memory allocation
-and deallocation details are dealt with by the class. Some of the operators
-require the Array2D to contain doubles or floats.
-
-NOTICE: All Array2D a operator * Array2D b methods now require b to be transposed.
+   A 2-dimensional template for making arrays.  All of the memory allocation
+   and deallocation details are dealt with by the class. Some of the operators
+   require the Array2D to contain doubles or floats.
+   
+   NOTICE: All Array2D a operator * Array2D b methods now require b to be transposed.
 */
 
 
@@ -99,66 +105,66 @@ public:
     */
 
     void allocate(int i, int j){
-        if( n_1 != i || n_2 != j ){
-            deallocate();
+      if( n_1 != i || n_2 != j ){
+	deallocate();
 
-            n_1 = i;
-            n_2 = j;
+	n_1 = i;
+	n_2 = j;
 
-            if(n_1 >= 1 && n_2 >= 1){
-                pArray = new T[ n_1*n_2 ];
-            } else {
-                pArray = 0;
-            }
-        }
+	if(n_1 >= 1 && n_2 >= 1){
+	  pArray = new T[ n_1*n_2 ];
+	} else {
+	  pArray = 0;
+	}
+      }
     }
 
     /**
-    Deallocates memory for the array.
+       Deallocates memory for the array.
     */
-
+    
     void deallocate()
     {
-        delete [] pArray;
-        pArray = 0;
-
-        n_1 = 0;
-        n_2 = 0;
+      delete [] pArray;
+      pArray = 0;
+      
+      n_1 = 0;
+      n_2 = 0;
     }
-
+    
     /**
-    The flag USEATLAS dictates whether Array2D will use the library to speed it's math or not.
-    Actually, if the dimensions of the data are small, using ATLAS may actually be slower.
-    FYI: DGEMM stands for Double-precision GEneral Matrix-Matrix multiplication
-    DGEMM convention: MxN = MxK * KxN; lda, ldb, and ldc are the n_2 of their respective Array2Ds
+       The flag USEATLAS dictates whether Array2D will use the library to speed it's math or not.
+       Actually, if the dimensions of the data are small, using ATLAS may actually be slower.
+       FYI: DGEMM stands for Double-precision GEneral Matrix-Matrix multiplication
+       DGEMM convention: MxN = MxK * KxN; lda, ldb, and ldc are the n_2 of their respective Array2Ds
     */
 
 #ifdef USEATLAS
     /**This matrix multiplication requires rhs to be transposed.*/
     Array2D<double> operator*(const Array2D<double> & rhs)
-    {
-        if(n_2 != rhs.n_2)
-        {
-            cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-            << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
-            exit(1);
-        }
-        Array2D<T> TEMP(n_1,rhs.n_1);
-        TEMP = 0;
-        cblas_dgemm(CBLAS_ORDER(CblasRowMajor),
-            CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasTrans),
-            n_1, rhs.n_1, n_2,
-            1.0, pArray, n_2,
-            rhs.pArray, rhs.n_2,
-            0.0, TEMP.pArray, TEMP.n_2);
+      {
+	if(n_2 != rhs.n_2)
+	  {
+	    cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
+		 << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
+	    exit(1);
+	  }
+	Array2D<T> TEMP(n_1,rhs.n_1);
+	TEMP = 0;
+	cblas_dgemm(CBLAS_ORDER(CblasRowMajor),
+		    CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasTrans),
+		    n_1, rhs.n_1, n_2,
+		    1.0, pArray, n_2,
+		    rhs.pArray, rhs.n_2,
+		    0.0, TEMP.pArray, TEMP.n_2);
         return TEMP;
-    }
-
+      }
+    
     /**This matrix multiplication requires rhs to be transposed.*/
     Array2D<float> operator*(const Array2D<float> & rhs)
-    {
+      {
         if(n_2 != rhs.n_2)
-        {
+	  {
             cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
             << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
             exit(1);

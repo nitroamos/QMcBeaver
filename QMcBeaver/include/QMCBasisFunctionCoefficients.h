@@ -70,7 +70,7 @@ class QMCBasisFunctionCoefficients
     Coeffs[bf #][Gaussian #][0=exp,1=contract]
     */
 
-  Array3D <double> Coeffs;
+  Array3D <qmcfloat> Coeffs;
 
 
   /**

@@ -111,7 +111,7 @@ public:
   QMCInput *Input;
   QMCBasisFunction *BF;
   QMCWavefunction  *WF;
-
+  
   Array1D<double> Psi;
   Array1D<double> Laplacian_PsiRatio;
   Array3D<double> Grad_PsiRatio;
@@ -124,17 +124,17 @@ public:
 
   double PsiRatio_1electron;
 
-  Array1D< Array2D<double> > D;
-  Array1D< Array2D<double> > D_inv;
-  Array1D< Array2D<double> > Laplacian_D;
-  Array2D< Array2D<double> > Grad_D;
+  Array1D< Array2D<qmcfloat> > D;
+  Array1D< Array2D<qmcfloat> > D_inv;
+  Array1D< Array2D<qmcfloat> > Laplacian_D;
+  Array2D< Array2D<qmcfloat> > Grad_D;
 
   // Scratch Space
-  Array2D<double> Chi;
-  Array2D<double> Chi_laplacian;
-  Array1D< Array2D<double> > Chi_gradient;
+  Array2D<qmcfloat> Chi;
+  Array2D<qmcfloat> Chi_laplacian;
+  Array1D< Array2D<qmcfloat> > Chi_gradient;
 
-  Array2D<double> WF_coeffs;
+  Array2D<qmcfloat> WF_coeffs;
 
   void allocate(int N);
 
