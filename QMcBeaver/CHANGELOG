@@ -1,3 +1,10 @@
+Tues, 14 Dec 2004, Daniel R. Fisher
+
+1.  Updated the .ckmf files for the test and example calculations to have the 
+    new wavefunction format.  Also added two multideterminant calculations to
+    the examples.  
+
+
 Wed, 8 Dec 2004, Daniel R. Fisher
 
 1.  Fixed the gamess2qmcbeaver.py script to handle MCSCF geometry 
