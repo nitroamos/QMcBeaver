@@ -1,3 +1,8 @@
+Thurs, 30 Dec 2004, Daniel R. Fisher
+
+1.  Added a << function to Array3D.h so that the program would compile on QSC.
+
+
 Tues, 23 Dec 2004, Amos Anderson
 (note! i have not tested these changes anywhere but my G4 laptop. i'll do that soon)
 1.  Modified Dan's multi-determinant specific changes. With a small commenting flip
@@ -34,7 +39,7 @@ Tues, 23 Dec 2004, Amos Anderson
     This means that the multideterminant QMcBeaver requires very little additional
     memory above the old version.
 
-5.  Array1D now has some of it's methods implemented in ATLAS.
+5.  Array1D now has some of its methods implemented in ATLAS.
 
 6.  I replaced some of the code in Array1D and Array2D to have them use some of
     the C memory functions (e.g. memset). This probably helps.   

@@ -33,12 +33,12 @@ for more details.
 #ifndef Array3D_H
 #define Array3D_H
 
+#include "Array2D.h"
 
 /**
   A 3-dimensional template for making arrays.  All of the memory allocation
   and deallocation details are dealt with by the class.
 */
-
 
 template <class T> class Array3D
 {
@@ -46,28 +46,21 @@ template <class T> class Array3D
   /**
      Number of elements in the array's first dimension.
   */
-
   int n_1;
-
 
   /**
      Number of elements in the array's second dimension.
   */
-
   int n_2;
-
 
   /**
      Number of elements in the array's third dimension.
   */
-
   int n_3;
-
 
   /**
      Array containing the data.
   */
-
   T*** pArray;
 
 public:
@@ -113,7 +106,6 @@ public:
      @param j size of the array's second dimension.
      @param k size of the array's third dimension.
   */
-
   void allocate(int i, int j, int k)
     {
       if( n_1 != i || n_2 != j || n_3 != k )
@@ -140,11 +132,9 @@ public:
 	}
     }
 
-
   /**
      Deallocates memory for the array.
   */
-
   void deallocate()
     {
      for(int i=0; i<n_1; i++)
@@ -160,15 +150,13 @@ public:
      n_3 = 0;
     }
 
-
   /**
      Sets two arrays equal.
   */
-
   void operator=(const Array3D & rhs)
     {
      if(n_1 != rhs.n_1 || n_2 != rhs.n_2 || n_3 != rhs.n_3)
-            allocate(rhs.n_1,rhs.n_2,rhs.n_3);
+       allocate(rhs.n_1,rhs.n_2,rhs.n_3);
 
       for(int i=0; i<n_1;i++)
         for(int j=0; j<n_2;j++)
@@ -176,13 +164,10 @@ public:
             pArray[i][j][k] = rhs.pArray[i][j][k];
     }
 
-
   /**
      Creates an array.
   */
-
   Array3D(){pArray = 0; n_1 = 0; n_2 = 0; n_3 = 0;}
-
 
   /**
      Creates an array and allocates memory.
@@ -191,17 +176,14 @@ public:
      @param j size of the array's second dimension.
      @param k size of the array's third dimension.
   */
-
   Array3D(int i, int j, int k)
     {pArray = 0; n_1 = 0; n_2 = 0; n_3 = 0; allocate(i,j, k);}
-
 
   /**
      Creates an array and sets it equal to another array.
 
      @param rhs array to set this array equal to.
   */
-
   Array3D( const Array3D<T> & rhs)
     {
       n_1 = 0;
@@ -216,17 +198,32 @@ public:
 	    pArray[i][j][k] = rhs.pArray[i][j][k];
     }
 
-
   /**
-     Destroy's the array and cleans up the memory.
+     Destroys the array and cleans up the memory.
   */
-
   ~Array3D(){deallocate();}
 
  /**
     Accesses element <code>(i,j,k)</code> of the array.
-    */
+  */
   T& operator()(int i,int j, int k){return pArray[i][j][k];}
+
+  friend ostream& operator<<(ostream & strm, const Array3D<T> & rhs)
+    {
+      for (int i=0; i<rhs.n_1; i++)
+	{
+	  for (int j=0; j<rhs.n_2; j++)
+	    {
+	      for (int k=0; k<rhs.n_3; k++)
+		{
+		  strm << rhs.pArray[i][j][k] << "\t";
+		}
+	      strm << endl;
+	    }
+	  strm << endl << endl;
+	}
+      return strm;
+    }
 
 };
 
