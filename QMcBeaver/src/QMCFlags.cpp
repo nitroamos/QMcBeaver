@@ -141,6 +141,7 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
           iseed = atoi(temp_string.c_str());
+          if (iseed > 0) iseed *= -1;
         }
       else if(temp_string == "sampling_method")
         {
@@ -537,7 +538,8 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
       << flags.walker_initialization_method << endl;
  strm << "walker_initialization_combinations\n " 
       << flags.walker_initialization_combinations << endl;
- strm << "iseed\n " << flags.iseed << endl;
+ if (flags.iseed > 0) strm << "iseed\n " << -1*flags.iseed << endl;
+ else if (flags.iseed < 0) strm << "iseed\n " << flags.iseed << endl;
  strm << "sampling_method\n " << flags.sampling_method << endl;
  strm << "QF_modification_type\n " << flags.QF_modification_type << endl;
  strm << "energy_modification_type\n " << flags.energy_modification_type 
