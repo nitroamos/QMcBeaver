@@ -14,6 +14,9 @@
 
 Stopwatch::Stopwatch()
 {
+  tz.tz_minuteswest = 0;
+  tz.tz_dsttime = 0;
+
   reset();
 
 
@@ -45,9 +48,9 @@ void Stopwatch::start()
     }
   else
     {
-      ftime(&tp);
-      stime1 = tp.time;
-      milli1 = tp.millitm;
+      gettimeofday(&tp,&tz);
+      stime1 = tp.tv_sec;
+      milli1 = tp.tv_usec/1000;
       running=true;
     }
 }
@@ -56,10 +59,10 @@ void Stopwatch::stop()
 {
   if(running)
     {
-      ftime(&tp);
-      
-      stime2    = tp.time;
-      milli2    = tp.millitm;
+      gettimeofday(&tp,&tz);
+      stime2 = tp.tv_sec;
+      milli2 = tp.tv_usec/1000;
+
       result_ms = ((stime2-stime1)*1000 + milli2 - milli1);
       total_ms += result_ms;
       running   = false;

@@ -63,6 +63,7 @@ class ControlMake:
         print '\tsgi'
         print '\taix'
         print '\ttru64'
+        print '\tmac'
 	print '\tcplant'
         print '\tccmalloc'
         print '\tinsure'
@@ -106,6 +107,7 @@ class ControlMake:
                self.SYS != 'sgi' and \
                self.SYS != 'aix' and \
                self.SYS != 'tru64' and \
+               self.SYS != 'mac' and \
                self.SYS != 'cplant' and \
                self.SYS != 'ccmalloc'and \
                self.SYS != 'insure':
@@ -200,6 +202,17 @@ class ControlMake:
             self.PLL  = ''
             self.LNK  = '-lm'
 
+        elif self.SYS == 'mac':
+            self.MAKE = 'make'
+            self.EXE  = ''
+            self.CXX  = 'g++ -Wall'
+            self.DEP  = '-MM'
+            self.setOptimize()
+            self.DBG  = ''
+            self.PFL  = ''
+            self.PLL  = ''
+            self.LNK  = '-lm'
+
         elif self.SYS == 'cplant':
             self.MAKE = 'gmake'
             self.EXE  = ''
@@ -263,6 +276,9 @@ class ControlMake:
         elif self.SYS == 'tru64':
             self.OPT = '-fast'
 
+        elif self.SYS == 'mac':
+            self.OPT = '-O3 -felide-constructors -ffast-math -Wno-deprecated' 
+
 	elif self.SYS == 'cplant':
 	    self.OPT = '-O3'
 
@@ -297,6 +313,9 @@ class ControlMake:
             self.DBG = '-g'
 
         elif self.SYS == 'tru64':
+            self.DBG = '-g'
+
+        elif self.SYS == 'mac':
             self.DBG = '-g'
 
 	elif self.SYS == 'cplant':
@@ -340,6 +359,9 @@ class ControlMake:
             self.INC = self.INC + ' $(MPI_COMPILE_FLAGS)'
             self.LNK = self.LNK + ' $(MPI_LD_FLAGS) -lmpi'
 
+        elif self.SYS == 'mac':
+            self.CXX = 'mpiCC'
+
         elif self.SYS == 'ccmalloc':
             self.INC = self.INC + ' -I/usr/local/lam-6.3.2/include/mpi2c++ ' \
                        + '-I/usr/local/lam-6.3.2/include'
@@ -370,6 +392,9 @@ class ControlMake:
             self.PFL = '-p'
 
         elif self.SYS == 'tru64':
+            self.PFL = '-p'
+
+        elif self.SYS == 'mac':
             self.PFL = '-p'
 
 	elif self.SYS == 'cplant':

@@ -13,6 +13,8 @@
 #ifndef QMCOBJECTIVEFUNCTIONRESULTS_H
 #define QMCOBJECTIVEFUNCTIONRESULTS_H
 
+extern "C" int isnan(double);
+
 #include "QMCInput.h"
 
 //This number will be returned as a result if any number gets

@@ -14,7 +14,8 @@
 #define QMCMikesBracketingStepLengthSelector_H
 
 #include <iostream>
-#include <math.h>
+
+extern "C" int isnan(double);
 
 #include "QMCLineSearchStepLengthSelectionAlgorithm.h"
 

@@ -13,7 +13,7 @@
 #ifndef Stopwatch_H
 #define Stopwatch_H
 
-#include <sys/timeb.h>
+#include <sys/time.h>
 #include <string>
 #include <strstream>
 #include <iostream>
@@ -34,7 +34,8 @@ class Stopwatch
   long stime1, stime2, result_ms, total_ms;
   int milli1, milli2;
   bool running;
-  struct timeb tp;
+  struct timeval tp;
+  struct timezone tz;
   
  public:
   /**
