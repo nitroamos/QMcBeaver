@@ -52,11 +52,7 @@ class ControlMake:
     # self.VER  -- version number of the software
     
     def printHelp(self):
-<<<<<<< configure.py
 	print 'Syntax: ./configure.py system [option1 [option2 etc]]'
-=======
-		print 'Syntax: ./configure.py system [option1 [option2 etc]]'
->>>>>>> 1.15
         print 'System Options'
         print '\tdefault'
         print '\tlinux'
@@ -126,14 +122,9 @@ class ControlMake:
         self.INC = '-I'+self.HOME+'/include'
 
     def setEXE(self):
-<<<<<<< configure.py
 	self.EXTRA = '';
-=======
-		self.EXTRA = '';
->>>>>>> 1.15
         if self.EXE == '':
             if self.PLL != '':
-<<<<<<< configure.py
                 self.EXTRA = 'p' + self.EXTRA
 	    else:
 		self.EXTRA = 's' + self.EXTRA
@@ -142,16 +133,6 @@ class ControlMake:
             if self.LIB != '':
                 self.EXTRA = 'a' + self.EXTRA
             self.EXE = 'QMcB.' + self.EXTRA + '.' + self.SYS
-=======
-                self.EXTRA = 'p' + self.EXTRA
-			else:
-				self.EXTRA = 's' + self.EXTRA
-			if self.DBG != '':
-				self.EXTRA = 'd' + self.EXTRA
-			if self.LIB != '':
-				self.EXTRA = 'a' + self.EXTRA
-			self.EXE = 'QMcBeaver.' + self.EXTRA + '.' + self.SYS
->>>>>>> 1.15
 
     def setBase(self):
         self.LIB = ''
@@ -496,26 +477,12 @@ class ControlMake:
             sys.exit(0)
 
     def printString(self):
-<<<<<<< configure.py
         text = 'SYS = ' + self.SYS + '\n'
-=======
-        text = '#the ATLAS option requires the libcblas.a and libatlas.a to be in the lib directory!\n'
-        text = text + 'SYS = ' + self.SYS + '\n'
->>>>>>> 1.15
         text = text + 'VER = ' + self.VER + '\n'
         text = text + 'HOME = ' + self.HOME + '\n'
         text = text + 'INC = ' + self.INC + '\n'
-<<<<<<< configure.py
 	text = text + 'DIROBJ = obj_' + self.EXTRA + '_$(SYS)\n'
 	text = text + 'MAKE = ' + self.MAKE + '\n'
-=======
-        text = text + 'LIB = ' + self.LIB + '\n'
-		if self.EXTRA != '':
-			text = text + 'DIROBJ = obj_' + self.EXTRA + '_$(SYS)\n'
-		else:
-			text = text + 'DIROBJ = obj_$(SYS)\n'
-		text = text + 'MAKE = ' + self.MAKE + '\n'
->>>>>>> 1.15
         text = text + 'EXE = ' + self.EXE + '\n'
         text = text + 'DEP = ' + self.DEP + '\n'
         text = text + 'OPT = ' + self.OPT + '\n'
@@ -692,11 +659,8 @@ if __name__ == '__main__':
 
     file = open('Makefile.config','w')
     file.write(dat.printString())
-<<<<<<< configure.py
     file.close()
 
 
 
 
-=======
-    file.close()>>>>>>> 1.15
