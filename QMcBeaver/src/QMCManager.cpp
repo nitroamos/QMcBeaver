@@ -41,7 +41,7 @@ void QMCManager::initialize(int argc, char **argv)
   // Set equilibrating = true so that the run equilibrates before taking
   // data
 
-  if( Input.flags.equilibrate_first_opt_step <= 0 )
+  if( Input.flags.equilibrate_first_opt_step == 0 )
     {
       equilibrating = false;
     }
@@ -547,7 +547,7 @@ void QMCManager::writeEnergyResultsSummary(ostream & strm)
   strm << setw(width) << Eave << setw(width) << Estd << setw(width) << Eave-Estd
        << setw(width) << Eave+Estd << setw(width) << QMCnode.getNumberOfWalkers() 
        << setw(width) << Input.flags.energy_trial << setw(width) << Input.flags.dt_effective
-       << setw(width) << QMCnode.getWeights() << endl;
+       << setw(width) << QMCnode.getWeights() << setw(width) << Properties_total.energy.getNumberSamples() << endl;
   strm << setprecision(15);
 }
 
