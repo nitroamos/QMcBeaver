@@ -16,11 +16,21 @@ class AngleDistributions
 {
  public:
 
+  /**
+    Gets the phi array values for the appropriate distribution.
+    @param index index of the distribution.
+    @return array of phi values.
+  */
+
   static Array1D<double> getPhiArray(int index);
 
-  static Array1D<double> getThetaArray(int index);
-  
-};
+  /**
+    Gets the theta array values for the appropriate distribution.
+    @param index index of the distribution.
+    @return array of theta values.
+  */
 
+  static Array1D<double> getThetaArray(int index);
+};
 
 #endif

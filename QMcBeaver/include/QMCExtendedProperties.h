@@ -39,18 +39,44 @@ class QMCExtendedProperties
 
  public:
 
+  /**
+    Creates and initializes the object.
+  */
   QMCExtendedProperties();
 
+  /**
+    Gets the accumulated statistics in this object.
+    @return accumulated statistics in this object.
+  */
   QMCProperties * getProperties();
 
+  /**
+    Gets the stopwatch for the equilibration phase of the calculation.
+    @return equilibration stopwatch.
+  */
   Stopwatch * getEquilibrationStopwatch();
 
+  /**
+    Gets the stopwatch for the propogation phase of the calculation.
+    @return propagation stopwatch.
+  */
   Stopwatch * getPropagationStopwatch();
 
+  /**
+    Zeros out statistics and resets the timers.
+  */
   void zeroOut();
 
+  /**
+    Gets the iteration on which this object started to collect statistics.
+    @return starting step for this object.
+  */
   long getStartingStep();
 
+  /**
+    Sets the step on which this object started to collect statistics.
+    @param starting step for this object.
+  */
   void setStartingStep(long i);
 };
 

@@ -26,7 +26,7 @@ void QMCEquilibrationArray::newSample(QMCProperties * timeStepProps,
   //       << ".  There are " << decorr_objects << " Properties objects alive."
   //       << endl;
 
-
+  // Adds the new sample to the active elements of the array.
   for (int i=0; i<decorr_objects; i++)
     {
       Eq_Array[i].getProperties()->energy.newSample
@@ -51,6 +51,7 @@ void QMCEquilibrationArray::newSample(QMCProperties * timeStepProps,
 	(timeStepProps->logWeights.getAverage(), nWalkers);
     }
 
+  // Activates the ith element on the 2^ith step.
   long check = power(2,decorr_objects);
 
   if (Eq_Array[0].getProperties()->energy.getNumberSamples() == check-1)
@@ -66,7 +67,8 @@ QMCProperties * QMCEquilibrationArray::chooseDecorrObject()
   return Eq_Array[index].getProperties();
 }
 
-
+// Gets the index of the element of the array with the lowest variance for the 
+// energy.
 int QMCEquilibrationArray::getDecorrObjectIndex()
 {
   //  cout << "Choosing Properties object." << endl;

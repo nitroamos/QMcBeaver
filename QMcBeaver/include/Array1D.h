@@ -257,6 +257,8 @@ template <class T> class Array1D
 
   /**
     Returns the product of two quaternions.
+    @param rhs quaternion to multiply by this quaternion.
+    @return product of these two quaternions.
   */
 
   Array1D quaternion_product( const Array1D & rhs )
@@ -280,7 +282,8 @@ template <class T> class Array1D
 
   /**
     Rotates a point by an angle about an axis.
-    @param angle, 3D coords of axis of unit length.
+    @param angle 
+    @param axis 3D coords of axis of unit length about which we are rotating.
   */
 
   void rotate(Array1D axis, double angle)

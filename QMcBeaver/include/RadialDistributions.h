@@ -15,6 +15,14 @@ class RadialDistributions
 {
  public:
 
+  /**
+    Gets the radial array values for the appropriate atomic number and energy
+    level.
+    @param Z atomic charge of the nucleus.
+    @param n energy level.
+    @return array of radial distances.
+  */
+
   static Array1D<double> getRadialArray(int Z, int n);
 
 };

@@ -1,3 +1,10 @@
+Sat, 16 Oct 2004, Daniel R Fisher
+
+1. Fixed the comments in the AngleDistributions, RadialDistributions, Array1D, 
+   QMCDansWalkerInitialization, QMCEquilibrationArray, QMCExtendedProperties, 
+   QMCGreensRatioComponent, QMCProperties, QMCProperty, QMCRun, and QMCWalker 
+   classes to work with the JavaDoc documentation.
+
 Thr, 14 Oct 2004, Chip Kent
 
 1. Improved the output formatting.  For some cases, the columns of 

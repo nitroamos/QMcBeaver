@@ -86,6 +86,7 @@ public:
 
   /**
     Returns the sum of two QMCProperties.
+    @return sum of two QMCProperties
   */
   QMCProperties operator + ( QMCProperties &rhs );
 
@@ -100,7 +101,6 @@ public:
     @param strm XML stream
   */
   void readXML(istream& strm);
-
 
   /**
     Formats and prints the properties to a stream.

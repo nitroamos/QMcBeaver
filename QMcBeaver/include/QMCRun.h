@@ -72,11 +72,15 @@ class QMCRun
   /**
     Gets the the propagation stopwatch from the appropriate element of the
     EquilibrationArray.
+    @return propagation Stopwatch from the appropriate element of the 
+    EquilibrationArray.
   */
   Stopwatch * getPropagationStopwatch();
 
   /** 
     Gets the equilibration stopwatch from the appropriate element of the
+    EquilibrationArray.
+    @return equilibration Stopwatch from the appropriate element of the 
     EquilibrationArray.
   */
   Stopwatch * getEquilibrationStopwatch();
@@ -145,7 +149,6 @@ private:
     The statistics for this group of walkers if QMCEquilibrationArray is not
     used.
   */
-
   QMCProperties Properties;
 
   /**

@@ -25,12 +25,17 @@ class QMCGreensRatioComponent
 
   /**
     Creates a new instance of this class with a total value of 'k.'
+    @param k total value for the new object.
   */
 
   QMCGreensRatioComponent(double k);
 
   /** 
-    Creates a new instance of this class.
+    Creates a new instance of this class of the form k*a^b*c.
+    @param k coefficient
+    @param a base
+    @param b power
+    @param c exponent
   */
 
   QMCGreensRatioComponent(double k, double a, double b, double c);
@@ -38,7 +43,7 @@ class QMCGreensRatioComponent
   /** 
     Creates  new instance of this class and makes it equivalent to another 
     instance of this class.
-    @ param rhs object to set this equal to.
+    @param rhs object to set this equal to.
   */
 
   QMCGreensRatioComponent( const QMCGreensRatioComponent & rhs );
@@ -51,48 +56,55 @@ class QMCGreensRatioComponent
 
   /** 
     Sets two QMCGreensRatioComponent objects equal.
-    @ param rhs object to set this object equal to.
+    @param rhs object to set this object equal to.
   */
 
   void operator=( const QMCGreensRatioComponent & rhs );
 
   /**
-    @ param X object to add to this object.
-    @ return sum of these two GreensRatioComponents 
+    Adds two QMCGreensRatioComponent objects together.
+    @param rhs object to add to this object.
+    @return sum of these two GreensRatioComponents. 
   */
 
   QMCGreensRatioComponent operator + ( const QMCGreensRatioComponent & rhs );
 
-  /** 
-    @ param denom object to divide this object by
-    @ return Greens function ratio of these two GreensRatioComponents.
+  /**
+    Divides this QMCGreensRatioComponent by another one and returns a double.
+    @param denom object to divide this object by
+    @return Greens function ratio of these two GreensRatioComponents.
   */
 
   double DivideBy(QMCGreensRatioComponent &denom);
 
   /**
-    @ param X object to multiply this object by
-    @ return product of these two GreensRatioComponents.
+    Multiplies two QMCGreensRatioComponents together.
+    @param X object to multiply this object by
   */
 
   void MultiplyBy(QMCGreensRatioComponent &X);
 
   /**
     Writes the state of this object to an XML stream.
-    @ param strm XML stream.
+    @param strm XML stream.
   */
 
   void toXML(ostream & strm);
 
   /**
-    Returns the overall value of the object.
+    Gets the overall value of the object.
+    @return total value of this object.
   */
 
   double getValue();
 
  private:
 
-  double k,a,b,c;
+  /** 
+    This class has the form k*a^b*c.
+  */
+
+  double k,a,b,c; 
 
   /**
     Initializes all of the data members.
@@ -106,7 +118,6 @@ class QMCGreensRatioComponent
 
   void SimplifyRatioPowers(double na, double nb, double da, double db, 
 			   double &ra, double &rb);
-
 };
 
 #endif

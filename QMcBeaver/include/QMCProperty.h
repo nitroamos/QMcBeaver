@@ -49,12 +49,16 @@ private:
   double DeCorr_weight[DCL];
 
   //static const int numberParams = 4;
-  /**
-     Parameters used in fitting the decorrelation plot to a function to
-     estimate the standard deviation.
-  */
+  ///**
+  //   Parameters used in fitting the decorrelation plot to a function to
+  //   estimate the standard deviation.
+  //*/
   //double stdevFittingParameters[numberParams];
 
+  /**
+    Gets the decorrelation depth- the index of the decorrelation array where
+    the variance reaches a plateau.
+  */
   int getDecorrDepth();
 
 public:
@@ -79,37 +83,44 @@ public:
 
   /**
     Gets the number of data samples entered into the object.
+    @return number of samples in the object.
   */
   long getNumberSamples();
 
   /**
     Gets the average of the data entered into the object.
+    @return average of the data in the object.
   */
   double getAverage();
 
   /**
     Gets the variance of the data entered into the object.
+    @return variance of the data in the object.
   */
   double getVariance();
 
   /**
     Gets the serially correlated variance of the data entered into the object.
+    @return serially correlated variance of the data in the object.
   */
   double getSeriallyCorrelatedVariance();
 
   /**
     Gets the standard deviation of the data entered into the object.
+    @return standard deviation of the data in the object.
   */
   double getStandardDeviation();
 
   /**
     Gets the serially correlated standard deviation of the data entered 
     into the object.
+    @return serially correlated standard deviation of the data in the object.
   */
   double getSeriallyCorrelatedStandardDeviation();
 
   /**
     Gets the standard deviation of the standard deviation.
+    @return standard deviation of the standard deviation.
   */
   double getStandardDeviationStandardDeviation();
 
@@ -120,6 +131,8 @@ public:
 
   /**
     Returns the sum of two QMCproperties.
+    @param rhs QMCProperty to add to this one.
+    @return sum of these two QMCProperties.
   */
   QMCProperty operator + ( QMCProperty &rhs);
 
@@ -412,7 +425,8 @@ private:
   static void buildMpiReduce();
 
   /**
-    An MPI function which allows MPI_Reduce to be used in adding QMCproperties.  */
+    An MPI function which allows MPI_Reduce to be used in adding QMCproperties.
+  */
   static void Reduce_Function(QMCProperty *in, QMCProperty *inout, 
                               int *len, MPI_Datatype *dptr);
 
