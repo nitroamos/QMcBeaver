@@ -217,7 +217,7 @@ double QMCProperty::getStandardDeviation()
 
       for(int i=0; i<grad.dim1(); i++)
 	{
-	  if( isnan( grad(i) ) )
+	  if( isnan( grad(i) ) != 0 )
 	    {
 	      grad(i) = 0.0;
 	    }

@@ -14,6 +14,7 @@
 #define QMCMikesBracketingStepLengthSelector_H
 
 #include <iostream>
+#include <math.h>
 
 #include "QMCLineSearchStepLengthSelectionAlgorithm.h"
 
