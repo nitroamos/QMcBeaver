@@ -70,6 +70,7 @@ class ControlMake:
         print '\t--{no}optimize'
         print '\t--{no}debug'
         print '\t--{no}profile'
+        print '\t--atlas'
         print '\t--{no}parallel'
         print '\t--exe=EXECUTABLE_NAME'
         print '\t--cxx=COMPILER'
@@ -125,6 +126,8 @@ class ControlMake:
                 self.EXE = 'p' + self.EXE
 
     def setBase(self):
+        self.LIB = ''
+        
         if   self.SYS == 'linux':
             self.MAKE = 'gmake'
             self.EXE  = ''
@@ -464,10 +467,14 @@ class ControlMake:
             sys.exit(0)
 
     def printString(self):
-        text = 'SYS = ' + self.SYS + '\n'
+		text = '\n#NOTICE! ***************************************************************************'
+        text = text +  '#the ATLAS option requires the libcblas.a and libatlas.a to be in the lib directory!'
+        text = text + '#NOTICE! ***************************************************************************\n'    
+        text = text + 'SYS = ' + self.SYS + '\n'
         text = text + 'VER = ' + self.VER + '\n'
         text = text + 'HOME = ' + self.HOME + '\n'
         text = text + 'INC = ' + self.INC + '\n'
+        text = text + 'LIB = ' + self.LIB + '\n'
         text = text + 'DIROBJ = obj_$(SYS)\n'
         text = text + 'MAKE = ' + self.MAKE + '\n'
         text = text + 'EXE = ' + self.EXE + '\n'
@@ -507,6 +514,10 @@ class ControlMake:
             elif flag == '--noparallel':
                 self.PLL = ''
 
+            elif flag == '--atlas':            
+                self.LIB = '-L'+self.HOME+'/lib -lcblas -latlas'
+                self.CXX += ' -DUSEATLAS'
+                
             elif string.find(flag,'--exe=') != -1:
                 self.EXE = flag[6:]
 

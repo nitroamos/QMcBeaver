@@ -28,10 +28,6 @@
 # or FITNESS FOR A  PARTICULAR PURPOSE.  See the GNU General Public License 
 # for more details. 
 #**************************************************************************/
-
-
-
-
 include ../Makefile.config
 
 OBJECTS  := $(patsubst %.cpp,$(DIROBJ)/%.o,$(wildcard *.cpp))
@@ -39,13 +35,15 @@ DEPFILES := $(patsubst %.cpp,$(DIROBJ)/%.d,$(wildcard *.cpp))
 
 all: QMcBeaver.e
 
-QMcBeaver.e: $(OBJECTS) $(LIBS)
-	$(CXX) $(OPT) $(INC) -o ../bin/$(EXE) $^ $(LINK)
+QMcBeaver.e: $(OBJECTS) $(LIB)
+	$(CXX) $(OPT) $(LIB) $(INC) -o ../bin/$(EXE) $^ $(LINK)
 
 $(DIROBJ)/Makefile.dep: $(DEPFILES)
 	@cat $(DEPFILES) > $(DIROBJ)/Makefile.dep
 
 include $(DIROBJ)/Makefile.dep
+
+$(LIB):
 
 $(DIROBJ)/%.d: %.cpp ../include/%.h
 	$(CXX) $(INC) $(DEP) $< | sed -e "s/$*\.o/$(DIROBJ)\/$*\.o/g" >> $@
@@ -63,9 +61,3 @@ $(DIROBJ)/QMcBeaver.d: QMcBeaver.cpp
 clean:
 	rm -f *.o *~ *#
 	rm -rf ii_files d.files cxx_repository $(DIROBJ)
-
-
-
-
-
-
