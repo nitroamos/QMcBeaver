@@ -39,7 +39,7 @@ for more details.
 
 
 using namespace std;
-#define USEATLAS
+//#define USEATLAS
 
 /**
 A 2-dimensional template for making arrays.  All of the memory allocation

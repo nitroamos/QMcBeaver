@@ -14,6 +14,7 @@
 #include "dgemm.h"
 #include "cppblas.h"
 #include "basisfunction.h"
+#include "GPUMatrixMultiplication.h"
 
 using namespace std;
 

@@ -1,3 +1,6 @@
+#ifndef CG_SCRIPTS
+#define CG_SCRIPTS
+
 static const char *matrixMultiply = 
 "float4 main(in float2 position : TEX0,                             \n"
 "            uniform int  startOps,                                 \n"
@@ -108,3 +111,5 @@ static const char *fixBottomFringe =
 "        return v;                                                  \n"
 "    }                                                              \n"
 "}                                                                  \n";
+
+#endif
