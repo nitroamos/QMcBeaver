@@ -141,10 +141,11 @@ private:
   double potentialEnergy;
   double distanceMovedAccepted;
   double AcceptanceProbability;
+  Array1D<double> Chi_Density;
 
   QMCFunctions QMF;
 
-  Array2D <double> R;
+  Array2D<double> R;
 
   // Magnitude of the proposed move
   double dR2;
@@ -154,7 +155,7 @@ private:
 
   bool move_accepted;
 
-  QMCInput *Input;
+  QMCInput* Input;
 
   void setAcceptanceProbability(double p);
 

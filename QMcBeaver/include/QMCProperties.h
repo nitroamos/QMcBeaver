@@ -22,6 +22,7 @@
 #endif
 
 #include "QMCProperty.h"
+#include "Array1D.h"
 
 using namespace std;
 
@@ -69,8 +70,22 @@ public:
   QMCProperty distanceMovedTrial;
 
   /**
-    Creates a zeroed out instance of the class and generates the MPI types if 
-    they have not been done.
+    Tells if basis function density is being calculated.
+  */
+  bool calc_density;
+
+  /**
+    The number of basis functions.  Only has a value if calc_density is true.
+  */
+  int nBasisFunc;
+
+  /**
+     Densities for the basis functions.
+  */
+  Array1D<QMCProperty> chiDensity;
+
+  /**
+    Creates an instance of the class.
   */
   QMCProperties();
 
@@ -80,7 +95,7 @@ public:
   void zeroOut();
 
   /**
-    Sets two object equal.
+    Sets two objects equal.
   */
   void operator = ( const QMCProperties &rhs);
 
@@ -89,6 +104,14 @@ public:
     @return sum of two QMCProperties
   */
   QMCProperties operator + ( QMCProperties &rhs );
+
+  /**
+    Tells the object if basis function densities are being calculated.
+
+    @param calcDensity- true if densities are being calculated.
+    @param nbasisfunctions- number of basis functions.
+  */
+  void setCalcDensity(bool calcDensity, int nbasisfunctions);
 
   /**
     Writes the state of this object to an XML stream.

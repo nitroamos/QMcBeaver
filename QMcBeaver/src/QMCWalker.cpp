@@ -66,8 +66,10 @@ void QMCWalker::operator=( const QMCWalker & rhs )
   kineticEnergy         = rhs.kineticEnergy;
   distanceMovedAccepted = rhs.distanceMovedAccepted;
   dR2                   = rhs.dR2;
+  R                     = rhs.R;
 
-  R = rhs.R;
+  if (Input->flags.calculate_bf_density == 1)
+    Chi_Density         = rhs.Chi_Density;
 }
 
 void QMCWalker::propagateWalker()
@@ -985,6 +987,9 @@ void QMCWalker::initialize(QMCInput *INPUT)
   // Make current position in 3N space
   // N by 3 matrix, R[which electron][x,y, or z]
   R.allocate(Input->WF.getNumberElectrons(),3); 
+
+  if (Input->flags.calculate_bf_density == 1)
+    Chi_Density.allocate(Input->WF.getNumberBasisFunctions());
 }
 
 void QMCWalker::writeCorrelatedSamplingConfiguration(ostream& strm)
@@ -1153,6 +1158,13 @@ void QMCWalker::calculateObservables()
   // moved on a step
   distanceMovedAccepted = p * dR2;
 
+  if (Input->flags.calculate_bf_density == 1)
+    {
+      Array1D<double> trial_temp = *(TrialWalker->QMF.getChiDensity());
+      Array1D<double> orig_temp = *(OriginalWalker->QMF.getChiDensity());
+      for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
+	Chi_Density(i) = p * trial_temp(i) + q * orig_temp(i);
+    }
 }
 
 void QMCWalker::calculateObservables( QMCProperties & props )
@@ -1181,6 +1193,11 @@ void QMCWalker::calculateObservables( QMCProperties & props )
 
   // Calculate the log of the weight
   props.logWeights.newSample(getWeight(),1);
+
+  // Calculate the basis function densities
+  if (Input->flags.calculate_bf_density == 1)
+    for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
+      props.chiDensity(i).newSample( Chi_Density(i), getWeight() );
 }
 
 bool QMCWalker::isSingular()

@@ -43,8 +43,17 @@ class QMCEquilibrationArray
     @param b power.
     @return a^b.
   */
-
   long power(int a,int b);
+
+  /** 
+    True if basis function density is being calculated.
+  */
+  bool calc_density;
+
+  /**
+    Only has a value if calc_density = true
+  */
+  int nBasisFunc;
 
  public:
 
@@ -57,6 +66,11 @@ class QMCEquilibrationArray
     Sets all of the data in the object to zero.
   */
   void zeroOut(); 
+
+  /**
+    Tells the object if basis function densities are being calculated.
+  */
+  void setCalcDensity(bool calcDensity, int nbasisfunctions);
 
   /**
     Adds a new data sample to the live objects in the array and updates

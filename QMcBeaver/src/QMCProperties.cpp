@@ -14,16 +14,29 @@
 
 QMCProperties::QMCProperties()
 {
+  calc_density = false;
+  nBasisFunc   = 0;
   zeroOut();
 
 #ifdef PARALLEL
-  if( !mpiTypeCreated )
+  if (!mpiTypeCreated)
     {
       mpiTypeCreated = true;
       buildMpiType();
       buildMpiReduce();
     }
 #endif
+}
+
+void QMCProperties::setCalcDensity(bool calcDensity, int nbasisfunctions)
+{
+  calc_density = calcDensity;
+  nBasisFunc   = nbasisfunctions;
+
+  chiDensity.allocate(nBasisFunc);
+
+  for (int i=0; i<nBasisFunc; i++)
+    chiDensity(i).zeroOut();
 }
 
 void QMCProperties::zeroOut()
@@ -35,6 +48,10 @@ void QMCProperties::zeroOut()
   acceptanceProbability.zeroOut();
   distanceMovedAccepted.zeroOut();
   distanceMovedTrial.zeroOut();
+
+  if (calc_density)
+    for (int i=0; i<nBasisFunc; i++)
+      chiDensity(i).zeroOut();
 }
 
 void QMCProperties::operator = ( const QMCProperties &rhs )
@@ -52,16 +69,15 @@ QMCProperties QMCProperties::operator + ( QMCProperties &rhs )
 {
   QMCProperties result;
 
-  result.energy = energy+rhs.energy;
-  result.kineticEnergy = kineticEnergy + rhs.kineticEnergy;
-  result.potentialEnergy = potentialEnergy + rhs.potentialEnergy;
-  result.logWeights = logWeights+rhs.logWeights;
+  result.energy                = energy+rhs.energy;
+  result.kineticEnergy         = kineticEnergy + rhs.kineticEnergy;
+  result.potentialEnergy       = potentialEnergy + rhs.potentialEnergy;
+  result.logWeights            = logWeights+rhs.logWeights;
   result.acceptanceProbability = acceptanceProbability + 
     rhs.acceptanceProbability;
   result.distanceMovedAccepted = distanceMovedAccepted + 
     rhs.distanceMovedAccepted;
-  result.distanceMovedTrial = distanceMovedTrial + 
-    rhs.distanceMovedTrial;
+  result.distanceMovedTrial    = distanceMovedTrial + rhs.distanceMovedTrial;
 
   return result;
 }
@@ -105,6 +121,15 @@ void QMCProperties::toXML(ostream& strm)
   strm << "<DistanceMovedTrial>" << endl;
   distanceMovedTrial.toXML(strm);
   strm << "</DistanceMovedTrial>" << endl;
+
+  // Chi Density
+  if (calc_density)
+    {
+      strm << "<ChiDensity>" << endl;
+      for (int i=0; i<nBasisFunc; i++)
+        chiDensity(i).toXML(strm);
+      strm << "</ChiDensity>" << endl;
+    }
 
   // Close XML
   strm << "</QMCProperties>" << endl;
@@ -152,6 +177,15 @@ void QMCProperties::readXML(istream& strm)
   distanceMovedTrial.readXML(strm);
   strm >> temp;
 
+  // Chi Density
+  if (calc_density)
+    {
+      strm >> temp;
+      for (int i=0; i<nBasisFunc; i++)
+        chiDensity(i).readXML(strm);
+      strm >> temp;
+    }
+
   // Close XML
   strm >> temp;
 }
@@ -185,18 +219,13 @@ ostream& operator <<(ostream& strm, QMCProperties &rhs)
   return strm;
 }
 
-
-
-
-
 #ifdef PARALLEL
 
 bool QMCProperties::mpiTypeCreated = false;
 
 void QMCProperties::buildMpiReduce()
 {
-  MPI_Op_create((MPI_User_function*)Reduce_Function,
-                true,&MPI_REDUCE);
+  MPI_Op_create((MPI_User_function*)Reduce_Function,true,&MPI_REDUCE);
 }
 
 void QMCProperties::buildMpiType()
@@ -218,7 +247,7 @@ void QMCProperties::buildMpiType()
       typelist[i] = QMCProperty::MPI_TYPE;
       block_lengths[i] = 1;
     }
-  
+
   // Find the addresses of all of the data elements in the struct
   // ADJUST THIS WHEN ADDING NEW PROPERTIES
   MPI_Address(&indata, &addresses[0]);
@@ -229,7 +258,6 @@ void QMCProperties::buildMpiType()
   MPI_Address(&(indata.distanceMovedTrial), &addresses[5]);  
   MPI_Address(&(indata.kineticEnergy), &addresses[6]);  
   MPI_Address(&(indata.potentialEnergy), &addresses[7]);  
-
 
   // Find the relative addresses of the data elements to the start of 
   // the struct
@@ -252,7 +280,6 @@ void QMCProperties::Reduce_Function(QMCProperties *in, QMCProperties *inout,
 {
   *inout = *inout + *in;
 }
-
 
 #endif
 

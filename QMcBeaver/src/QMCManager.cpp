@@ -36,6 +36,13 @@ void QMCManager::initialize(int argc, char **argv)
 
   Input.flags.iseed = Input.flags.iseed - Input.flags.my_rank;
 
+  if (Input.flags.calculate_bf_density == 1)
+    {
+      bool calcDensity = true;
+      Properties_total.setCalcDensity(calcDensity,
+                                           Input.WF.getNumberBasisFunctions());
+    }
+
   QMCnode.initialize(&Input);
 
   // Set equilibrating = true so that the run equilibrates before taking
@@ -80,7 +87,6 @@ void QMCManager::initializeMPI()
 #endif
 }
 
-
 void QMCManager::initializeOutputs()
 {
   if( Input.flags.my_rank == 0 )
@@ -99,7 +105,6 @@ void QMCManager::initializeOutputs()
 	}
       
       *qmcRslts << copyright;
-      
       
       // Allocate qmc output stream
       qmcOut = new ofstream(Input.flags.output_file_name.c_str());
@@ -150,17 +155,16 @@ void QMCManager::finalize()
   if (Input.flags.use_equilibration_array == 1)
     {
       QMCnode.stopTimers();
-
       *localTimers.getPropagationStopwatch() = 
-	*QMCnode.getPropagationStopwatch();
+	                                    *QMCnode.getPropagationStopwatch();
       *localTimers.getEquilibrationStopwatch() = 
-	*localTimers.getEquilibrationStopwatch() + 
-	*QMCnode.getEquilibrationStopwatch();
+                                     *localTimers.getEquilibrationStopwatch() +
+                                          *QMCnode.getEquilibrationStopwatch();
     }
 
 #ifdef PARALLEL
   MPI_Reduce(&localTimers,&globalTimers,1,QMCStopwatches::MPI_TYPE,
-	     QMCStopwatches::MPI_REDUCE,0,MPI_COMM_WORLD);
+	                          QMCStopwatches::MPI_REDUCE,0,MPI_COMM_WORLD);
 #else
   globalTimers = localTimers;
 #endif
@@ -202,12 +206,32 @@ void QMCManager::gatherProperties()
   localTimers.getGatherPropertiesStopwatch()->start();
 
   MPI_Reduce(QMCnode.getProperties(),&Properties_total,1,
-	     QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE,0,
-	     MPI_COMM_WORLD);
+          QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE,0,MPI_COMM_WORLD);
 
   localTimers.getGatherPropertiesStopwatch()->stop();
 #else
   Properties_total = *QMCnode.getProperties();
+#endif
+}
+
+void QMCManager::gatherDensities()
+{
+#ifdef PARALLEL
+  localTimers.getGatherPropertiesStopwatch()->start();
+  
+  Array1D<QMCProperty> localChiDensity = QMCnode.getProperties()->chiDensity;
+
+  MPI_Reduce(QMCnode.getProperties()->chiDensity.array(), 
+        Properties_total.chiDensity.array(),Input.WF.getNumberBasisFunctions(),
+               QMCProperty::MPI_TYPE,QMCProperty::MPI_REDUCE,0,MPI_COMM_WORLD);
+
+  localTimers.getGatherPropertiesStopwatch()->stop();
+
+#else
+  for (int i=0; i<Input.WF.getNumberBasisFunctions(); i++)
+    {
+      Properties_total.chiDensity(i) = QMCnode.getProperties()->chiDensity(i);
+    }
 #endif
 }
 
@@ -245,7 +269,6 @@ int QMCManager::pollForACommand()
   return -1;
 #endif
 }
-
 
 void QMCManager::run()
 {
@@ -298,7 +321,6 @@ void QMCManager::run()
       energy_strm_out = new ofstream(filename.c_str());
       energy_strm_out->precision(15);
     }
-
   
   // Check to make sure a valid parallelization algorithm is chosen
    if( Input.flags.parallelization_method == "pure_iterative" )
@@ -312,9 +334,8 @@ void QMCManager::run()
      {
        cerr << "ERROR: Not a valid form of parallelization (";
        cerr << Input.flags.parallelization_method << ") in " << endl;
-       cerr << "QMCManager::run()" << endl;
-       cerr << "exiting now" << endl;
-      exit(1);
+       cerr << "QMCManager::run()" << endl << "exiting now" << endl;
+       exit(1);
      }
 
    while(!done)
@@ -337,13 +358,13 @@ void QMCManager::run()
 
        if( !equilibrating && 
 	   ( Input.flags.optimize_Psi || Input.flags.print_configs == 1 ) &&
-	   iteration%Input.flags.print_config_frequency == 0 )
+	                    iteration%Input.flags.print_config_frequency == 0 )
 	 {
 	   QMCnode.writeCorrelatedSamplingConfigurations(*config_strm_out); 
 	 }	 
 
        if( Input.flags.checkpoint == 1 && 
-	   iteration%Input.flags.checkpoint_interval == 0 )
+	                       iteration%Input.flags.checkpoint_interval == 0 )
 	 {
 	   writeCheckpoint();
 	 }
@@ -357,7 +378,7 @@ void QMCManager::run()
 	 {
 	   localTimers.getEquilibrationStopwatch()->stop();
 	   equilibrationProperties = equilibrationProperties + 
-	     *QMCnode.getProperties();
+	                                              *QMCnode.getProperties();
 	   QMCnode.zeroOut();
 	 }
        else 
@@ -379,6 +400,8 @@ void QMCManager::run()
 	     {
 	       sendAllProcessorsACommand(TERMINATE);
 	       gatherProperties();
+	       if (Input.flags.calculate_bf_density == 1)
+		 gatherDensities();
 	     }
 	   else if(iteration%Input.flags.mpireduce_interval == 0 )
 	     {
@@ -407,12 +430,18 @@ void QMCManager::run()
 	       poll_result = pollForACommand();
 	     }
 
-	   if(poll_result == REDUCE || poll_result == TERMINATE) 
+	   if(poll_result == REDUCE)
 	     {
 	       gatherProperties();
 	     }
 	      
-	   if(poll_result == TERMINATE) done = true;
+	   if(poll_result == TERMINATE) 
+	     {
+	       done = true;
+	       gatherProperties();
+	       if (Input.flags.calculate_bf_density == 1)
+		 gatherDensities();
+	     }
 	 }
 	  
        if(equilibrating) 
@@ -437,7 +466,6 @@ void QMCManager::run()
     }
 }
 
-
 void QMCManager::optimize()
 {
   localTimers.getOptimizationStopwatch()->start();
@@ -449,11 +477,6 @@ void QMCManager::optimize()
       configsToSkip = 1 + ( iteration - Input.flags.equilibration_steps - 
 	QMCnode.getProperties()->energy.getNumberSamples() ) / 
         Input.flags.print_config_frequency;
-
-      //      cout << "On node " << Input.flags.my_rank << ", iteration = "
-      //        << iteration << ", numberOfSamples = " 
-      //        << QMCnode.getProperties()->energy.getNumberSamples() 
-      //        << ", so configsToSkip = " << configsToSkip << endl;
     }
 
   if( Input.flags.optimize_Psi )
@@ -466,10 +489,8 @@ void QMCManager::optimize()
 	  *qmcRslts << Input.JP << endl;
 	}
     }
-
   localTimers.getOptimizationStopwatch()->stop();
 }
-
 
 void QMCManager::equilibration_step()
 {
@@ -548,10 +569,12 @@ void QMCManager::writeEnergyResultsSummary(ostream & strm)
 
   strm << setw(10) << iteration;
   strm << setprecision(10);
-  strm << setw(width) << Eave << setw(width) << Estd << setw(width) << Eave-Estd
-       << setw(width) << Eave+Estd << setw(width) << QMCnode.getNumberOfWalkers() 
-       << setw(width) << Input.flags.energy_trial << setw(width) << Input.flags.dt_effective
-       << setw(width) << QMCnode.getWeights() << setw(width) << Properties_total.energy.getNumberSamples() << endl;
+  strm << setw(width) << Eave << setw(width) << Estd << setw(width);
+  strm << Eave-Estd << setw(width) << Eave+Estd << setw(width);
+  strm << QMCnode.getNumberOfWalkers() << setw(width);
+  strm << Input.flags.energy_trial << setw(width) << Input.flags.dt_effective;
+  strm << setw(width) << QMCnode.getWeights() << setw(width); 
+  strm << Properties_total.energy.getNumberSamples() << endl;
   strm << setprecision(15);
 }
 
@@ -584,6 +607,19 @@ void QMCManager::writeRestart()
 
   restart << Input << endl;
   restart.close();
+}
+
+void QMCManager::writeBFDensity()
+{
+  ofstream density(Input.flags.density_file_name.c_str());
+  density.setf(ios::scientific,ios::floatfield);
+  density.precision(15);
+
+  for (int i=0; i<Input.WF.getNumberBasisFunctions(); i++)
+    {
+      density << Properties_total.chiDensity(i) << endl;
+    }
+  density.close();
 }
 
 void QMCManager::writeXML(ostream & strm)
@@ -795,7 +831,6 @@ void QMCManager::synchronizationBarrier()
 #endif
 }
 
-
 string QMCManager::sendAllProcessorsInputFileName(char **argv)
 {
 #ifdef PARALLEL
@@ -832,12 +867,10 @@ QMCInput * QMCManager::getInputData()
   return &Input;
 }
 
-
 ostream * QMCManager::getResultsOutputStream()
 {
   return qmcRslts;
 }
-
 
 void QMCManager::zeroOut()
 {
@@ -862,3 +895,5 @@ ostream&  operator<<(ostream & strm, QMCManager & rhs)
 
   return strm;
 }
+
+

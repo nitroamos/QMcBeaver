@@ -375,131 +375,13 @@ for i in range(len(Wavefunction)-nbeta):
     OUT.write("0\t")
 OUT.write("\n\n")
 
+OUT.write("CI Coeffs\n")
+OUT.write("1.0\n")
+OUT.write("\n\n")
+
 OUT.write("&\n")
 
 # End Write Wavefunction
-
-
-def periodic_table(i):
-    mass=0.0
-    i=int(i)
-    if(i==1):
-        mass=1.0
-    elif(i==2):
-        mass=4.0
-    elif(i==3):
-        mass=7.0
-    elif(i==4):
-        mass=9.0
-    elif(i==5):
-        mass=11.0
-    elif(i==6):
-        mass=12.0
-    elif(i==7):
-        mass=14.0
-    elif(i==8):
-        mass=16.0
-    elif(i==9):
-        mass=19.0
-    elif(i==10):
-        mass=20.0
-    elif(i==11):
-        mass=23.0
-    elif(i==12):
-        mass=24.0
-    elif(i==13):
-        mass=27.0
-    elif(i==14):
-        mass=28.0
-    elif(i==15):
-        mass=31.0
-    elif(i==16):
-        mass=32.0
-    elif(i==17):
-        mass=35.0
-    elif(i==18):
-        mass=40.0
-    elif(i==19):
-        mass=39.0
-    elif(i==20):
-        mass=40.0
-    elif(i==21):
-        mass=45.0
-    elif(i==22):
-        mass=48.0
-    elif(i==23):
-        mass=51.0
-    elif(i==24):
-        mass=52.0
-    elif(i==25):
-        mass=55.0
-    elif(i==26):
-        mass=56.0
-    elif(i==27):
-        mass=59.0
-    elif(i==28):
-        mass=59.0
-    elif(i==29):
-        mass=64.0
-    elif(i==30):
-        mass=65.0
-    elif(i==31):
-        mass=70.0
-    elif(i==32):
-        mass=73.0
-    elif(i==33):
-        mass=75.0
-    elif(i==34):
-        mass=79.0
-    elif(i==35):
-        mass=80.0
-    elif(i==36):
-        mass=84.0
-    elif(i==37):
-        mass=85.0
-    elif(i==38):
-        mass=88.0
-    elif(i==39):
-        mass=89.0
-    elif(i==40):
-        mass=91.0
-    elif(i==41):
-        mass=93.0
-    elif(i==42):
-        mass=96.0
-    elif(i==43):
-        mass=98.0
-    elif(i==44):
-        mass=101.0
-    elif(i==45):
-        mass=103.0
-    elif(i==46):
-        mass=106.0
-    elif(i==47):
-        mass=108.0
-    elif(i==48):
-        mass=112.0
-    elif(i==49):
-        mass=115.0
-    elif(i==50):
-        mass=119.0
-    elif(i==51):
-        mass=122.0
-    elif(i==52):
-        mass=128.0
-    elif(i==53):
-        mass=127.0
-    elif(i==54):
-        mass=131.0
-    elif(i==55):
-        mass=133.0
-    elif(i==56):#this has become tiresome, finish later if needed
-        mass=138.0
-    else:
-        print "Need to pick a real atom type in periodic_table in GamesToCkMf.py"
-        exit(1)
-    conversion=1833.15038419
-    return mass*conversion
 
 ################## PRINT JASTROW: BEGIN ##############################
 

@@ -16,7 +16,7 @@
 // Define the energy and log weight values to use when there is an attempt
 // to evaluate a singular Jastrow
 #define MAXIMUM_ENERGY_VALUE  1.0e20
-#define MAXIMUM_WEIGHT_VALUE  1.0e20
+#define MAXIMUM_LOG_WEIGHT_VALUE  50
 
 #include <iostream>
 #include <math.h>
@@ -99,7 +99,7 @@ private:
   Array2D<double> R;
   double D1;
   Array2D<double> D2;
-  double J;
+  double lnJ;
   double PE;
   
   // Read in a new config
@@ -117,7 +117,7 @@ private:
 
   // Calculate the weight of the current configuration with the currently
   // calculated jastrow
-  double calc_weight_current();
+  double calc_log_weight_current();
 
   // Calculate the properites from the configs for all the parameters in params
   // on the current node

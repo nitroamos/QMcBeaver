@@ -78,6 +78,11 @@ void QMCGreensRatioComponent::SimplifyRatioPowers(double na, double nb, \
 	  method = 2;
 	}
     }
+  if ( fabs(na-1.0) < 1e-15 )
+    {
+      method = 3;
+    }
+
 #ifdef CRAY_X1_DEBUG
   cout << "method:\t" << method << endl;
 #endif
@@ -100,6 +105,11 @@ void QMCGreensRatioComponent::SimplifyRatioPowers(double na, double nb, \
       power1 = log(na)/log(da)*nb;
       power2 = db;
       rb = power1 - power2;
+    }
+  else if (method == 3)
+    {
+      ra = da;
+      rb = -db;
     }
   else
     {

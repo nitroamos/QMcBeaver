@@ -69,12 +69,17 @@ class QMCFlags
   string config_file_name;
 
   /**
+     Basis function density file name for the calculation.  This is the base 
+     file name with the ".density" extension.
+  */
+  string density_file_name;
+
+  /**
      Method for initializing the walkers for the calculation.  
      @see QMCInitializeWalkerFactory
   */
   string walker_initialization_method;
 
-  
   /**
      Number of walkers to generate when initializing the walkers.  The
      desired number of walkers will be chosen from the generated walkers.
@@ -333,6 +338,11 @@ class QMCFlags
      Number of determinants in the SCF part of the wavefunction.
   */
   int Ndeterminants;
+
+  /**
+     1 if the basis function density is to be calculated, 0 if not.
+  */
+  int calculate_bf_density;
 
   /**
      Trial energy used for branching QMC calculations.

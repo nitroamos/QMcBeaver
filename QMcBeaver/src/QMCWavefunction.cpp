@@ -187,7 +187,7 @@ ostream& operator <<(ostream& strm, QMCWavefunction& rhs)
     strm << endl << "CI Coeffs" << endl;
     for (int i=0; i<rhs.Ndeterminants; i++)
     {
-        strm << rhs.CI_coeffs(i) << "\t";
+        strm << rhs.CI_coeffs(i) << endl;
     }
     strm << endl << endl;
     

@@ -39,48 +39,50 @@ class QMCDansWalkerInitialization : public QMCInitializeWalker
     The array of cubic splines made for the phi distributions made 
     from the data in the AngleDistributions class.
   */
-  Array1D<CubicSpline> phiSplines;
+  static Array1D<CubicSpline> phiSplines;
 
   /**
     The phiSplinesMade array indicates if a spline has been made for a 
     distribution.  The element equals 0 if no spline has been made, and 1
     if a spline has been made.
   */
-  Array1D<int> phiSplinesMade;
+  static Array1D<int> phiSplinesMade;
 
   /**
     The array of cubic splines made for the theta distributions made 
     from the data in the AngleDistributions class.
   */    
-  Array1D<CubicSpline> thetaSplines;
+  static Array1D<CubicSpline> thetaSplines;
 
   /**
     The thetaSplinesMade array indicates if a spline has been made for a 
     distribution.  The element equals 0 if no spline has been made, and 1
     if a spline has been made.
   */
-  Array1D<int> thetaSplinesMade;
+  static Array1D<int> thetaSplinesMade;
 
   /**
     The array of cubic splines made for the radial distributions made 
     from the data in the RadialDistributions class.
   */ 
-  Array2D<CubicSpline> radialSplines;
+  static Array2D<CubicSpline> radialSplines;
 
   /**
     The radialSplinesMade array indicates if a spline has been made for a 
     distribution.  The element equals 0 if no spline has been made, and 1
     if a spline has been made.
   */
-  Array2D<int> radialSplinesMade;
+  static Array2D<int> radialSplinesMade;
 
   /** 
     The x_array goes from 0 to 1 in steps of .05 and is the same for all 
     distributions.
   */
-  Array1D<double> x_array;
+  static Array1D<double> x_array;
 
-  void initializeArrays();
+  static void initializeArrays();
+
+  static bool arraysInitialized;
 
   /** 
     Distributes electrons in an energy level and gives them a random rotation.

@@ -1,3 +1,14 @@
+Friday, 11 Mar 2005, Daniel R. Fisher
+
+1.  Fixed the jaguar2qmcbeaver.py script.  It was not printing the CI coefficients, so they were
+    being initialized with garbage values.
+
+2.  Made some of the arrays in QMCDansWalkerInitialization static.  This makes the initialization
+    faster.
+
+3.  Added the capability to calculate the expectation values of the basis functions.  To do this,
+    set the calculate_bf_density flag to 1.
+
 Tues, 8 Mar 2005, Amos Anderson
 1.  I upgraded Stopwatch.h so it now uses Microsoft's high precision QueryPerformanceCounter and
 	QueryPerformanceFrequency timing functions. The precision is now at the 1 ms resolution when

@@ -137,6 +137,13 @@ void qmcbeaver(int argc, char ** argv)
   TheMan.finalize();
 
   timer.stop();
+
+  if( TheMan.getInputData()->flags.my_rank == 0 &&
+                        TheMan.getInputData()->flags.calculate_bf_density == 1)
+    {
+      TheMan.writeBFDensity();
+    }
+
   if( TheMan.getInputData()->flags.my_rank == 0 )
     {
       cout << "Run Time: " << timer << endl;

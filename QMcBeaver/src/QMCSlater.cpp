@@ -34,11 +34,13 @@ for more details.
 
 void QMCSlater::operator=(const QMCSlater & rhs )
 {
+  Input              = rhs.Input;
   Psi                = rhs.Psi;
   Laplacian_PsiRatio = rhs.Laplacian_PsiRatio;
   Grad_PsiRatio      = rhs.Grad_PsiRatio;
+  if (Input->flags.calculate_bf_density == 1)
+    Chi_Density      = rhs.Chi_Density;
   
-  Input = rhs.Input;
   BF    = rhs.BF;
   WF    = rhs.WF;
   
@@ -102,8 +104,46 @@ void QMCSlater::allocate(int N)
   Chi_gradient.allocate(3);
   for(int j=0; j<3; j++)
     Chi_gradient(j).allocate(N,nbasisfunc);
+
+  if (Input->flags.calculate_bf_density == 1)
+    Chi_Density.allocate(nbasisfunc);
   
   WF_coeffs.allocate(N,nbasisfunc);
+}
+
+QMCSlater::~QMCSlater()
+{
+  for (int i=0; i<WF->getNumberDeterminants(); i++)
+    {
+      D(i).deallocate();
+      D_inv(i).deallocate();
+      Laplacian_D(i).deallocate();
+      for (int j=0; j<3; j++)
+        Grad_D(i,j).deallocate();
+    }
+
+  D.deallocate();
+  D_inv.deallocate();
+  Laplacian_D.deallocate();
+  Grad_D.deallocate();
+
+  Singular.deallocate();
+  occupation.deallocate();
+
+  Psi.deallocate();
+  Laplacian_PsiRatio.deallocate();
+  Grad_PsiRatio.deallocate();
+
+  if (Input->flags.calculate_bf_density == 1)
+    Chi_Density.deallocate();
+
+  Chi.deallocate();
+  Chi_laplacian.deallocate();
+  for (int j=0; j<3; j++)
+    Chi_gradient(j).deallocate();
+  Chi_gradient.deallocate();
+
+  WF_coeffs.deallocate();
 }
 
 void QMCSlater::setStartAndStopElectronPositions(int StartEl, int StopEl)
@@ -162,6 +202,16 @@ void QMCSlater::update_Ds(Array2D<double> &X){
 			     Chi_gradient(1),
 			     Chi_gradient(2),
 			     Chi_laplacian);
+
+  if (Input->flags.calculate_bf_density == 1)
+    {
+      Chi_Density = 0.0;
+      for (int i=0; i<WF->getNumberBasisFunctions(); i++)
+        for (int j=0; j<D(0).dim1(); j++)
+          {
+            Chi_Density(i) += Chi(j,i);
+          }
+    }
   
   for(int i=0; i<WF->getNumberDeterminants(); i++){
     
@@ -228,6 +278,11 @@ Array1D<double>* QMCSlater::getLaplacianPsiRatio()
 Array3D<double>* QMCSlater::getGradPsiRatio()
 {
   return &Grad_PsiRatio;
+}
+
+Array1D<double>* QMCSlater::getChiDensity()
+{
+  return &Chi_Density;
 }
 
 bool QMCSlater::isSingular()

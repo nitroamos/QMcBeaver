@@ -53,6 +53,11 @@ class QMCSlater
 {
 public:
   /**
+    Deallocates all memory used by the object.
+  */
+  ~QMCSlater();
+
+  /**
     Initializes the class and sets which region of the \f$3N\f$ dimensional 
     electronic configuration corresponds to electrons in these Slater 
     determinants.  It is assumed that all electrons in a determinant are 
@@ -65,7 +70,7 @@ public:
   void initialize(QMCInput *input, int startEl, int stopEl, Array2D<int> occ);
 
   /**
-    Evaluates the slater determinants and their first two derivatives at X.
+    Evaluates the Slater determinants and their first two derivatives at X.
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
   */
@@ -97,6 +102,12 @@ public:
   Array1D<double>* getLaplacianPsiRatio();
 
   /**
+    Gets an array of the densities for the basis functions for the last 
+    evaluated electronic configuration.
+  */
+  Array1D<double>* getChiDensity();
+
+  /**
     Returns true if the Slater determinant is singular and false otherwise.
   */
   bool isSingular();
@@ -115,6 +126,7 @@ public:
   Array1D<double> Psi;
   Array1D<double> Laplacian_PsiRatio;
   Array3D<double> Grad_PsiRatio;
+  Array1D<double> Chi_Density;
 
   Array1D<bool> Singular;
 

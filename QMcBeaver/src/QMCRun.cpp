@@ -51,7 +51,7 @@ void QMCRun::branchWalkers()
       // This method is described in Umrigar, Nightingale, and Runge 
       // JCP 99(4) 2865; 1993 and elsewhere.  A walker is reweighted
       // and is divided if it's weight exceeds a threshold and is fused
-      // with another walker if it's weight falls below a threshold.
+      // with another walker if its weight falls below a threshold.
 
       nonunitWeightBranching();
     }
@@ -71,6 +71,20 @@ void QMCRun::zeroOut()
 void QMCRun::initialize(QMCInput *INPUT)
 {
   Input = INPUT;
+
+  if (Input->flags.calculate_bf_density == 1)
+    {
+      bool calcDensity = true;
+      if (Input->flags.use_equilibration_array == 1) 
+	EquilibrationArray.setCalcDensity
+                            (calcDensity, Input->WF.getNumberBasisFunctions());
+      else 
+	{
+	  Properties.setCalcDensity
+	                    (calcDensity, Input->WF.getNumberBasisFunctions());
+	}
+    }
+
   if (Input->flags.use_equilibration_array == 1) EquilibrationArray.zeroOut();
   else Properties.zeroOut();
 }
@@ -95,6 +109,12 @@ void QMCRun::calculateObservables()
   // Pre block all of the statistics from one time step together
 
   QMCProperties timeStepProperties;
+  if (Input->flags.calculate_bf_density == 1)
+    {
+      bool calcDensity = true;
+      timeStepProperties.setCalcDensity
+	                    (calcDensity, Input->WF.getNumberBasisFunctions());
+    }
 
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
     {
@@ -142,6 +162,14 @@ void QMCRun::calculateObservables()
       // Calculate the log of the weights
       Properties.logWeights.newSample(
         timeStepProperties.logWeights.getAverage(), getNumberOfWalkers() );
+
+      // Calculate the basis function density
+      if (Input->flags.calculate_bf_density == 1)
+	for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
+	  {
+	    Properties.chiDensity(i).newSample(
+	      timeStepProperties.chiDensity(i).getAverage(), totalWeights );
+	  }
     }
 }
 

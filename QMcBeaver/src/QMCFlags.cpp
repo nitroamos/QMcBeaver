@@ -60,6 +60,7 @@ void QMCFlags::read_flags(string InFileName)
   equilibration_function         = "ramp";
   CKAnnealingEquilibration1_parameter = 500;
   use_equilibration_array        = 0;
+  calculate_bf_density           = 0;
 
   correct_population_size_bias   = 0;
 
@@ -302,6 +303,11 @@ void QMCFlags::read_flags(string InFileName)
 	  input_file >> temp_string;
 	  Ndeterminants = atoi(temp_string.c_str());
 	}
+      else if(temp_string == "calculate_bf_density")
+	{
+	  input_file >> temp_string;
+	  calculate_bf_density = atoi(temp_string.c_str());
+	}
       else if(temp_string == "energy")
 	{
 	  input_file >> temp_string;
@@ -483,6 +489,7 @@ void QMCFlags::set_filenames(string runfile)
   output_file_name  = file_name + ".qmc";
   results_file_name = file_name + ".rslts";
   base_file_name    = file_name;
+  density_file_name = file_name + ".density";
 
   char my_rank_string[32];
 #ifdef _WIN32
@@ -599,6 +606,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
  strm << "norbitals\n " << flags.Norbitals << endl;
  strm << "nbasisfunc\n " << flags.Nbasisfunc << endl;
  strm << "ndeterminants\n " << flags.Ndeterminants << endl;
+ strm << "calculate_bf_density\n " << flags.calculate_bf_density << endl;
  strm << "energy\n " << flags.energy_trial << endl;
  strm << "correct_population_size_bias\n " 
       << flags.correct_population_size_bias << endl;

@@ -4,6 +4,8 @@
 
 QMCEquilibrationArray::QMCEquilibrationArray()
 {
+  calc_density = false;
+  nBasisFunc   = 0;
   zeroOut();
 }
 
@@ -16,6 +18,19 @@ void QMCEquilibrationArray::zeroOut()
 
   decorr_objects = 1;
   Eq_Array[0].setStartingStep(1);
+}
+
+void QMCEquilibrationArray::setCalcDensity(bool calcDensity, 
+					                   int nbasisfunctions)
+{
+  calc_density = calcDensity;
+  nBasisFunc = nbasisfunctions;
+
+  for (int i=0; i<EQ; i++)
+    {
+      Eq_Array[i].getProperties()->setCalcDensity
+                                                (calcDensity, nbasisfunctions);
+    }
 }
 
 void QMCEquilibrationArray::newSample(QMCProperties * timeStepProps,
@@ -49,6 +64,12 @@ void QMCEquilibrationArray::newSample(QMCProperties * timeStepProps,
 
       Eq_Array[i].getProperties()->logWeights.newSample
 	(timeStepProps->logWeights.getAverage(), nWalkers);
+      if (calc_density)
+	for (int j=0; j<nBasisFunc; j++)
+	  {
+	    Eq_Array[i].getProperties()->chiDensity(j).newSample
+	      (timeStepProps->chiDensity(j).getAverage(), totalWeights);
+	  }
     }
 
   // Activates the ith element on the 2^ith step.

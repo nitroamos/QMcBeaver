@@ -27,6 +27,8 @@
 #include "QMCDerivativeProperties.h"
 #include "QMCCorrelatedSamplingVMCOptimization.h"
 #include "QMCCopyright.h"
+#include "QMCProperties.h"
+#include "QMCProperty.h"
 
 #ifdef PARALLEL
 #include <mpi.h>
@@ -86,6 +88,11 @@ class QMCManager
      Writes the restart file for the calculation.
   */
   void writeRestart();
+
+  /**
+     Writes the basis function density for the calculation.
+  */
+  void writeBFDensity();
 
   /**
      Writes the timing data to a stream. This is only valid after
@@ -237,6 +244,12 @@ class QMCManager
   void gatherProperties();
 
   /**
+     Gathers the statistics for the basis function densities from all the 
+     processors and saves the result in Properties_total.
+  */
+  void gatherDensities();
+
+  /**
      Checks to see if a command is waiting for this processor.  If there is a
      command waiting, the integer value of the command is returned, if not, 
      -1 is returned.
@@ -244,7 +257,7 @@ class QMCManager
      @return integer value of the command waiting for this processor or -1 if 
      there is no waiting command.
   */
-  int  pollForACommand();
+  int pollForACommand();
 
   /**
      Writes a summary of the energy statistics to a stream.
@@ -280,12 +293,12 @@ class QMCManager
 
   /**
     Updates the diffusion QMC (DMC) trial energy.
-    */
+  */
   void updateTrialEnergy();
 
   /**
     Updates the effective time step used for diffusion QMC (DMC).
-    */
+  */
   void updateEffectiveTimeStep();
 
   /**

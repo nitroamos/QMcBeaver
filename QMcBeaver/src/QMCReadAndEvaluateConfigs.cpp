@@ -56,6 +56,7 @@ void QMCReadAndEvaluateConfigs::read_next_config()
   for(int i=0; i<Nelectrons; i++)
     {
       config_in_stream >> itemp;
+
       config_in_stream >> R(i,0);
       config_in_stream >> R(i,1);
       config_in_stream >> R(i,2);
@@ -74,9 +75,9 @@ void QMCReadAndEvaluateConfigs::read_next_config()
       config_in_stream >> D2(i,2);
     }
 
-  // read J
+  // read lnJ
   config_in_stream >> stemp;
-  config_in_stream >> J;
+  config_in_stream >> lnJ;
 
   // read PE
   config_in_stream >> stemp;
@@ -118,8 +119,7 @@ void QMCReadAndEvaluateConfigs::rootCalculateProperties(
     {
       for(int j=0;j<Params(i).dim1();j++)
 	{
-	  PackedParameters[i*Params(0).dim1()+j] = 
-	    Params(i)(j);
+	  PackedParameters[i*Params(0).dim1()+j] = Params(i)(j);
 	}
     }
 
@@ -142,6 +142,7 @@ void QMCReadAndEvaluateConfigs::rootCalculateProperties(
 
   //this function does all the dirty work of reading in the configs
   //and analyzing them and puts the results in local_properties
+
   locally_CalculateProperties(Params,local_properties);
 
   //reduce on this properties
@@ -190,8 +191,7 @@ void QMCReadAndEvaluateConfigs::workerCalculateProperties()
     {
       for(int j=0;j<Params(i).dim1();j++)
 	{
-	  Params(i)(j) = 
-	    PackedParameters[i*Params(0).dim1()+j];
+	  Params(i)(j) = PackedParameters[i*Params(0).dim1()+j];
 	}
     }
 
@@ -215,7 +215,6 @@ void QMCReadAndEvaluateConfigs::workerCalculateProperties()
   MPI_reduce(local_properties,Properties);
 #endif
 }
-
 
 // Calculate the properites from the configs for all the parameters in params
 // on the current node
@@ -243,15 +242,13 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
 
   // Skip the appropriate number of configs from the beginning of the file.
 
-  //  cout << "On processor " << Input->flags.my_rank << ", skipping " 
-  //       << configsToSkip << " configs from the file." << endl;
-
   for (int i=0; i<configsToSkip; i++)
     {
       read_next_config();
     }
 
   // read configurations until the file is empty
+
   while( !config_in_stream.eof() )
     {
       // read the next configuration
@@ -281,7 +278,7 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
   Jastrow.evaluate( R );
 
   double E_Local;
-  double Weight;
+  double logWeight;
 
   bool Am_I_Valid = true;
 
@@ -292,7 +289,7 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
       // calculate the local energy and weight for this configuration  
 
       E_Local = calc_E_Local_current();
-      Weight  = calc_weight_current();
+      logWeight  = calc_log_weight_current();
 
       // Limit the size of E_Local or the weights
 
@@ -301,9 +298,9 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
 	  E_Local = MAXIMUM_ENERGY_VALUE;
 	}
 
-      if(Weight > MAXIMUM_WEIGHT_VALUE)
+      if(logWeight > MAXIMUM_LOG_WEIGHT_VALUE)
 	{
-	  Weight = MAXIMUM_WEIGHT_VALUE;
+	  logWeight = MAXIMUM_LOG_WEIGHT_VALUE;
 	}
     }
   else
@@ -312,22 +309,29 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
       // local energy and weight;
 
       E_Local = MAXIMUM_ENERGY_VALUE;
-      Weight  = MAXIMUM_WEIGHT_VALUE;
+      logWeight  = MAXIMUM_LOG_WEIGHT_VALUE;
     }
 
-  /* On some computers, it seems this class was reading one extra config in, assiging
-     zeros to all the parameters. Why was it doing this? Probably some compilers had
-     a different definition of eof() or something like that. Anyway, assuming that
-     the check for J=0 identifies these (it does on QSC) then this fix should work.
+  // Place the results into the properties
 
-     If the config is valid, place the results into the properties.
-  */
-  if(J == 0){
-    cerr << "ERROR: Rejecting config (J=0) with E_Local " << E_Local << endl;
-  } else {
-    Properties.energy.newSample(E_Local,Weight);
-    Properties.logWeights.newSample(log(Weight),1.0);
-  }
+  // On some computers, it seems this class was reading one extra config in, 
+  // assiging zeros to all the parameters. Why was it doing this? Probably 
+  // some compilers had a different definition of eof() or something like that.
+  // Anyway, assuming that the check for J=0 identifies these (it does on QSC)
+  // then this fix should work.
+
+  // If the config is valid, place the results into the properties.
+
+  if (lnJ == 0)
+    {
+      cerr << "ERROR: Rejecting config (lnJ=0) with E_Local " << E_Local;
+      cerr << endl;
+    } 
+  else 
+    {
+      Properties.energy.newSample(E_Local,exp(logWeight));
+      Properties.logWeights.newSample(logWeight,1.0);
+    }
 }
 
 // Calculate the local energy of the current configuration with the currently
@@ -367,8 +371,7 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
       for(int j=0; j<3; j++)
         {
 	  Grad_PsiRatio_current(i,j)=
-	    Grad_PsiRatio_current_without_Jastrow(i,j) +
-	    (*Grad_sum_u_current)(i,j);
+        Grad_PsiRatio_current_without_Jastrow(i,j) +(*Grad_sum_u_current)(i,j);
 	}
     }
 
@@ -387,8 +390,7 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
       for(int j=0; j<3; j++)
         {
           Laplacian_PsiRatio_current += (*Grad_sum_u_current)(i,j) *
-            (2*Grad_PsiRatio_current(i,j)-
-             (*Grad_sum_u_current)(i,j));
+                     (2*Grad_PsiRatio_current(i,j)-(*Grad_sum_u_current)(i,j));
         }
     }
   
@@ -396,16 +398,15 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
   //calc E_Local_current
 
   E_Local_current = -0.5 * Laplacian_PsiRatio_current + PE;
-
   return E_Local_current;
 }
 
 // Calculate the weight of the current configuration with the currently
 // calculated jastrow
-double QMCReadAndEvaluateConfigs::calc_weight_current()
+double QMCReadAndEvaluateConfigs::calc_log_weight_current()
 {
-  double weight=Jastrow.getJastrow()*Jastrow.getJastrow()/J/J;
-  return weight;
+  double logweight = 2*(Jastrow.getLnJastrow() - lnJ);
+  return logweight;
 }
 
 // perform an mpi reduce operation on the properties collected on each
@@ -430,14 +431,5 @@ void QMCReadAndEvaluateConfigs::MPI_reduce(
     }
 #endif
 }
-
-
-
-
-
-
-
-
-
 
 

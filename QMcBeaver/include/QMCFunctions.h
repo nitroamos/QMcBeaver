@@ -67,6 +67,11 @@ public:
   QMCFunctions(const QMCFunctions & rhs );
 
   /**
+    Deallocates all memory used by the object.
+  */
+  ~QMCFunctions();
+
+  /**
     Initializes the object with the data controling the QMC calculation.
 
     @param input input data for the calculation
@@ -87,7 +92,7 @@ public:
 
     @return wavefunction value
   */
-  double getPsi();
+  QMCGreensRatioComponent getPsi();
 
   /**
     Gets the local energy at the last evaluated electronic configuration.
@@ -109,6 +114,14 @@ public:
     @return potential energy.
   */
   double getPotentialEnergy();
+
+  /**
+    Gets the densities for the basis functions for the last evaluated
+    electronic configuration.
+
+    @return chi density.
+  */
+  Array1D<double>* getChiDensity();
 
   /**
     Gets the ratio of the wavefunction gradient to the wavefunction value at
@@ -160,10 +173,12 @@ public:
   QMCJastrow Jastrow;  
   QMCPotential_Energy PE;
 
-  double Psi;
+  QMCGreensRatioComponent Psi;
   double Laplacian_PsiRatio;
   Array2D<double> Grad_PsiRatio;
   Array2D<double> Modified_Grad_PsiRatio;
+
+  Array1D<double> Chi_Density;
 
   double SCF_Laplacian_PsiRatio;
   Array2D<double> SCF_Grad_PsiRatio;

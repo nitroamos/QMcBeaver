@@ -8,8 +8,25 @@
 QMCDansWalkerInitialization::QMCDansWalkerInitialization(QMCInput * INPUT)
 {
   Input = INPUT;
-  initializeArrays();
+  if (!arraysInitialized)
+    {
+      arraysInitialized = true;
+      initializeArrays();
+    }
 }
+
+bool QMCDansWalkerInitialization::arraysInitialized = false;
+
+Array1D<CubicSpline> QMCDansWalkerInitialization::phiSplines;
+Array1D<int> QMCDansWalkerInitialization::phiSplinesMade;
+
+Array1D<CubicSpline> QMCDansWalkerInitialization::thetaSplines;
+Array1D<int> QMCDansWalkerInitialization::thetaSplinesMade;
+
+Array2D<CubicSpline> QMCDansWalkerInitialization::radialSplines;
+Array2D<int> QMCDansWalkerInitialization::radialSplinesMade;
+
+Array1D<double> QMCDansWalkerInitialization::x_array;
 
 void QMCDansWalkerInitialization::initializeArrays()
 {
@@ -421,7 +438,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
   int Norbitals  = Input->flags.Norbitals;
   int Nbasisfunc = Input->flags.Nbasisfunc;
 
-  Array2D<qmcfloat> Scratch(Input->WF.Coeffs);
+  Array2D<double> Scratch(Input->WF.Coeffs);
 
   // Square MO coefficients.
 
@@ -874,3 +891,5 @@ Array1D<double> QMCDansWalkerInitialization::\
     }
   return r_locs;
 }
+
+# undef PI
