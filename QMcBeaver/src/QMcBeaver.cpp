@@ -71,10 +71,10 @@ void qmcbeaver(int argc, char ** argv)
   if( TheMan.getInputData()->flags.my_rank == 0 )
     {
       cout << "***************  TheMan.run();" << endl;
-      cout << setw(10) << "iteration" << setw(width) << "Eavg" << setw(width) << "Estd" << setw(width)
+      cout << setw(10) << "Iteration" << setw(width) << "Eavg" << setw(width) << "Estd" << setw(width)
 	<< "Eavg-Estd" << setw(width) << "Eavg+Estd" << setw(width) << "Num. Walkers" 
-	<< setw(width) << "Trial Energy" << setw(width) << "Eff. dt"
-	<< setw(width) << "Weights" << endl;
+	<< setw(width) << "Trial Energy" << setw(width) << "dt_effective"
+	<< setw(width) << "Weights" << setw(width) << "Total Samples" << endl;
     }
 
   TheMan.run();
