@@ -51,7 +51,7 @@ void DistributionInverter::make_F_and_F_inverse(Array1D<double> &x_input,
   Y_INP.allocate(n);
 
   double total_integral=0.0;
-  double L,L2,R,R2,A,B,int_AB;
+  double L,R,A,B,int_AB;
 
   X_INP(0)=x_input(0);
   Y_INP(0)=total_integral;
@@ -59,9 +59,7 @@ void DistributionInverter::make_F_and_F_inverse(Array1D<double> &x_input,
   for(int i=0;i<(n-1);i++)
     {
       L=x_input(i);
-      L2=L*L;
       R=x_input(i+1);
-      R2=R*R;
 
       A = y_input(i);
 

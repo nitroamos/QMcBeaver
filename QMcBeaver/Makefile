@@ -38,7 +38,7 @@ all: dep
 # this works on some stubborn machines
 bruteforce:
 	@echo "Brute force make procedure..."
-	-cd src; $(CXX) $(OPT) $(INC) -o ../bin/$(EXE) *.cpp $(LINK)
+	-cd src; $(CXX) $(OPTIMIZATION) $(INCLUDE) -o ../bin/$(EXE) *.cpp $(LINK)
 
 .PHONY:dep
 dep: src/$(DIROBJ)/Makefile.dep
@@ -72,7 +72,7 @@ clean:
 .PHONY:execlean
 execlean:
 	-cd bin
-	-rm -f *.$(SYS)
+	-rm -f *.$(LABEL)
 
 .PHONY:testclean
 testclean: 

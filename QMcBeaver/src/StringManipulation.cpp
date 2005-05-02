@@ -138,7 +138,7 @@ char StringManipulation::toLowerChar(char c)
 
 string StringManipulation::intToString(int i)
 {
-  ostrstream ostr;
+  ostringstream ostr;
   ostr << i << ends;
   return ostr.str();
 
@@ -150,7 +150,7 @@ string StringManipulation::intToString(int i)
 
 string StringManipulation::intToHexString(int i)
 {
-  ostrstream ostr;
+  ostringstream ostr;
   ostr << hex << i << ends;
   return ostr.str();
 
@@ -162,7 +162,7 @@ string StringManipulation::intToHexString(int i)
 
 string StringManipulation::doubleToString(double d)
 {
-  ostrstream ostr;
+  ostringstream ostr;
   ostr << d << ends;
   return ostr.str();
 
@@ -174,7 +174,7 @@ string StringManipulation::doubleToString(double d)
 
 string StringManipulation::longToString(long l)
 {
-  ostrstream ostr;
+  ostringstream ostr;
   ostr << l << ends;
   return ostr.str();
 
@@ -186,7 +186,7 @@ string StringManipulation::longToString(long l)
 
 int StringManipulation::stringToInt(string & s)
 {
-  istrstream istr(s.c_str(), STREAMSIZE_TYPE s.length());
+  istringstream istr(s, istringstream::in);
   int val;
   istr >> val;
   return val;
@@ -194,7 +194,7 @@ int StringManipulation::stringToInt(string & s)
 
 long StringManipulation::stringToLong(string & s)
 {  
-  istrstream istr(s.c_str(), STREAMSIZE_TYPE s.length());
+  istringstream istr(s, istringstream::in);
   long val;
   istr >> val;
   return val;
@@ -202,7 +202,7 @@ long StringManipulation::stringToLong(string & s)
 
 int StringManipulation::hexstringToInt(string & s)
 {
-  istrstream istr(s.c_str(), STREAMSIZE_TYPE s.length());
+  istringstream istr(s, istringstream::in);
   int val;
   istr >> hex >> val;
   return val;
@@ -210,7 +210,7 @@ int StringManipulation::hexstringToInt(string & s)
 
 double StringManipulation::stringToDouble(string & s)
 {
-  istrstream istr(s.c_str(), STREAMSIZE_TYPE s.length());
+  istringstream istr(s, istringstream::in);
   double val;
   istr >> val;
   return val;

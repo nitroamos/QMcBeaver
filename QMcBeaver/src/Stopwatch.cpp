@@ -90,9 +90,9 @@ bool Stopwatch::isRunning()
 
 string Stopwatch::toString()
 {
-  char temp[30];
-  ostrstream(temp,30) << timeMS() << " ms " << ends;
-  return temp;
+  ostringstream stream;
+  stream << timeMS() << " ms " << ends;
+  return stream.str();
 }
 
 void Stopwatch::operator =( const Stopwatch & rhs )

@@ -50,7 +50,7 @@ static void gettimeofday(struct timeval* t,void* timezone){
 
 
 #include <string>
-#include <strstream>
+#include <sstream>
 #include <iostream>
 
 #ifdef PARALLEL

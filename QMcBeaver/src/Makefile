@@ -42,18 +42,18 @@ ifneq ($(MAKECMDGOALS),updateall)
 $(DIROBJ)/%.d: %.cpp ../include/%.h
 	@rm -f $@
 	@echo "Writing $*.d"
-	@$(CXX) $(INC) $(DEP) $< | sed -e "s/$*\.o/$(DIROBJ)\/$*\.o/g" >> $@
+	@$(CXX) $(INCLUDE) $(DEPENDENCY) $< | sed -e "s/$*\.o/$(DIROBJ)\/$*\.o/g" >> $@
 	@echo "	@echo Compiling $*.o" >> $@
-	@echo "	@$(CXX) $(OPT) $(INC) -c -o $(patsubst %.cpp,$(DIROBJ)/%.o,$<) $*.cpp" >> $@
+	@echo "	@$(CXX) $(OPT) $(INCLUDE) -c -o $(patsubst %.cpp,$(DIROBJ)/%.o,$<) $*.cpp" >> $@
 	@echo "" >> $@
 	@echo "" >> $@
 
 $(DIROBJ)/QMcBeaver.d: QMcBeaver.cpp
 	@rm -f $@
 	@echo "Writing QMcBeaver.d"
-	@$(CXX) $(INC) $(DEP) $< | sed -e "s/QMcBeaver\.o/$(DIROBJ)\/QMcBeaver\.o/g" >> $@
+	@$(CXX) $(INCLUDE) $(DEPENDENCY) $< | sed -e "s/QMcBeaver\.o/$(DIROBJ)\/QMcBeaver\.o/g" >> $@
 	@echo "	@echo Compiling QMcBeaver.o" >> $@
-	@echo "	@$(CXX) $(OPT) $(INC) -c -o $(DIROBJ)/QMcBeaver.o QMcBeaver.cpp" >> $@
+	@echo "	@$(CXX) $(OPTIMIZATION) $(INCLUDE) -c -o $(DIROBJ)/QMcBeaver.o QMcBeaver.cpp" >> $@
 	@echo "" >> $@
 	@echo "" >> $@
 
@@ -61,7 +61,7 @@ $(DIROBJ)/Makefile.dep: $(DEPFILES)
 	@cat $(DEPFILES) > $(DIROBJ)/Makefile.dep
 	@echo "$(DIROBJ).e: $(OBJECTS)" >> $@
 	@echo "	@echo Creating $(EXE)..." >> $@
-	@echo "	@$(CXX) $(OPT) $(INC) -o ../bin/$(EXE) $(OBJECTS) $(LINK)" >> $@
+	@echo "	@$(CXX) $(OPTIMIZATION) $(INCLUDE) -o ../bin/$(EXE) $(OBJECTS) $(LINK)" >> $@
 
 #This if block makes sure not to update the .d files right before we delete them
 ifneq ($(MAKECMDGOALS),clean)
@@ -70,7 +70,7 @@ endif
 
 else
 
-DIRSET := $(wildcard *_$(SYS))
+DIRSET := $(wildcard *_$(LABEL))
 include $(addsuffix /Makefile.dep, $(DIRSET))
 
 endif

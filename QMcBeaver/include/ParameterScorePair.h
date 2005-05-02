@@ -66,7 +66,7 @@ public:
   /**
     An operator which orders ParameterScorePair objects based on their scores.
     */
-  bool operator<(ParameterScorePair &PSP);
+  bool operator<(const ParameterScorePair &PSP) const;
 
 private:
   double Score;

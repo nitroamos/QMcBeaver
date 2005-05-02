@@ -8,7 +8,7 @@
 #              and 
 #   David Randall "Chip" Kent IV
 #
-# Copyright 2000.  All rights reserved.
+# Copyright 2000-2005.  All rights reserved.
 #
 # drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
@@ -33,523 +33,514 @@
 #**************************************************************************/
 
 # A class containing all of the information necessary to build the code
-# The executable now has tags: s for serial, p for parallel, d for debug, a for atlas
 
 import os
 import os.path
 import string
 
-class ControlMake:
-    # self.MAKE -- make program
-    # self.EXE  -- executable name
-    # self.CXX  -- compiler
-    # self.DEP  -- flag used to get dependancy
-    # self.OPT  -- optimization flags
-    # self.DBG  -- debug flags
-    # self.PFL  -- profiling flags
-    # self.PLL  -- parallel flags
-    # self.LNK  -- linking flags
-    # self.VER  -- version number of the software
-    
-    def printHelp(self):
-	print 'Syntax: ./configure.py system [option1 [option2 etc]]'
-        print 'System Options'
-        print '\tdefault'
-        print '\tlinux'
-        print '\titanium'
-        print '\tteragrid'
-        print '\tsgi'
-        print '\taix'
-        print '\ttru64'
-        print '\tmac'
-        print '\tcplant'
-        print '\tccmalloc'
-        print '\tcray_x1'
-        print '\tinsure'
-        print '\tcygwin'
-        print
-        print 'Compilation Options'
-        print '\t--{no}optimize'
-        print '\t--{no}debug'
-        print '\t--{no}profile'
-        print '\t--atlas'
-        print '\t--{no}parallel'
-        print '\t--exe=EXECUTABLE_NAME'
-        print '\t--cxx=COMPILER'
-        print '\t--make=MAKE_PROGRAM'
-        print '\t--optimize-flags=FLAGS'
-        print '\t--debug-flags=FLAGS'
-        print '\t--profile-flags=FLAGS'
-        print '\t--link-flags=FLAGS'
-    
-    def __init__(self,inputflags):
-        if len(inputflags) > 1 and inputflags[1][0:2] != '--':
-            self.SYS = inputflags[1]
-        else:
-            self.printHelp()
-            sys.exit(0)
+####################### Define Compilers ####################
 
-        self.testSysValidity()
-        
-        import os
-        self.HOME = os.getcwd()
-        
-        self.setINC()
-        self.setBase()
-        self.parseInput(inputflags)
-        self.setEXE()
-        self.VER = str( getVersionNumber() )
-
-    def testSysValidity(self):
-        if self.SYS != 'default' and \
-               self.SYS != 'linux' and \
-               self.SYS != 'cygwin' and \
-               self.SYS != 'itanium' and \
-               self.SYS != 'teragrid' and \
-               self.SYS != 'sgi' and \
-               self.SYS != 'aix' and \
-               self.SYS != 'tru64' and \
-               self.SYS != 'mac' and \
-               self.SYS != 'cplant' and \
-               self.SYS != 'ccmalloc'and \
-               self.SYS != 'cray_x1'and \
-               self.SYS != 'insure':
-            print 'Incorrect system specified!'
-            self.printHelp()
-            sys.exit(0)
-
-    def setINC(self):
-        self.INC = '-I'+self.HOME+'/include'
-
-    def setEXE(self):
-	self.EXTRA = '';
-        if self.EXE == '':
-            if self.PLL != '':
-                self.EXTRA = 'p' + self.EXTRA
-	    else:
-		self.EXTRA = 's' + self.EXTRA
-            if self.DBG != '':
-                self.EXTRA = 'd' + self.EXTRA
-            if self.LIB != '':
-                self.EXTRA = 'a' + self.EXTRA
-            self.EXE = 'QMcB.' + self.EXTRA + '.' + self.SYS
-
-    def setBase(self):
-        self.LIB = ''
-        
-        if   self.SYS == 'linux':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            self.CXX  = 'g++ -Wall -Wno-deprecated'
-            self.DEP  = '-MM'
-            self.setOptimize()
-            self.DBG  = ''
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-
-        elif   self.SYS == 'cygwin':
-            self.MAKE = 'make'
-            self.EXE  = ''
-            self.CXX  = 'g++ -Wall -Wno-deprecated'
-            self.DEP  = '-MM'
-            self.setOptimize()
-            self.DBG  = ''
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-
-        elif   self.SYS == 'itanium':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            self.CXX  = 'g++ -Wall -Wno-deprecated -Wno-long-double'
-            self.DEP  = '-MM'
-            self.setOptimize()
-            self.DBG  = ''
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-
-        elif   self.SYS == 'teragrid':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            self.CXX  = 'g++ -Wall -Wno-deprecated -Wno-long-double '
-            self.DEP  = '-MM'
-            self.setOptimize()
-            self.DBG  = ''
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-            
-        elif   self.SYS == 'insure':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            self.CXX  = 'insure'
-            self.DEP  = '-MM'
-            self.OPT  = ''
-            self.DBG  = '-g'
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-            
-        elif self.SYS == 'sgi':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            self.CXX  = 'CC -64 -LANG:std -ansi'
-            self.DEP  = '-M'
-            self.setOptimize()
-            self.DBG  = ''
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-            
-        elif self.SYS == 'aix':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            self.CXX  = 'newmpCC'
-            self.DEP  = '-M'
-            self.setOptimize()
-            self.DBG  = ''
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-
-        elif self.SYS == 'tru64':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            self.CXX  = 'cxx -ieee'
-            self.DEP  = '-M'
-            self.setOptimize()
-            self.DBG  = ''
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-
-        elif self.SYS == 'mac':
-            self.MAKE = 'make'
-            self.EXE  = ''
-            self.CXX  = 'g++ -Wall -Wno-deprecated -Wno-long-double'
-            self.DEP  = '-MM'
-            self.setOptimize()
-            self.DBG  = ''
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-
-        elif self.SYS == 'cplant':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            self.CXX  = '/usr/local/cplant/west/current/bin/c++'
-            self.DEP  = '-MM'
-            self.setOptimize()
-            self.DBG  = ''
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-
-        elif self.SYS == 'ccmalloc':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            self.CXX  = '/ul/chip/TEMP/MemDebugging/ccmalloc/ccmalloc-0-3-4/' \
-                        + 'bin/ccmalloc g++'
-            self.DEP  = '-MM'
-            self.OPT  = ''
-            self.setDebug()
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm -L/ul/chip/TEMP/MemDebugging/ccmalloc/' \
-                        + 'ccmalloc-0-3-4/lib -lccmalloc'
-            
-        elif self.SYS == 'cray_x1':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            #self.CXX = 'CC -h new_for_init '
-            #self.CXX = 'CC -h new_for_init -h conform '
-            #self.CXX = 'CC -h conform '
-            #self.CXX = 'CC -h new_for_init -h fp0 -h list-m -DCRAY_X1 '
-            self.CXX  = 'CC -h new_for_init -h fp0 -DCRAY_X1 '
-            #self.CXX = 'CC -h new_for_init -h ieeeconform -h list = m -DCRAY_X1 '
-            #self.CXX = 'CC -h new_for_init -f ieeeconform -h list=m -h decomp -DCRAY_X1 '
-            self.DEP  = '-M'
-            self.setOptimize()
-            self.DBG = ''
-            self.PFL = ''
-            self.PLL = ''
-            self.LNK = '-lm'
-
-        elif self.SYS == 'default':
-            self.MAKE = 'gmake'
-            self.EXE  = ''
-            self.CXX  = 'g++'
-            self.DEP  = '-MM'
-            self.OPT  = ''
-            self.DBG  = ''
-            self.PFL  = ''
-            self.PLL  = ''
-            self.LNK  = '-lm'
-            
-        else:
-            print 'ERROR: Unknown system type!'
-            print self.SYS
-            sys.exit(0)
-            
-
-    def setOptimize(self):
-        if self.SYS == 'linux':
-            self.OPT = '-O3 -felide-constructors -ffast-math' 
-
-        elif self.SYS == 'cygwin':
-            self.OPT = '-O3 -felide-constructors -ffast-math' 
-
-        elif self.SYS == 'itanium':
-            self.OPT = '-O3 -felide-constructors -ffast-math'
-
-        elif self.SYS == 'teragrid':
-            self.OPT = '-O3 -felide-constructors -ffast-math'
-
-        elif self.SYS == 'insure':
-            self.OPT = '-O3'
-            
-        elif self.SYS == 'sgi':
-            self.OPT = '-O3'
-            
-        elif self.SYS == 'aix':
-            self.OPT = '-O3'
-
-        elif self.SYS == 'tru64':
-            self.OPT = '-fast'
-
-        elif self.SYS == 'mac':
-            self.OPT = '-O3 -felide-constructors -ffast-math'
-
-        elif self.SYS == 'cplant':
-            self.OPT = '-O3'
-
-        elif self.SYS == 'ccmalloc':
-            self.OPT = '-O3 -felide-constructors -fnonnull-objects -ffast-math'
-            
-        elif self.SYS == 'cray_x1':
-            self.OPT = '-02'
-            #self.OPT = '-03'
-            #self.OPT = '-03 -h inline4 -h stream3 -h ivdep' # too aggressive 
-
-        elif self.SYS == 'default':
-            self.OPT = '-O3'
-            
-        else:
-            print 'ERROR: Unknown system type!'
-            print self.SYS
-            sys.exit(0)
-
-    def setDebug(self):
-        if self.SYS == 'linux':
-            self.DBG = '-g'
-
-        elif self.SYS == 'cygwin':
-            self.DBG = '-g'
-
-        elif self.SYS == 'itanium':
-            self.DBG = '-g'
-
-        elif self.SYS == 'teragrid':
-            self.DBG = '-g'
-
-        elif self.SYS == 'insure':
-            self.DBG = '-g'
-        
-        elif self.SYS == 'sgi':
-            self.DBG = '-g'
-            
-        elif self.SYS == 'aix':
-            self.DBG = '-g'
-
-        elif self.SYS == 'tru64':
-            self.DBG = '-g'
-	    self.OPT = ''
-
-        elif self.SYS == 'mac':
-            self.DBG = '-g'
-
-        elif self.SYS == 'cplant':
-            self.DBG = '-g'
-
-        elif self.SYS == 'ccmalloc':
-            self.DBG = '-g'
-            
-        elif self.SYS == 'cray_x1':
-            self.OPT = '-g'
-
-        elif self.SYS == 'default':
-            self.DBG = '-g'
-            
-        else:
-            print 'ERROR: Unknown system type!'
-            print self.SYS
-            sys.exit(0)
-
-    def setParallel(self):
-        self.PLL = '-DPARALLEL'
-
-        if self.SYS == 'linux':
-            self.CXX = 'mpiCC -Wall -Wno-deprecated'
-            self.DEP = '-M'
-
-        elif self.SYS == 'cygwin':
-            self.CXX = 'mpiCC -Wall -Wno-deprecated'
-            self.DEP = '-M'
-
-        elif self.SYS == 'itanium':
-            self.CXX = 'mpiCC -Wall -Wno-deprecated'
-            self.DEP = '-M'
-
-        elif self.SYS == 'teragrid':
-            self.CXX = 'mpiCC -Wall -Wno-deprecated'
-            self.DEP = '-M'
-
-        elif self.SYS == 'insure':
-            self.LNK = self.LNK + ' -lm -lmpi++ -lmpio -lmpi -ltstdio ' \
-                       + '-ltrillium -largs -lt'
-            self.INC = self.INC + ' -I/usr/local/lam-6.3.2/include/mpi2c++ ' \
-                       + '-I/usr/local/lam-6.3.2/include -L/usr/local/' \
-                       + 'lam-6.3.2/lib'
-
-        elif self.SYS == 'sgi':
-            self.PLL = self.PLL + ' -DMPI_NO_CPPBIND'
-            self.LNK = self.LNK + ' -lmpi'
-
-        elif self.SYS == 'tru64':
-            self.INC = self.INC + ' $(MPI_COMPILE_FLAGS)'
-            self.LNK = self.LNK + ' $(MPI_LD_FLAGS) -lmpi'
-
-        elif self.SYS == 'mac':
-            self.CXX = 'mpiCC -Wall -Wno-deprecated -Wno-long-double'
-
-        elif self.SYS == 'ccmalloc':
-            self.INC = self.INC + ' -I/usr/local/lam-6.3.2/include/mpi2c++ ' \
-                       + '-I/usr/local/lam-6.3.2/include'
-            self.LNK = self.LNK + ' -L/usr/local/lam-6.3.2/lib -lmpi++ ' \
-                       + '-lmpio -lmpi -ltstdio -ltrillium -largs -lt'
-
-        elif self.SYS == 'cplant':
-            self.INC = self.INC + ' -I/usr/local/cplant/west/current/include'
-            self.LNK = self.LNK + ' -lmpi'
-
-    def setProfile(self):
-        if self.SYS == 'linux':
-            self.PFL = '-p'
-
-        elif self.SYS == 'cygwin':
-            self.PFL = '-p'
-
-        elif self.SYS == 'itanium':
-            self.PFL = '-p'
-
-        elif self.SYS == 'teragrid':
-            self.PFL = '-p'
-
-        elif self.SYS == 'insure':
-            self.PFL = '-p'
-            
-        elif self.SYS == 'sgi':
-            self.PFL = '-p'
-            
-        elif self.SYS == 'aix':
-            self.PFL = '-p'
-
-        elif self.SYS == 'tru64':
-            self.PFL = '-p'
-
-        elif self.SYS == 'mac':
-            self.PFL = '-p'
-
-        elif self.SYS == 'cplant':
-            self.PFL = '-p'
-
-        elif self.SYS == 'ccmalloc':
-            self.PFL = '-p'
-            
-        elif self.SYS == 'default':
-            self.PFL = '-p'
-            
-        else:
-            print 'ERROR: Unknown system type!'
-            print self.SYS
-            sys.exit(0)
+class Compiler:
+    def __init__(self):
+        self.CXX = ''
+        self.FLAGS = ''
+        self.INCLUDE = ''
+        self.DEPENDENCY = ''
+        self.OPTIMIZATION = ''
+        self.DEBUG = ''
+        self.PROFILE = ''
+        self.LINK = ''
 
     def printString(self):
-        text = 'SYS = ' + self.SYS + '\n'
-        text = text + 'VER = ' + self.VER + '\n'
-        text = text + 'HOME = ' + self.HOME + '\n'
-        text = text + 'INC = ' + self.INC + '\n'
-	text = text + 'DIROBJ = obj_' + self.EXTRA + '_$(SYS)\n'
-	text = text + 'MAKE = ' + self.MAKE + '\n'
-        text = text + 'EXE = ' + self.EXE + '\n'
-        text = text + 'DEP = ' + self.DEP + '\n'
-        text = text + 'OPT = ' + self.OPT + '\n'
-        text = text + 'DBG = ' + self.DBG + '\n'
-        text = text + 'PFL = ' + self.PFL + '\n'
-        text = text + 'PLL = ' + self.PLL + '\n'
-        text = text + 'LINK = ' + self.LIB + ' ' + self.LNK + '\n'
-        text = text + 'CXX = ' + self.CXX + \
-               ' -DVERSION=$(VER) $(DBG) $(PFL) $(PLL)\n'
+        text = 'CXX = ' + self.CXX + '\n'
+        text += 'FLAGS = ' + self.FLAGS + '\n'
+        text += 'INCLUDE = ' + self.INCLUDE + '\n'
+        text += 'DEPENDENCY = ' + self.DEPENDENCY + '\n'
+        text += 'OPTIMIZATION = ' + self.OPTIMIZATION + '\n'
+        text += 'DEBUG = ' + self.DEBUG + '\n'
+        text += 'PROFILE = ' + self.PROFILE + '\n'
+        text += 'LINK = ' + self.LINK + '\n'
         return text
 
-    def parseInput(self,inputflags):
-        for flag in inputflags[2:]:
-            if flag == '--optimize':
-                self.setOptimize()
+class CompilerAIX(Compiler):
+    def __init__(self,optimize,debug,profile):
+        self.CXX = 'mpCC'
+        self.FLAGS = '-Wall'
+        self.INCLUDE = ''
+        self.DEPENDENCY = '-M'
 
-            elif flag == '--nooptimize':
-                self.OPT = ''
+        if optimize:
+            self.OPTIMIZATION = '-O3'
+        else:
+            self.OPTIMIZATION = ''
 
-            elif flag == '--debug':
-                self.setDebug()
+        if debug:
+            self.DEBUG = '-g'
+        else:
+            self.DEBUG = ''
 
-            elif flag == '--nodebug':
-                self.DBG = ''
+        if profile:
+            self.PROFILE = '-p'
+        else:
+            self.PROFILE = ''
+            
+        self.LINK = '-lm'
 
-            elif flag == '--profile':
-                self.setProfile()
 
-            elif flag == '--noprofile':
-                self.PFL = ''
+class CompilerCCMALLOC(Compiler):
+    def __init__(self,optimize,debug,profile):
+        self.CXX = 'ccmalloc g++'
+        self.FLAGS = '-Wall'
+        self.INCLUDE = ''
+        self.DEPENDENCY = '-MM'
 
-            elif flag == '--parallel':
-                self.setParallel()
+        if optimize:
+            self.OPTIMIZATION = '-O3 -ffast-math'
+        else:
+            self.OPTIMIZATION = ''
 
-            elif flag == '--noparallel':
-                self.PLL = ''
+        if debug:
+            self.DEBUG = '-g'
+        else:
+            self.DEBUG = ''
 
-            elif flag == '--atlas':            
-                self.LIB = '-L'+self.HOME+'/lib -lcblas -latlas'
-                self.CXX += ' -DUSEATLAS'
-                
-            elif string.find(flag,'--exe=') != -1:
-                self.EXE = flag[6:]
+        if profile:
+            self.PROFILE = '-pg'
+        else:
+            self.PROFILE = ''
+            
+        self.LINK = '-lm -lccmalloc'
 
-            elif string.find(flag,'--cxx=') != -1:
-                self.CXX = flag[6:]
 
-            elif string.find(flag,'--make=') != -1:
-                self.MAKE = flag[7:]
+class CompilerCrayX1(Compiler):
+    def __init__(self,optimize,debug,profile):
+        self.CXX = 'CC -h new_for_init -h fp0 -DCRAY_X1 '
+        self.FLAGS = '-h new_for_init -h fp0 -DCRAY_X1'
+        self.INCLUDE = ''
+        self.DEPENDENCY = '-M'
 
-            elif string.find(flag,'--optimize-flags=') != -1:
-                self.OPT = flag[17:]
+        if optimize:
+            self.OPTIMIZATION = '-02'
+        else:
+            self.OPTIMIZATION = ''
 
-            elif string.find(flag,'--debug-flags=') != -1:
-                self.DBG = flag[14:]
+        if debug:
+            self.DEBUG = '-g'
+        else:
+            self.DEBUG = ''
 
-            elif string.find(flag,'--profile-flags=') != -1:
-                self.PFL = flag[16:]
+        if profile:
+            self.PROFILE = '-p'
+        else:
+            self.PROFILE = ''
+            
+        self.LINK = '-lm'
 
-            elif string.find(flag,'--link-flags=') != -1:
-                self.LNK = flag[13:]
 
+class CompilerGCC(Compiler):
+    def __init__(self,optimize,debug,profile):
+        self.CXX = 'g++'
+        self.FLAGS = '-Wall'
+        self.INCLUDE = ''
+        self.DEPENDENCY = '-MM'
+
+        if optimize:
+            self.OPTIMIZATION = '-O3 -fexpensive-optimizations -ffast-math #-mtune=???'
+        else:
+            self.OPTIMIZATION = ''
+
+        if debug:
+            self.DEBUG = '-gdwarf-2'
+        else:
+            self.DEBUG = ''
+
+        if profile:
+            self.PROFILE = '-pg'
+        else:
+            self.PROFILE = ''
+            
+        self.LINK = '-lm'
+
+
+class CompilerInsure(Compiler):
+    def __init__(self,optimize,debug,profile):
+        self.CXX = 'insure'
+        self.FLAGS = '-Wall'
+        self.INCLUDE = ''
+        self.DEPENDENCY = '-MM'
+
+        if optimize:
+            self.OPTIMIZATION = '-O3'
+        else:
+            self.OPTIMIZATION = ''
+
+        if debug:
+            self.DEBUG = '-g'
+        else:
+            self.DEBUG = ''
+
+        if profile:
+            self.PROFILE = '-p'
+        else:
+            self.PROFILE = ''
+            
+        self.LINK = '-lm'
+
+class CompilerIntel(Compiler):
+    def __init__(self,optimize,debug,profile):
+        self.CXX = 'icpc'
+        self.FLAGS = '-Wall -w1 -Wcheck -ansi'
+        self.INCLUDE = ''
+        self.DEPENDENCY = '-MM'
+
+        if optimize:
+            self.OPTIMIZATION = '-fast'
+        else:
+            self.OPTIMIZATION = ''
+
+        if debug:
+            self.DEBUG = '-g -debug extended'
+        else:
+            self.DEBUG = ''
+
+        if profile:
+            self.PROFILE = '-p'
+        else:
+            self.PROFILE = ''
+            
+        self.LINK = '-lm'
+
+
+class CompilerMPICC(Compiler):
+    def __init__(self,optimize,debug,profile):
+        self.CXX = 'mpiCC'
+        self.FLAGS = '-Wall'
+        self.INCLUDE = ''
+        self.DEPENDENCY = '-MM'
+
+        if optimize:
+            self.OPTIMIZATION = '-O3 -ffast-math'
+        else:
+            self.OPTIMIZATION = ''
+
+        if debug:
+            self.DEBUG = '-g'
+        else:
+            self.DEBUG = ''
+
+        if profile:
+            self.PROFILE = '-pg'
+        else:
+            self.PROFILE = ''
+            
+        self.LINK = '-lm'
+        
+class CompilerPGI(Compiler):
+    def __init__(self,optimize,debug,profile):
+        self.CXX = 'pgCC'
+        self.FLAGS = '-Minform=warn'
+        self.INCLUDE = ''
+        self.DEPENDENCY = '-M'
+
+        if optimize:
+            self.OPTIMIZATION = '-fastsse -Minline=levels:10 -Mipa=fast'
+        else:
+            self.OPTIMIZATION = ''
+
+        if debug:
+            self.DEBUG = '-g -Mdwarf2'
+        else:
+            self.DEBUG = ''
+
+        if profile:
+            self.PROFILE = '-pg'
+        else:
+            self.PROFILE = ''
+            
+        self.LINK = '-lm'
+
+
+class CompilerSgiIrix(Compiler):
+    def __init__(self,optimize,debug,profile):
+        self.CXX = 'CC'
+        self.FLAGS = '-64 -LANG:std -ansi'
+        self.INCLUDE = ''
+        self.DEPENDENCY = '-M'
+
+        if optimize:
+            self.OPTIMIZATION = '-O3'
+        else:
+            self.OPTIMIZATION = ''
+
+        if debug:
+            self.DEBUG = '-g'
+        else:
+            self.DEBUG = ''
+
+        if profile:
+            self.PROFILE = '-p'
+        else:
+            self.PROFILE = ''
+            
+        self.LINK = '-lm'
+
+
+class CompilerTru64(Compiler):
+    def __init__(self,optimize,debug,profile):
+        self.CXX = 'cxx'
+        self.FLAGS = '-ieee'
+        self.INCLUDE = ''
+        self.DEPENDENCY = '-M'
+
+        if optimize:
+            self.OPTIMIZATION = '-fast'
+        else:
+            self.OPTIMIZATION = ''
+
+        if debug:
+            if optimize:
+                self.DEBUG = '-g3'
             else:
-                print 'ERROR: Unknown flag ' + flag
-                print
-                self.printHelp()
-                sys.exit(0)
+                self.DEBUG = '-g'
+        else:
+            self.DEBUG = ''
+
+        if profile:
+            self.PROFILE = '-p'
+        else:
+            self.PROFILE = ''
+            
+        self.LINK = '-lm'
+
+
+compilers = {
+    'AIX'     : CompilerAIX,
+    'CrayX1'  : CompilerCrayX1,
+    'CCMALLOC' : CompilerCCMALLOC,
+    'GCC'     : CompilerGCC,
+    'Insure'  : CompilerInsure,
+    'Intel'   : CompilerIntel,
+    'MPICC'   : CompilerMPICC,
+    'PGI'     : CompilerPGI,
+    'SgiIrix' : CompilerSgiIrix,
+    'Tru64'   : CompilerTru64,
+    }
+
+
+####################### Define MPIs ####################
+
+class Mpi:
+    def __init__(self):
+        self.PARALLEL = '-DPARALLEL'
+        self.FLAGS = ''
+        self.INCLUDE = ''
+        self.LINK = ''
+
+class MpiNone(Mpi):
+    def __init__(self):
+        self.PARALLEL = ''
+        self.FLAGS = ''
+        self.INCLUDE = ''
+        self.LINK = ''
+
+class MpiLAMPI(Mpi):
+    def __init__(self):
+        self.PARALLEL = '-DPARALLEL'
+        self.FLAGS = ''
+        self.INCLUDE = ' -I$(MPI_ROOT)/include'
+        self.LINK = ' -L$(MPI_ROOT)/lib -lmpi'
+
+class MpiSgiIrix(Mpi):
+    def __init__(self):
+        self.PARALLEL = '-DPARALLEL'
+        self.FLAGS = ' -DMPI_NO_CPPBIND'
+        self.INCLUDE = ''
+        self.LINK = ' -lmpi'
+
+class MpiTru64(Mpi):
+    def __init__(self):
+        self.PARALLEL = '-DPARALLEL'
+        self.FLAGS = ''
+        self.INCLUDE = ' $(MPI_COMPILE_FLAGS)'
+        self.LINK = ' $(MPI_LD_FLAGS) -lmpi'
+
+mpis = {
+    'None'    : MpiNone,
+    'LAMPI'   : MpiLAMPI,
+    'MPICH'   : Mpi,
+    'SgiIrix' : MpiSgiIrix,
+    'Tru64'   : MpiTru64,
+    }
+
+
+####################################################################
+# Don't Change Below This Line Unless You Know What You Are Doing! #
+####################################################################
+
+
+####################### Define Optional Args ####################
+
+optionalarguments = {
+    '--optimize': 'self.optimize = 1',
+    '--nooptimize': 'self.optimize = 0',
+    '--debug' : 'self.debug = 1',
+    '--nodebug' : 'self.debug = 0',
+    '--profile' : 'self.profile = 1',
+    '--noprofile' : 'self.profile = 0',
+    '--atlas': 'self.atlas = 1',
+    }    
+
+#########################
+
+
+class CommandLineArgs:
+    def __init__(self):
+        self.optimize = 1
+        self.debug = 0
+        self.profile = 0
+        self.parallel = 0
+        self.atlas = 0
+        self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).x'
+        self.MAKE = self._getMake()
+
+        if len(sys.argv) > 1 and sys.argv[1][0:2] != '--':
+            self.COMPILER = sys.argv[1]
+        else:
+            self.printHelp()
+            sys.exit(0)
+
+        if len(sys.argv) > 2 and sys.argv[2][0:2] != "--":
+            self.MPI = sys.argv[2]
+        else:
+            self.printHelp()
+            sys.exit(0)
+
+        if self.COMPILER == 'MPICC':
+            self.MPI = 'MPICH'
+
+        if self.MPI != 'None':
+            self.parallel = 1
+        
+        for arg in sys.argv[3:]:
+            self._testArgValidity(arg)
+            exec optionalarguments[arg]
+
+        self._testInputValidity()
+
+        self.LABEL = self._getLabel()
+    
+    def printHelp(self):
+	print 'Syntax: ./configure.py compiler mpi [option1 [option2 etc]]'
+        print 'Compiler Options'
+        compilerKeys = compilers.keys()
+        compilerKeys.sort()
+        for compiler in compilerKeys:
+            print '\t', compiler
+        print
+
+        print 'MPI Options'
+        mpiKeys = mpis.keys()
+        mpiKeys.sort()
+        for mpi in mpiKeys:
+            print '\t', mpi
+        print
+        print 'Optional Arguments'
+        optArgKeys = optionalarguments.keys()
+        optArgKeys.sort()
+        for arg in optArgKeys:
+            print '\t', arg
+
+    def _getMake(self):
+        paths = os.environ['PATH'].split(":")
+
+        for path in paths:
+            if os.path.isfile(path+'/gmake'):
+                return 'gmake'
+
+        return 'make'
+
+    def _testArgValidity(self, arg):
+        if not optionalarguments.has_key( arg ):
+            print 'Incorrect argument specified! (%s)'%arg
+            self.printHelp()
+            sys.exit(1)
+
+    def _testInputValidity(self):
+        if not compilers.has_key( self.COMPILER ):
+            print 'Incorrect compiler specified! (%s)'%self.COMPILER
+            self.printHelp()
+            sys.exit(1)
+
+        if not mpis.has_key( self.MPI ):
+            print 'Incorrect MPI specified! (%s)'%self.MPI
+            self.printHelp()
+            sys.exit(1)
+
+    def _getLabel(self):
+
+        extra = [self.COMPILER]
+
+        if self.parallel:
+            extra.append("parallel")
+        if self.atlas:
+            extra.append("atlas")
+        if self.optimize:
+            extra.append("optimize")
+        if self.debug:
+            extra.append("debug")
+        if self.profile:
+            extra.append("profile")
+
+        return '_'.join(extra)
+
+
+class MakeConfigBuilder:
+    def __init__(self):
+        self._inputs = CommandLineArgs()
+
+        self._compiler = compilers[ self._inputs.COMPILER ](
+            self._inputs.optimize,
+            self._inputs.debug,
+            self._inputs.profile)
+
+        self._mpi = mpis[ self._inputs.MPI ]()
+        
+        self.VERSION = str( getVersionNumber() )
+        self.HOME = os.getcwd()        
+        self.INCLUDE = '-I$(HOME)/include'
+
+    def printString(self):
+        text = '# Makefile.config is generated by configure.py.  Either use \n'
+        text += '# one of the configurations configure.py generates, \n'
+        text += '# edit the script to generate your configuration, \n'
+        text += '# or edit Makefile.config for your configuration \n'
+        text += '\n'
+        text += 'COMPILER = ' + self._compiler.CXX + '\n'
+        text += 'LABEL = ' + self._inputs.LABEL + '\n'
+        text += 'VERSION = ' + self.VERSION + '\n'
+        text += 'HOME = ' + self.HOME + '\n'
+        text += 'INCLUDE = ' + self.INCLUDE + " " + self._mpi.INCLUDE + '\n'
+        text += 'FLAGS = ' + self._compiler.FLAGS + self._mpi.FLAGS
+        if self._inputs.atlas:
+            text += ' -DUSEATLAS \n'
+        else:
+            text += '\n'
+	text += 'DIROBJ = obj_$(LABEL)\n'
+	text += 'MAKE = ' + self._inputs.MAKE + '\n'
+        text += 'EXE = ' + self._inputs.EXE + '\n'
+        text += 'DEPENDENCY = ' + self._compiler.DEPENDENCY + '\n'
+        text += 'OPTIMIZATION = ' + self._compiler.OPTIMIZATION + '\n'
+        text += 'DEBUG = ' + self._compiler.DEBUG + '\n'
+        text += 'PROFILE = ' + self._compiler.PROFILE + '\n'
+        text += 'PARALLEL = ' + self._mpi.PARALLEL + '\n'
+        text += 'LINK = ' + self._compiler.LINK
+        if self._inputs.atlas:
+            text += ' -L$(HOME)/lib -lcblas -latlas \n'
+        else:
+            text += '\n'
+        text += 'CXX = $(COMPILER) -DVERSION=$(VERSION) $(FLAGS) $(DEBUG) $(PROFILE) $(PARALLEL)\n'
+        return text
+
 
 
 '''
@@ -654,7 +645,7 @@ def getVersionNumber():
 if __name__ == '__main__':
     import sys
 
-    dat = ControlMake(sys.argv)
+    dat = MakeConfigBuilder()
     print dat.printString()
 
     file = open('Makefile.config','w')

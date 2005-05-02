@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 #include <string>
-#include <strstream>
+#include <sstream>
 
 #ifdef _WIN32
 #define STREAMSIZE_TYPE (long)

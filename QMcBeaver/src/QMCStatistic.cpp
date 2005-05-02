@@ -89,13 +89,13 @@ void QMCStatistic::toXML(ostream& strm)
   strm << "<QMCStatistic>" << endl;
   
   // sum
-  strm << "<Sum>\n" << sum << "\n</Sum>" << endl;
+  strm << "<Sum>\n" << double(sum) << "\n</Sum>" << endl;
   
   // sum sq
-  strm << "<SumSquared>\n" << sum2 << "\n</SumSquared>" << endl;
+  strm << "<SumSquared>\n" << double(sum2) << "\n</SumSquared>" << endl;
 
   // weights
-  strm << "<SumWeights>\n" << weights << "\n</SumWeights>" << endl;
+  strm << "<SumWeights>\n" << double(weights) << "\n</SumWeights>" << endl;
 
   // nsamples
   strm << "<NumberOfSamples>\n" << nsamples << "\n</NumberOfSamples>" << endl;

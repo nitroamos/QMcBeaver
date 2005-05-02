@@ -34,7 +34,7 @@ void ParameterScorePair::operator=(const ParameterScorePair &PSP)
   Parameters = PSP.Parameters;
 }
 
-bool ParameterScorePair::operator<(ParameterScorePair &PSP)
+bool ParameterScorePair::operator<(const ParameterScorePair &PSP) const
 {
   bool returnvalue = true;
   if( Score < PSP.Score )
