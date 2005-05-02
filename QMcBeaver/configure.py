@@ -533,7 +533,7 @@ class MakeConfigBuilder:
         text += 'DEBUG = ' + self._compiler.DEBUG + '\n'
         text += 'PROFILE = ' + self._compiler.PROFILE + '\n'
         text += 'PARALLEL = ' + self._mpi.PARALLEL + '\n'
-        text += 'LINK = ' + self._compiler.LINK
+        text += 'LINK = ' + self._compiler.LINK + self._mpi.LINK
         if self._inputs.atlas:
             text += ' -L$(HOME)/lib -lcblas -latlas \n'
         else:
