@@ -66,9 +66,22 @@ public:
   void initializeWalkerPosition(); 
 
   /**
-    Proposes a trial walker move and accepts or rejects it.
+    Proposes a trial walker move and accepts or rejects it. This method has
+    been broken into 2 parts. The first part moves the electrons and then
+    returns pointers to the new positions along with pointers to the
+    QMCWalkerData structs so they can be filled.
+    @param data to put a pointer to this walkerData
+    @param R to put a pointer to this' new configuration
   */
-  void propagateWalker();
+  void initializePropagation(QMCWalkerData * &data, Array2D<double> * &R);
+
+  /**
+     This function completes the processing. The forwardGreensFunction was
+     stored and because pointers were given with a call to initializePropagation
+     no parameters need to be passed. This function should not be called without
+     first calling initializePropagation.
+  */
+  void processPropagation();
 
   /**
     Calculates the observables for this walker and adds them to the input
@@ -104,6 +117,16 @@ public:
   bool isSingular();
 
   /**
+    Writes the state of this walker to a stream in a format that is suitable
+    for correlated sampling.  This writes out more information than 
+    <code>toXML</code> so that parts of the wavefunction do not have to
+    be reevaluated every time properties are calculated using correlated
+    sampling.
+    @param strm stream to write correlated sampling information to.
+  */ 
+  void writeCorrelatedSamplingConfiguration(ostream& strm); 
+
+  /**
     Writes the state of this object to an XML stream.
     @param strm XML stream
   */
@@ -118,16 +141,6 @@ public:
   void readXML(istream& strm);
 
   /**
-    Writes the state of this walker to a stream in a format that is suitable
-    for correlated sampling.  This writes out more information than 
-    <code>toXML</code> so that parts of the wavefunction do not have to
-    be reevaluated every time properties are calculated using correlated
-    sampling.
-    @param strm stream to write correlated sampling information to.
-  */ 
-  void writeCorrelatedSamplingConfiguration(ostream& strm);  
-
-  /**
     Gets the value of the local energy estimator for this walker.
   */
   double getLocalEnergyEstimator();
@@ -136,14 +149,27 @@ private:
   double weight;
   int age;
 
+  /*these energies are calculated by QMCWalker using the
+    acceptance probability as opposed to those calculated by QMCFunction
+  */
   double localEnergy;
   double kineticEnergy;
   double potentialEnergy;
+
   double distanceMovedAccepted;
   double AcceptanceProbability;
-  Array1D<double> Chi_Density;
 
-  QMCFunctions QMF;
+  /**
+     walkerData is meant to hold all the necessary data given by a QMCFunction
+     to complete the iteration.
+  */
+  QMCWalkerData walkerData;
+  
+  /**
+     This data is simply meant to carry the forwardGreensFunction between the 2
+     propagate walker functions.
+  */
+  QMCGreensRatioComponent forwardGreensFunction;
 
   Array2D<double> R;
 
@@ -158,8 +184,6 @@ private:
   QMCInput* Input;
 
   void setAcceptanceProbability(double p);
-
-  void evaluate();
   void createChildWalkers();
   void calculateMoveAcceptanceProbability(double GreensRatio);
   void acceptOrRejectMove();

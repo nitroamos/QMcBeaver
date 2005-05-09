@@ -41,12 +41,23 @@ for more details.
 #include "LU.h"
 #include "QMCInput.h"
 
+/**
+   This parameter is used in QMCRun to process several walkers simultaneously. The value
+   of this macro is how many walkers to treat at once. If this parameter is set to 1, then
+   the code will perform the way it did previously. Also, the amount of memory the
+   program requires is dependent on this because all the walkers have to be stored.
+*/
+#define WALKERS_PER_PASS 5 
+
 using namespace std;
 
 /** 
   An array of Slater determinants describing like spin electrons from a 3N 
   dimensional wavefunction.  This class allows the functions, their gradients, 
   and their laplacians to be calculated.
+
+  This class has now been modified to handle several electron configurations
+  simultaneously. It will process (at most) WALKERS_PER_PASS walkers.
 */
 
 class QMCSlater
@@ -73,8 +84,9 @@ public:
     Evaluates the Slater determinants and their first two derivatives at X.
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
+    @param num how many configurations to process in the X array.
   */
-  void evaluate( Array2D<double> &X);
+  void evaluate( Array1D< Array2D<double> * > &X, int num);
 
   /**
     Gets an array of values of the Slater determinants for the last evaluated 
@@ -82,40 +94,50 @@ public:
     Assuming the basis functions ued to make the determinant are normalized, 
     the values can be normalized by dividing by \f$\sqrt{M!}\f$, where 
     \f$M\f$ is the number of electrons in the determinants.
+
+    @param i of which walker we are requesting the information
   */
-  Array1D<double>* getPsi();
+  Array1D<double>* getPsi(int i);
 
   /**
     Gets an array where each element is a ratio of the Slater determinant 
     gradient over the Slater determinant for the last evaluated electronic 
     configuration.  These values do not depend on the normalization of the 
     Slater determinant.
+
+    @param i of which walker we are requesting the information
   */
-  Array3D<double>* getGradPsiRatio();
+  Array3D<double>* getGradPsiRatio(int i);
 
   /**
     Gets an array where each element is a ratio of the Slater determinant 
     laplacian over the Slater determinant for the last evaluated electronic 
     configuration.  These values do not depend on the normalization of the 
     Slater determinant.
+
+    @param i of which walker we are requesting the information
   */
-  Array1D<double>* getLaplacianPsiRatio();
+  Array1D<double>* getLaplacianPsiRatio(int i);
 
   /**
     Gets an array of the densities for the basis functions for the last 
     evaluated electronic configuration.
+
+    @param i of which walker we are requesting the information
   */
-  Array1D<double>* getChiDensity();
+  Array1D<double>* getChiDensity(int i);
 
   /**
-    Returns true if the Slater determinant is singular and false otherwise.
+     Returns true if the Slater determinant is singular and false otherwise.
+     
+     @param i of which walker we are requesting the information
   */
-  bool isSingular();
+  bool isSingular(int i);
 
   /**
-    Sets two QMCSlater objects equal.
-    @param rhs object to set this object equal to
-    */
+     Sets two QMCSlater objects equal.
+     @param rhs object to set this object equal to
+  */
   void operator=(const QMCSlater & rhs );
 
  private:
@@ -123,12 +145,13 @@ public:
   QMCBasisFunction *BF;
   QMCWavefunction  *WF;
   
-  Array1D<double> Psi;
-  Array1D<double> Laplacian_PsiRatio;
-  Array3D<double> Grad_PsiRatio;
-  Array1D<double> Chi_Density;
+  /* The dimensions of these data are numWalkers x numDeterminants*/
+  Array1D< Array1D<double> > Psi;
+  Array1D< Array1D<double> > Laplacian_PsiRatio;
+  Array1D< Array3D<double> > Grad_PsiRatio;
+  Array1D< Array1D<double> > Chi_Density;
 
-  Array1D<bool> Singular;
+  Array1D< Array1D<bool> > Singular;
 
   int Start;
   int Stop;
@@ -136,17 +159,19 @@ public:
 
   double PsiRatio_1electron;
 
-  Array1D< Array2D<qmcfloat> > D;
-  Array1D< Array2D<qmcfloat> > D_inv;
-  Array1D< Array2D<qmcfloat> > Laplacian_D;
-  Array2D< Array2D<qmcfloat> > Grad_D;
+  /* The dimensions of these data are numWalkers x numDeterminants then numElec x numOrb*/
+  Array2D< Array2D<qmcfloat> > D;
+  Array2D< Array2D<qmcfloat> > D_inv;
+  Array2D< Array2D<qmcfloat> > Laplacian_D;
+  Array3D< Array2D<qmcfloat> > Grad_D;
 
   // Scratch Space
   Array2D<qmcfloat> Chi;
   Array2D<qmcfloat> Chi_laplacian;
   Array1D< Array2D<qmcfloat> > Chi_gradient;
 
-  Array2D<qmcfloat> WF_coeffs;
+  /* The dimensions of WF_coeffs is numDeterminants and then numBasisFunction x numOrb */
+  Array1D< Array2D<qmcfloat> > WF_coeffs;
 
   void allocate(int N);
 
@@ -161,11 +186,14 @@ public:
   */
   void setStartAndStopElectronPositions(int startEl, int stopEl); 
 
-  void update_Ds(Array2D<double> &X);
+  /**
+     An array of configurations are processed simultaneously.
+  */
+  void update_Ds(Array1D<Array2D<double>*> &X, int num);
 
-  void calculate_DerivativeRatios();
+  void calculate_DerivativeRatios(int walker);
 
-  void update_D_inverse_and_Psi();
+  void update_D_inverse_and_Psi(int num);
 };
 
 #endif

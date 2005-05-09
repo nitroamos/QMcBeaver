@@ -55,33 +55,30 @@ void QMCWalker::operator=( const QMCWalker & rhs )
   weight = rhs.weight;
   age    = rhs.age;
 
-  QMF = rhs.QMF;
   Input = rhs.Input;
-
   move_accepted         = rhs.move_accepted;
- 
   AcceptanceProbability = rhs.AcceptanceProbability;
   localEnergy           = rhs.localEnergy;
-  potentialEnergy       = rhs.potentialEnergy;
   kineticEnergy         = rhs.kineticEnergy;
+  potentialEnergy       = rhs.potentialEnergy;
   distanceMovedAccepted = rhs.distanceMovedAccepted;
   dR2                   = rhs.dR2;
   R                     = rhs.R;
-
-  if (Input->flags.calculate_bf_density == 1)
-    Chi_Density         = rhs.Chi_Density;
+  walkerData            = rhs.walkerData;
 }
 
-void QMCWalker::propagateWalker()
+void QMCWalker::initializePropagation(QMCWalkerData * &data, Array2D<double> * &rToCalc)
 {
   createChildWalkers();
+  forwardGreensFunction = TrialWalker->moveElectrons();
+  data = & TrialWalker->walkerData;
+  rToCalc = & TrialWalker->R;
+}
 
-  QMCGreensRatioComponent forwardGreensFunction = TrialWalker->moveElectrons();
-
-  TrialWalker->evaluate();
+void QMCWalker::processPropagation()
+{  
   QMCGreensRatioComponent reverseGreensFunction = \
                                               calculateReverseGreensFunction();
-
   double GreensFunctionRatio =
     reverseGreensFunction/forwardGreensFunction;
 
@@ -188,7 +185,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
   // Add the drift to the displacement
 
   // Use the QF => R' = R + dt * QF + gauss_rn
-  Displacement = *QMF.getModifiedGradPsiRatio();
+  Displacement = walkerData.modifiedGradPsiRatio;
   Displacement *= Input->flags.dt;
 
   // Add the randomness to the displacement
@@ -220,7 +217,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
       for(int j=0; j<3; j++)
 	{
 	  double temp = Displacement(i,j)-
-	    tau*(*QMF.getModifiedGradPsiRatio())(i,j);
+	    tau*Displacement(i,j);
 
 	  greens += temp*temp;
 	}
@@ -252,6 +249,8 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
   double tau = Input->flags.dt;
   QMCGreensRatioComponent GF(1.0);
   dR2 = 0.0;
+  Array2D<double> Displacement(Input->WF.getNumberElectrons(),3); 
+  Displacement = walkerData.modifiedGradPsiRatio;
 
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
     {
@@ -282,8 +281,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 
       for(int i=0; i<3; i++)
 	{
-	  zComponentQF += zUnitVector(i)*
-	    (*QMF.getModifiedGradPsiRatio())(electron,i);
+	  zComponentQF += zUnitVector(i)*Displacement(electron,i);
 	}
 
       Array1D<double> radialUnitVector(3);
@@ -291,7 +289,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 
       for(int i=0; i<3; i++)
 	{
-	  radialUnitVector(i) = (*QMF.getModifiedGradPsiRatio())(electron,i) - 
+	  radialUnitVector(i) = Displacement(electron,i) - 
 	    zComponentQF * zUnitVector(i);
 
 	  radialComponentQF += radialUnitVector(i)*radialUnitVector(i);
@@ -322,11 +320,9 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 			     sqrt(2.0 * tau) );
 
       double probabilityGaussianTypeMove = 1.0 - probabilitySlaterTypeMove;
-
       // Randomly decide which electron moving method to use
 
       Array1D<double> newPosition(3);
-
       if( probabilityGaussianTypeMove > ran1(&Input->flags.iseed) )
 	{
 	  // Gaussian Type Move
@@ -335,7 +331,6 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	  // Rnuc + radialCoordinate * radialUnitVector + 
 	  //   zCoordinate * zUnitVector + 
 	  //   gaussian random number with standard deviation sqrt(tau)
-
 	  for(int i=0; i<3; i++)
 	    {
 	      newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i)
@@ -366,7 +361,6 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	}
 
       // Update the greens function
-
       double distance1Sq = 0.0;
 
       for(int i=0; i<3; i++)
@@ -421,7 +415,6 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	  R(electron,i) = newPosition(i);
 	}
     }
-
   return GF;
 }
 
@@ -479,7 +472,7 @@ QMCGreensRatioComponent \
       for(int j=0; j<3; j++)
 	{
 	  double temp = OriginalWalker->R(i,j) - TrialWalker->R(i,j) - 
-	    tau*(*TrialWalker->QMF.getModifiedGradPsiRatio())(i,j);
+	    tau*TrialWalker->walkerData.modifiedGradPsiRatio(i,j);
 
 	  greens += temp*temp;
 	}
@@ -533,7 +526,7 @@ QMCGreensRatioComponent \
       for(int i=0; i<3; i++)
 	{
 	  zComponentQF += zUnitVector(i)*
-	    (*TrialWalker->QMF.getModifiedGradPsiRatio())(electron,i);
+	    TrialWalker->walkerData.modifiedGradPsiRatio(electron,i);
 	}
 
       Array1D<double> radialUnitVector(3);
@@ -542,7 +535,7 @@ QMCGreensRatioComponent \
       for(int i=0; i<3; i++)
 	{
 	  radialUnitVector(i) = 
-	    (*TrialWalker->QMF.getModifiedGradPsiRatio())(electron,i) - 
+	    TrialWalker->walkerData.modifiedGradPsiRatio(electron,i) - 
 	    zComponentQF * zUnitVector(i);
 
 	  radialComponentQF += radialUnitVector(i)*radialUnitVector(i);
@@ -623,167 +616,50 @@ void QMCWalker::reweight_walker()
 {
   double S_trial;
   double S_original;
+  
+  double trialEnergy = TrialWalker->walkerData.localEnergy;
+  double originalEnergy = OriginalWalker->walkerData.localEnergy;
 
   if( Input->flags.energy_modification_type == "none" )
     {
-      S_trial    = Input->flags.energy_trial - 
-	TrialWalker->QMF.getLocalEnergy();
-      S_original = Input->flags.energy_trial - 
-	OriginalWalker->QMF.getLocalEnergy();
+      S_trial    = Input->flags.energy_trial - trialEnergy;
+      S_original = Input->flags.energy_trial - originalEnergy;
     }
-  else if( Input->flags.energy_modification_type == "modified_umrigar93" )
-    {
-      Array2D<double> * gradTrialModified = 
-	TrialWalker->QMF.getModifiedGradPsiRatio();
-
-      double temp = 0;
-      for(int i=0; i<gradTrialModified->dim1(); i++ )
-	{
-	  for(int j=0; j<gradTrialModified->dim2(); j++)
-	    {
-	      temp += (*gradTrialModified)(i,j) *
-		(*gradTrialModified)(i,j); 
-	    }
-	}
-
-      double lengthGradTrialModified = sqrt(temp);
-
-      Array2D<double> * gradTrialUnmodified = 
-	TrialWalker->QMF.getGradPsiRatio();
-
-      temp = 0;
-      for(int i=0; i<gradTrialUnmodified->dim1(); i++ )
-	{
-	  for(int j=0; j<gradTrialUnmodified->dim2(); j++)
-	    {
-	      temp += (*gradTrialUnmodified)(i,j) *
-		(*gradTrialUnmodified)(i,j); 
-	    }
-	}
-
-      double lengthGradTrialUnmodified = sqrt(temp);
-
-
-      S_trial = (Input->flags.energy_trial - 
-		 TrialWalker->QMF.getLocalEnergy())*
-	(lengthGradTrialModified/lengthGradTrialUnmodified);
-
-
-
-
-      Array2D<double> * gradOriginalModified = 
-	OriginalWalker->QMF.getModifiedGradPsiRatio();
-
-      temp = 0;
-      for(int i=0; i<gradOriginalModified->dim1(); i++ )
-	{
-	  for(int j=0; j<gradOriginalModified->dim2(); j++)
-	    {
-	      temp += (*gradOriginalModified)(i,j) *
-		(*gradOriginalModified)(i,j); 
-	    }
-	}
-
-      double lengthGradOriginalModified = sqrt(temp);
-
-      Array2D<double> * gradOriginalUnmodified = 
-	OriginalWalker->QMF.getGradPsiRatio();
-
-      temp = 0;
-      for(int i=0; i<gradOriginalUnmodified->dim1(); i++ )
-	{
-	  for(int j=0; j<gradOriginalUnmodified->dim2(); j++)
-	    {
-	      temp += (*gradOriginalUnmodified)(i,j) *
-		(*gradOriginalUnmodified)(i,j); 
-	    }
-	}
-
-      double lengthGradOriginalUnmodified = sqrt(temp);
-      
-      S_original = (Input->flags.energy_trial - 
-		    OriginalWalker->QMF.getLocalEnergy()) *
-	(lengthGradOriginalModified/lengthGradOriginalUnmodified);
-    }
-  else if( Input->flags.energy_modification_type == "umrigar93" )
-    {
-      Array2D<double> * gradTrialModified = 
-	TrialWalker->QMF.getModifiedGradPsiRatio();
-
-      double temp = 0;
-      for(int i=0; i<gradTrialModified->dim1(); i++ )
-	{
-	  for(int j=0; j<gradTrialModified->dim2(); j++)
-	    {
-	      temp += (*gradTrialModified)(i,j) *
-		(*gradTrialModified)(i,j); 
-	    }
-	}
-
-      double lengthGradTrialModified = sqrt(temp);
-
-      Array2D<double> * gradTrialUnmodified = 
-	TrialWalker->QMF.getGradPsiRatio();
-
-      temp = 0;
-      for(int i=0; i<gradTrialUnmodified->dim1(); i++ )
-	{
-	  for(int j=0; j<gradTrialUnmodified->dim2(); j++)
-	    {
-	      temp += (*gradTrialUnmodified)(i,j) *
-		(*gradTrialUnmodified)(i,j); 
-	    }
-	}
-
-      double lengthGradTrialUnmodified = sqrt(temp);
-
-
-      S_trial = (Input->flags.energy_trial - Input->flags.energy_estimated) +
-	(Input->flags.energy_estimated - 
-		 TrialWalker->QMF.getLocalEnergy())*
-	(lengthGradTrialModified/lengthGradTrialUnmodified);
-
-
-
-      Array2D<double> * gradOriginalModified = 
-	OriginalWalker->QMF.getModifiedGradPsiRatio();
-
-      temp = 0;
-      for(int i=0; i<gradOriginalModified->dim1(); i++ )
-	{
-	  for(int j=0; j<gradOriginalModified->dim2(); j++)
-	    {
-	      temp += (*gradOriginalModified)(i,j) *
-		(*gradOriginalModified)(i,j); 
-	    }
-	}
-
-      double lengthGradOriginalModified = sqrt(temp);
-
-      Array2D<double> * gradOriginalUnmodified = 
-	OriginalWalker->QMF.getGradPsiRatio();
-
-      temp = 0;
-      for(int i=0; i<gradOriginalUnmodified->dim1(); i++ )
-	{
-	  for(int j=0; j<gradOriginalUnmodified->dim2(); j++)
-	    {
-	      temp += (*gradOriginalUnmodified)(i,j) *
-		(*gradOriginalUnmodified)(i,j); 
-	    }
-	}
-
-      double lengthGradOriginalUnmodified = sqrt(temp);
-      
-      S_original = (Input->flags.energy_trial - Input->flags.energy_estimated)
-	+ (Input->flags.energy_estimated - 
-	   OriginalWalker->QMF.getLocalEnergy()) *
-	(lengthGradOriginalModified/lengthGradOriginalUnmodified);
-    }  
   else
     {
-      cerr << "ERROR: unknown energy modification method!" << endl;
-      exit(0);
+      Array2D<double> * tMGPR = & TrialWalker->walkerData.modifiedGradPsiRatio;
+      Array2D<double> * tGPR = & TrialWalker->walkerData.gradPsiRatio;
+      Array2D<double> * oMGPR = & OriginalWalker->walkerData.modifiedGradPsiRatio;
+      Array2D<double> * oGPR = & OriginalWalker->walkerData.gradPsiRatio;
+      
+      double lengthGradTrialModified = sqrt((*tMGPR).dotAllElectrons(*tMGPR));
+      double lengthGradTrialUnmodified = sqrt((*tGPR).dotAllElectrons(*tGPR));
+      double lengthGradOriginalModified = sqrt((*oMGPR).dotAllElectrons(*oMGPR));
+      double lengthGradOriginalUnmodified = sqrt((*oGPR).dotAllElectrons(*oGPR));
+
+      if( Input->flags.energy_modification_type == "modified_umrigar93" )
+	{
+	  S_trial = (Input->flags.energy_trial - trialEnergy)*
+	    (lengthGradTrialModified/lengthGradTrialUnmodified);
+	  
+	  S_original = (Input->flags.energy_trial - originalEnergy) *
+	    (lengthGradOriginalModified/lengthGradOriginalUnmodified);
+	}
+      else if( Input->flags.energy_modification_type == "umrigar93" )
+	{
+	  S_trial = (Input->flags.energy_trial - Input->flags.energy_estimated) +
+	    (Input->flags.energy_estimated - trialEnergy)*
+	    (lengthGradTrialModified/lengthGradTrialUnmodified);
+	  
+	  S_original = (Input->flags.energy_trial - Input->flags.energy_estimated)
+	    + (Input->flags.energy_estimated - originalEnergy) *
+	    (lengthGradOriginalModified/lengthGradOriginalUnmodified);
+	}  
+      else
+	{
+	  cerr << "ERROR: unknown energy modification method!" << endl;
+	  exit(0);
+	}
     }
 
   // determine the weighting factor dw so that the new weight = Weight*dw
@@ -869,16 +745,11 @@ void QMCWalker::reweight_walker()
   setWeight( getWeight() * dW );
 }
 
-void QMCWalker::evaluate()
-{
-  QMF.evaluate(R);
-}
-
 void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
 {
   // This tells us the probability of accepting or rejecting a proposed move
 
-  double PsiRatio = TrialWalker->QMF.getPsi()/OriginalWalker->QMF.getPsi();
+  double PsiRatio = TrialWalker->walkerData.psi/OriginalWalker->walkerData.psi;
 
   // increase the probability of accepting a move if the walker has not
   // moved in a long time
@@ -979,38 +850,42 @@ void QMCWalker::createChildWalkers()
 void QMCWalker::initialize(QMCInput *INPUT)
 {
   Input = INPUT;
-  QMF.initialize(Input);
+  walkerData.gradPsiRatio.allocate(Input->WF.getNumberElectrons(),3);
+  walkerData.modifiedGradPsiRatio.allocate(Input->WF.getNumberElectrons(),3);
+  walkerData.localEnergy     = 0.0;
+  walkerData.kineticEnergy   = 0.0;
+  walkerData.potentialEnergy = 0.0;
+  walkerData.psi             = 0.0;
+  walkerData.configOutput    = new stringstream();
+  if (Input->flags.calculate_bf_density == 1)
+    walkerData.chiDensity.allocate(Input->WF.getNumberBasisFunctions());
 
- //initialize acceptance probability
+  //initialize acceptance probability
   AcceptanceProbability = 0.0; 
 
   // Make current position in 3N space
   // N by 3 matrix, R[which electron][x,y, or z]
   R.allocate(Input->WF.getNumberElectrons(),3); 
-
-  if (Input->flags.calculate_bf_density == 1)
-    Chi_Density.allocate(Input->WF.getNumberBasisFunctions());
 }
 
 void QMCWalker::writeCorrelatedSamplingConfiguration(ostream& strm)
 {
-   strm << "&" << endl;
-   int R_moved=R.dim1();
+  strm << "&" << endl;
+  int R_moved=R.dim1();
 
-   strm << "R\t" << R_moved << endl;
-   for(int i=0;i<R_moved;i++)
-     {
-       //now we are printing out all the electrons 
+  strm << "R\t" << R_moved << endl;
+  for(int i=0;i<R_moved;i++)
+    {
+      //now we are printing out all the electrons 
 
-       strm << "\t" << i << "\t";
-       strm << R(i,0) << "\t";
-       strm << R(i,1) << "\t";
-       strm << R(i,2) << endl;
-     }
+      strm << "\t" << i << "\t";
+      strm << R(i,0) << "\t";
+      strm << R(i,1) << "\t";
+      strm << R(i,2) << endl;
+    }
 
-   QMF.writeCorrelatedSamplingConfiguration(strm);
+  strm << (*walkerData.configOutput).str();
 }
-
 
 void QMCWalker::toXML(ostream& strm)
 {
@@ -1028,7 +903,7 @@ void QMCWalker::toXML(ostream& strm)
   strm << "\t</Position>" << endl;
   strm << "\t<Weight>\n\t\t" << getWeight() << "\n\t</Weight>" << endl;
   strm << "\t<Age>\n\t\t" << getAge() << "\n\t</Age>" << endl;
-  strm << "\t<Elocal> \n\t\t" << QMF.getLocalEnergy() 
+  strm << "\t<Elocal> \n\t\t" << walkerData.psi 
        << "\n\t</Elocal>" <<endl;
   strm << "</QMCWalker>\n" << endl;
 }
@@ -1064,7 +939,9 @@ void QMCWalker::readXML(istream& strm)
   // Read the energy and don't save it
   strm >> temp >> temp >> temp >> temp >> temp;
 
-  evaluate();
+  QMCFunctions QMF;
+  QMF.initialize(Input);
+  QMF.evaluate(R,walkerData);
 }
 
 void QMCWalker::initializeWalkerPosition()
@@ -1072,9 +949,11 @@ void QMCWalker::initializeWalkerPosition()
   QMCInitializeWalker * IW = 
     QMCInitializeWalkerFactory::initializeWalkerFactory(Input,
 				   Input->flags.walker_initialization_method);
+  QMCFunctions QMF;
+  QMF.initialize(Input);
 
   R = IW->initializeWalkerPosition();
-  evaluate();
+  QMF.evaluate(R,walkerData);
 
   int initilization_try = 1;
   while( isSingular() )
@@ -1089,7 +968,7 @@ void QMCWalker::initializeWalkerPosition()
 	}
 
       R = IW->initializeWalkerPosition();
-      evaluate();
+      QMF.evaluate(R,walkerData);
       initilization_try++;
     }
 
@@ -1140,16 +1019,16 @@ void QMCWalker::calculateObservables()
     }
 
   // Calculate the Energy ...
-  localEnergy = p * TrialWalker->QMF.getLocalEnergy() + 
-    q * OriginalWalker->QMF.getLocalEnergy();
+  localEnergy = p * TrialWalker->walkerData.localEnergy + 
+    q * OriginalWalker->walkerData.localEnergy;
 
   // Calculate the kinetic energy...
-  kineticEnergy = p * TrialWalker->QMF.getKineticEnergy() +
-    q * OriginalWalker->QMF.getKineticEnergy();
+  kineticEnergy = p * TrialWalker->walkerData.kineticEnergy +
+    q * OriginalWalker->walkerData.kineticEnergy;
 
   // Calculate the potential energy
-  potentialEnergy = p * TrialWalker->QMF.getPotentialEnergy() +
-    q * OriginalWalker->QMF.getPotentialEnergy();
+  potentialEnergy = p * TrialWalker->walkerData.potentialEnergy +
+    q * OriginalWalker->walkerData.potentialEnergy;
 
   // Calculate the acceptance probability
   AcceptanceProbability = p;
@@ -1160,10 +1039,10 @@ void QMCWalker::calculateObservables()
 
   if (Input->flags.calculate_bf_density == 1)
     {
-      Array1D<double> trial_temp = *(TrialWalker->QMF.getChiDensity());
-      Array1D<double> orig_temp = *(OriginalWalker->QMF.getChiDensity());
       for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
-	Chi_Density(i) = p * trial_temp(i) + q * orig_temp(i);
+	walkerData.chiDensity(i) = 
+	  p * TrialWalker->walkerData.chiDensity(i) + 
+	  q * OriginalWalker->walkerData.chiDensity(i);
     }
 }
 
@@ -1197,12 +1076,12 @@ void QMCWalker::calculateObservables( QMCProperties & props )
   // Calculate the basis function densities
   if (Input->flags.calculate_bf_density == 1)
     for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
-      props.chiDensity(i).newSample( Chi_Density(i), getWeight() );
+      props.chiDensity(i).newSample( walkerData.chiDensity(i), getWeight() );
 }
 
 bool QMCWalker::isSingular()
 {
-  return QMF.isSingular();
+  return walkerData.isSingular;
 }
 
 

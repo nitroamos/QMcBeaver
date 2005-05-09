@@ -17,13 +17,48 @@ QMCRun::QMCRun()
   populationSizeBiasCorrectionFactor = 1.0;
 }
 
-void QMCRun::propagateWalkers()
+void QMCRun::propagateWalkers(bool writeConfigs)
 {
+  int count = 0;
+  int index = 0;
   // Propagate all of the walkers
+  Array1D<QMCWalkerData *> dataPointers = 0;
+  Array1D<Array2D<double> * > rPointers = 0;
+  dataPointers.allocate(WALKERS_PER_PASS);
+  rPointers.allocate(WALKERS_PER_PASS);
 
+  /*The point here is to collect WALKERS_PER_PASS amount of walkers
+    to process at once. Once we have that many (or the last remaining), we finally run
+    QMF.evaluate which fills up the dataPointers data structure with values.
+    The actual data for dataPointers is stored in each walker, so initializePropagation
+    asks for a pointer to it. The collection of pointers is then passed around to
+    everybody.
+
+    The advantage to filling the array dynamically is that we don't have to worry
+    about branching -- walkers being deleted and created.
+  */
   for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
     {
-      wp->propagateWalker(); 
+      wp->initializePropagation(dataPointers(index),rPointers(index));
+      count++;
+      index = count%WALKERS_PER_PASS;
+      if(index == 0 || count == (int)(wlist.size()))
+	{
+	  QMF.evaluate(dataPointers, rPointers,
+		       index==0?WALKERS_PER_PASS:index, writeConfigs);
+	}
+      
+    }
+  
+  /*At this point, all of the dataPointers have been filled, so we
+    can tell each walker to finish processing each move. Note this will
+    give different answers than before (when all processing was done before
+    the next walker was evaluated) because random numbers are drawn in a
+    different order.
+   */
+  for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
+    {
+      wp->processPropagation();
     }
 }
 
@@ -71,6 +106,7 @@ void QMCRun::zeroOut()
 void QMCRun::initialize(QMCInput *INPUT)
 {
   Input = INPUT;
+  QMF.initialize(Input); 
 
   if (Input->flags.calculate_bf_density == 1)
     {
@@ -173,6 +209,14 @@ void QMCRun::calculateObservables()
     }
 }
 
+void QMCRun::writeCorrelatedSamplingConfigurations(ostream& strm)  
+{
+  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
+    {
+      wp->writeCorrelatedSamplingConfiguration(strm);
+    }
+}
+
 void QMCRun::writeEnergies(ostream& strm)
 {
   // Get the energy calculated in each walker and write out
@@ -180,14 +224,6 @@ void QMCRun::writeEnergies(ostream& strm)
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
     {
       strm << wp->getLocalEnergyEstimator() << endl;
-    }
-}
-
-void QMCRun::writeCorrelatedSamplingConfigurations(ostream& strm)  
-{
-  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
-    {
-      wp->writeCorrelatedSamplingConfiguration(strm);
     }
 }
 
@@ -447,9 +483,9 @@ int QMCRun::getNumberOfWalkers()
   return (int)wlist.size();
 }
 
-void QMCRun::step()
+void QMCRun::step(bool writeConfigs)
 {
-  propagateWalkers();
+  propagateWalkers(writeConfigs);
   calculatePopulationSizeBiasCorrectionFactor();
   calculateObservables();
   branchWalkers();

@@ -54,6 +54,7 @@ double gasdev(long *idum)
 
 double ran1(long *idum)
 {
+  /*notice that the use of static variables means it has a MEMORY!!!*/
   int j;
   long k;
   static long iy=0;

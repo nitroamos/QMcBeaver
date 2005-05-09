@@ -350,15 +350,17 @@ void QMCManager::run()
            else localTimers.getPropagationStopwatch()->start();
 	 }
 
-       QMCnode.step();
-
+       bool writeConfigs = !equilibrating && 
+	 ( Input.flags.optimize_Psi || Input.flags.print_configs == 1 ) &&
+	 iteration%Input.flags.print_config_frequency == 0;
+       
+       QMCnode.step(writeConfigs);
+	
        updateEstimatedEnergy();
        updateTrialEnergy();
        updateEffectiveTimeStep();
 
-       if( !equilibrating && 
-	   ( Input.flags.optimize_Psi || Input.flags.print_configs == 1 ) &&
-	                    iteration%Input.flags.print_config_frequency == 0 )
+       if( writeConfigs )
 	 {
 	   QMCnode.writeCorrelatedSamplingConfigurations(*config_strm_out); 
 	 }	 

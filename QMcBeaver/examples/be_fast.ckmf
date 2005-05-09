@@ -52,7 +52,7 @@ dt
 dt_equilibration
  1.000000000000000e-02
 max_time_steps
- 20000
+ 1000
 equilibration_steps
  100
 equilibration_function
@@ -64,9 +64,9 @@ number_of_walkers
  10
 
 output_interval
- 1000
+ 100
 mpireduce_interval
- 1000
+ 100
 
 desired_convergence
  0.00
@@ -74,7 +74,7 @@ desired_convergence
 checkpoint
  0
 checkpoint_interval
- 1000
+ 100
 use_available_checkpoints
  0
 zero_out_checkpoint_statistics

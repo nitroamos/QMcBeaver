@@ -44,7 +44,7 @@ max_time_steps
 dt_equilibration
  2.000000000000000e-03
 equilibration_steps
- 15000
+ 20000
 equilibration_function
  ramp
 CKAnnealingEquilibration1_parameter
@@ -52,17 +52,17 @@ CKAnnealingEquilibration1_parameter
 use_equilibration_array
  0
 number_of_walkers
- 10
+ 100
 output_interval
- 1000
+ 2000
 mpireduce_interval
- 1000
+ 2000
 mpipoll_interval
  1
 checkpoint_interval
  1000
 checkpoint
- 1
+ 0
 use_available_checkpoints
  0
 atoms
@@ -88,7 +88,7 @@ print_configs
 print_config_frequency
  50
 optimize_Psi
- 1
+ 0
 max_optimize_Psi_steps
  10
 optimize_Psi_criteria

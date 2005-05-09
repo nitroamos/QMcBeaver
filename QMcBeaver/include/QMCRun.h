@@ -51,7 +51,7 @@ class QMCRun
   /**
     Propagate the QMC calculation one time step forward.
   */
-  void step();
+  void step(bool writeConfigs);
 
   /**
     Gets the statistics for the properties that have been calculated.
@@ -140,6 +140,8 @@ private:
   */
   list<QMCWalker> wlist;
 
+  QMCFunctions QMF;
+
   /**
     The array of Decorrelation objects for this group of walkers.
   */
@@ -180,7 +182,7 @@ private:
   /**
     Proposes trial walker moves and accepts or rejects them.
   */
-  void propagateWalkers();
+  void propagateWalkers(bool writeConfigs);
 
   /**
     Creates and destroys walkers based on their weights.

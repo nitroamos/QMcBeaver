@@ -2,7 +2,7 @@
 run_type
  variational
 temp_dir
- /scratch1/amosa/
+ /temp1/
 parallelization_method
  manager_worker
 walker_initialization_method

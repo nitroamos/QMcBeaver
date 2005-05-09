@@ -54,8 +54,7 @@ void QMCSlater::operator=(const QMCSlater & rhs )
   // dealing with when const was used.  In the simplest format this would be
   // allocate( rhs.D.dim1() );
   D = rhs.D;
-  int size = D(0).dim1();
-  allocate( size );
+  allocate( Stop-Start+1 );
 }
 
 void QMCSlater::initialize
@@ -64,75 +63,117 @@ void QMCSlater::initialize
   Input = INPUT;
   BF = &Input->BF;
   WF = &Input->WF;
-  
-  Singular = false;
-  
+    
   setStartAndStopElectronPositions(startEl, stopEl); 
   occupation = occ;
+
+  for(int i=0; i<Singular.dim1(); i++)
+    Singular(i) = false;
+
+  int orbital_index;
+  int numRows;
+  int numOrbs = WF->getNumberOrbitals();
+  for(int i=0; i<WF->getNumberDeterminants(); i++)
+    {
+      numRows = 0;
+      orbital_index = 0;
+      for(int j=0; j<=numOrbs; j++)
+	{
+	  if (j<numOrbs && occupation(i,j) == 1)
+	    {
+	      numRows++;
+	      orbital_index++;
+	    } else {
+	      if(numRows != 0)
+		{
+		  WF_coeffs(i).setRows(orbital_index-numRows,j-numRows,numRows,WF->Coeffs);
+		  numRows = 0;
+		}
+	      if (orbital_index == D(0,i).dim2()) break;
+	    }
+	}
+    }
 }
 
 void QMCSlater::allocate(int N)
 {
-  int ndet = WF->getNumberDeterminants();
-  
-  D.allocate(ndet);
-  D_inv.allocate(ndet);
-  Laplacian_D.allocate(ndet);
-  Grad_D.allocate(ndet,3);
-  
-  for (int i=0; i<ndet; i++)
-    {
-      D(i).allocate(N,N);
-      D_inv(i).allocate(N,N);
-      Laplacian_D(i).allocate(N,N);
-      for(int j=0; j<3; j++)
-	Grad_D(i,j).allocate(N,N);
-    }
-  
-  Singular.allocate(ndet);
-  
-  occupation.allocate(ndet,WF->getNumberOrbitals());
-  
-  Psi.allocate(ndet);
-  Laplacian_PsiRatio.allocate(ndet);
-  Grad_PsiRatio.allocate(ndet,N,3);
-  
+  int ndet = WF->getNumberDeterminants();  
   int nbasisfunc = WF->getNumberBasisFunctions();
+
+  D.allocate(WALKERS_PER_PASS,ndet);
+  D_inv.allocate(WALKERS_PER_PASS,ndet);
+  Laplacian_D.allocate(WALKERS_PER_PASS,ndet);
+  Grad_D.allocate(WALKERS_PER_PASS,ndet,3);
+
+  Singular.allocate(WALKERS_PER_PASS);      
+  Psi.allocate(WALKERS_PER_PASS);
+  Laplacian_PsiRatio.allocate(WALKERS_PER_PASS);
+  Grad_PsiRatio.allocate(WALKERS_PER_PASS);
+  
+  if (Input->flags.calculate_bf_density == 1)
+    Chi_Density.allocate(WALKERS_PER_PASS);
+
+  for(int j=0; j<WALKERS_PER_PASS; j++)
+    {      
+      for (int i=0; i<ndet; i++)
+	{
+	  D(j,i).allocate(N,N);
+	  D_inv(j,i).allocate(N,N);
+	  Laplacian_D(j,i).allocate(N,N);
+	  for(int k=0; k<3; k++)
+	    Grad_D(j,i,k).allocate(N,N);
+	}
+      
+      Singular(j).allocate(ndet);
+      Psi(j).allocate(ndet);
+      Laplacian_PsiRatio(j).allocate(ndet);
+      Grad_PsiRatio(j).allocate(ndet,N,3);
+      if (Input->flags.calculate_bf_density == 1)
+	Chi_Density(j).allocate(nbasisfunc);      
+    }
+
+  WF_coeffs.allocate(ndet);
+  for(int i=0; i<ndet; i++)
+    WF_coeffs(i).allocate(N,nbasisfunc);
+
+  occupation.allocate(ndet,WF->getNumberOrbitals());
   
   Chi.allocate(N,nbasisfunc);
   Chi_laplacian.allocate(N,nbasisfunc);
   Chi_gradient.allocate(3);
   for(int j=0; j<3; j++)
     Chi_gradient(j).allocate(N,nbasisfunc);
-
-  if (Input->flags.calculate_bf_density == 1)
-    Chi_Density.allocate(nbasisfunc);
-  
-  WF_coeffs.allocate(N,nbasisfunc);
 }
 
 QMCSlater::~QMCSlater()
 {
-  for (int i=0; i<WF->getNumberDeterminants(); i++)
-    {
-      D(i).deallocate();
-      D_inv(i).deallocate();
-      Laplacian_D(i).deallocate();
-      for (int j=0; j<3; j++)
-        Grad_D(i,j).deallocate();
-    }
+  for(int j=0; j < WALKERS_PER_PASS; j++){
+    for (int i=0; i<WF->getNumberDeterminants(); i++)
+      {
+	D(j,i).deallocate();
+	D_inv(j,i).deallocate();
+	Laplacian_D(j,i).deallocate();
+	for (int k=0; k<3; k++)
+	  Grad_D(j,i,k).deallocate();
+      }
+    Singular(j).deallocate();
+    Psi(j).deallocate();
+    Laplacian_PsiRatio(j).deallocate();
+    Grad_PsiRatio(j).deallocate();    
+    if (Input->flags.calculate_bf_density == 1)
+      Chi_Density(j).deallocate();
+  }
 
   D.deallocate();
   D_inv.deallocate();
   Laplacian_D.deallocate();
   Grad_D.deallocate();
-
   Singular.deallocate();
-  occupation.deallocate();
-
   Psi.deallocate();
   Laplacian_PsiRatio.deallocate();
-  Grad_PsiRatio.deallocate();
+  Grad_PsiRatio.deallocate();    
+  
+  occupation.deallocate();
 
   if (Input->flags.calculate_bf_density == 1)
     Chi_Density.deallocate();
@@ -154,30 +195,33 @@ void QMCSlater::setStartAndStopElectronPositions(int StartEl, int StopEl)
   allocate(StopEl-StartEl+1);
 }
 
-void QMCSlater::evaluate(Array2D<double> &X)
+void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num)
 {
-  update_Ds(X);
+  update_Ds(X, num);
   
-  update_D_inverse_and_Psi();
+  update_D_inverse_and_Psi(num);
   
-  if( !isSingular() )
-    {
-      calculate_DerivativeRatios();
-    }
+  for(int i=0; i<num; i++){
+    if( !isSingular(i) )
+      {
+	calculate_DerivativeRatios(i);
+      }
+  }
 }
 
-void QMCSlater::update_D_inverse_and_Psi()
+void QMCSlater::update_D_inverse_and_Psi(int num)
 {
   // The LU Decomposition inverse used here is O(1*N^3)
   // Updating one electron at a time is O(2*N^3-N^2)
   
   bool calcOK = true;
   
-  for (int i=0; i<WF->getNumberDeterminants(); i++)
-    {
-      determinant_and_inverse(D(i),D_inv(i),Psi(i),&calcOK);
-      Singular(i) = !calcOK;
-    }
+  for(int j=0; j<num; j++)
+    for (int i=0; i<WF->getNumberDeterminants(); i++)
+      {
+	determinant_and_inverse(D(j,i),D_inv(j,i),(Psi(j))(i),&calcOK);
+	(Singular(j))(i) = !calcOK;
+      }
 }
 
 /**
@@ -194,49 +238,35 @@ void QMCSlater::update_D_inverse_and_Psi()
    Note: the coefficient matricies are transposed. hand-coded matrix multiplication is faster
    with a transposed matrix, and it enables the use of memcpy for Array2D's row-major data.
 */
-void QMCSlater::update_Ds(Array2D<double> &X){
-  int numOrbs;
-  BF->evaluateBasisFunctions(X,Start,Stop,
-			     Chi,
-			     Chi_gradient(0),
-			     Chi_gradient(1),
-			     Chi_gradient(2),
-			     Chi_laplacian);
-
-  if (Input->flags.calculate_bf_density == 1)
+void QMCSlater::update_Ds(Array1D<Array2D<double>*> &X, int num)
+{
+  for(int walker = 0; walker < num; walker++)
     {
-      Chi_Density = 0.0;
-      for (int i=0; i<WF->getNumberBasisFunctions(); i++)
-        for (int j=0; j<D(0).dim1(); j++)
-          {
-            Chi_Density(i) += Chi(j,i);
-          }
-    }
-  
-  for(int i=0; i<WF->getNumberDeterminants(); i++){
-    
-    int orbital_index = 0;
-    int numRows = 0;
-    numOrbs = WF->getNumberOrbitals();
-    for(int j=0; j<=numOrbs; j++){
-      if (j<numOrbs && occupation(i,j) == 1){
-	numRows++;
-	orbital_index++;
-      } else {
-	if(numRows != 0){
-	  WF_coeffs.setRows(orbital_index-numRows,j-numRows,numRows,WF->Coeffs);
-	  numRows = 0;
+      BF->evaluateBasisFunctions(*X(walker),Start,Stop,
+				 Chi,
+				 Chi_gradient(0),
+				 Chi_gradient(1),
+				 Chi_gradient(2),
+				 Chi_laplacian);
+      for(int i=0; i<WF->getNumberDeterminants(); i++)
+	{      
+	  D(walker,i)           = Chi * WF_coeffs(i);
+	  Laplacian_D(walker,i) = Chi_laplacian * WF_coeffs(i);
+	  Grad_D(walker,i,0)    = Chi_gradient(0) * WF_coeffs(i);
+	  Grad_D(walker,i,1)    = Chi_gradient(1) * WF_coeffs(i);
+	  Grad_D(walker,i,2)    = Chi_gradient(2) * WF_coeffs(i);
 	}
-	if (orbital_index == D(i).dim2()) break;
-      }
+
+      if (Input->flags.calculate_bf_density == 1)
+	{
+	  Chi_Density(walker) = 0.0;
+	  for (int i=0; i<WF->getNumberBasisFunctions(); i++)
+	    for (int j=0; j<D(0,0).dim1(); j++)
+	      {
+		(Chi_Density(walker))(i) += Chi(j,i);
+	      }
+	} 
     }
-    
-    D(i)           = Chi * WF_coeffs;
-    Laplacian_D(i) = Chi_laplacian * WF_coeffs;
-    Grad_D(i,0)    = Chi_gradient(0) * WF_coeffs;
-    Grad_D(i,1)    = Chi_gradient(1) * WF_coeffs;
-    Grad_D(i,2)    = Chi_gradient(2) * WF_coeffs;
-  }
 }
 
 /**
@@ -248,48 +278,49 @@ void QMCSlater::update_Ds(Array2D<double> &X){
    At this time, D_inv and Grad_D and Laplacian_D are all qmcfloat type. The explicit typecast
    when creating the final result (double) should emphasize this.
 */
-void QMCSlater::calculate_DerivativeRatios()
+void QMCSlater::calculate_DerivativeRatios(int k)
 {
-  int numElectrons = (D(0)).dim1();
+  int numElectrons = (D(0,0)).dim1();
   for(int i=0; i<WF->getNumberDeterminants(); i++)
     {
-      double** grad_psiratioArray = Grad_PsiRatio.array()[i];
+      double** grad_psiratioArray = Grad_PsiRatio(k).array()[i];
       
-      Laplacian_PsiRatio(i) = (double)((Laplacian_D(i)).dotAllElectrons(D_inv(i)));
+      (Laplacian_PsiRatio(k))(i) = (double)((Laplacian_D(k,i)).dotAllElectrons(D_inv(k,i)));
       
-      for(int j=0; j<numElectrons; j++){
-	grad_psiratioArray[j][0] = (double)((Grad_D(i,0)).dotOneElectron(D_inv(i),j));
-	grad_psiratioArray[j][1] = (double)((Grad_D(i,1)).dotOneElectron(D_inv(i),j));
-	grad_psiratioArray[j][2] = (double)((Grad_D(i,2)).dotOneElectron(D_inv(i),j));
-      }
+      for(int j=0; j<numElectrons; j++)
+	{
+	  grad_psiratioArray[j][0] = (double)((Grad_D(k,i,0)).dotOneElectron(D_inv(k,i),j));
+	  grad_psiratioArray[j][1] = (double)((Grad_D(k,i,1)).dotOneElectron(D_inv(k,i),j));
+	  grad_psiratioArray[j][2] = (double)((Grad_D(k,i,2)).dotOneElectron(D_inv(k,i),j));
+	}
     }
 }
 
-Array1D<double>* QMCSlater::getPsi()
+Array1D<double>* QMCSlater::getPsi(int i)
 {
-  return &Psi;
+  return &Psi(i);
 }
 
-Array1D<double>* QMCSlater::getLaplacianPsiRatio()
+Array1D<double>* QMCSlater::getLaplacianPsiRatio(int i)
 {
-  return &Laplacian_PsiRatio;
+  return &Laplacian_PsiRatio(i);
 }
 
-Array3D<double>* QMCSlater::getGradPsiRatio()
+Array3D<double>* QMCSlater::getGradPsiRatio(int i)
 {
-  return &Grad_PsiRatio;
+  return &Grad_PsiRatio(i);
 }
 
-Array1D<double>* QMCSlater::getChiDensity()
+Array1D<double>* QMCSlater::getChiDensity(int i)
 {
-  return &Chi_Density;
+  return &Chi_Density(i);
 }
 
-bool QMCSlater::isSingular()
+bool QMCSlater::isSingular(int j)
 {
   for (int i=0; i<WF->getNumberDeterminants(); i++)
     {
-      if (Singular(i)) return true;
+      if (Singular(j)(i)) return true;
     }
   return false;
 }
