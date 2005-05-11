@@ -1,9 +1,16 @@
-Mon, 9 May 2005, Amos Anderson
+Tue, 10 May 2005, Amos Anderson
 1. Committed my code for a streaming version of QMCFunction with all necessary correlary changes.
    This modification actually makes the code a little bit faster -- more so with more walkers.
    This also adds a new macro WALKERS_PER_PASS.
 
 2. I added some QMcBeaver compiling discussion to beaver.tex. I also cleared up some citations.
+
+3. I replaced QMcPlot1.py and QMcPlot2.py with PlotQMc1.py and PlotQMc2.py so the first couple
+   characters is not the same as the executables.
+
+4. Made a couple minor changes to the make system. configure.py will accept a TAG argument, necessary
+   for 'make updateall', which performs a batch build for all exec's sharing the TAG. I chose this
+   instead of the compiler name because many different processors have GCC.
 
 Mon, 2 Apr 2005, Chip Kent
 
