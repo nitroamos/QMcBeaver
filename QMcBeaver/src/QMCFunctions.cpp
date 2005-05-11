@@ -11,7 +11,6 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCFunctions.h"
-#define TOOSMALL 1e-306
 
 QMCFunctions::QMCFunctions()
 {

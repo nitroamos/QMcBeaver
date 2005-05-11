@@ -288,7 +288,7 @@ class CompilerSgiIrix(Compiler):
 class CompilerTru64(Compiler):
     def __init__(self,optimize,debug,profile):
         self.CXX = 'cxx'
-        self.FLAGS = '-ieee'
+        self.FLAGS = '-ieee -D__USE_STD_IOSTREAM'
         self.INCLUDE = ''
         self.DEPENDENCY = '-M'
 
@@ -388,6 +388,7 @@ optionalarguments = {
     '--profile' : 'self.profile = 1',
     '--noprofile' : 'self.profile = 0',
     '--atlas': 'self.atlas = 1',
+    '--float': 'self.float = 1',
     }    
 
 #########################
@@ -400,6 +401,7 @@ class CommandLineArgs:
         self.profile = 0
         self.parallel = 0
         self.atlas = 0
+        self.float = 0
         self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).x'
         self.MAKE = self._getMake()
 
@@ -412,8 +414,8 @@ class CommandLineArgs:
         if len(sys.argv) > 2 and sys.argv[2][0:2] != "--":
             self.MPI = sys.argv[2]
         else:
-            self.printHelp()
-            sys.exit(0)
+            self.MPI = 'None'
+            sys.argv.insert(2,'None')
 
         if self.COMPILER == 'MPICC':
             self.MPI = 'MPICH'
@@ -490,6 +492,8 @@ class CommandLineArgs:
             extra.append("debug")
         if self.profile:
             extra.append("profile")
+        if self.float:
+            extra.append("float")
 
         return '_'.join(extra)
 
@@ -522,9 +526,10 @@ class MakeConfigBuilder:
         text += 'INCLUDE = ' + self.INCLUDE + " " + self._mpi.INCLUDE + '\n'
         text += 'FLAGS = ' + self._compiler.FLAGS + self._mpi.FLAGS
         if self._inputs.atlas:
-            text += ' -DUSEATLAS \n'
-        else:
-            text += '\n'
+            text += ' -DUSEATLAS '
+        if self._inputs.float:
+            text += ' -DSINGLEPRECISION'
+        text += '\n'
 	text += 'DIROBJ = obj_$(LABEL)\n'
 	text += 'MAKE = ' + self._inputs.MAKE + '\n'
         text += 'EXE = ' + self._inputs.EXE + '\n'

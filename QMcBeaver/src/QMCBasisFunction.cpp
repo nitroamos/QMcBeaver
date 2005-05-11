@@ -32,7 +32,6 @@ for more details.
 
 
 #include "QMCBasisFunction.h"
-#define TOOSMALL 1e-300
 
 QMCBasisFunction::QMCBasisFunction()
 {
@@ -289,6 +288,8 @@ evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
 		       Array2D<qmcfloat>& chi_grz,
 		       Array2D<qmcfloat>& chi_laplacian)
 {
+  //This line helps prevent some floating point errors
+  const double TOOSMALL = 1e-306;
   int el = 0;
   int a, b, c, nGaussians;
   int numBF;
@@ -343,6 +344,7 @@ evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
 				- (4.0*(a+b+c)+6.0-4.0*r_sq*p0)*p0)*exp_term;
 		}
 
+	      //This block could safely be commented out for most compilers
 	      if(chi > 0 && chi < TOOSMALL) chi = TOOSMALL;
 	      if(chi < 0 && chi > -1.0*TOOSMALL) chi = -1.0*TOOSMALL;
 	      if(chi_gradx > 0 && chi_gradx < TOOSMALL) chi_gradx = TOOSMALL;

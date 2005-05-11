@@ -76,7 +76,7 @@ execlean:
 
 .PHONY:testclean
 testclean: 
-	-cd test; $(MAKE) clean
+	@cd test; $(MAKE) clean
 
 cleanall: clean execlean testclean 
 	rm -rf src/obj_*
