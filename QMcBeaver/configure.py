@@ -402,6 +402,7 @@ class CommandLineArgs:
         self.parallel = 0
         self.atlas = 0
         self.float = 0
+        self.TAG = ''
         self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).x'
         self.MAKE = self._getMake()
 
@@ -424,9 +425,14 @@ class CommandLineArgs:
             self.parallel = 1
         
         for arg in sys.argv[3:]:
-            self._testArgValidity(arg)
-            exec optionalarguments[arg]
-
+            if arg[0:2] == "--":
+                self._testArgValidity(arg)
+                exec optionalarguments[arg]
+            else:
+                if self.TAG == '':
+                    self.TAG = '_'
+                self.TAG += arg;
+                
         self._testInputValidity()
 
         self.LABEL = self._getLabel()
@@ -451,6 +457,7 @@ class CommandLineArgs:
         optArgKeys.sort()
         for arg in optArgKeys:
             print '\t', arg
+        print 'Any Optional Arguments without the -- will be treated as a tag\n'
 
     def _getMake(self):
         paths = os.environ['PATH'].split(":")
@@ -482,18 +489,19 @@ class CommandLineArgs:
 
         extra = [self.COMPILER]
 
-        if self.parallel:
-            extra.append("parallel")
-        if self.atlas:
-            extra.append("atlas")
+        #the order here should facilitate selecting the exe via tabs
         if self.optimize:
             extra.append("optimize")
-        if self.debug:
-            extra.append("debug")
+        if self.atlas:
+            extra.append("atlas")
+        if self.parallel:
+            extra.append("parallel")
         if self.profile:
             extra.append("profile")
         if self.float:
             extra.append("float")
+        if self.debug:
+            extra.append("debug")
 
         return '_'.join(extra)
 
@@ -519,8 +527,9 @@ class MakeConfigBuilder:
         text += '# edit the script to generate your configuration, \n'
         text += '# or edit Makefile.config for your configuration \n'
         text += '\n'
+        text += 'TAG = ' + self._inputs.TAG + '\n'
         text += 'COMPILER = ' + self._compiler.CXX + '\n'
-        text += 'LABEL = ' + self._inputs.LABEL + '\n'
+        text += 'LABEL = ' + self._inputs.LABEL + self._inputs.TAG + '\n'
         text += 'VERSION = ' + self.VERSION + '\n'
         text += 'HOME = ' + self.HOME + '\n'
         text += 'INCLUDE = ' + self.INCLUDE + " " + self._mpi.INCLUDE + '\n'

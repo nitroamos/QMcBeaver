@@ -70,7 +70,7 @@ endif
 
 else
 
-DIRSET := $(wildcard *_$(LABEL))
+DIRSET := $(wildcard *$(TAG))
 include $(addsuffix /Makefile.dep, $(DIRSET))
 
 endif

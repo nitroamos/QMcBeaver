@@ -55,7 +55,7 @@ src/$(DIROBJ)/Makefile.dep:
 #changed.
 .PHONY:updateall
 updateall:
-	@echo "Updating all $(SYS) executables..."
+	@echo "Updating all TAG=$(TAG) executables..."
 	@-cd src; $(MAKE) updateall
 
 test: all
@@ -78,7 +78,8 @@ execlean:
 testclean: 
 	@cd test; $(MAKE) clean
 
-cleanall: clean execlean testclean 
+cleanall: clean testclean 
 	rm -rf src/obj_*
+	rm -rf bin/QMcBeaver.*
 
 
