@@ -588,10 +588,12 @@ def __getMostRecentCVSDateLocalDirectory(directory):
                 date = string.split(date)
                 
                 if len(date) > 1:
-                    day   = string.atoi(date[2])
-                    month = date[1]
-                    year  = string.atoi(date[4])
-
+		    try:
+                    	day   = string.atoi(date[2])
+		    	month = date[1]
+                    	year  = string.atoi(date[4])
+		    except ValueError:			
+			break
                     if month == 'Jan': month = 1
                     elif month == 'Feb': month = 2
                     elif month == 'Mar': month = 3
