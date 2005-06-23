@@ -62,10 +62,9 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
   Array2D<int> ab_count(natoms,3);
   ab_count = assign_electrons_to_nuclei();
 
-  // Redistribute electrons if there are charged centers or if there are more
-  // than 5 of one type around a center with Z <= 10.
+  // Redistribute electrons if there are charged centers.
 
-  int needed_e, extra_e, temp_na, temp_nb;
+  int extra_e, temp_na, temp_nb;
 
   for (int i=0; i<natoms; i++)
     if (Input->Molecule.Z(i) < ab_count(i,0))  // If the center is negative.
@@ -110,14 +109,13 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 			break;
 		      }
 		    else if (ab_count(k,1) > ab_count(k,2)) // if na>nb on +
-		      // find a neutral center where nb>na, and trade an alpha
-		      // from - for a beta for +.
+		      // find a center where nb>na, and trade an alpha from - 
+                      // for a beta for +.
 		      {
 		        for (int l=0; l<natoms; l++) 
-			  if (Input->Molecule.Z(l) == ab_count(l,0) &&
-			                        ab_count(l,1) < ab_count(l,2))
-			    {  
-			      ab_count(i,0) -= 1;
+			  if (ab_count(l,1) < ab_count(l,2))
+			    { 
+ 			      ab_count(i,0) -= 1;
 			      ab_count(i,1) -= 1;
 			      ab_count(l,1) += 1;
 			      ab_count(l,2) -= 1;
@@ -129,7 +127,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 		        break;
 		      }
 		  }
-		else if (temp_na < temp_nb)  // if nb>na on -
+		else if (temp_na < temp_nb) // if nb>na on -
 		  {
 		    if (ab_count(k,1) >= ab_count(k,2)) // and na>=nb on +
 		      {  // transfer a beta
@@ -141,12 +139,11 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 			break;
 		      }
 		    else if (ab_count(k,1) < ab_count(k,2)) // if nb>na on +
-		      // find a neutral center where na>nb, and trade a beta
-		      // from - for an alpha for +
+		      // find a center where na>nb, and trade a beta from - 
+		      // for an alpha for +
 		      {
 			for (int m=0; m<natoms; m++)
-			  if (Input->Molecule.Z(m) == ab_count(m,0) &&
-			                         ab_count(m,1) > ab_count(m,2))
+			  if ( ab_count(m,1) > ab_count(m,2) )
 			    {
 			      ab_count(i,0) -= 1;
 			      ab_count(i,2) -= 1;
@@ -163,104 +160,8 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	      }
       }
 
-  for (int i=0; i<natoms; i++)
-    if (Input->Molecule.Z(i) > ab_count(i,0))  // If the center is positive.
-      {
-	needed_e = Input->Molecule.Z(i) - ab_count(i,0);
-	temp_na = ab_count(i,1);
-	temp_nb = ab_count(i,2);
-        for (int j=0; j<needed_e; j++)
-	  for (int k=0; k<natoms; k++)  // Find a center that is negative.
-	    if (Input->Molecule.Z(k) < ab_count(k,0))
-      	      {
-                if (temp_na == temp_nb)  // if na=nb on +
-		  {
-		    if (ab_count(k,1) <= ab_count(k,2)) // and na <= nb on -
-		      {  // transfer a beta
-			ab_count(i,0) += 1;
-			ab_count(i,2) += 1;
-			ab_count(k,0) -= 1;
-			ab_count(k,2) -= 1;
-			temp_nb++;
-		        break;
-		      }
-		    else if (ab_count(k,1) > ab_count(k,2))  // if na>nb on -
-		      {  // transfer an alpha
-			ab_count(i,0) += 1;
-			ab_count(i,1) += 1;
-			ab_count(k,0) -= 1;
-			ab_count(k,1) -= 1;
-			temp_na++;
-			break;
-		      }
-		  }
-		else if (temp_na > temp_nb) // if na>nb on +
-		  {
-		    if (ab_count(k,1) <= ab_count(k,2)) // and na<=nb on -
-		      {  // transfer a beta
-			ab_count(i,0) += 1;
-			ab_count(i,2) += 1;
-			ab_count(k,0) -= 1;
-			ab_count(k,2) -= 1;
-			temp_na++;
-			break;
-		      }
-		    else if (ab_count(k,1) > ab_count(k,2)) // if na>nb on -
-		      // find a neutral center where nb>na, and trade an alpha
-		      // from - for a beta for +.
-		      {
-		        for (int l=0; l<natoms; l++) 
-			  if (Input->Molecule.Z(l) == ab_count(l,0) &&
-			                        ab_count(l,1) < ab_count(l,2))
-			    {  
-			      ab_count(i,0) += 1;
-			      ab_count(i,2) += 1;
-			      ab_count(l,1) += 1;
-			      ab_count(l,2) -= 1;
-			      ab_count(k,0) -= 1;
-			      ab_count(k,1) -= 1;
-			      temp_nb++;
-			      break;
-			    }
-		        break;
-		      }
-		  }
-		else if (temp_na < temp_nb)  // if nb>na on +
-		  {
-		    if (ab_count(k,1) >= ab_count(k,2)) // and na>=nb on -
-		      {  // transfer an alpha
-			ab_count(i,0) += 1;
-			ab_count(i,1) += 1;
-			ab_count(k,0) -= 1;
-			ab_count(k,1) -= 1;
-			temp_na++;
-			break;
-		      }
-		    else if (ab_count(k,1) < ab_count(k,2)) // if nb>na on -
-		      // find a neutral center where na>nb, and trade a beta
-		      // from - for an alpha for +
-		      {
-			for (int m=0; m<natoms; m++)
-			  if (Input->Molecule.Z(m) == ab_count(m,0) &&
-			                         ab_count(m,1) > ab_count(m,2))
-			    {
-			      ab_count(i,0) += 1;
-			      ab_count(i,1) += 1;
-			      ab_count(m,2) += 1;
-			      ab_count(m,1) -= 1;
-			      ab_count(k,0) -= 1;
-			      ab_count(k,2) -= 1;
-			      temp_na++;
-			      break;
-			    }
-			break;
-		      }
-		  }
-	      }
-      }
-
-  // Now we check to make sure no second row atom has too many electrons of the
-  // same type.
+  // Now we check to make sure no center has too many electrons of the same 
+  // type.
 
   for (int i=0; i<natoms; i++)
     {
@@ -283,16 +184,14 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  int extra_betas = ab_count(i,2)-9;
 	  for (int m=0; m<extra_betas; m++)
 	    for (int n=0; n<natoms; n++)
-	      {
-		if (ab_count(n,1) > ab_count(n,2))
-		  {
-		    ab_count(i,2) -= 1;
-		    ab_count(n,2) += 1;
-		    ab_count(i,1) += 1;
-		    ab_count(n,1) -= 1;
-		    break;
-		  }
-	      }
+	      if (ab_count(n,1) > ab_count(n,2))
+		{
+		  ab_count(i,2) -= 1;
+		  ab_count(n,2) += 1;
+		  ab_count(i,1) += 1;
+		  ab_count(n,1) -= 1;
+		  break;
+		}
 	}
       if (Input->Molecule.Z(i) <= 10 && ab_count(i,1) > 5)
 	{
@@ -313,61 +212,44 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  int extra_betas = ab_count(i,2)-5;
 	  for (int m=0; m<extra_betas; m++)
 	    for (int n=0; n<natoms; n++)
-	      {
-		if (ab_count(n,1) > ab_count(n,2))
-		  {
-		    ab_count(i,2) -= 1;
-		    ab_count(n,2) += 1;
-		    ab_count(i,1) += 1;
-		    ab_count(n,1) -= 1;
-		    break;
-		  }
-	      }
+	      if (ab_count(n,1) > ab_count(n,2))
+		{
+		  ab_count(i,2) -= 1;
+		  ab_count(n,2) += 1;
+		  ab_count(i,1) += 1;
+		  ab_count(n,1) -= 1;
+		  break;
+		}
 	}
       if (Input->Molecule.Z(i) <= 2 && ab_count(i,1) > 1)
 	{
 	  int extra_alphas = ab_count(i,1)-1;
 	  for (int p=0; p<extra_alphas; p++)
 	    for (int q=0; q<natoms; q++)
-	      {
-		if ( Input->Molecule.Z(q) > 2 && ab_count(q,1) < 5)
-		  {
-		    ab_count(i,0) -= 1;
-		    ab_count(i,1) -= 1;
-		    ab_count(q,0) += 1;
-		    ab_count(q,1) += 1;
-		    break;
-		  }
-	      }
+	      if ( Input->Molecule.Z(q) > 2 && ab_count(q,1) < 5)
+		{
+		  ab_count(i,0) -= 1;
+		  ab_count(i,1) -= 1;
+		  ab_count(q,0) += 1;
+		  ab_count(q,1) += 1;
+		  break;
+		}
 	}
       if (Input->Molecule.Z(i) <= 2 && ab_count(i,2) > 1)
 	{
 	  int extra_betas = ab_count(i,2)-1;
 	  for (int r=0; r<extra_betas; r++)
 	    for (int s=0; s<natoms; s++)
-	      {
-		if (Input->Molecule.Z(s) > 2 && ab_count(s,2) < 5)
-		  {
-		    ab_count(i,0) -= 1;
-		    ab_count(i,2) -= 1;
-		    ab_count(s,0) += 1;
-		    ab_count(s,2) += 1;
-		    break;
-		  }
-	      }
+	      if (Input->Molecule.Z(s) > 2 && ab_count(s,2) < 5)
+		{
+		  ab_count(i,0) -= 1;
+		  ab_count(i,2) -= 1;
+		  ab_count(s,0) += 1;
+		  ab_count(s,2) += 1;
+		  break;
+		}
 	}
     }
-
-  /*
-  cout << "Final ab_count array:" << endl;
-
-  for (int i=0; i<natoms; i++)
-    {
-      cout << "\t" << "Z = " << Input->Molecule.Z(i);
-      cout << "\t" << "alpha = " << ab_count(i,1);
-      cout << "\t" << "beta = " << ab_count(i,2) << endl;
-    }   	      
-  */  
 
   // Check to see that all electrons have been assigned.
 
@@ -377,19 +259,34 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 
   for (int i=0; i<natoms; i++)
     {
+      if ( (ab_count(i,1)+ab_count(i,2)) != ab_count(i,0) )
+	{
+	  cerr << "Alpha and beta electrons do not add up for atom " << i;
+	  cerr << endl;
+	  exit(1);
+	}
       check_elec += ab_count(i,0);
       check_alpha += ab_count(i,1);
       check_beta += ab_count(i,2);
     }
 
   if (check_elec != nelectrons)
-    { cerr << "Electron counting has gone bad." << endl; exit(1); }
+    { 
+      cerr << "Electron counting has gone bad." << endl; 
+      exit(1); 
+    }
 
   if (check_alpha != nalpha)
-    { cerr << "Alpha counting has gone bad." << endl; exit(1); }
+    { 
+      cerr << "Alpha counting has gone bad." << endl; 
+      exit(1); 
+    }
   
   if (check_beta != nbeta)
-    { cerr << "Beta counting has gone bad." << endl; exit(1); }
+    { 
+      cerr << "Beta counting has gone bad." << endl; 
+      exit(1); 
+    }
 
   // The electronic coordinates are stored in this array, with the alpha
   // electrons first, then the betas.
@@ -414,22 +311,17 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
       for (int j=0; j<n_a; j++)
 	{
       	  for (int k=0; k<3; k++)
-	    {
-	      R(alpha_index,k) = temp_coords(j,k) + atom_centers(i,k);
-	    }
+	    R(alpha_index,k) = temp_coords(j,k) + atom_centers(i,k);
 	  alpha_index++;
 	}
       
       for (int m=0; m<n_b; m++)
 	{
 	  for (int n=0; n<3; n++)
-	    {
-	      R(beta_index,n) = temp_coords(n_a+m,n) + atom_centers(i,n);
-	    }
+	    R(beta_index,n) = temp_coords(n_a+m,n) + atom_centers(i,n);
 	  beta_index++;
 	}
     }
-
   return R;
 }
 
@@ -443,12 +335,8 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
   // Square MO coefficients.
 
   for (int i=0; i<Norbitals; i++)
-    {
-      for (int j=0; j<Nbasisfunc; j++)
-        {
-          Scratch(i,j) = Scratch(i,j)*Scratch(i,j);
-        }
-    }
+    for (int j=0; j<Nbasisfunc; j++)
+      Scratch(i,j) = Scratch(i,j)*Scratch(i,j);
 
   //"Normalize" MO by summing the squared coeffs and dividing
 
@@ -457,12 +345,10 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
   for (int i=0; i<Norbitals; i++)
     {
       sum = 0.0;
-      for(int j=0; j<Nbasisfunc; j++) sum += Scratch(i,j);
-
+      for(int j=0; j<Nbasisfunc; j++) 
+	sum += Scratch(i,j);
       for(int j=0; j<Nbasisfunc; j++)
-        {
-          Scratch(i,j) = Scratch(i,j)/sum;
-        }
+	Scratch(i,j) = Scratch(i,j)/sum;
     }
 
   // Create an Array that links the index of an basis function to the atom it
@@ -474,20 +360,16 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 
   int i = 0;
   for (int j=0; j<Natoms; j++)
-    {
-      for(int k=0; k<(Input->BF.getNumberBasisFunctions(j)); k++)
-        {
-          OrbPos(i) = j;
-          i++;
-        }
-    }
+    for(int k=0; k<(Input->BF.getNumberBasisFunctions(j)); k++)
+      {
+	OrbPos(i) = j;
+	i++;
+      }
 
   //Initialize the array to be returned.
 
   Array2D <int> atom_occ(Natoms,3);
-
-  for (int i=0; i<Natoms; i++)
-    for (int j=0; j<3; j++) atom_occ(i,j) = 0;
+  atom_occ = 0;
 
   double rv;  //uniform [0,1] random variable
   for (int i=0; i<Norbitals; i++)
@@ -535,9 +417,7 @@ dist_center(int atomic_charge, int n_e, int n_a, int n_b)
   Array2D<double> e_locs(n_e,3);
 
   if (n_e <= 2) 
-    {
-      e_locs = dist_energy_level(atomic_charge,1,n_a,n_b);
-    }
+    e_locs = dist_energy_level(atomic_charge,1,n_a,n_b);
       
   else if (n_e > 2 && n_e <= 10)
     {
@@ -877,8 +757,8 @@ Array1D<double> QMCDansWalkerInitialization::\
       double derivativeAtZero = r_array(1)*20;
       double derivativeAtOne = (r_array(20) - r_array(19))*20;
       radialSplines(atomicNumberIndex,energyLevelIndex).\
-                                                  initializeWithFunctionValues\
-                            (x_array,r_array,derivativeAtZero,derivativeAtOne);
+	initializeWithFunctionValues\
+	                    (x_array,r_array,derivativeAtZero,derivativeAtOne);
       radialSplinesMade(atomicNumberIndex,energyLevelIndex) = 1;
     }
   Array1D<double> r_locs(nelecs);

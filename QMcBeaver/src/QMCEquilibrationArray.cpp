@@ -108,15 +108,16 @@ int QMCEquilibrationArray::getDecorrObjectIndex()
 	}
     }
 
-  double value = Eq_Array[0].getProperties()->energy.getStandardDeviation() + 
-   Eq_Array[0].getProperties()->energy.getStandardDeviationStandardDeviation();
+  double value = Eq_Array[0].getProperties()->energy.getAverage() + 
+    3*Eq_Array[0].getProperties()->energy.getSeriallyCorrelatedVariance()/
+    sqrt(Eq_Array[0].getProperties()->energy.getNumberSamples()-1.0);
   obj = 0;
 
   for (int i=1; i<decorr_objects; i++)
     {
-      double test = Eq_Array[i].getProperties()->energy.getStandardDeviation()
- + Eq_Array[i].getProperties()->energy.getStandardDeviationStandardDeviation();
-
+      double test = Eq_Array[i].getProperties()->energy.getAverage() +
+	3*Eq_Array[i].getProperties()->energy.getSeriallyCorrelatedVariance()/
+	sqrt(Eq_Array[i].getProperties()->energy.getNumberSamples()-1.0);
       if (IeeeMath::isNaN(test)) continue;
       if (test < value)
 	{
