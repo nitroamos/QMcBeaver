@@ -54,6 +54,27 @@ void QMCProperties::zeroOut()
       chiDensity(i).zeroOut();
 }
 
+void QMCProperties::newSample(QMCProperties* newProperties, double weight, 
+			      int nwalkers)
+{
+  energy.newSample(newProperties->energy.getAverage(), weight);
+  kineticEnergy.newSample(newProperties->kineticEnergy.getAverage(), weight);
+  potentialEnergy.newSample(newProperties->potentialEnergy.getAverage(),
+			    weight);
+  acceptanceProbability.newSample
+    (newProperties->acceptanceProbability.getAverage(), weight);
+  distanceMovedAccepted.newSample
+    (newProperties->distanceMovedAccepted.getAverage(), weight);
+  distanceMovedTrial.newSample(newProperties->distanceMovedTrial.getAverage(),
+			       weight);
+  logWeights.newSample(newProperties->logWeights.getAverage(), nwalkers);
+
+  if (calc_density)
+    for (int i=0; i<nBasisFunc; i++)
+      chiDensity(i).newSample(newProperties->chiDensity(i).getAverage(), 
+			      weight);
+}
+
 void QMCProperties::operator = ( const QMCProperties &rhs )
 {
   energy                = rhs.energy;
@@ -69,10 +90,10 @@ QMCProperties QMCProperties::operator + ( QMCProperties &rhs )
 {
   QMCProperties result;
 
-  result.energy                = energy+rhs.energy;
+  result.energy                = energy + rhs.energy;
   result.kineticEnergy         = kineticEnergy + rhs.kineticEnergy;
   result.potentialEnergy       = potentialEnergy + rhs.potentialEnergy;
-  result.logWeights            = logWeights+rhs.logWeights;
+  result.logWeights            = logWeights + rhs.logWeights;
   result.acceptanceProbability = acceptanceProbability + 
     rhs.acceptanceProbability;
   result.distanceMovedAccepted = distanceMovedAccepted + 

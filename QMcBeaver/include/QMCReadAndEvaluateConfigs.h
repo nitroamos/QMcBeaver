@@ -39,47 +39,39 @@ public:
   /**
      Creates an instance of the class.
   */
-
   QMCReadAndEvaluateConfigs();
 
 
   /**
      Creates an instance of the class and initializes it.
-
      @param input data input to control the calculation.
   */
-
   QMCReadAndEvaluateConfigs(QMCInput *input, int cfgsToSkip);
 
   /**
      Initializes the object.
-
      @param input data input to control the calculation.
   */
-
   void initialize(QMCInput *input, int cfgsToSkip);
 
   /**
-   Calculates properties (QMCProperties) for different parameter sets 
-   from walkers and related data saved to a file during a QMC calculation.
-   This function is called only by the root node.  The non-root nodes should
-   call workerCalculateProperties().
-
-   @param params array of parameters which parameterize the wavefunction.
-   @param properties properties calculated from params and the 
-   saved configurations.
+     Calculates properties (QMCProperties) for different parameter sets 
+     from walkers and related data saved to a file during a QMC calculation.
+     This function is called only by the root node.  The non-root nodes should
+     call workerCalculateProperties().
+     @param params array of parameters which parameterize the wavefunction.
+     @param properties properties calculated from params and the 
+     saved configurations.
   */
-
   void rootCalculateProperties(Array1D < Array1D<double> > &params, 
-		                          Array1D<QMCProperties> & properties);
+			       Array1D<QMCProperties> & properties);
 
   /**
-   Calculates properties (QMCProperties) for different parameter sets 
-   from walkers and related data saved to a file during a QMC calculation.
-   This function is called only by the non-root nodes.  The root node should
-   call rootCalculateProperties(params, properties).
+     Calculates properties (QMCProperties) for different parameter sets 
+     from walkers and related data saved to a file during a QMC calculation.
+     This function is called only by the non-root nodes.  The root node should
+     call rootCalculateProperties(params, properties).
   */
-
   void workerCalculateProperties();
 
 private:
@@ -107,9 +99,8 @@ private:
 
   // given a set of parameters perform the necessary calcualtions and
   // add the results to the properties.
-  void AddNewConfigToProperites(
-			  Array1D<double> &Params,QMCProperties &Properties);
-
+  void AddNewConfigToProperites(Array1D<double> &Params,
+				QMCProperties &Properties);
 
   // Calculate the local energy of the current configuration with the currently
   // calculated jastrow

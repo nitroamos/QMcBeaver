@@ -23,7 +23,7 @@
 using namespace std;
 
 /**
-  An instantaneous snapshot of all 3N electronic corrdinates for a system.
+  An instantaneous snapshot of all 3N electronic coordinates for a system.
   This is the same as the "walker" or "psip" discussed in QMC literature.
 */
 
@@ -60,7 +60,7 @@ public:
   /**
     Initializes the electronic configuration for this walker using an
     algorithm from QMCInitializeWalkerFactory.  If a singular walker is
-    generated, upto 100 configurations are generated until one is not 
+    generated, up to 100 configurations are generated until one is not 
     singular.
   */
   void initializeWalkerPosition(); 
@@ -77,9 +77,9 @@ public:
 
   /**
      This function completes the processing. The forwardGreensFunction was
-     stored and because pointers were given with a call to initializePropagation
-     no parameters need to be passed. This function should not be called without
-     first calling initializePropagation.
+     stored and because pointers were given with a call to 
+     initializePropagation, no parameters need to be passed. This function 
+     should not be called without first calling initializePropagation.
   */
   void processPropagation();
 
@@ -127,6 +127,14 @@ public:
   void writeCorrelatedSamplingConfiguration(ostream& strm); 
 
   /**
+    Calculates the distance between each pair of electrons and records it in 
+    the appropriate histogram.  This will be used to evaluate pair density 
+    functions for DFT development.
+  */
+  void calculatePairDistances(double max_pair_distance, double dr, 
+			 Array1D<double> &pll_spin, Array1D<double> &opp_spin);
+
+  /**
     Writes the state of this object to an XML stream.
     @param strm XML stream
   */
@@ -144,6 +152,11 @@ public:
     Gets the value of the local energy estimator for this walker.
   */
   double getLocalEnergyEstimator();
+
+  /**
+    Reweight the walker after a move
+  */
+  void reweight_walker();
 
 private:
   double weight;
@@ -245,9 +258,6 @@ private:
   QMCGreensRatioComponent \
                    calculateReverseGreensFunctionUmrigar93ImportanceSampling();
 
-  // reweight the walker after a move
-  void reweight_walker();
-
   Array2D<double> * getR();
   int getAge();
   double getAcceptanceProbability();
@@ -259,9 +269,3 @@ private:
 };
 
 #endif
-
-
-
-
-
-

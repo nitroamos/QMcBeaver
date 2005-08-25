@@ -56,7 +56,6 @@ class QMCManager
 
   /**
      Initializes this object and loads the input data for the calculation.
-
      @param argc number of command line arguments.
      @param argv command line arguments.
   */
@@ -97,21 +96,18 @@ class QMCManager
   /**
      Writes the timing data to a stream. This is only valid after
      <code>finalize</code> is called and only on the root node.
-
      @param strm stream to write timing information to.
   */
   void writeTimingData(ostream & strm);
 
   /**
      Gets the input data for the calculation.
-
      @return input data for the calculation.
   */
   QMCInput * getInputData();
 
   /**
      Gets the stream for outputting results from a calculation.
-
      @return output stream for results.
   */
   ostream * getResultsOutputStream();
@@ -170,9 +166,9 @@ class QMCManager
   QMCProperties Properties_total;
 
   /**
-    Local statistical properties calculated during the equilibration phase
-    of the calculation.
-    */
+     Local statistical properties calculated during the equilibration phase
+     of the calculation.
+  */
   QMCProperties equilibrationProperties;
 
   /**
@@ -207,7 +203,6 @@ class QMCManager
 
   /**
      Writes the current statistics for the calculated properties to a file.
-
      @param label label to indicate which set of transient properties this is.
   */
   void writeTransientProperties(int label);
@@ -222,17 +217,14 @@ class QMCManager
 
   /**
      Send all of the processors the input file name.
-  
      @param argv input from the command line where the first element is the 
      file name.
-     
      @return input file name.
   */
   string sendAllProcessorsInputFileName(char **argv);
 
   /**
      Send all of the processors a command in the form of an integer.
-
      @param command command to be sent to all processors.
   */
   void sendAllProcessorsACommand(int command);
@@ -250,6 +242,13 @@ class QMCManager
   void gatherDensities();
 
   /**
+     The global results are collected and sent to all processors, where they 
+     are used to update the estimated energy, trial energy, and effective time
+     step.  
+  */
+  void synchronizeDMCEnsemble();
+
+  /**
      Checks to see if a command is waiting for this processor.  If there is a
      command waiting, the integer value of the command is returned, if not, 
      -1 is returned.
@@ -261,7 +260,6 @@ class QMCManager
 
   /**
      Writes a summary of the energy statistics to a stream.
-
      @param strm output stream to write the energy statistics summary to.
   */
   void writeEnergyResultsSummary(ostream & strm);
@@ -289,17 +287,17 @@ class QMCManager
   /**
      Updates the estimated value of the energy.
   */
-  void updateEstimatedEnergy();
+  void updateEstimatedEnergy(QMCProperties * Properties);
 
   /**
-    Updates the diffusion QMC (DMC) trial energy.
+     Updates the diffusion QMC (DMC) trial energy.
   */
-  void updateTrialEnergy();
+  void updateTrialEnergy(double totalWeight, int nwalkers_original);
 
   /**
-    Updates the effective time step used for diffusion QMC (DMC).
+     Updates the effective time step used for diffusion QMC (DMC).
   */
-  void updateEffectiveTimeStep();
+  void updateEffectiveTimeStep(QMCProperties * Properties);
 
   /**
      Forces all processors to synchronize at this point.
@@ -307,29 +305,18 @@ class QMCManager
   void synchronizationBarrier();
 
   /**
-    Writes the state of this object to an XML stream.
-
-    @param strm XML stream
-    */
+     Writes the state of this object to an XML stream.
+     @param strm XML stream
+  */
   void writeXML(ostream & strm);
 
   /**
-    Loads the state of this object from an XML stream.  The input stream must
-    be formatted exactly like the output from <code>toXML</code> because
-    it is not intelligent.
-
-    @param strm XML stream
-    */
+     Loads the state of this object from an XML stream.  The input stream must
+     be formatted exactly like the output from <code>toXML</code> because
+     it is not intelligent.
+     @param strm XML stream
+  */
   void readXML(istream & strm);
 };
 
 #endif
-
-
-
-
-
-
-
-
-

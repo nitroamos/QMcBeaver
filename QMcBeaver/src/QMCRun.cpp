@@ -28,14 +28,13 @@ void QMCRun::propagateWalkers(bool writeConfigs)
   rPointers.allocate(WALKERS_PER_PASS);
 
   /*The point here is to collect WALKERS_PER_PASS amount of walkers
-    to process at once. Once we have that many (or the last remaining), we finally run
-    QMF.evaluate which fills up the dataPointers data structure with values.
-    The actual data for dataPointers is stored in each walker, so initializePropagation
-    asks for a pointer to it. The collection of pointers is then passed around to
-    everybody.
-
-    The advantage to filling the array dynamically is that we don't have to worry
-    about branching -- walkers being deleted and created.
+    to process at once. Once we have that many (or the last remaining), we 
+    finally run QMF.evaluate which fills up the dataPointers data structure 
+    with values.  The actual data for dataPointers is stored in each walker, so
+    initializePropagation asks for a pointer to it. The collection of pointers 
+    is then passed around to everybody.
+    The advantage to filling the array dynamically is that we don't have to 
+    worry about branching -- walkers being deleted and created.
   */
   for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
     {
@@ -47,7 +46,6 @@ void QMCRun::propagateWalkers(bool writeConfigs)
 	  QMF.evaluate(dataPointers, rPointers,
 		       index==0?WALKERS_PER_PASS:index, writeConfigs);
 	}
-      
     }
   
   /*At this point, all of the dataPointers have been filled, so we
@@ -85,7 +83,7 @@ void QMCRun::branchWalkers()
     {
       // This method is described in Umrigar, Nightingale, and Runge 
       // JCP 99(4) 2865; 1993 and elsewhere.  A walker is reweighted
-      // and is divided if it's weight exceeds a threshold and is fused
+      // and is divided if its weight exceeds a threshold and is fused
       // with another walker if its weight falls below a threshold.
 
       nonunitWeightBranching();
@@ -95,6 +93,13 @@ void QMCRun::branchWalkers()
       cerr << "ERROR: Unknown branching method!" << endl;
       exit(0);
     }
+}
+
+void QMCRun::reweightAndBranchWalkers()
+{
+  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
+    wp->reweight_walker();
+  branchWalkers();
 }
 
 void QMCRun::zeroOut()
@@ -111,18 +116,44 @@ void QMCRun::initialize(QMCInput *INPUT)
   if (Input->flags.calculate_bf_density == 1)
     {
       bool calcDensity = true;
+      timeStepProperties.setCalcDensity(calcDensity, 
+					Input->WF.getNumberBasisFunctions());
       if (Input->flags.use_equilibration_array == 1) 
-	EquilibrationArray.setCalcDensity
-                            (calcDensity, Input->WF.getNumberBasisFunctions());
+	EquilibrationArray.setCalcDensity(calcDensity, 
+					  Input->WF.getNumberBasisFunctions());
       else 
-	{
-	  Properties.setCalcDensity
-	                    (calcDensity, Input->WF.getNumberBasisFunctions());
-	}
+	Properties.setCalcDensity(calcDensity, 
+				  Input->WF.getNumberBasisFunctions());
     }
 
   if (Input->flags.use_equilibration_array == 1) EquilibrationArray.zeroOut();
   else Properties.zeroOut();
+
+  if (Input->flags.write_pair_densities == 1)
+    {
+      // The pair densities are recorded in histograms for opposite and 
+      // parallel spins.  The maximum distance is 20 divided by the largest 
+      // atomic charge in the molecule, (this should be changed if larger and 
+      // molecules are considered) and there are 5,000 bins.
+      
+      int max_Z = 0;
+
+      for (int i=0; i<Input->Molecule.getNumberAtoms(); i++)
+	if ( Input->Molecule.Z(i) > max_Z )
+	  max_Z = Input->Molecule.Z(i);
+
+      max_pair_distance = 20.0/max_Z;
+      dr = max_pair_distance/5000;
+
+      pll_spin_histogram.allocate(5000);
+      opp_spin_histogram.allocate(5000);
+
+      for (int i=0; i<5000; i++)
+	{
+	  pll_spin_histogram(i) = 0.0;
+	  opp_spin_histogram(i) = 0.0;
+	}
+    }
 }
 
 void QMCRun::randomlyInitializeWalkers()
@@ -144,18 +175,10 @@ void QMCRun::calculateObservables()
   // Get the observables calculated in each walker
   // Pre block all of the statistics from one time step together
 
-  QMCProperties timeStepProperties;
-  if (Input->flags.calculate_bf_density == 1)
-    {
-      bool calcDensity = true;
-      timeStepProperties.setCalcDensity
-	                    (calcDensity, Input->WF.getNumberBasisFunctions());
-    }
+  timeStepProperties.zeroOut();
 
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
-    {
-      wp->calculateObservables( timeStepProperties );
-    }
+    wp->calculateObservables( timeStepProperties );
 
   // Add the pre blocked data from this time step to the accumulated
   // statistics
@@ -163,67 +186,84 @@ void QMCRun::calculateObservables()
   double totalWeights = getWeights() * populationSizeBiasCorrectionFactor;
 
   if (Input->flags.use_equilibration_array == 1)
-    {  
-      EquilibrationArray.newSample
-        (&timeStepProperties, totalWeights, getNumberOfWalkers()); 
-    }
+    EquilibrationArray.newSample(&timeStepProperties, totalWeights, 
+				 getNumberOfWalkers()); 
   else
-    {
-      // Calculate the Energy ...
-      Properties.energy.newSample(
-        timeStepProperties.energy.getAverage(), totalWeights );
-
-      // Calculate the Kinetic Energy
-      Properties.kineticEnergy.newSample(
-        timeStepProperties.kineticEnergy.getAverage(), totalWeights );
-
-      // Calculate the Potential Energy
-      Properties.potentialEnergy.newSample(
-        timeStepProperties.potentialEnergy.getAverage(), totalWeights );
-
-      // Calculate the Acceptance Probability ...
-      Properties.acceptanceProbability.newSample(
-        timeStepProperties.acceptanceProbability.getAverage(), totalWeights );
-
-      // Calculate the DistanceMovedAccepted this is the average distance
-      // moved on a step
-      Properties.distanceMovedAccepted.newSample(
-        timeStepProperties.distanceMovedAccepted.getAverage(), totalWeights );
-
-      // Calculate the DistanceMovedTrial this is the average step length for
-      // a trial move
-      Properties.distanceMovedTrial.newSample(
-        timeStepProperties.distanceMovedTrial.getAverage(), totalWeights );
-
-      // Calculate the log of the weights
-      Properties.logWeights.newSample(
-        timeStepProperties.logWeights.getAverage(), getNumberOfWalkers() );
-
-      // Calculate the basis function density
-      if (Input->flags.calculate_bf_density == 1)
-	for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
-	  {
-	    Properties.chiDensity(i).newSample(
-	      timeStepProperties.chiDensity(i).getAverage(), totalWeights );
-	  }
-    }
+    Properties.newSample(&timeStepProperties, totalWeights, 
+			 getNumberOfWalkers());
 }
 
 void QMCRun::writeCorrelatedSamplingConfigurations(ostream& strm)  
 {
-  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
-    {
-      wp->writeCorrelatedSamplingConfiguration(strm);
-    }
+  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
+    wp->writeCorrelatedSamplingConfiguration(strm);
 }
 
 void QMCRun::writeEnergies(ostream& strm)
 {
   // Get the energy calculated in each walker and write out
 
-  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
+  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
+    strm << wp->getLocalEnergyEstimator() << "\t" << wp->getWeight() << endl;
+}
+
+void QMCRun::calculatePairDistances()
+{
+  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
+    wp->calculatePairDistances(max_pair_distance, dr, pll_spin_histogram,
+				 opp_spin_histogram);
+}
+
+void QMCRun::writePairDensityHistograms()
+{
+  // Write out the pair distance histograms for this processor.
+  
+  if (Input->WF.getNumberAlphaElectrons() > 1 || 
+      Input->WF.getNumberBetaElectrons() > 1)
     {
-      strm << wp->getLocalEnergyEstimator() << endl;
+        char my_rank_string[32];
+	int my_rank = Input->flags.my_rank;
+#ifdef _WIN32
+	_snprintf( my_rank_string, 32, "%d", my_rank );
+#else    
+	snprintf( my_rank_string, 32, "%d", my_rank );
+#endif
+	string pll_spin_filename = Input->flags.base_file_name + 
+	  ".pll_pair_density." + my_rank_string;
+	ofstream * pll_spin_strm = new ofstream(pll_spin_filename.c_str());
+	pll_spin_strm->precision(15);
+	
+	for (int i=0; i<pll_spin_histogram.dim1(); i++)
+	  {
+	    *pll_spin_strm << (i+1)*dr << "\t" << pll_spin_histogram(i);
+	    *pll_spin_strm << endl;
+	  }
+	delete pll_spin_strm;
+	pll_spin_strm = 0;
+    }
+
+  if (Input->WF.getNumberAlphaElectrons() > 0 && 
+      Input->WF.getNumberBetaElectrons() > 0)
+    {
+        char my_rank_string[32];
+	int my_rank = Input->flags.my_rank;
+#ifdef _WIN32
+	_snprintf( my_rank_string, 32, "%d", my_rank );
+#else    
+	snprintf( my_rank_string, 32, "%d", my_rank );
+#endif
+	string opp_spin_filename = Input->flags.base_file_name + 
+	  ".opp_pair_density." + my_rank_string;
+	ofstream * opp_spin_strm = new ofstream(opp_spin_filename.c_str());
+	opp_spin_strm->precision(15);
+	
+	for (int i=0; i<opp_spin_histogram.dim1(); i++)
+	  {
+	    *opp_spin_strm << (i+1)*dr << "\t" << opp_spin_histogram(i);
+	    *opp_spin_strm << endl;
+	  }
+	delete opp_spin_strm;
+	opp_spin_strm = 0;
     }
 }
 
@@ -378,14 +418,17 @@ void QMCRun::nonunitWeightBranching()
 double QMCRun::getWeights()
 {
   // determine the total of all the walker weights
-  double total_weights = 0;
+  double total_weights = 0.0;
 
   for( list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp )
-    {
-      total_weights += wp->getWeight();
-    }
+    total_weights += wp->getWeight();
 
   return total_weights;
+}
+
+double QMCRun::getPopulationSizeBiasCorrectionFactor()
+{
+  return populationSizeBiasCorrectionFactor;
 }
 
 void QMCRun::toXML(ostream& strm)
@@ -466,16 +509,17 @@ Stopwatch * QMCRun::getEquilibrationStopwatch()
   return EquilibrationArray.getEquilibrationStopwatch();
 }
 
+QMCProperties * QMCRun::getTimeStepProperties()
+{
+  return &timeStepProperties;
+}
+
 QMCProperties * QMCRun::getProperties()
 {
   if (Input->flags.use_equilibration_array == 1)
-    {
-      return EquilibrationArray.chooseDecorrObject();
-    }
+    return EquilibrationArray.chooseDecorrObject();
   else 
-    {
-      return &Properties;
-    }
+    return &Properties;
 }
 
 int QMCRun::getNumberOfWalkers()
@@ -506,6 +550,3 @@ void QMCRun::calculatePopulationSizeBiasCorrectionFactor()
       populationSizeBiasCorrectionFactor *= temp;
     }
 }
-
-
-

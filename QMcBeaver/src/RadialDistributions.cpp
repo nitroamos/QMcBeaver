@@ -1057,9 +1057,8 @@ Array1D<double> RadialDistributions::getRadialArray(int Z, int n)
   else
     {
       cerr << "ERROR: Bad index in getRadialArray." << endl;
+      cerr << "No radial array for Z = " << Z << ", n = " << n << endl;
       exit(1);
     }
-
   return r_array;
-
 }

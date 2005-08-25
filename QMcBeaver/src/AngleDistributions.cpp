@@ -284,9 +284,9 @@ Array1D<double> AngleDistributions::getPhiArray(int index)
   else
     {
       cerr << "ERROR: Bad index value in getPhiArray." << endl;
+      cerr << "No phi array for index = " << index << endl;
       exit(1);
     }
-
   return phi_array;
 }
 
@@ -497,8 +497,8 @@ Array1D<double> AngleDistributions::getThetaArray(int index)
   else
     {
       cerr << "ERROR: Bad index in getThetaArray." << endl;
+      cerr << "No theta array for index = " << index << endl;
       exit(1);
     }
-
   return th_array;
 }

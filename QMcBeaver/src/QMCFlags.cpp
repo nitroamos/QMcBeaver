@@ -33,23 +33,25 @@ void QMCFlags::read_flags(string InFileName)
     }
 
   //***** Default Flag Values ********
-  walker_initialization_method = "mikes_jacked_initialization";
+  walker_initialization_method   = "mikes_jacked_initialization";
   walker_initialization_combinations = 3;
-  temp_dir = "/temp1/";
-  parallelization_method = "manager_worker";
-  iseed  = -5135696;
-  sampling_method = "importance_sampling";
-  QF_modification_type = "none";
-  energy_modification_type = "none";
+  temp_dir                       = "/temp1/";
+  parallelization_method         = "manager_worker";
+  iseed                          = -5135696;
+  sampling_method                = "importance_sampling";
+  QF_modification_type           = "none";
+  energy_modification_type       = "none";
   umrigar93_equalelectrons_parameter = 0.5;  // in (0,1] 
-  walker_reweighting_method = "umrigar93_probability_weighted";
-  branching_method = "nonunit_weight_branching";
-  branching_threshold = 2.0;
-  fusion_threshold = 0.5;
+  walker_reweighting_method      = "umrigar93_probability_weighted";
+  branching_method               = "nonunit_weight_branching";
+  branching_threshold            = 2.0;
+  fusion_threshold               = 0.5;
+  synchronize_dmc_ensemble       = 0;
+  synchronize_dmc_ensemble_interval = 1000;
   old_walker_acceptance_parameter = 50;
   zero_out_checkpoint_statistics = 0;
-  Ndeterminants = 1;
-  dt     = 0.001;
+  Ndeterminants                  = 1;
+  dt                             = 0.001;
   dt_equilibration               = 0.02;
 
   use_basis_function_interpolation = 0;
@@ -87,10 +89,10 @@ void QMCFlags::read_flags(string InFileName)
   optimize_Psi_criteria          = "umrigar88";
   optimize_Psi_method            = "BFGSQuasiNewton";  
   numerical_derivative_surface   = "umrigar88";
-  line_search_step_length = "Wolfe";
+  line_search_step_length        = "Wolfe";
 
-  optimization_max_iterations = 100;
-  optimization_error_tolerance = 0.001;
+  optimization_max_iterations    = 100;
+  optimization_error_tolerance   = 0.001;
 
   ck_genetic_algorithm_1_population_size = 30;
   ck_genetic_algorithm_1_mutation_rate = 0.2;
@@ -102,6 +104,8 @@ void QMCFlags::read_flags(string InFileName)
   equilibrate_every_opt_step     = 0;
   equilibrate_first_opt_step     = 1;
   write_all_energies_out         = 0;
+  write_pair_densities           = 0;
+  write_pair_densities_interval  = 10000;
   chip_and_mike_are_cool         = "false";
 
   //**********************************
@@ -183,6 +187,16 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           fusion_threshold = atof(temp_string.c_str());
         }
+      else if(temp_string == "synchronize_dmc_ensemble")
+	{
+	  input_file >> temp_string;
+	  synchronize_dmc_ensemble = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "synchronize_dmc_ensemble_interval")
+	{
+	  input_file >> temp_string;
+	  synchronize_dmc_ensemble_interval = atoi(temp_string.c_str());
+	}
       else if(temp_string == "old_walker_acceptance_parameter")
         {
           input_file >> temp_string;
@@ -426,6 +440,16 @@ void QMCFlags::read_flags(string InFileName)
 	  input_file >> temp_string;
 	  write_all_energies_out = atoi(temp_string.c_str());
 	}
+      else if(temp_string == "write_pair_densities")
+	{
+	  input_file >> temp_string;
+	  write_pair_densities = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "write_pair_densities_interval")
+	{
+	  input_file >> temp_string;
+	  write_pair_densities_interval = atoi(temp_string.c_str());
+	}
       else if(temp_string == "zero_out_checkpoint_statistics" )
 	{
 	  input_file >> temp_string;
@@ -497,7 +521,7 @@ void QMCFlags::set_filenames(string runfile)
 #else    
 	  snprintf( my_rank_string, 32, "%d", my_rank );
 #endif
-  config_file_name = temp_dir + base_file_name + "."+my_rank_string + ".cfgs";
+  config_file_name = temp_dir + base_file_name + "." +my_rank_string + ".cfgs";
 
   basename = file_name;
   if(file_name[file_name.size()-3] == '.')
@@ -575,6 +599,10 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
       << endl;
  strm << "branching_method\n " << flags.branching_method << endl;
  strm << "branching_threshold\n " << flags.branching_threshold << endl;
+ strm << "synchronize_dmc_ensemble\n " << flags.synchronize_dmc_ensemble 
+      << endl;
+ strm << "synchronize_dmc_ensemble_interval\n " 
+      << flags.synchronize_dmc_ensemble_interval << endl;
  strm << "old_walker_acceptance_parameter\n " 
       << flags.old_walker_acceptance_parameter << endl;
  strm << "use_basis_function_interpolation\n " 
@@ -645,6 +673,9 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
  strm << "population_control_parameter\n " 
       << flags.population_control_parameter << endl;
  strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
+ strm << "write_pair_densities\n " << flags.write_pair_densities << endl; 
+ strm << "write_pair_densities_interval\n "
+      << flags.write_pair_densities_interval << endl;
  strm << "zero_out_checkpoint_statistics\n " 
       << flags.zero_out_checkpoint_statistics << endl;
  strm << "chip_and_mike_are_cool\n " << flags.chip_and_mike_are_cool << endl;

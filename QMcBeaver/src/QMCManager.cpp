@@ -49,13 +49,9 @@ void QMCManager::initialize(int argc, char **argv)
   // data
 
   if( Input.flags.equilibrate_first_opt_step == 0 )
-    {
-      equilibrating = false;
-    }
+    equilibrating = false;
   else
-    {
-      equilibrating = true;
-    }
+    equilibrating = true;
 
   done = false;
 
@@ -156,10 +152,10 @@ void QMCManager::finalize()
     {
       QMCnode.stopTimers();
       *localTimers.getPropagationStopwatch() = 
-	                                    *QMCnode.getPropagationStopwatch();
+	*QMCnode.getPropagationStopwatch();
       *localTimers.getEquilibrationStopwatch() = 
-                                     *localTimers.getEquilibrationStopwatch() +
-                                          *QMCnode.getEquilibrationStopwatch();
+	*localTimers.getEquilibrationStopwatch() +
+	*QMCnode.getEquilibrationStopwatch();
     }
 
 #ifdef PARALLEL
@@ -205,10 +201,42 @@ void QMCManager::gatherProperties()
 #ifdef PARALLEL
   localTimers.getGatherPropertiesStopwatch()->start();
 
-  MPI_Reduce(QMCnode.getProperties(),&Properties_total,1,
-          QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE,0,MPI_COMM_WORLD);
+  MPI_Reduce(QMCnode.getProperties(), &Properties_total, 1,
+        QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, 0, MPI_COMM_WORLD);
 
   localTimers.getGatherPropertiesStopwatch()->stop();
+#else
+  Properties_total = *QMCnode.getProperties();
+#endif
+}
+
+void QMCManager::synchronizeDMCEnsemble()
+{
+  Properties_total.zeroOut();
+#ifdef PARALLEL
+  localTimers.getCommunicationSynchronizationStopwatch()->start();
+
+  // Collect the global properties and send to all nodes
+  
+  MPI_Allreduce(QMCnode.getProperties(), &Properties_total, 1,
+	   QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, MPI_COMM_WORLD);
+
+  // Add the weights of the walkers and send to all nodes
+
+  double totalWeights;
+  double localWeight = QMCnode.getWeights();
+  
+  MPI_Allreduce(&localWeight, &totalWeights, 1, MPI_DOUBLE, MPI_SUM,
+		MPI_COMM_WORLD);
+
+  updateEstimatedEnergy(&Properties_total);
+  updateEffectiveTimeStep(&Properties_total);
+  updateTrialEnergy(totalWeights,
+		    Input.flags.number_of_walkers_initial*Input.flags.nprocs);
+
+  QMCnode.reweightAndBranchWalkers();
+
+  localTimers.getCommunicationSynchronizationStopwatch()->stop();
 #else
   Properties_total = *QMCnode.getProperties();
 #endif
@@ -274,14 +302,12 @@ void QMCManager::run()
 {
   equilibrationProperties.zeroOut();
 
-  done           = false;
-  iteration      = 0;
+  done      = false;
+  iteration = 0;
 
   
   if( Input.flags.equilibrate_every_opt_step > 0 )
-    {
-      equilibrating = true;
-    }
+    equilibrating = true;
 
   ofstream *config_strm_out = 0;
   if( Input.flags.optimize_Psi || Input.flags.print_configs == 1 )
@@ -355,10 +381,39 @@ void QMCManager::run()
 	 iteration%Input.flags.print_config_frequency == 0;
        
        QMCnode.step(writeConfigs);
-	
-       updateEstimatedEnergy();
-       updateTrialEnergy();
-       updateEffectiveTimeStep();
+
+       if( equilibrating )
+	 {
+	   equilibrationProperties = equilibrationProperties + 
+	     *QMCnode.getProperties();
+	   updateEffectiveTimeStep(&equilibrationProperties);
+	   if( Input.flags.run_type == "diffusion") 
+	     updateTrialEnergy(QMCnode.getWeights(),
+			       Input.flags.number_of_walkers_initial);
+	 }
+       else if( !equilibrating && Input.flags.run_type == "diffusion")
+	 {
+	   if( Input.flags.synchronize_dmc_ensemble == 1 ) 
+	     {
+	       double weight = QMCnode.getWeights();
+	       weight *= QMCnode.getPopulationSizeBiasCorrectionFactor();
+	       Properties_total.newSample(QMCnode.getTimeStepProperties(),
+					  weight,QMCnode.getNumberOfWalkers());
+	       updateEstimatedEnergy(&Properties_total);
+	       updateEffectiveTimeStep(&Properties_total);
+	     }
+	   else
+	     {
+	       updateEstimatedEnergy(QMCnode.getProperties());
+	       updateEffectiveTimeStep(QMCnode.getProperties());
+	     }
+	   updateTrialEnergy(QMCnode.getWeights(),
+			     Input.flags.number_of_walkers_initial);
+	 }
+       else
+	 // If this is a variational calculation, the estimated energy and the 
+	 // trial energy aren't used.
+	 updateEffectiveTimeStep(QMCnode.getProperties());
 
        if( writeConfigs )
 	 {
@@ -371,16 +426,21 @@ void QMCManager::run()
 	   writeCheckpoint();
 	 }
        
-       if( Input.flags.write_all_energies_out == 1 )
+       if( !equilibrating && Input.flags.write_all_energies_out == 1 )
 	 {
 	   QMCnode.writeEnergies(*energy_strm_out);
 	 }
 
-       if(equilibrating) 
+       if( !equilibrating && Input.flags.write_pair_densities == 1 )
+	 {
+	   QMCnode.calculatePairDistances();
+	   if (iteration%Input.flags.write_pair_densities_interval == 0)
+	     QMCnode.writePairDensityHistograms();
+	 }
+
+       if( equilibrating ) 
 	 {
 	   localTimers.getEquilibrationStopwatch()->stop();
-	   equilibrationProperties = equilibrationProperties + 
-	                                              *QMCnode.getProperties();
 	   QMCnode.zeroOut();
 	 }
        else 
@@ -393,26 +453,33 @@ void QMCManager::run()
 
        if( Input.flags.my_rank == 0 )
 	 {
-	   if(iteration%Input.flags.mpireduce_interval == 0 )
+	   if(iteration % Input.flags.mpireduce_interval == 0)
 	     {
+	       sendAllProcessorsACommand(REDUCE);
+	       gatherProperties();
 	       checkTerminationCriteria();
 	     }
 
+	   if(!equilibrating && Input.flags.run_type == "diffusion" &&
+	      Input.flags.synchronize_dmc_ensemble == 1 && 
+	      iteration % Input.flags.synchronize_dmc_ensemble_interval == 0)
+	     {
+	       sendAllProcessorsACommand(SYNCHRONIZE);
+	       synchronizeDMCEnsemble();
+	       checkTerminationCriteria();
+	     }
+	   
 	   if( done )
 	     {
 	       sendAllProcessorsACommand(TERMINATE);
 	       gatherProperties();
 	       if (Input.flags.calculate_bf_density == 1)
 		 gatherDensities();
-	     }
-	   else if(iteration%Input.flags.mpireduce_interval == 0 )
-	     {
-	       sendAllProcessorsACommand(REDUCE);
-	       gatherProperties();
+	       if (Input.flags.write_pair_densities == 1)
+		 QMCnode.writePairDensityHistograms();
 	     }
 	      
-	   if( Input.flags.my_rank == 0 &&
-	       Input.flags.print_transient_properties &&
+	   if( Input.flags.print_transient_properties &&
 	       iteration%Input.flags.print_transient_properties_interval == 0)
 	     {
 	       writeTransientProperties(iteration);
@@ -437,22 +504,27 @@ void QMCManager::run()
 	       gatherProperties();
 	     }
 	      
-	   if(poll_result == TERMINATE) 
+	   else if(poll_result == TERMINATE) 
 	     {
 	       done = true;
 	       gatherProperties();
 	       if (Input.flags.calculate_bf_density == 1)
 		 gatherDensities();
+	       if (Input.flags.write_pair_densities == 1)
+		 QMCnode.writePairDensityHistograms();
+	     }
+	   else if(poll_result == SYNCHRONIZE)
+	     {
+	       synchronizeDMCEnsemble();
 	     }
 	 }
 	  
        if(equilibrating) 
 	 {
 	   equilibration_step();
-	 }    
-	  
+	 }     
      }
-
+   
   if( Input.flags.optimize_Psi || Input.flags.print_configs == 1 )
     {
       (*config_strm_out).close();
@@ -745,15 +817,13 @@ void QMCManager::checkConvergenceBasedTerminationCriteria()
     }
 }
 
-void QMCManager::updateEstimatedEnergy()
+void QMCManager::updateEstimatedEnergy(QMCProperties* Properties)
 {
   // Update the estimated energy
 
-  if( !equilibrating && 
-      QMCnode.getProperties()->energy.getNumberSamples() > 1 )
+  if( !equilibrating && Properties->energy.getNumberSamples() > 1 )
     {
-      Input.flags.energy_estimated = 
-	QMCnode.getProperties()->energy.getAverage();
+      Input.flags.energy_estimated = Properties->energy.getAverage();
     }
   else
     {
@@ -762,25 +832,15 @@ void QMCManager::updateEstimatedEnergy()
     }
 }
 
-void QMCManager::updateTrialEnergy()
+void QMCManager::updateTrialEnergy(double weights, int nwalkers_init)
 {
   // Update the trial energy
 
-  if( !equilibrating && 
-      QMCnode.getProperties()->energy.getNumberSamples() > 1 )
-    {
-      // determine the total of all the walker weights
-      double total_weights = QMCnode.getWeights();
-
-      Input.flags.energy_trial = Input.flags.energy_estimated - 
-	Input.flags.population_control_parameter * 
-	log( total_weights / Input.flags.number_of_walkers_initial );
-    }
-  else
+  if( equilibrating )
     {
       /*
 	This section uses an estimate of the energy based on the change
-	in the walkers weights.  This eleminates the upward bias introduced
+	in the walkers weights.  This eliminates the upward bias introduced
 	into the average energy calculated during the equilibration.  The
 	estimator was derived by David R. "Chip" Kent IV and is listed
 	in his notebook and possibly thesis.
@@ -788,47 +848,30 @@ void QMCManager::updateTrialEnergy()
 
       static const double originalEest = Input.flags.energy_estimated;
 
-      // determine the total of all the walker weights
-      double total_weights = QMCnode.getWeights();
-
       Input.flags.energy_trial = originalEest - 
-	1.0 / Input.flags.dt_effective * 
-	log( total_weights / Input.flags.number_of_walkers_initial );
-    }
-}
-
-void QMCManager::updateEffectiveTimeStep()
-{
-  // Update the dt_effective
-
-  if( !equilibrating && 
-      QMCnode.getProperties()->energy.getNumberSamples() > 1 )
-    {
-      QMCDerivativeProperties derivativeProperties( QMCnode.getProperties(), 
-						    Input.flags.dt);
-
-      Input.flags.dt_effective = derivativeProperties.getEffectiveTimeStep();
+	1.0 / Input.flags.dt_effective * log( weights / nwalkers_init );
     }
   else
     {
-      if( equilibrationProperties.energy.getNumberSamples() > 1 )
-	{
-	  QMCDerivativeProperties derivativeProperties( 
-			     &equilibrationProperties, Input.flags.dt);
-
-	  Input.flags.dt_effective = 
-	    derivativeProperties.getEffectiveTimeStep();
-	}
+      Input.flags.energy_trial = Input.flags.energy_estimated - 
+	Input.flags.population_control_parameter * 
+	log( weights / nwalkers_init );
     }
+}
+
+void QMCManager::updateEffectiveTimeStep(QMCProperties* Properties)
+{
+  // Update the dt_effective
+
+  QMCDerivativeProperties derivativeProperties(Properties, Input.flags.dt);
+  Input.flags.dt_effective = derivativeProperties.getEffectiveTimeStep();
 }
 
 void QMCManager::synchronizationBarrier()
 {
 #ifdef PARALLEL
   localTimers.getCommunicationSynchronizationStopwatch()->start();
-
   MPI_Barrier(MPI_COMM_WORLD);
-
   localTimers.getCommunicationSynchronizationStopwatch()->stop();
 #endif
 }
@@ -885,17 +928,10 @@ void QMCManager::zeroOut()
 ostream&  operator<<(ostream & strm, QMCManager & rhs)
 {
   strm << "**************** Start of Results *****************" << endl;
-  
   strm << rhs.Properties_total;
-  
   QMCDerivativeProperties derivativeProperties(&rhs.Properties_total,
 					       rhs.Input.flags.dt);
-
   strm << derivativeProperties << endl;
-
   strm << "**************** End of Results *****************" << endl;
-
   return strm;
 }
-
-

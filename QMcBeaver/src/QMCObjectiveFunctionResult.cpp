@@ -16,11 +16,8 @@ QMCObjectiveFunctionResult::QMCObjectiveFunctionResult()
 {
 }
 
-QMCObjectiveFunctionResult::QMCObjectiveFunctionResult(QMCInput *input, 
-						       double energyAve, 
-						       double energyVar, 
-						       double logWeightAve,
-						       double logWeightVar,
+QMCObjectiveFunctionResult::QMCObjectiveFunctionResult(QMCInput *input,
+  double energyAve, double energyVar, double logWeightAve, double logWeightVar,
 						      Array1D<Complex> & poles)
 {
   Input = input;

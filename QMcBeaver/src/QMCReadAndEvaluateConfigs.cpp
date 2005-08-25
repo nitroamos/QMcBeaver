@@ -17,7 +17,7 @@ QMCReadAndEvaluateConfigs::QMCReadAndEvaluateConfigs()
 }
 
 QMCReadAndEvaluateConfigs::QMCReadAndEvaluateConfigs(QMCInput *In, 
-                                                             int cfgsToSkip)
+						     int cfgsToSkip)
 {
   initialize(In, cfgsToSkip);
 }
@@ -116,12 +116,8 @@ void QMCReadAndEvaluateConfigs::rootCalculateProperties(
   // The root node packs all of the parameter sets into a vector
 
   for(int i=0;i<Params.dim1();i++)
-    {
-      for(int j=0;j<Params(i).dim1();j++)
-	{
-	  PackedParameters[i*Params(0).dim1()+j] = Params(i)(j);
-	}
-    }
+    for(int j=0;j<Params(i).dim1();j++)
+      PackedParameters[i*Params(0).dim1()+j] = Params(i)(j);
 
   // send PackedParameters to all cpu's 
 
@@ -188,12 +184,8 @@ void QMCReadAndEvaluateConfigs::workerCalculateProperties()
   // Everyone unpacks PackedParameters
 
   for(int i=0;i<Params.dim1();i++)
-    {
-      for(int j=0;j<Params(i).dim1();j++)
-	{
-	  Params(i)(j) = PackedParameters[i*Params(0).dim1()+j];
-	}
-    }
+    for(int j=0;j<Params(i).dim1();j++)
+      Params(i)(j) = PackedParameters[i*Params(0).dim1()+j];
 
   delete [] PackedParameters;
 
@@ -236,16 +228,12 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
 
   Properties.allocate(Params.dim1());
   for(int j=0;j<Properties.dim1();j++)
-    {
-      Properties(j).zeroOut();
-    }
+    Properties(j).zeroOut();
 
   // Skip the appropriate number of configs from the beginning of the file.
 
   for (int i=0; i<configsToSkip; i++)
-    {
-      read_next_config();
-    }
+    read_next_config();
 
   // read configurations until the file is empty
 
@@ -267,9 +255,7 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
 	  // properties
 
 	  for(int i=0; i<Params.dim1(); i++)
-	    {
-	      AddNewConfigToProperites(Params(i),Properties(i));
-	    }
+	    AddNewConfigToProperites(Params(i),Properties(i));
 	}
     }
   config_in_stream.close();
@@ -294,7 +280,6 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
   if( Am_I_Valid == true )
     {
       // If the Jastrow is nonsingular perform the calculation as normal
-
       // calculate the local energy and weight for this configuration  
 
       E_Local = calc_E_Local_current();
@@ -303,14 +288,10 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
       // Limit the size of E_Local or the weights
 
       if(E_Local > MAXIMUM_ENERGY_VALUE)
-	{
-	  E_Local = MAXIMUM_ENERGY_VALUE;
-	}
+	E_Local = MAXIMUM_ENERGY_VALUE;
 
       if(logWeight > MAXIMUM_LOG_WEIGHT_VALUE)
-	{
-	  logWeight = MAXIMUM_LOG_WEIGHT_VALUE;
-	}
+	logWeight = MAXIMUM_LOG_WEIGHT_VALUE;
     }
   else
     {
@@ -349,9 +330,7 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
   for(int i=0; i<Nelectrons; i++)
     {
       for(int j=0; j<3; j++)
-        {
-	  Grad_PsiRatio_current_without_Jastrow(i,j)=D2(i,j);
-	}
+	Grad_PsiRatio_current_without_Jastrow(i,j)=D2(i,j);
     }  
 
   //look at QMCFunctions.calculate_Grad_PsiRatio_current()
@@ -362,10 +341,8 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
   for(int i=0; i<Nelectrons; i++)
     {
       for(int j=0; j<3; j++)
-        {
-	  Grad_PsiRatio_current(i,j)=
-        Grad_PsiRatio_current_without_Jastrow(i,j) +(*Grad_sum_u_current)(i,j);
-	}
+	Grad_PsiRatio_current(i,j)= Grad_PsiRatio_current_without_Jastrow(i,j)
+	  + (*Grad_sum_u_current)(i,j);
     }
 
   //calc alpha_beta_sum_of_Lap_PsiRatio_current
@@ -381,10 +358,8 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
   for(int i=0; i<Nelectrons; i++)
     {
       for(int j=0; j<3; j++)
-        {
-          Laplacian_PsiRatio_current += (*Grad_sum_u_current)(i,j) *
-                     (2*Grad_PsiRatio_current(i,j)-(*Grad_sum_u_current)(i,j));
-        }
+	Laplacian_PsiRatio_current += (*Grad_sum_u_current)(i,j) *
+	  (2*Grad_PsiRatio_current(i,j)-(*Grad_sum_u_current)(i,j));
     }
   
   //look at QMCFunctions.calculate_E_Local_current()

@@ -97,13 +97,23 @@ public:
   /**
     Sets two objects equal.
   */
-  void operator = ( const QMCProperties &rhs);
+  void operator = ( const QMCProperties &rhs );
 
   /**
     Returns the sum of two QMCProperties.
     @return sum of two QMCProperties
   */
   QMCProperties operator + ( QMCProperties &rhs );
+
+  /**
+    Adds the statistics calculated for a time step to the object as new 
+    samples.  This is not the same as adding the two QMCProperties objects 
+    together.
+    @param newProperties the statistics calculated at the time step.
+    @param weight the weight of the new samples.
+    @param nwalkers the number of walkers used to make this sample.
+  */
+  void newSample(QMCProperties* newProperties, double weight, int nwalkers);
 
   /**
     Tells the object if basis function densities are being calculated.
@@ -168,7 +178,6 @@ public:
   static MPI_Op MPI_REDUCE;
 
 #endif
-
 };
 
 #endif

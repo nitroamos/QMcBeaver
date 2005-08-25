@@ -36,41 +36,10 @@ void QMCEquilibrationArray::setCalcDensity(bool calcDensity,
 void QMCEquilibrationArray::newSample(QMCProperties * timeStepProps,
                                       double totalWeights, int nWalkers)
 { 
-  //  cout << "Adding sample " 
-  //       << Eq_Array[0].getProperties()->energy.getNumberSamples() + 1
-  //       << ".  There are " << decorr_objects << " Properties objects alive."
-  //       << endl;
-
   // Adds the new sample to the active elements of the array.
   for (int i=0; i<decorr_objects; i++)
-    {
-      Eq_Array[i].getProperties()->energy.newSample
-        (timeStepProps->energy.getAverage(), totalWeights);
-
-      Eq_Array[i].getProperties()->kineticEnergy.newSample
-	(timeStepProps->kineticEnergy.getAverage(), totalWeights);
-
-      Eq_Array[i].getProperties()->potentialEnergy.newSample
-        (timeStepProps->potentialEnergy.getAverage(), totalWeights);
-
-      Eq_Array[i].getProperties()->acceptanceProbability.newSample
-        (timeStepProps->acceptanceProbability.getAverage(), totalWeights);
-
-      Eq_Array[i].getProperties()->distanceMovedAccepted.newSample
-        (timeStepProps->distanceMovedAccepted.getAverage(), totalWeights);
-
-      Eq_Array[i].getProperties()->distanceMovedTrial.newSample
-	(timeStepProps->distanceMovedTrial.getAverage(), totalWeights);
-
-      Eq_Array[i].getProperties()->logWeights.newSample
-	(timeStepProps->logWeights.getAverage(), nWalkers);
-      if (calc_density)
-	for (int j=0; j<nBasisFunc; j++)
-	  {
-	    Eq_Array[i].getProperties()->chiDensity(j).newSample
-	      (timeStepProps->chiDensity(j).getAverage(), totalWeights);
-	  }
-    }
+    Eq_Array[i].getProperties()->newSample(timeStepProps, totalWeights, 
+					   nWalkers);
 
   // Activates the ith element on the 2^ith step.
   long check = power(2,decorr_objects);
@@ -92,8 +61,6 @@ QMCProperties * QMCEquilibrationArray::chooseDecorrObject()
 // energy.
 int QMCEquilibrationArray::getDecorrObjectIndex()
 {
-  //  cout << "Choosing Properties object." << endl;
-
   int obj = 0;
   while(true)
     {
@@ -125,7 +92,6 @@ int QMCEquilibrationArray::getDecorrObjectIndex()
           obj = i;
 	}
     }
-  // cout << "Object " << obj << " has the lowest standard deviation." << endl;
   return obj;
 }
 
@@ -144,13 +110,9 @@ Stopwatch * QMCEquilibrationArray::getEquilibrationStopwatch()
 void QMCEquilibrationArray::startTimers()
 {
   for (int i=0; i<decorr_objects; i++)
-    {
-      Eq_Array[i].getPropagationStopwatch()->start();
-    }
+    Eq_Array[i].getPropagationStopwatch()->start();
   for (int j=decorr_objects; j<EQ; j++)
-    {
-      Eq_Array[j].getEquilibrationStopwatch()->start();
-    }
+    Eq_Array[j].getEquilibrationStopwatch()->start();
 }
 
 void QMCEquilibrationArray::stopTimers()
@@ -158,13 +120,9 @@ void QMCEquilibrationArray::stopTimers()
   for (int i=0; i<EQ; i++)
     {
       if (Eq_Array[i].getPropagationStopwatch()->isRunning())
-        {
-	  Eq_Array[i].getPropagationStopwatch()->stop();
-	}
+	Eq_Array[i].getPropagationStopwatch()->stop();
       else if (Eq_Array[i].getEquilibrationStopwatch()->isRunning())
-	{
-	  Eq_Array[i].getEquilibrationStopwatch()->stop();
-	}
+	Eq_Array[i].getEquilibrationStopwatch()->stop();
     }
 }
 
@@ -191,9 +149,7 @@ void QMCEquilibrationArray::readXML(istream& strm)
   strm >> temp;
 
   for (int i=0; i<EQ; i++) 
-    {
-      Eq_Array[i].getProperties()->readXML(strm);
-    }
+    Eq_Array[i].getProperties()->readXML(strm);
   
   strm >> temp;
 
@@ -208,9 +164,7 @@ long QMCEquilibrationArray::power(int a, int b)
 {
   long result = 1;
   for (int i=0; i<b; i++)
-    {
-      result *= a;
-    }
+    result *= a;
   return result;
 }
 

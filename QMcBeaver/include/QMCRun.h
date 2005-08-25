@@ -60,12 +60,20 @@ class QMCRun
   QMCProperties * getProperties();
 
   /**
-    Starts the times in the EquilibrationArray.
+    Gets the statistics for the properties that have been calculated at this 
+    time step.
+    @return statistics for the properties that have been calculated at this
+    time step.
+  */
+  QMCProperties * getTimeStepProperties();
+
+  /**
+    Starts the timers in the EquilibrationArray.
   */
   void startTimers();
 
   /**
-    Stops the times in the EquilibrationArray.
+    Stops the timers in the EquilibrationArray.
   */
   void stopTimers();
 
@@ -90,6 +98,17 @@ class QMCRun
     @return total weights for current walkers.
   */
   double getWeights();
+
+  /** 
+    Gets the factor that corrects the population size bias in the statistics.
+    @return population size bias correction factor
+  */
+  double getPopulationSizeBiasCorrectionFactor();
+
+  /**
+    Reweights and branches walkers to synchronize the DMC ensemble.
+  */
+  void reweightAndBranchWalkers();
 
   /**
     Gets the current number of walkers.
@@ -121,6 +140,17 @@ class QMCRun
   */ 
   void writeCorrelatedSamplingConfigurations(ostream& strm);  
 
+  /**
+    Calculates the distances between all pairs of electrons and records them in
+    parallel and opposite spin histograms.
+  */
+  void calculatePairDistances();
+
+  /**
+    Writes the parallel and opposite spin pair distance histograms to files.
+  */
+  void writePairDensityHistograms();
+  
   /**
     Writes the state of this object to an XML stream.
     @param strm XML stream
@@ -154,6 +184,11 @@ private:
   QMCProperties Properties;
 
   /**
+    The statistics for these walkers at this time step.
+  */
+  QMCProperties timeStepProperties;
+
+  /**
     Input data to control the calculation.
   */
   QMCInput *Input;
@@ -174,7 +209,7 @@ private:
   void unitWeightBranching();
 
   /**
-    During a DMC calculation branch a walker if it's weight exceeds a 
+    During a DMC calculation branch a walker if its weight exceeds a 
     threshold and fuse walkers when their weights fall below a threshold.
   */
   void nonunitWeightBranching();
@@ -202,10 +237,26 @@ private:
   */
   void calculatePopulationSizeBiasCorrectionFactor();
 
+  /**
+    The maximum distance between a pair of electrons that will be recorded in
+    the histogram.
+  */
+  double max_pair_distance;
+
+  /**
+    The size of a bin in the pair distance histograms.
+  */
+  double dr;
+
+  /** 
+    The histogram of distances between parallel spin electrons.
+  */
+  Array1D<double> pll_spin_histogram;
+
+  /**
+    The histogram of distances between opposite spin electrons.
+  */
+  Array1D<double> opp_spin_histogram;
 };
 
 #endif
-
-
-
-

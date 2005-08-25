@@ -162,6 +162,18 @@ class QMCFlags
   */
   double fusion_threshold;
 
+  /** 
+     1 if the global results are to be collected and broadcast to all nodes and
+     used to calculate the estimated energy, trial energy, and effective time
+     step.
+  */
+  int synchronize_dmc_ensemble;
+
+  /**
+     The interval at which the DMC ensemble is to be synchronized.
+  */
+  int synchronize_dmc_ensemble_interval;
+
   /**
      Parameter which can be used to prevent persistent configurations
      from interfering with a calculation.  A description of this is
@@ -496,6 +508,18 @@ class QMCFlags
      to be written out, and 0 otherwise.
   */
   int write_all_energies_out;
+
+  /**
+     1 if the distance between each pair of electrons for every time step is to
+     be collected and written out in a histogram, and 0 otherwise.
+  */
+  int write_pair_densities;
+
+  /**
+     The interval at which the pair density histograms are to be written out to
+     files.
+  */
+  int write_pair_densities_interval;
 
   /**
      Are Chip and Mike cool?  Answer: Yea Baby!

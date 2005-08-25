@@ -45,12 +45,10 @@ QMCWalker::~QMCWalker()
 
 void QMCWalker::operator=( const QMCWalker & rhs )
 {
-  // In the equality operator DON'T copy the 
-  // pointers to the child walkers.  If you do,
-  // then there is the possibility of big memory leak
-  // problems.  This is not required because these are 
-  // just temporary variables used in propagating the 
-  // electrons.
+  // In the equality operator DON'T copy the pointers to the child walkers.  
+  // If you do, then there is the possibility of big memory leak problems.  
+  // This is not required because these are just temporary variables used in 
+  // propagating the electrons.
 
   weight = rhs.weight;
   age    = rhs.age;
@@ -67,7 +65,8 @@ void QMCWalker::operator=( const QMCWalker & rhs )
   walkerData            = rhs.walkerData;
 }
 
-void QMCWalker::initializePropagation(QMCWalkerData * &data, Array2D<double> * &rToCalc)
+void QMCWalker::initializePropagation(QMCWalkerData * &data, 
+				      Array2D<double> * &rToCalc)
 {
   createChildWalkers();
   forwardGreensFunction = TrialWalker->moveElectrons();
@@ -77,8 +76,8 @@ void QMCWalker::initializePropagation(QMCWalkerData * &data, Array2D<double> * &
 
 void QMCWalker::processPropagation()
 {  
-  QMCGreensRatioComponent reverseGreensFunction = \
-                                              calculateReverseGreensFunction();
+  QMCGreensRatioComponent reverseGreensFunction = 
+    calculateReverseGreensFunction();
   double GreensFunctionRatio =
     reverseGreensFunction/forwardGreensFunction;
 
@@ -614,111 +613,116 @@ QMCGreensRatioComponent \
 
 void QMCWalker::reweight_walker()
 {
-  double S_trial;
-  double S_original;
-  
-  double trialEnergy = TrialWalker->walkerData.localEnergy;
-  double originalEnergy = OriginalWalker->walkerData.localEnergy;
-
-  if( Input->flags.energy_modification_type == "none" )
-    {
-      S_trial    = Input->flags.energy_trial - trialEnergy;
-      S_original = Input->flags.energy_trial - originalEnergy;
-    }
-  else
-    {
-      Array2D<double> * tMGPR = & TrialWalker->walkerData.modifiedGradPsiRatio;
-      Array2D<double> * tGPR = & TrialWalker->walkerData.gradPsiRatio;
-      Array2D<double> * oMGPR = & OriginalWalker->walkerData.modifiedGradPsiRatio;
-      Array2D<double> * oGPR = & OriginalWalker->walkerData.gradPsiRatio;
-      
-      double lengthGradTrialModified = sqrt((*tMGPR).dotAllElectrons(*tMGPR));
-      double lengthGradTrialUnmodified = sqrt((*tGPR).dotAllElectrons(*tGPR));
-      double lengthGradOriginalModified = sqrt((*oMGPR).dotAllElectrons(*oMGPR));
-      double lengthGradOriginalUnmodified = sqrt((*oGPR).dotAllElectrons(*oGPR));
-
-      if( Input->flags.energy_modification_type == "modified_umrigar93" )
-	{
-	  S_trial = (Input->flags.energy_trial - trialEnergy)*
-	    (lengthGradTrialModified/lengthGradTrialUnmodified);
-	  
-	  S_original = (Input->flags.energy_trial - originalEnergy) *
-	    (lengthGradOriginalModified/lengthGradOriginalUnmodified);
-	}
-      else if( Input->flags.energy_modification_type == "umrigar93" )
-	{
-	  S_trial = (Input->flags.energy_trial - Input->flags.energy_estimated) +
-	    (Input->flags.energy_estimated - trialEnergy)*
-	    (lengthGradTrialModified/lengthGradTrialUnmodified);
-	  
-	  S_original = (Input->flags.energy_trial - Input->flags.energy_estimated)
-	    + (Input->flags.energy_estimated - originalEnergy) *
-	    (lengthGradOriginalModified/lengthGradOriginalUnmodified);
-	}  
-      else
-	{
-	  cerr << "ERROR: unknown energy modification method!" << endl;
-	  exit(0);
-	}
-    }
-
-  // determine the weighting factor dw so that the new weight = Weight*dw
-  double dW = 0;
+  double dW = 0.0;
+  // determine the weighting factor dW so that the new weight = weight*dW
 
   if( Input->flags.run_type == "variational" )
     {
-      // Keep all of the weights constant for VMC
+      // Keep weights constant for VMC
       dW = 1.0;
     }
-  else if( Input->flags.walker_reweighting_method == "simple_symmetric" )
-    {
-      // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 8
-      // This is the "classical" reweighting factor most people use.
-      // umrigar says this has larger timestep and statistical errors than
-      // umrigar93_probability_weighted
 
-      double temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
-      dW = exp(temp);
-    }
-  else if( Input->flags.walker_reweighting_method == "simple_asymmetric" )
-    {
-      // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 23
-      // supposedly between simple_symmetric and umrigar93_probability_weighted
-      // in terms of its timestep and statistical performance
-
-      double temp;
-
-      if( move_accepted )
-	{
-	  temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
-	}
-      else
-	{
-	  temp = S_original*Input->flags.dt_effective;
-	}
-
-      dW = exp(temp);
-    }
-  else if( Input->flags.walker_reweighting_method == 
-	   "umrigar93_probability_weighted" )
-    {
-      // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993
-      // Umrigar claims this has a small time step error and a small 
-      // statistical error compared to simple_asymmetric and simple_symmetric
-
-      double p = TrialWalker->getAcceptanceProbability();
-      double q = OriginalWalker->getAcceptanceProbability();
-
-      double temp = (p/2.0*(S_original+S_trial) + q*S_original) * 
-	Input->flags.dt_effective;
-
-      dW = exp(temp);
-    }
   else
     {
-      cerr << "ERROR: unknown branching method!" << endl;
-      exit(0);
-    }
+      double S_trial;
+      double S_original;
+  
+      double trialEnergy = TrialWalker->walkerData.localEnergy;
+      double originalEnergy = OriginalWalker->walkerData.localEnergy;
+
+      if( Input->flags.energy_modification_type == "none" )
+        {
+          S_trial    = Input->flags.energy_trial - trialEnergy;
+          S_original = Input->flags.energy_trial - originalEnergy;
+        }
+      else
+        {
+          Array2D<double> * tMGPR = 
+	    & TrialWalker->walkerData.modifiedGradPsiRatio;
+          Array2D<double> * tGPR = & TrialWalker->walkerData.gradPsiRatio;
+          Array2D<double> * oMGPR = 
+	    & OriginalWalker->walkerData.modifiedGradPsiRatio;
+          Array2D<double> * oGPR = & OriginalWalker->walkerData.gradPsiRatio;
+      
+          double lengthGradTrialModified = 
+	    sqrt((*tMGPR).dotAllElectrons(*tMGPR));
+          double lengthGradTrialUnmodified = 
+	    sqrt((*tGPR).dotAllElectrons(*tGPR));
+          double lengthGradOriginalModified = 
+	    sqrt((*oMGPR).dotAllElectrons(*oMGPR));
+          double lengthGradOriginalUnmodified = 
+	    sqrt((*oGPR).dotAllElectrons(*oGPR));
+
+          if( Input->flags.energy_modification_type == "modified_umrigar93" )
+	    {
+	      S_trial = (Input->flags.energy_trial - trialEnergy)*
+		(lengthGradTrialModified/lengthGradTrialUnmodified);
+	  
+	      S_original = (Input->flags.energy_trial - originalEnergy) *
+		(lengthGradOriginalModified/lengthGradOriginalUnmodified);
+	    }	
+          else if( Input->flags.energy_modification_type == "umrigar93" )
+	    {
+	      S_trial = 
+		(Input->flags.energy_trial - Input->flags.energy_estimated) +
+		(Input->flags.energy_estimated - trialEnergy)*
+		(lengthGradTrialModified/lengthGradTrialUnmodified);
+       
+	      S_original = 
+		(Input->flags.energy_trial - Input->flags.energy_estimated) +
+		(Input->flags.energy_estimated - originalEnergy) *
+		(lengthGradOriginalModified/lengthGradOriginalUnmodified);
+	    }  
+          else
+	    {
+	      cerr << "ERROR: unknown energy modification method!" << endl;
+	      exit(0);
+	    }
+        }
+
+      if( Input->flags.walker_reweighting_method == "simple_symmetric" )
+        {
+	  // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 8
+	  // This is the "classical" reweighting factor most people use.
+	  // umrigar says this has larger timestep and statistical errors than
+	  // umrigar93_probability_weighted
+          double temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
+          dW = exp(temp);
+        }
+      else if( Input->flags.walker_reweighting_method == "simple_asymmetric" )
+        {
+	  // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 23
+	  // supposedly between simple_symmetric and 
+          // umrigar93_probability_weighted in terms of its timestep error and
+          // statistical performance
+          double temp;
+          if( move_accepted )
+	    temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
+          else
+	    temp = S_original*Input->flags.dt_effective;
+          dW = exp(temp);
+        }
+      else if( Input->flags.walker_reweighting_method == 
+	       "umrigar93_probability_weighted" )
+        {
+	  // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993
+	  // Umrigar claims this has a small time step error and a small 
+	  // statistical error compared to simple_asymmetric and 
+          // simple_symmetric
+          double p = TrialWalker->getAcceptanceProbability();
+          double q = OriginalWalker->getAcceptanceProbability();
+
+          double temp = (p/2.0*(S_original+S_trial) + q*S_original) * 
+	                Input->flags.dt_effective;
+
+          dW = exp(temp);
+        }
+      else
+        {
+          cerr << "ERROR: unknown branching method!" << endl;
+          exit(0);
+        }
+    }  
 
 #ifdef DELETE_LARGE_WEIGHT_WALKERS
 
@@ -734,14 +738,11 @@ void QMCWalker::reweight_walker()
       cerr << "Walker's weight is being set to zero so that it does not"
 	   << " ruin the whole calculation or use all of the "
 	   << "machine's memory." << endl;
-
       dW = 0.0;
     }
-
 #endif
-
+  
   // now set the weight of the walker
-
   setWeight( getWeight() * dW );
 }
 
@@ -757,20 +758,15 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
   double MoveOldWalkerFactor = 1.0;
 
   if( age > Input->flags.old_walker_acceptance_parameter )
-    {
-      MoveOldWalkerFactor = 
-	pow(1.1,age-Input->flags.old_walker_acceptance_parameter);
-    }
+    MoveOldWalkerFactor = 
+      pow(1.1,age-Input->flags.old_walker_acceptance_parameter);
 
   // calculate the probability of accepting the trial move
   double p = PsiRatio * PsiRatio * GreensRatio * MoveOldWalkerFactor;
 
   // Force the walker to move if it is too old
   if( age > 2*Input->flags.old_walker_acceptance_parameter )
-    {
-      p = 1;
-    }
-
+    p = 1;
 
   // if the aratio is NaN then reject the move
   if( IeeeMath::isNaN(p) != 0 )
@@ -885,6 +881,55 @@ void QMCWalker::writeCorrelatedSamplingConfiguration(ostream& strm)
     }
 
   strm << (*walkerData.configOutput).str();
+}
+
+void QMCWalker::calculatePairDistances(double max_pair_distance, double dr, 
+			  Array1D<double> &pll_spin, Array1D<double> &opp_spin)
+{
+  int nalpha = Input->WF.getNumberAlphaElectrons();
+  int nbeta = Input->WF.getNumberBetaElectrons();
+
+  double dist = 0.0;
+  int index = 0;
+
+  if (nalpha > 1)
+    {
+      for (int i=0; i<nalpha-1; i++)
+	for (int j=i+1; j<nalpha; j++)
+	  {
+	    dist = sqrt( (R(i,0) - R(j,0)) * (R(i,0) - R(j,0)) + 
+	      (R(i,1) - R(j,1)) * (R(i,1) - R(j,1)) + 
+	      (R(i,2) - R(j,2)) * (R(i,2) - R(j,2)) );
+	    index = int(dist/dr);
+	    pll_spin(index) += weight;
+	  }
+    }
+
+  if (nbeta > 1)
+    {
+      for (int i=nalpha; i<nalpha+nbeta-1; i++)
+	for (int j=i+1; j<nalpha+nbeta; j++)
+	  {
+	    dist = sqrt( (R(i,0) - R(j,0)) * (R(i,0) - R(j,0)) + 
+	      (R(i,1) - R(j,1)) * (R(i,1) - R(j,1)) + 
+	      (R(i,2) - R(j,2)) * (R(i,2) - R(j,2)) );
+	    index = int(dist/dr);
+	    pll_spin(index) += weight;
+	  }
+    }
+
+  if (nalpha > 0 && nbeta > 0)
+    {
+      for (int i=0; i<nalpha; i++)
+	for (int j=nalpha; j<nalpha+nbeta; j++)
+	  {
+	    dist = sqrt( (R(i,0) - R(j,0)) * (R(i,0) - R(j,0)) + 
+	      (R(i,1) - R(j,1)) * (R(i,1) - R(j,1)) + 
+	      (R(i,2) - R(j,2)) * (R(i,2) - R(j,2)) );
+	    index = int(dist/dr);
+	    opp_spin(index) += weight;
+	  }
+    }
 }
 
 void QMCWalker::toXML(ostream& strm)
@@ -1084,12 +1129,7 @@ bool QMCWalker::isSingular()
   return walkerData.isSingular;
 }
 
-
 double QMCWalker::getLocalEnergyEstimator()
 {
   return localEnergy;
 }
-
-
-
-
