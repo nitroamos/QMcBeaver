@@ -106,11 +106,6 @@ class QMCRun
   double getPopulationSizeBiasCorrectionFactor();
 
   /**
-    Reweights and branches walkers to synchronize the DMC ensemble.
-  */
-  void reweightAndBranchWalkers();
-
-  /**
     Gets the current number of walkers.
     @return number of walkers.
   */

@@ -153,11 +153,6 @@ public:
   */
   double getLocalEnergyEstimator();
 
-  /**
-    Reweight the walker after a move
-  */
-  void reweight_walker();
-
 private:
   double weight;
   int age;
@@ -261,6 +256,11 @@ private:
   Array2D<double> * getR();
   int getAge();
   double getAcceptanceProbability();
+
+  /**
+    Reweight the walker after a move
+  */
+  void reweight_walker();
 
   /**
     Calculates the observables for this walker.

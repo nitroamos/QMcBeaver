@@ -221,21 +221,6 @@ void QMCManager::synchronizeDMCEnsemble()
   MPI_Allreduce(QMCnode.getProperties(), &Properties_total, 1,
 	   QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, MPI_COMM_WORLD);
 
-  // Add the weights of the walkers and send to all nodes
-
-  double totalWeights;
-  double localWeight = QMCnode.getWeights();
-  
-  MPI_Allreduce(&localWeight, &totalWeights, 1, MPI_DOUBLE, MPI_SUM,
-		MPI_COMM_WORLD);
-
-  updateEstimatedEnergy(&Properties_total);
-  updateEffectiveTimeStep(&Properties_total);
-  updateTrialEnergy(totalWeights,
-		    Input.flags.number_of_walkers_initial*Input.flags.nprocs);
-
-  QMCnode.reweightAndBranchWalkers();
-
   localTimers.getCommunicationSynchronizationStopwatch()->stop();
 #else
   Properties_total = *QMCnode.getProperties();
@@ -845,10 +830,7 @@ void QMCManager::updateTrialEnergy(double weights, int nwalkers_init)
 	estimator was derived by David R. "Chip" Kent IV and is listed
 	in his notebook and possibly thesis.
        */
-
-      static const double originalEest = Input.flags.energy_estimated;
-
-      Input.flags.energy_trial = originalEest - 
+      Input.flags.energy_trial = Input.flags.energy_estimated - 
 	1.0 / Input.flags.dt_effective * log( weights / nwalkers_init );
     }
   else

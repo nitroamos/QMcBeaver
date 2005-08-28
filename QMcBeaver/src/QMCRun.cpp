@@ -95,13 +95,6 @@ void QMCRun::branchWalkers()
     }
 }
 
-void QMCRun::reweightAndBranchWalkers()
-{
-  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
-    wp->reweight_walker();
-  branchWalkers();
-}
-
 void QMCRun::zeroOut()
 {
   if (Input->flags.use_equilibration_array == 1) EquilibrationArray.zeroOut();
