@@ -40,14 +40,12 @@ for more details.
 #include "Array4D.h"
 #include "LU.h"
 #include "QMCInput.h"
+#include "Stopwatch.h"
 
-/**
-   This parameter is used in QMCRun to process several walkers simultaneously. The value
-   of this macro is how many walkers to treat at once. If this parameter is set to 1, then
-   the code will perform the way it did previously. Also, the amount of memory the
-   program requires is dependent on this because all the walkers have to be stored.
-*/
-#define WALKERS_PER_PASS 5 
+#ifdef QMC_GPU
+#include "GPUQMCMatrix.h"
+#include "GPUQMCBasisFunction.h"
+#endif
 
 using namespace std;
 
@@ -86,7 +84,15 @@ public:
     a \f$N \times 3\f$ matrix
     @param num how many configurations to process in the X array.
   */
-  void evaluate( Array1D< Array2D<double> * > &X, int num);
+  void evaluate(int num);
+
+  /**
+    An array of configurations are processed simultaneously. Call this function
+    to set up the basis function and matrix multiplication work, and then
+    when the results are actually needed, THEN call evaluate for psi et al
+    to be filled in.
+  */
+  void update_Ds(Array1D<Array2D<double>*> &X, int num);
 
   /**
     Gets an array of values of the Slater determinants for the last evaluated 
@@ -164,11 +170,18 @@ public:
   Array2D< Array2D<qmcfloat> > D_inv;
   Array2D< Array2D<qmcfloat> > Laplacian_D;
   Array3D< Array2D<qmcfloat> > Grad_D;
-
+#ifdef QMC_GPU
+  GPUQMCBasisFunction gpuBF;
+  GPUQMCMatrix gpuMatMult;
+  // Scratch Space
+  Array1D< Array2D<qmcfloat> > bfData;
+  Array2D< Array2D<qmcfloat>* > resultsCollector;
+#else
   // Scratch Space
   Array2D<qmcfloat> Chi;
   Array2D<qmcfloat> Chi_laplacian;
   Array1D< Array2D<qmcfloat> > Chi_gradient;
+#endif
 
   /* The dimensions of WF_coeffs is numDeterminants and then numBasisFunction x numOrb */
   Array1D< Array2D<qmcfloat> > WF_coeffs;
@@ -186,14 +199,7 @@ public:
   */
   void setStartAndStopElectronPositions(int startEl, int stopEl); 
 
-  /**
-     An array of configurations are processed simultaneously.
-  */
-  void update_Ds(Array1D<Array2D<double>*> &X, int num);
-
   void calculate_DerivativeRatios(int walker);
-
-  void update_D_inverse_and_Psi(int num);
 };
 
 #endif

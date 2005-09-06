@@ -51,14 +51,14 @@ public:
     a \f$N \times 3\f$ matrix
     */
 
-  void evaluate(Array2D<double> &X);
+  void evaluate(Array1D<Array2D<double>*> &X, int num);
 
 
   /**
     Gets the potential energy of the last configuration evaluated.
     */
   
-  double getEnergy();
+  double getEnergy(int which);
 
 
   /**
@@ -72,7 +72,7 @@ public:
  private:
   QMCInput *Input;
 
-  double Energy_total;
+  Array1D<double> Energy_total;
 
   double P_nn;
   double P_en;

@@ -143,10 +143,10 @@ public:
   /**
     Writes the state of this object to a stream for use in correlated
     sampling calculations.
-
+    @param which indicates which walker
     @param strm output stream
   */
-  void writeCorrelatedSamplingConfiguration(stringstream& strm);
+  void writeCorrelatedSamplingConfiguration(stringstream& strm, int which);
 
  private:
   QMCInput *Input; 
@@ -183,7 +183,12 @@ public:
   void calculate_Modified_Grad_PsiRatio(Array2D<double> & X, 
 					Array2D<double> & Modified_Grad_PsiRatio, 
 					Array2D<double> & Grad_PsiRatio);
-  void calculate_E_Local();
+  
+  /**
+    Calculate the local energy.
+    @param which indicates which walker
+    */
+  void calculate_E_Local(int which);
 
   /**
     Gets the value of the wavefunction at the last evaluated electronic
@@ -209,10 +214,10 @@ public:
 
   /**
     Gets the potential energy at the last evaluated electronic configuration.
-
+    @param which indicates which walker
     @return potential energy.
   */
-  double getPotentialEnergy();
+  double getPotentialEnergy(int which);
 
   /**
     Returns true if the last evaluated electronic configuration gives a
