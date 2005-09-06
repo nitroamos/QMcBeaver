@@ -1,9 +1,9 @@
 //            QMcBeaver
 //
-//         Constructed by 
+//         Constructed by
 //
-//     Michael Todd Feldmann 
-//              and 
+//     Michael Todd Feldmann
+//              and
 //   David Randall "Chip" Kent IV
 //
 // Copyright 2000.  All rights reserved.
@@ -13,11 +13,10 @@
 #include "QMCReadAndEvaluateConfigs.h"
 
 QMCReadAndEvaluateConfigs::QMCReadAndEvaluateConfigs()
-{
-}
+{}
 
-QMCReadAndEvaluateConfigs::QMCReadAndEvaluateConfigs(QMCInput *In, 
-						     int cfgsToSkip)
+QMCReadAndEvaluateConfigs::QMCReadAndEvaluateConfigs(QMCInput *In,
+    int cfgsToSkip)
 {
   initialize(In, cfgsToSkip);
 }
@@ -42,7 +41,7 @@ void QMCReadAndEvaluateConfigs::initialize(QMCInput *In, int cfgsToSkip)
   D2.allocate(Nelectrons,3);
 }
 
-  // Read in a new config
+// Read in a new config
 void QMCReadAndEvaluateConfigs::read_next_config()
 {
   string stemp;
@@ -87,14 +86,14 @@ void QMCReadAndEvaluateConfigs::read_next_config()
 // Calculate the properites from the configs for all the parameters in params
 // using the root node
 void QMCReadAndEvaluateConfigs::rootCalculateProperties(
-     Array1D < Array1D<double> > & Params, Array1D<QMCProperties> & Properties)
+  Array1D < Array1D<double> > & Params, Array1D<QMCProperties> & Properties)
 {
-  //Params holds all the vectors to be evaluated 
+  //Params holds all the vectors to be evaluated
   //Their scores be returned in the end
 
 #ifdef PARALLEL
   // Root packs all of the different parameter sets into a large vector
-  // This vector is sent to all processors where it is unpacked and 
+  // This vector is sent to all processors where it is unpacked and
   // the function is evaluated locally
 
   // Broadcast 1 to signal the workers to execute workerCalculateProperties
@@ -116,10 +115,14 @@ void QMCReadAndEvaluateConfigs::rootCalculateProperties(
   // The root node packs all of the parameter sets into a vector
 
   for(int i=0;i<Params.dim1();i++)
-    for(int j=0;j<Params(i).dim1();j++)
-      PackedParameters[i*Params(0).dim1()+j] = Params(i)(j);
+    {
+      for(int j=0;j<Params(i).dim1();j++)
+        {
+          PackedParameters[i*Params(0).dim1()+j] = Params(i)(j);
+        }
+    }
 
-  // send PackedParameters to all cpu's 
+  // send PackedParameters to all cpu's
 
   MPI_Bcast(PackedParameters,elements,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
@@ -150,12 +153,12 @@ void QMCReadAndEvaluateConfigs::rootCalculateProperties(
 // using the root node
 void QMCReadAndEvaluateConfigs::workerCalculateProperties()
 {
-  //Params holds all the vectors to be evaluated 
+  //Params holds all the vectors to be evaluated
   //Their scores be returned in the end
 
 #ifdef PARALLEL
   // Root packs all of the different parameter sets into a large vector
-  // This vector is sent to all processors where it is unpacked and 
+  // This vector is sent to all processors where it is unpacked and
   // the function is evaluated locally
 
   // Receive the size of the Params from the root node and allocate structures
@@ -166,7 +169,7 @@ void QMCReadAndEvaluateConfigs::workerCalculateProperties()
   Array1D< Array1D<double> > Params;
   Params.allocate(ParamSize[0]);
 
-  for(int i=0; i<ParamSize[0]; i++) 
+  for(int i=0; i<ParamSize[0]; i++)
     {
       Params(i).allocate(ParamSize[1]);
     }
@@ -176,7 +179,7 @@ void QMCReadAndEvaluateConfigs::workerCalculateProperties()
   int elements = Params.dim1()*Params(0).dim1();
   double *PackedParameters = new double[elements];
 
-  // Everyone else MPI recv PackedParameters by participating 
+  // Everyone else MPI recv PackedParameters by participating
   //in the MPI_BCast
 
   MPI_Bcast(PackedParameters,elements,MPI_DOUBLE,0,MPI_COMM_WORLD);
@@ -184,8 +187,12 @@ void QMCReadAndEvaluateConfigs::workerCalculateProperties()
   // Everyone unpacks PackedParameters
 
   for(int i=0;i<Params.dim1();i++)
-    for(int j=0;j<Params(i).dim1();j++)
-      Params(i)(j) = PackedParameters[i*Params(0).dim1()+j];
+    {
+      for(int j=0;j<Params(i).dim1();j++)
+        {
+          Params(i)(j) = PackedParameters[i*Params(0).dim1()+j];
+        }
+    }
 
   delete [] PackedParameters;
 
@@ -218,7 +225,7 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
   if( config_in_stream.bad() )
     {
       cerr << "ERROR: Cannot open file " << Input->flags.config_file_name
-	   << " in QMCReadAndEvaluateConfigs!" << endl;
+      << " in QMCReadAndEvaluateConfigs!" << endl;
       exit(0);
     }
 
@@ -228,12 +235,16 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
 
   Properties.allocate(Params.dim1());
   for(int j=0;j<Properties.dim1();j++)
-    Properties(j).zeroOut();
+    {
+      Properties(j).zeroOut();
+    }
 
   // Skip the appropriate number of configs from the beginning of the file.
 
   for (int i=0; i<configsToSkip; i++)
-    read_next_config();
+    {
+      read_next_config();
+    }
 
   // read configurations until the file is empty
 
@@ -243,34 +254,40 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
 
       read_next_config();
 
-      // On some computers, it seems this class was reading one extra config 
-      // in, assiging zeros to all the parameters. Why was it doing this? 
-      // Probably some compilers had a different definition of eof() or 
-      // something like that.  Anyway, assuming that the check for lnJ==0 
+      // On some computers, it seems this class was reading one extra config
+      // in, assiging zeros to all the parameters. Why was it doing this?
+      // Probably some compilers had a different definition of eof() or
+      // something like that.  Anyway, assuming that the check for lnJ==0
       // identifies these (it does on QSC) then this fix should work.
 
       if (lnJ != 0)
-	{
-	  // loop over the input configurations and calculate the corresponding
-	  // properties
+        {
+          // loop over the input configurations and calculate the corresponding
+          // properties
 
-	  for(int i=0; i<Params.dim1(); i++)
-	    AddNewConfigToProperites(Params(i),Properties(i));
-	}
+          for(int i=0; i<Params.dim1(); i++)
+            {
+              AddNewConfigToProperites(Params(i),Properties(i));
+            }
+        }
     }
   config_in_stream.close();
 }
 
-// given a set of parameters perform the necessary calcualtions and
+// given a set of parameters perform the necessary calculations and
 // add the results to the properties.
 void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
-			  Array1D<double> &Params,QMCProperties &Properties)
+  Array1D<double> &Params,QMCProperties &Properties)
 {
   // Calculate the jastrow values
 
   Input->JP.setParameterVector( Params );
 
-  Jastrow.evaluate( R );
+  //there is a much better way to do this...
+  Array1D< Array2D<double>* > temp;
+  temp.allocate(1);
+  temp(0) = &R;
+  Jastrow.evaluate(temp,1);
 
   double E_Local;
   double logWeight;
@@ -280,7 +297,8 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
   if( Am_I_Valid == true )
     {
       // If the Jastrow is nonsingular perform the calculation as normal
-      // calculate the local energy and weight for this configuration  
+
+      // calculate the local energy and weight for this configuration
 
       E_Local = calc_E_Local_current();
       logWeight  = calc_log_weight_current();
@@ -288,14 +306,18 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
       // Limit the size of E_Local or the weights
 
       if(E_Local > MAXIMUM_ENERGY_VALUE)
-	E_Local = MAXIMUM_ENERGY_VALUE;
+        {
+          E_Local = MAXIMUM_ENERGY_VALUE;
+        }
 
       if(logWeight > MAXIMUM_LOG_WEIGHT_VALUE)
-	logWeight = MAXIMUM_LOG_WEIGHT_VALUE;
+        {
+          logWeight = MAXIMUM_LOG_WEIGHT_VALUE;
+        }
     }
   else
     {
-      // If the Jastrow is singular provide default values for the 
+      // If the Jastrow is singular provide default values for the
       // local energy and weight;
 
       E_Local = MAXIMUM_ENERGY_VALUE;
@@ -316,11 +338,11 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
 
   //calc Grad_sum_u_current
 
-  Array2D<double> * Grad_sum_u_current = Jastrow.getGradientLnJastrow();
+  Array2D<double> * Grad_sum_u_current = Jastrow.getGradientLnJastrow(0);
 
   //calc Lap_sum_u_current
 
-  double Lap_sum_u_current = Jastrow.getLaplacianLnJastrow();
+  double Lap_sum_u_current = Jastrow.getLaplacianLnJastrow(0);
 
   //this is only for clarity and can be optimized
   //calc Grad_PsiRatio_current_without_Jastrow
@@ -330,8 +352,10 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
   for(int i=0; i<Nelectrons; i++)
     {
       for(int j=0; j<3; j++)
-	Grad_PsiRatio_current_without_Jastrow(i,j)=D2(i,j);
-    }  
+        {
+          Grad_PsiRatio_current_without_Jastrow(i,j)=D2(i,j);
+        }
+    }
 
   //look at QMCFunctions.calculate_Grad_PsiRatio_current()
   //calc Grad_PsiRatio_current
@@ -341,8 +365,10 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
   for(int i=0; i<Nelectrons; i++)
     {
       for(int j=0; j<3; j++)
-	Grad_PsiRatio_current(i,j)= Grad_PsiRatio_current_without_Jastrow(i,j)
-	  + (*Grad_sum_u_current)(i,j);
+        {
+          Grad_PsiRatio_current(i,j)=
+            Grad_PsiRatio_current_without_Jastrow(i,j) +(*Grad_sum_u_current)(i,j);
+        }
     }
 
   //calc alpha_beta_sum_of_Lap_PsiRatio_current
@@ -352,16 +378,18 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
   //look at QMCFunctions.calculate_Laplacian_PsiRatio_current()
   //calc Laplacian_PsiRatio_current
 
-  double Laplacian_PsiRatio_current = alpha_beta_sum_of_Lap_PsiRatio_current + 
-    Lap_sum_u_current;
-  
+  double Laplacian_PsiRatio_current = alpha_beta_sum_of_Lap_PsiRatio_current +
+                                      Lap_sum_u_current;
+
   for(int i=0; i<Nelectrons; i++)
     {
       for(int j=0; j<3; j++)
-	Laplacian_PsiRatio_current += (*Grad_sum_u_current)(i,j) *
-	  (2*Grad_PsiRatio_current(i,j)-(*Grad_sum_u_current)(i,j));
+        {
+          Laplacian_PsiRatio_current += (*Grad_sum_u_current)(i,j) *
+                                        (2*Grad_PsiRatio_current(i,j)-(*Grad_sum_u_current)(i,j));
+        }
     }
-  
+
   //look at QMCFunctions.calculate_E_Local_current()
   //calc E_Local_current
 
@@ -373,23 +401,23 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
 // calculated jastrow
 double QMCReadAndEvaluateConfigs::calc_log_weight_current()
 {
-  double logweight = 2*(Jastrow.getLnJastrow() - lnJ);
+  double logweight = 2*(Jastrow.getLnJastrow(0) - lnJ);
   return logweight;
 }
 
 // perform an mpi reduce operation on the properties collected on each
 // processor
 void QMCReadAndEvaluateConfigs::MPI_reduce(
-	       Array1D <QMCProperties> &local_Properties, 
-	       Array1D < QMCProperties> &global_Properties)
+  Array1D <QMCProperties> &local_Properties,
+  Array1D < QMCProperties> &global_Properties)
 {
   global_Properties.allocate(local_Properties.dim1());
 
 #ifdef PARALLEL
 
   MPI_Reduce(local_Properties.array(),global_Properties.array(),
-	     local_Properties.dim1(),QMCProperties::MPI_TYPE,
-	     QMCProperties::MPI_REDUCE,0,MPI_COMM_WORLD);
+             local_Properties.dim1(),QMCProperties::MPI_TYPE,
+             QMCProperties::MPI_REDUCE,0,MPI_COMM_WORLD);
 
 #else
 

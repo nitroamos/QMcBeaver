@@ -1,9 +1,9 @@
 //            QMcBeaver
 //
-//         Constructed by 
+//         Constructed by
 //
-//     Michael Todd Feldmann 
-//              and 
+//     Michael Todd Feldmann
+//              and
 //   David Randall "Chip" Kent IV
 //
 // Copyright 2000.  All rights reserved.
@@ -15,58 +15,68 @@
 void QMCJastrow::initialize(QMCInput * input)
 {
   Input = input;
+  int walkersPerPass = Input->flags.walkers_per_pass;
+  sum_U.allocate(walkersPerPass);
+  grad_sum_U.allocate(walkersPerPass);
+  laplacian_sum_U.allocate(walkersPerPass);
 
   JastrowElectronNuclear.initialize(Input);
   JastrowElectronElectron.initialize(Input);
 }
 
-double QMCJastrow::getJastrow()
+double QMCJastrow::getJastrow(int which)
 {
-  return exp(sum_U);
+  return exp(sum_U(which));
 }
 
-double QMCJastrow::getLnJastrow()
+double QMCJastrow::getLnJastrow(int which)
 {
-  return sum_U;
+  return sum_U(which);
 }
 
-Array2D<double> * QMCJastrow::getGradientLnJastrow()
+Array2D<double> * QMCJastrow::getGradientLnJastrow(int which)
 {
-  return &grad_sum_U;
+  return &grad_sum_U(which);
 }
 
-double QMCJastrow::getLaplacianLnJastrow()
+double QMCJastrow::getLaplacianLnJastrow(int which)
 {
-  return laplacian_sum_U;
+  return laplacian_sum_U(which);
 }
 
-void QMCJastrow::evaluate(Array2D < double > & X)
+void QMCJastrow::evaluate(Array1D<Array2D<double>*> &X, int num)
 {
-  evaluate(Input->JP,X);
+  evaluate(Input->JP,X,num);
 }
 
-void QMCJastrow::evaluate(QMCJastrowParameters & JP, Array2D<double> & X)
+void QMCJastrow::evaluate(QMCJastrowParameters & JP, Array1D<Array2D<double>*> &X, int num)
 {
-  JastrowElectronNuclear.evaluate(JP,X);
-  JastrowElectronElectron.evaluate(JP,X);
-
-  sum_U = JastrowElectronNuclear.getLnJastrow() + 
-    JastrowElectronElectron.getLnJastrow();
-
-  laplacian_sum_U = JastrowElectronNuclear.getLaplacianLnJastrow() +
-    JastrowElectronElectron.getLaplacianLnJastrow();
-
-  Array2D<double> * grad_JEN = JastrowElectronNuclear.getGradientLnJastrow();
-  Array2D<double> * grad_JEE = JastrowElectronElectron.getGradientLnJastrow();
-
-  grad_sum_U.allocate(X.dim1(),3);
-
-  for(int i=0; i<grad_JEE->dim1(); i++)
+  Array2D<double> * grad_JEN;
+  Array2D<double> * grad_JEE;
+  for(int walker = 0; walker < num; walker++)
     {
-      for(int j=0; j<grad_JEE->dim2(); j++)
-	{
-	  grad_sum_U(i,j) = (*grad_JEE)(i,j) + 
-	    (*grad_JEN)(i,j);
-	}
+      JastrowElectronNuclear.evaluate(JP,*X(walker));
+      JastrowElectronElectron.evaluate(JP,*X(walker));
+
+      sum_U(walker) = JastrowElectronNuclear.getLnJastrow() +
+                      JastrowElectronElectron.getLnJastrow();
+
+      laplacian_sum_U(walker) = JastrowElectronNuclear.getLaplacianLnJastrow() +
+                                JastrowElectronElectron.getLaplacianLnJastrow();
+
+      grad_JEN = JastrowElectronNuclear.getGradientLnJastrow();
+      grad_JEE = JastrowElectronElectron.getGradientLnJastrow();
+
+      grad_sum_U(walker).allocate(X(walker)->dim1(),3);
+
+      for(int i=0; i<grad_JEE->dim1(); i++)
+        {
+          for(int j=0; j<grad_JEE->dim2(); j++)
+            {
+              (grad_sum_U(walker))(i,j) = (*grad_JEE)(i,j) +
+                                          (*grad_JEN)(i,j);
+            }
+        }
+
     }
 }
