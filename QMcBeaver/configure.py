@@ -37,6 +37,7 @@
 import os
 import os.path
 import string
+import platform
 
 ####################### Define Compilers ####################
 
@@ -140,10 +141,11 @@ class CompilerCrayX1(Compiler):
 class CompilerGCC(Compiler):
     def __init__(self,optimize,debug,profile):
         self.CXX = 'g++'
-        self.FLAGS = '-Wall'
+        self.FLAGS = '-Wall -Wno-unused -Wno-unused-function -Wno-format'
         self.INCLUDE = ''
         self.DEPENDENCY = '-MM'
-
+        self.LINK = '-lm'
+		
         if optimize:
             self.OPTIMIZATION = '-O3 -fexpensive-optimizations -ffast-math #-mtune=???'
         else:
@@ -158,9 +160,6 @@ class CompilerGCC(Compiler):
             self.PROFILE = '-pg'
         else:
             self.PROFILE = ''
-            
-        self.LINK = '-lm'
-
 
 class CompilerInsure(Compiler):
     def __init__(self,optimize,debug,profile):
@@ -388,7 +387,10 @@ optionalarguments = {
     '--profile' : 'self.profile = 1',
     '--noprofile' : 'self.profile = 0',
     '--atlas': 'self.atlas = 1',
+    '--lapack': 'self.lapack = 1',
     '--float': 'self.float = 1',
+    '--gpu': 'self.gpu = 1',
+    '--vtune': 'self.vtune = 1',
     }    
 
 #########################
@@ -401,9 +403,15 @@ class CommandLineArgs:
         self.profile = 0
         self.parallel = 0
         self.atlas = 0
+        self.lapack = 0
         self.float = 0
+        self.gpu = 0
+        self.vtune = 0
         self.TAG = ''
-        self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).x'
+        if "cygwin" or "windows" in platform.system():
+          self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).exe'
+        else:
+          self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).x'
         self.MAKE = self._getMake()
 
         if len(sys.argv) > 1 and sys.argv[1][0:2] != '--':
@@ -438,7 +446,7 @@ class CommandLineArgs:
         self.LABEL = self._getLabel()
     
     def printHelp(self):
-	print 'Syntax: ./configure.py compiler mpi [option1 [option2 etc]]'
+        print 'Syntax: ./configure.py compiler mpi [option1 [option2 etc]]'
         print 'Compiler Options'
         compilerKeys = compilers.keys()
         compilerKeys.sort()
@@ -502,6 +510,12 @@ class CommandLineArgs:
             extra.append("float")
         if self.debug:
             extra.append("debug")
+        if self.gpu:
+           extra.append("gpu")
+        if self.vtune:
+           extra.append("vtune")
+        if self.lapack:
+           extra.append("lapack")
 
         return '_'.join(extra)
 
@@ -536,22 +550,33 @@ class MakeConfigBuilder:
         text += 'FLAGS = ' + self._compiler.FLAGS + self._mpi.FLAGS
         if self._inputs.atlas:
             text += ' -DUSEATLAS '
+        if self._inputs.lapack:
+            text += ' -DUSELAPACK '
         if self._inputs.float:
             text += ' -DSINGLEPRECISION'
+        if self._inputs.gpu:
+            text += ' -DQMC_GPU'
         text += '\n'
-	text += 'DIROBJ = obj_$(LABEL)\n'
-	text += 'MAKE = ' + self._inputs.MAKE + '\n'
+        text += 'DIROBJ = obj_$(LABEL)\n'
+        text += 'MAKE = ' + self._inputs.MAKE + '\n'
         text += 'EXE = ' + self._inputs.EXE + '\n'
         text += 'DEPENDENCY = ' + self._compiler.DEPENDENCY + '\n'
         text += 'OPTIMIZATION = ' + self._compiler.OPTIMIZATION + '\n'
+        if self._inputs.vtune:
+            self._compiler.DEBUG = '-gstabs -g3'
         text += 'DEBUG = ' + self._compiler.DEBUG + '\n'
         text += 'PROFILE = ' + self._compiler.PROFILE + '\n'
         text += 'PARALLEL = ' + self._mpi.PARALLEL + '\n'
-        text += 'LINK = ' + self._compiler.LINK + self._mpi.LINK
-        if self._inputs.atlas:
-            text += ' -L$(HOME)/lib -lcblas -latlas \n'
-        else:
-            text += '\n'
+        text += 'LINK = ' + self._compiler.LINK + self._mpi.LINK + ' -L$(HOME)/lib'
+        if self._inputs.lapack:
+            text += ' -llapack -lcblas -latlas'
+        if self._inputs.atlas and not self._inputs.lapack:
+            text += ' -lcblas -latlas'
+        if self._inputs.gpu:
+            text+= ' -lkernel32 -lgdi32 -luser32 -lopengl32 -lglut32 -lversion -lglew32 -lglu32 -lcg -lcgGL'
+        if self._inputs.vtune:
+            text += ' -Wl,-pie -pie'
+        text += '\n'
         text += 'CXX = $(COMPILER) -DVERSION=$(VERSION) $(FLAGS) $(DEBUG) $(PROFILE) $(PARALLEL)\n'
         return text
 
