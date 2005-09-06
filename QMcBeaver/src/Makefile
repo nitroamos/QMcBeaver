@@ -44,7 +44,7 @@ $(DIROBJ)/%.d: %.cpp ../include/%.h
 	@echo "Writing $*.d"
 	@$(CXX) $(INCLUDE) $(DEPENDENCY) $< | sed -e "s/$*\.o/$(DIROBJ)\/$*\.o/g" >> $@
 	@echo "	@echo Compiling $*.o" >> $@
-	@echo "	@$(CXX) $(OPT) $(INCLUDE) -c -o $(patsubst %.cpp,$(DIROBJ)/%.o,$<) $*.cpp" >> $@
+	@echo "	@$(CXX) $(OPTIMIZATION) $(INCLUDE) -c -o $(patsubst %.cpp,$(DIROBJ)/%.o,$<) $*.cpp" >> $@
 	@echo "" >> $@
 	@echo "" >> $@
 
