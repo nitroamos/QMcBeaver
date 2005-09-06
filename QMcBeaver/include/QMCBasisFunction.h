@@ -54,7 +54,7 @@ using namespace std;
 
 class QMCBasisFunction
 {
- public:
+public:
   
   /**
      Creates an instance of the class.
@@ -117,8 +117,7 @@ class QMCBasisFunction
   */
   int getNumberBasisFunctions(int i);
   
- private:
-  
+protected:  
   QMCFlags *flags;
   QMCMolecule *Molecule;
   
@@ -129,12 +128,12 @@ class QMCBasisFunction
      Each element is for a different atom.
   */
   Array1D<QMCBasisFunctionCoefficients> BFCoeffs;  // Container for Coeffs
-  
+
   Array1D <double> Xcalc;      // e position relative to nucleus 
   
   Array2D<int> BFLookupTable;   // Lookup Table to select a BF
                                 // BFLookupTable[BF_number][0=atom#,1=orb#]
-  
+private:  
   /**
      Radial part of a basis function.  A basis function
      can be factored into \f$x^{i}y^{j}z^{k}\theta(r)\f$ where \f$\theta(r)\f$

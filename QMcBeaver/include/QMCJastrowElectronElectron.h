@@ -93,7 +93,11 @@ public:
     */
   double getLaplacianLnJastrow();
   
-private:    
+private:  
+
+  void collectForPair(int el1, int el2,
+	QMCCorrelationFunction *U_Function,Array2D<double> & X);
+
   void calculateDistanceAndUnitVector(Array2D<double> & X1, int x1particle, 
 				      Array2D<double> &X2, int x2particle, 
 				      double & r, 

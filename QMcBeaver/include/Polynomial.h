@@ -162,6 +162,18 @@ private:
     */
   double evaluate(double x, Array1D<double> & coeffs);
 
+
+  /**
+    Evaluates a polynomial at \f$x\f$ defined by the entered coefficients.
+    In addition, it evaluates the 1st two derivatives of that polynomial.
+    It stores the results in f, df, and d2f from this class.
+
+    @param x point to evaluate the polynomial at.
+    @param coeffs coefficients describing the polynomial being evaluated.
+    These are ordered from smallest to largest powers of \f$x\f$.
+    */
+  void evaluateAll(double x, Array1D<double> & coeffs);
+
   /**
     Given a complex point \f$x\f$ and a polynomial with complex coefficients,
     converges \f$x\f$ to the root of the polynomial, within achievable 
