@@ -1,9 +1,9 @@
 //            QMcBeaver
 //
-//         Constructed by 
+//         Constructed by
 //
-//     Michael Todd Feldmann 
-//              and 
+//     Michael Todd Feldmann
+//              and
 //   David Randall "Chip" Kent IV
 //
 // Copyright 2000-2.  All rights reserved.
@@ -20,7 +20,7 @@ makes any warranty, express or implied, or assumes any liability or
 responsibility for the use of this SOFTWARE.  If SOFTWARE is modified 
 to produce derivative works, such modified SOFTWARE should be clearly 
 marked, so as not to confuse it with the version available from LANL.   
-
+ 
 Additionally, this program is free software; you can distribute it and/or 
 modify it under the terms of the GNU General Public License. Accordingly, 
 this program is  distributed in the hope that it will be useful, but WITHOUT 
@@ -83,7 +83,7 @@ void Polynomial::evaluate(double x)
   this->x = x;
   evaluatedF   = false;
   evaluatedDF  = false;
-  evaluatedD2F = false;  
+  evaluatedD2F = false;
 }
 
 double Polynomial::evaluate(double x, Array1D<double> &coeffs)
@@ -104,12 +104,36 @@ double Polynomial::evaluate(double x, Array1D<double> &coeffs)
   return val;
 }
 
+void Polynomial::evaluateAll(double x, Array1D<double> & coeffs)
+{
+  //This method was sort of adapted from 5.3 of Numerical Recipies.
+  evaluatedF = true;
+  evaluatedDF = true;
+  evaluatedD2F = true;
+
+  int n = coeffs.dim1()-1;
+
+  if( n < 0 ) return;
+
+  f = coeffs(n);
+  df = 0.0;
+  d2f = 0.0;
+  for(int i=n-1; i >= 0; i--)
+    {
+      d2f = d2f*x + df;
+      df  = df*x  + f;
+      f   = f*x   + coeffs(i);
+    }
+  d2f *= 2;
+}
+
 double Polynomial::getFunctionValue()
 {
   if( evaluatedF ) return f;
 
-  f = evaluate(x,coefficients);
-  evaluatedF = true;
+  evaluateAll(x,coefficients);
+  //f = evaluate(x,coefficients);
+  //evaluatedF = true;
 
   return f;
 }
@@ -118,8 +142,9 @@ double Polynomial::getFirstDerivativeValue()
 {
   if( evaluatedDF ) return df;
 
-  df = evaluate(x,firstDerivativeCoefficients);
-  evaluatedDF = true;
+  evaluateAll(x,coefficients);
+  //df = evaluate(x,firstDerivativeCoefficients);
+  //evaluatedDF = true;
 
   return df;
 }
@@ -128,8 +153,9 @@ double Polynomial::getSecondDerivativeValue()
 {
   if( evaluatedD2F ) return d2f;
 
-  d2f = evaluate(x,secondDerivativeCoefficients);
-  evaluatedD2F = true;
+  evaluateAll(x,coefficients);
+  //d2f = evaluate(x,secondDerivativeCoefficients);
+  //evaluatedD2F = true;
 
   return d2f;
 }
@@ -138,7 +164,7 @@ int Polynomial::getNumberCoefficients()
 {
   return coefficients.dim1();
 }
-  
+
 double Polynomial::getCoefficient(int i)
 {
   return coefficients(i);
@@ -170,7 +196,7 @@ Array1D<Complex> Polynomial::getRoots()
   EPSS is the fractional estimated roundoff error.  1.0e-7 was the default
   for a float point implementation.  1.0e-14 is probably safe for this double 
   implementation.
-
+ 
   Try to break (rare) limit cycles with MR different fractional values once
   every MT steps for MAXIT total allowed iterations.
   */
@@ -180,8 +206,8 @@ Array1D<Complex> Polynomial::getRoots()
 #define MT 10
 #define MAXIT (MT*MR)
 
-void Polynomial::laguer(Array1D<Complex> &a, int m, Complex &x, int *its, 
-			bool *calcOK)
+void Polynomial::laguer(Array1D<Complex> &a, int m, Complex &x, int *its,
+                        bool *calcOK)
 {
   Complex cZero(0.0,0.0);
 
@@ -191,7 +217,7 @@ void Polynomial::laguer(Array1D<Complex> &a, int m, Complex &x, int *its,
 
   *calcOK = *calcOK && true;
 
-  for(int iter=1; iter<=MAXIT; iter++) 
+  for(int iter=1; iter<=MAXIT; iter++)
     {
       *its = iter;
       b = a(m);
@@ -199,8 +225,8 @@ void Polynomial::laguer(Array1D<Complex> &a, int m, Complex &x, int *its,
       d = cZero;
       f = cZero;
       abx = x.abs();
-      
-      for(int j=m-1;j>=0;j--) 
+
+      for(int j=m-1;j>=0;j--)
         {
           f = (x*f)+d;
           d = (x*d)+b;
@@ -225,7 +251,7 @@ void Polynomial::laguer(Array1D<Complex> &a, int m, Complex &x, int *its,
 
       dx=( (abp>abm?abp:abm) > 0.0 ? (Complex(m,0.0)/gp)
            : (Complex(cos((double)iter),sin((double)iter)) * (1+abx)) );
-      
+
       x1 = x-dx;
 
       if (x.real() == x1.real() && x.imaginary() == x1.imaginary()) return;
@@ -247,31 +273,31 @@ void Polynomial::laguer(Array1D<Complex> &a, int m, Complex &x, int *its,
 
 #define EPS 2.0e-13  // 2.0e-6 default in float implementation
 
-Array1D<Complex> Polynomial::zroots(Array1D<Complex> & a, bool polish, 
-				    bool *calcOK)
+Array1D<Complex> Polynomial::zroots(Array1D<Complex> & a, bool polish,
+                                    bool *calcOK)
 {
   *calcOK = true;
 
   int m = a.dim1() - 1;
 
   Array1D<Complex> roots(m);
-  
+
   int its;
   Complex x,b,c;
   Array1D<Complex> ad(m+1);
-  
-  for(int j=0;j<=m;j++) 
+
+  for(int j=0;j<=m;j++)
     {
       ad(j) = a(j);
     }
 
-  for(int j=m;j>=1;j--) 
+  for(int j=m;j>=1;j--)
     {
       x = 0.0;
 
       laguer(ad,j,x,&its,calcOK);
-    
-      if (fabs(x.imaginary()) <= 2.0*EPS*fabs(x.real())) 
+
+      if (fabs(x.imaginary()) <= 2.0*EPS*fabs(x.real()))
         {
           x = Complex(x.real(),0.0);
         }
@@ -279,7 +305,7 @@ Array1D<Complex> Polynomial::zroots(Array1D<Complex> & a, bool polish,
       roots(j-1) = x;
       b = ad(j);
 
-      for (int jj=j-1;jj>=0;jj--) 
+      for (int jj=j-1;jj>=0;jj--)
         {
           c = ad(jj);
           ad(jj) = b;
@@ -291,19 +317,19 @@ Array1D<Complex> Polynomial::zroots(Array1D<Complex> & a, bool polish,
       for(int j=1;j<=m;j++)
         {
           laguer(a,m,roots(j-1),&its,calcOK);
-	}
+        }
     }
-     
-  for (int j=2;j<=m;j++) 
+
+  for (int j=2;j<=m;j++)
     {
       x = roots(j-1);
-              
+
       int i;
-      for (i=j-1;i>=1;i--) 
-	{
-	  if ( roots(i-1).real() <= x.real() ) break;
-	  roots(i) = roots(i-1);
-	}
+      for (i=j-1;i>=1;i--)
+        {
+          if ( roots(i-1).real() <= x.real() ) break;
+          roots(i) = roots(i-1);
+        }
       roots(i) = x;
     }
 

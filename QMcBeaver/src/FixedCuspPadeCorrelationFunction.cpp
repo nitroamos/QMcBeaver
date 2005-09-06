@@ -1,9 +1,9 @@
 //            QMcBeaver
 //
-//         Constructed by 
+//         Constructed by
 //
-//     Michael Todd Feldmann 
-//              and 
+//     Michael Todd Feldmann
+//              and
 //   David Randall "Chip" Kent IV
 //
 // Copyright 2000.  All rights reserved.
@@ -13,29 +13,29 @@
 #include "FixedCuspPadeCorrelationFunction.h"
 
 void FixedCuspPadeCorrelationFunction::initializeParameters(
-		  Array1D<int> & BeginningIndexOfParameterType, 
-		  Array1D<double> &Parameters,			    
-		  Array1D<int> & BeginningIndexOfConstantType, 
-		  Array1D<double> & Constants)
+  Array1D<int> & BeginningIndexOfParameterType,
+  Array1D<double> &Parameters,
+  Array1D<int> & BeginningIndexOfConstantType,
+  Array1D<double> & Constants)
 {
   if( Constants.dim1() < 1 )
     {
       cerr << "ERROR: Fixed Cusp Pade correlation function entered "
-	   << "without a constant for the cusp condition!" << endl;
+      << "without a constant for the cusp condition!" << endl;
       exit(0);
     }
   else if( Constants.dim1() > 1 )
     {
       cerr << "ERROR: Fixed Cusp Pade correlation function entered "
-	   << "with more than one constant!" << endl;
+      << "with more than one constant!" << endl;
       exit(0);
     }
-  
+
   if( BeginningIndexOfParameterType.dim1() != 2 )
     {
-    cerr << "ERROR: Pade correlation function entered with an incorrect "
-	 << "number of parameter types!" << endl;
-    exit(0);
+      cerr << "ERROR: Pade correlation function entered with an incorrect "
+      << "number of parameter types!" << endl;
+      exit(0);
     }
 
   Array1D<double> numeratorParameters(BeginningIndexOfParameterType(1)+2);
@@ -43,22 +43,22 @@ void FixedCuspPadeCorrelationFunction::initializeParameters(
   numeratorParameters(0) = 0.0;
   numeratorParameters(1) = Constants(0);
   for(int i=0; i<numeratorParameters.dim1()-2; i++)
-  {
-    numeratorParameters(i+2) = Parameters(i);
-  }
+    {
+      numeratorParameters(i+2) = Parameters(i);
+    }
 
   Numerator.initialize(numeratorParameters);
 
   Array1D<double> denominatorParameters(Parameters.dim1()-
-					numeratorParameters.dim1()+3);
+                                        numeratorParameters.dim1()+3);
 
   denominatorParameters(0) = 1.0;
 
   for(int i=0; i<denominatorParameters.dim1()-1; i++)
-  {
-    denominatorParameters(i+1) = 
-      Parameters(i+BeginningIndexOfParameterType(1));
-  }
+    {
+      denominatorParameters(i+1) =
+        Parameters(i+BeginningIndexOfParameterType(1));
+    }
 
   Denominator.initialize(denominatorParameters);
 }
@@ -89,9 +89,13 @@ void FixedCuspPadeCorrelationFunction::evaluate( double r )
   double bp  = Denominator.getFirstDerivativeValue();
   double bpp = Denominator.getSecondDerivativeValue();
 
-  FunctionValue = a/b;
-  dFunctionValue = ap/b - a*bp/b/b;
-  d2FunctionValue = app/b - 2*ap*bp/b/b + 2*a*bp*bp/b/b/b - a*bpp/b/b;
+  double aDIVb = a/b;
+  double bpDIVb = bp/b;
+  double apDIVb = ap/b;
+
+  FunctionValue = aDIVb;
+  dFunctionValue = apDIVb - bpDIVb*aDIVb;
+  d2FunctionValue = (app - bpp*aDIVb)/b - 2*bpDIVb*(apDIVb + bpDIVb*aDIVb);
 }
 
 double FixedCuspPadeCorrelationFunction::getFunctionValue()
