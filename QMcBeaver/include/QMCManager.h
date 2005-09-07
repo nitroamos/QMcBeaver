@@ -13,10 +13,11 @@
 #ifndef QMCManager_H
 #define QMCManager_H
 
-#define WORK_STEP 0
-#define REDUCE 1
-#define TERMINATE 2
-#define SYNCHRONIZE 3
+//The old macros conflicted with some Windows macros
+#define QMC_WORK_STEP 0
+#define QMC_REDUCE 1
+#define QMC_TERMINATE 2
+#define QMC_SYNCHRONIZE 3
 
 #include <iostream>
 #include <fstream>
