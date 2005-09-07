@@ -1,23 +1,53 @@
-This README discusses some issues about using ATLAS.
+This README discusses some issues about using ATLAS and GPUs.
 
+**********************************************************
+ATLAS related:
 This directory is meant to hold the ATLAS libraries libatlas.a and libcblas.a.
-(Perhaps it would be a good idea to provide the P3 Linux library common to the wolfs/matrix/borg? for now, they're in my amosa@wag directory.)
+(Perhaps it would be a good idea to provide the P3 Linux library common
+to the wolfs/matrix/borg? for now, they're in my amosa@wag directory.)
 
-To get these two libraries, you need to either find a precompiled version online, or compile it from source yourself because
-then you can get the most up to date version.
-There are some standard places you could look for precompiled libraries:
+To get these two libraries, you need to either find a precompiled
+version online, or compile it from source yourself because then
+you can get the most up to date version. There are some standard
+places you could look for precompiled libraries:
 https://sourceforge.net/projects/math-atlas/
 http://www.netlib.org/atlas/archives/
 
 To compile the ATLAS library:
 1) get the source from https://sourceforge.net/projects/math-atlas/
-2) follow it's instructions for compiling the library (they're easy). If it has some settings for
-your CPU already, then the build should be under 1 hr. On my P4 computer, it took around 45 minutes. If it doesn't
-have settings for you (or you want it to refigure the settings out), it can take upwards of 5 or 6 hours (on my OSX G4 laptop) because
-it tunes each function. if you do compile on OSX, you'll need to download and compile a fresh GNU compiler (the Apple modified ones
-don't work for some reason. it would actually be quicker to use the later-discovered vecLib framework)
-3) find the required libraries and plop them in this folder. the header files are standard and included in the QMcBeaver CVS.
+2) follow it's instructions for compiling the library (they're easy).
+
+If it has some settings for your CPU already, then the build should be
+under 1 hr. On my P4 computer, it took around 45 minutes. If it doesn't
+have settings for you (or you want it to refigure the settings out),
+it can take upwards of 5 or 6 hours (on my OSX G4 laptop) because
+it tunes each function. if you do compile on OSX, you'll need to download
+and compile a fresh GNU compiler (the Apple modified ones don't work for
+some reason. it would actually be quicker to use the later-discovered vecLib framework)
+
+3) find the required libraries and plop them in this folder.
+the header files are standard and included in the QMcBeaver CVS.
 
 To run with ATLAS:
 1) select the --atlas option from the configure.py script.
-2) if you do not want to run with ATLAS, don't select the --atlas option and the makefiles will NOT search for the 2 libraries.
+2) if you do not want to run with ATLAS, don't select the --atlas option
+and the makefiles will NOT search for the 2 libraries.
+
+**********************************************************
+GPU related:
+This directory is meant to hold
+cg.lib
+cgGL.lib
+glew32.lib
+glew32.dll
+
+Running with the GPU requires selection of the --gpu option with
+configure.py.
+
+**********************************************************
+LAPACK related:
+This directory needs the
+liblapack.a
+
+Which can be built with ATLAS. It is only used for inverting
+small, dense matrices -- and it does not seem to make much difference...
