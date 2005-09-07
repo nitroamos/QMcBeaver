@@ -33,6 +33,13 @@ class QMCFlags
   QMCFlags();
 
   /**
+    This facilitates easy testing of parameters through the input
+    file. Enter as many as desired, separated by a space.
+  */
+  vector<long> programmersLongs;
+  
+  
+  /**
      Base file name for the calculation.  This is the file name without
      any extension.
   */
@@ -208,6 +215,17 @@ class QMCFlags
   */
   long max_time_steps;
 
+	/**
+    This parameter is used in QMCRun to process several walkers simultaneously. The value
+    of this macro is how many walkers to treat at once. If this parameter is set to 1, then
+    the code will perform the way it did previously. Also, the amount of memory the
+    program requires is dependent on this because all the walkers have to be stored.
+    
+    This used instead of the WALKERS_PER_PASS macro.
+    DON"T CHANGE THIS IN THE MIDDLE OF A CALCULATION!
+  */
+  long walkers_per_pass;
+  
   /**
      Current number of walkers.
   */
