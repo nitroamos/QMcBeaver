@@ -44,6 +44,8 @@ glew32.dll
 Running with the GPU requires selection of the --gpu option with
 configure.py.
 
+Included are Windows versions of the libraries. When I port the GPU
+stuff to Linux, I'll have a better idea how to handle this.
 **********************************************************
 LAPACK related:
 This directory needs the
