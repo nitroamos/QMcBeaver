@@ -1,3 +1,10 @@
+/*
+  Copyright (c) Amos G. Anderson 2005
+  Distributed under GNU general public license (GPL)
+  No guarantee or warantee regarding usability or stability is expressed or implied.
+  nitroamos@gmail.com
+*/
+
 #include "GPUGlobals.h"
 
 #ifdef QMC_GPU

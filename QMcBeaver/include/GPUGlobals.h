@@ -1,26 +1,34 @@
+/*
+  Copyright (c) Amos G. Anderson 2005
+  Distributed under GNU general public license (GPL)
+  No guarantee or warantee regarding usability or stability is expressed or implied.
+  nitroamos@gmail.com
+*/
+
 #ifndef GPUGLOBALS
 #define GPUGLOBALS
 
 #ifdef QMC_GPU
 
 #include <windows.h>
-#include <gl/glew.h>
-#include <gl/glut.h>
-#include <cg/cgGL.h>
+#include <GL/glew.h>
+#include <GL/glut.h>
+#include <Cg/cgGL.h>
 #include "Array2D.h"
 #include <sstream>
 #include <fstream>
 
 typedef Array1D< Array2D<qmcfloat> > ArrayGPU;
 
-#define GET_GLERROR(message)                                    \
-  {                                                               \
-    string temp = __FILE__;                                       \
-    temp = temp.substr(temp.find_last_of('\\')+1);                \
-    GLenum err = glGetError();                                    \
-    if (err != GL_NO_ERROR) {                                     \
+//this is a modified version of something originally one of the OpenGL examples
+#define GET_GLERROR(message)                                        \
+  {                                                                 \
+    string temp = __FILE__;                                         \
+    temp = temp.substr(temp.find_last_of('\\')+1);                  \
+    GLenum err = glGetError();                                      \
+    if (err != GL_NO_ERROR) {                                       \
         fprintf(stderr, "\n[%s line %d] GL Error: %s\n",            \
-                temp.c_str(), __LINE__, gluErrorString(err));             \
+                temp.c_str(), __LINE__, gluErrorString(err));       \
         fprintf(stderr, "       %s\n\n", message);                  \
         fflush(stderr);                                             \
       }                                                             \
@@ -110,7 +118,7 @@ class GPUGlobals
        @param find what to look for
        @param replace what to replace all instances with. can be an integer, string, etc...
       */
-      template<class T> void GPUGlobals::findandreplace( string& source, const string& find, T replace )
+      template<class T> void findandreplace( string& source, const string& find, T replace )
       {
         size_t j;
         stringstream strm;
@@ -132,8 +140,8 @@ class GPUGlobals
       static void getFactors(int num, int & fact1, int & fact2);
       
       /**
-       Taken from the gpubench source code. Basically helps identify the
-       version of the driver and what company made the GPU.
+       Taken from the gpubench source code available from sourceforge.net. Basically helps identify the
+       version of the driver and which company made the GPU.
       */
       static const char *gpubench_getDriverVersion(void);
       
