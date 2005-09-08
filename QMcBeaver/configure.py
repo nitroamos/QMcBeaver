@@ -408,7 +408,7 @@ class CommandLineArgs:
         self.gpu = 0
         self.vtune = 0
         self.TAG = ''
-        if "cygwin" or "windows" in platform.system():
+        if "CYGWIN" in platform.system():
           self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).exe'
         else:
           self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).x'
@@ -465,8 +465,12 @@ class CommandLineArgs:
         optArgKeys.sort()
         for arg in optArgKeys:
             print '\t', arg
-        print 'Any Optional Arguments without the -- will be treated as a tag\n'
-
+        print 'Any Optional Arguments without the -- will be treated as a tag.'
+        print 'The vtune option is to create a position-independent exe'
+        print 'necessary for vtune\'s Call Graph.\n'
+        print 'The options gpu, atlas, and lapack all require special libraries.'
+        print 'See lib/README for setup details.\n'
+      
     def _getMake(self):
         paths = os.environ['PATH'].split(":")
 
