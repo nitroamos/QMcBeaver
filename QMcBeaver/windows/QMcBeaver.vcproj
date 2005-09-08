@@ -35,6 +35,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/VERSION:123"
+				AdditionalDependencies="atlas.lib cblas.lib"
 				OutputFile="$(OutDir)/QMcBeaver.exe"
 				Version=""
 				LinkIncremental="2"
@@ -66,14 +67,16 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2"
 			ReferencesPath="c:\src\qmcbeaver\include">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/D &quot;VERSION=123&quot;"
+				AdditionalOptions="/D &quot;VERSION=123&quot; /D &quot;USEATLAS&quot; /D &quot;USELAPACK&quot;"
+				Optimization="2"
+				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories=".\include,..\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="4"
@@ -85,6 +88,168 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/fixed:no"
+				AdditionalDependencies="liblapack.lib cblas.lib atlas.lib"
+				OutputFile="$(OutDir)/QMcBeaver.exe"
+				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Debug GPU|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			ReferencesPath="">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/D &quot;VERSION=123&quot; /D &quot;QMC_GPU&quot;"
+				Optimization="0"
+				AdditionalIncludeDirectories=".\include;..\include;&quot;C:\Program Files\NVIDIA Corporation\Cg\include&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="5"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/VERSION:123"
+				AdditionalDependencies="cg.lib cgGL.lib glut32.lib glew32.lib atlas.lib cblas.lib version.lib"
+				OutputFile="$(OutDir)/QMcBeaver.exe"
+				Version=""
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="C:\Program Files\NVIDIA Corporation\Cg\lib"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/QMcBeaver.pdb"
+				SubSystem="1"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release GPU|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			ReferencesPath="c:\src\qmcbeaver\include">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/D &quot;VERSION=123&quot; /D &quot;QMC_GPU&quot; /D &quot;SINGLEPRECISION&quot;"
+				Optimization="0"
+				FavorSizeOrSpeed="0"
+				AdditionalIncludeDirectories=".\include;..\include;&quot;C:\Program Files\NVIDIA Corporation\Cg\include&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				RuntimeLibrary="4"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/fixed:no"
+				AdditionalDependencies="cg.lib cgGL.lib glut32.lib glew32.lib atlas.lib cblas.lib version.lib"
+				OutputFile="$(OutDir)/QMcBeaver.exe"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\NVIDIA Corporation\Cg\lib&quot;"
+				GenerateDebugInformation="TRUE"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release (float)|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="2"
+			ReferencesPath="c:\src\qmcbeaver\include">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/D &quot;VERSION=123&quot; /D &quot;SINGLEPRECISION&quot;  /D &quot;USEATLAS&quot;"
+				FavorSizeOrSpeed="1"
+				AdditionalIncludeDirectories=".\include,..\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				RuntimeLibrary="4"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="atlas.lib cblas.lib"
 				OutputFile="$(OutDir)/QMcBeaver.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="TRUE"
@@ -150,6 +315,18 @@
 			</File>
 			<File
 				RelativePath="..\src\FixedCuspPadeCorrelationFunction.cpp">
+			</File>
+			<File
+				RelativePath="..\src\GPUGlobals.cpp">
+			</File>
+			<File
+				RelativePath="..\src\GPUQMCBasisFunction.cpp">
+			</File>
+			<File
+				RelativePath="..\src\GPUQMCFramebuffer.cpp">
+			</File>
+			<File
+				RelativePath="..\src\GPUQMCMatrix.cpp">
 			</File>
 			<File
 				RelativePath="..\src\IeeeMath.cpp">
@@ -355,6 +532,9 @@
 				RelativePath="..\include\CKGeneticAlgorithm1.h">
 			</File>
 			<File
+				RelativePath="..\include\clapack.h">
+			</File>
+			<File
 				RelativePath="..\include\Complex.h">
 			</File>
 			<File
@@ -377,6 +557,18 @@
 			</File>
 			<File
 				RelativePath="..\include\FunctionR1toR1.h">
+			</File>
+			<File
+				RelativePath="..\include\GPUGlobals.h">
+			</File>
+			<File
+				RelativePath="..\include\GPUQMCBasisFunction.h">
+			</File>
+			<File
+				RelativePath="..\include\GPUQMCFramebuffer.h">
+			</File>
+			<File
+				RelativePath="..\include\GPUQMCMatrix.h">
 			</File>
 			<File
 				RelativePath="..\include\IeeeMath.h">
@@ -570,6 +762,9 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}">
 		</Filter>
+		<File
+			RelativePath=".\VTune\QMcBeaver.vpj">
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
