@@ -15,7 +15,7 @@ drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 Installation Instructions:
 
-1) Read the file 'README'
+1) Read the file 'lib/README'
 
 2) Run './configure.py' to configure your system
 

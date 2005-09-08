@@ -33,19 +33,12 @@ To run with ATLAS:
 2) if you do not want to run with ATLAS, don't select the --atlas option
 and the makefiles will NOT search for the 2 libraries.
 
-**********************************************************
-GPU related:
-This directory is meant to hold
-cg.lib
-cgGL.lib
-glew32.lib
-glew32.dll
+If compiling with Visual Studio, your library will need:
+C:\Program Files\Microsoft Visual Studio .NET 2003\Vc7\lib
+cblas.lib
+lapack.lib
+atlas.lib
 
-Running with the GPU requires selection of the --gpu option with
-configure.py.
-
-Included are Windows versions of the libraries. When I port the GPU
-stuff to Linux, I'll have a better idea how to handle this.
 **********************************************************
 LAPACK related:
 This directory needs the
@@ -53,3 +46,86 @@ liblapack.a
 
 Which can be built with ATLAS. It is only used for inverting
 small, dense matrices -- and it does not seem to make much difference...
+
+**********************************************************
+GPU related: (Linux not included yet)
+
+There is a significant amount of library/dll setup that needs to happen
+to run GPUQMC. I hope this information is sufficient... Website references
+are at the bottom. I have only tried this on an nVidia GPU, I don't know if
+this code will run on an ATI GPU. It might, but it's precision is probably
+completely unacceptable as far as QMcBeaver accuracy is concerned.
+
+**To compile the code under Cygwin:
+1) You'll need to install the packages freeglut and opengl on top of
+the base installation. This is done through cygwin's setup.exe utility.
+
+2) You will need the latest Windows GPU driver.
+
+3) You'll need to download the Cg Toolkit and glew. You probalby need to
+run the Cg Toolkit installation file cause it might sprinkle dll's around.
+Place the following libraries in the QMcBeaver/lib/ directory:
+cg.lib
+cgGL.lib
+glew32.lib
+glew32.dll
+
+4) You'll need to copy some of the Cg header files into QMcBeaver/include/.
+Instructions are in the README in that directory
+
+5) Include the --gpu flag when running configure.py
+
+**To compile the code under Visual Studio:
+
+1) You'll need to download the Cg Toolkit. The Cg Toolkit
+has an installation utility -- run it. This should place all the required
+Cg header files in:
+C:\Program Files\NVIDIA Corporation\Cg\include
+The Visual Studio project files included with QMcBeaver look here.
+
+2) Download glew. Installation instructions are included on their website.
+
+3) Download glut. Installation instructions are included on their website.
+
+4) You will need the latest Windows GPU driver.
+
+5) In the end, your directories should look similar to:
+C:\WINDOWS\system32
+glew32.dll
+glu32.dll
+glut32.dll
+
+C:\Program Files\Microsoft Visual Studio .NET 2003\Vc7\include\GL
+(it's possible that not all of these are needed...)
+gl.h
+glew.h
+glut.h
+glext.h
+glxew.h
+wglew.h
+wglext.h
+
+C:\Program Files\Microsoft Visual Studio .NET 2003\Vc7\lib
+glew32.lib
+glut32.lib
+
+6) The Visual Studio QMcBeaver project file has several configurations
+set up, one of them will compile GPUQMC.
+
+>>>>>>>>GPU website references<<<<<<<<
+The Cg Toolkit is available here:
+http://developer.nvidia.com/object/cg_toolkit.html
+NOTE: as of this writing, Cg 1.4 does not work. I've been told they fixed
+the bug I told them about, but that bug fix has not been released yet.
+So, you'll need to get Cg 1.3.
+
+GLEW is available here:
+http://glew.sourceforge.net/
+
+GLUT is available here:
+http://www.xmission.com/~nate/glut.html
+
+nVidia Drivers are available here:
+http://www.nvidia.com/content/drivers/drivers.asp
+You'll probably need at least version 7676 (Linux) or 7718 (Windows) for the
+GL_EXT_framebuffer_object extention's capabilities.
