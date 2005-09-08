@@ -1,3 +1,38 @@
+Thurs, 8 Sep 2005, Amos Anderson
+1. I submitted all my GPUQMC code. So far, it only works on Windows
+   with Visual Studio or cygwin. Use --gpu with configure.py and look
+   at the lib/README for library set up guides.
+2. Several more classes have the "streaming" capability. This includes
+   QMCJastrow and QMCPotential_Energy.
+3. The code can now use LAPACK to calculate the inverse, but it does not
+   add much improvement. Use --lapack with configure.py.
+4. I changed the MPI constants in QMCRun.h to be prefixed with QMC_ because
+   the other ones were conflicting with something in the Windows API.
+5. For compatibility with Intel's Vtune's Call Graph, configure.py now
+   accepts --vtune. This sets profiling parameters to emulate Visual
+   Studio's /fixed:no.
+6. There are several vtune identified performance enhancements. Most of
+   them were simply moving memory allocations outside of loops.
+7. Two new flag parameters were added. The WALKERS_PER_PASS is now,
+   appropriately, an input parameter. In addition, I added a flag whereby
+   we (programmers) can quickly test different inputs via the input file.
+   The programmersLongs will allow you to enter any number of longs. I'll
+   upload a couple scripts I wrote to take advantage of this.
+8. I fixed a small bug in the Makefile which was causing it not to compile
+   optimized code!!!
+9. I added an atexit hook in QMcBeaver.cpp which I use to call getchar()
+   under Windows.
+10.QMCSlater no longer performs all it's calculations upon a call to
+   evaluate(). It divides the time between evaluate (setup) and update_Ds
+   (actual calcs) to allow QMCFunction the ability to better schedule the
+   processor. This makes a difference for GPUQMC.
+11.I used the sourceforge project astyle to format most of the code I
+   submitted. The most important change is that it replaced tabs with
+   spaces, allowing the code to look decent on any editor, not just
+   emacs.
+12.I added another isNaN check to QMCWalker. Somehow the GPU was creating
+   NaN's not identified by isnan or isinf.
+
 Thurs, 25 Aug 2005, Daniel R. Fisher
 1. Added the capability to synchronize the ensemble in DMC
    calculations.  If this option is used, the global properties are
