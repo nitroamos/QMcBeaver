@@ -1,0 +1,23 @@
+To run with Cg, you need to get the Cg Headers, which are available in the Cg Toolkit.
+
+The only one specifically mentioned in the GPUQMC code is:
+#include <cg/cgGL.h>
+
+But it references many of the others.
+In my Windows set up, the Toolkit includes:
+cgGL.h
+cg.h
+cg_profiles.h
+cg_datatypes.h
+cg_bindlocations.h
+cg_errors.h
+cg_enums.h
+cgGL_profiles.h
+
+And these are possibly not needed, but included anyway:
+cgProgramManager.h
+cgTemplates.h
+cgContextManager.h
+cgD3D.h
+cgD3D9.h
+cgD3D8.h
