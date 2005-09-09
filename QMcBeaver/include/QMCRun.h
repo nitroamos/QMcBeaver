@@ -252,6 +252,12 @@ private:
     The histogram of distances between opposite spin electrons.
   */
   Array1D<double> opp_spin_histogram;
+
+  /**
+    The total weight of all samples recorded in the histograms.
+  */
+  double total_sample_weight;
+
 };
 
 #endif

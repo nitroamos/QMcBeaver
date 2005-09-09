@@ -1,3 +1,9 @@
+Thurs, 8 Sep 2005, Daniel R. Fisher
+1. Changed the way that the distances for the pair density histograms 
+   are written.  Previously, the bins were labeled by their greatest
+   distance, which caused problems at small distances.  Now, they are
+   labeled by their midpoint.
+
 Thurs, 8 Sep 2005, Amos Anderson
 1. I submitted all my GPUQMC code. So far, it only works on Windows
    with Visual Studio or cygwin. Use --gpu with configure.py and look

@@ -900,13 +900,15 @@ void QMCWalker::writeCorrelatedSamplingConfiguration(ostream& strm)
 }
 
 void QMCWalker::calculatePairDistances(double max_pair_distance, double dr,
-                                       Array1D<double> &pll_spin, Array1D<double> &opp_spin)
+     Array1D<double> &pll_spin, Array1D<double> &opp_spin, double &totalWeight)
 {
   int nalpha = Input->WF.getNumberAlphaElectrons();
   int nbeta = Input->WF.getNumberBetaElectrons();
   
   double dist = 0.0;
   int index = 0;
+
+  totalWeight += weight;
   
   if (nalpha > 1)
     {

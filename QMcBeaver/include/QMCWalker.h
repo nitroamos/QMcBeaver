@@ -132,7 +132,7 @@ public:
     functions for DFT development.
   */
   void calculatePairDistances(double max_pair_distance, double dr, 
-			 Array1D<double> &pll_spin, Array1D<double> &opp_spin);
+    Array1D<double> &pll_spin, Array1D<double> &opp_spin, double &totalWeight);
 
   /**
     Writes the state of this object to an XML stream.

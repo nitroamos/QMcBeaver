@@ -139,6 +139,8 @@ void QMCRun::initialize(QMCInput *INPUT)
       max_pair_distance = 20.0/max_Z;
       dr = max_pair_distance/5000;
       
+      total_sample_weight = 0.0;
+
       pll_spin_histogram.allocate(5000);
       opp_spin_histogram.allocate(5000);
       
@@ -205,12 +207,14 @@ void QMCRun::calculatePairDistances()
 {
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
     wp->calculatePairDistances(max_pair_distance, dr, pll_spin_histogram,
-                               opp_spin_histogram);
+                               opp_spin_histogram, total_sample_weight);
 }
 
 void QMCRun::writePairDensityHistograms()
 {
   // Write out the pair distance histograms for this processor.
+
+#define PI 3.14159265359
   
   if (Input->WF.getNumberAlphaElectrons() > 1 ||
       Input->WF.getNumberBetaElectrons() > 1)
@@ -226,11 +230,15 @@ void QMCRun::writePairDensityHistograms()
                                  ".pll_pair_density." + my_rank_string;
       ofstream * pll_spin_strm = new ofstream(pll_spin_filename.c_str());
       pll_spin_strm->precision(15);
+
+      *pll_spin_strm << "#\t" <<  total_sample_weight << endl;
       
       for (int i=0; i<pll_spin_histogram.dim1(); i++)
         {
-          *pll_spin_strm << (i+1)*dr << "\t" << pll_spin_histogram(i);
-          *pll_spin_strm << endl;
+	  double rValue = (i+0.5)*dr;
+	  double dividedHist = pll_spin_histogram(i)/(4*PI*rValue*rValue);
+	  *pll_spin_strm << rValue << "\t" << pll_spin_histogram(i) << "\t";
+	  *pll_spin_strm << dividedHist << endl;
         }
       delete pll_spin_strm;
       pll_spin_strm = 0;
@@ -251,14 +259,19 @@ void QMCRun::writePairDensityHistograms()
       ofstream * opp_spin_strm = new ofstream(opp_spin_filename.c_str());
       opp_spin_strm->precision(15);
       
+      *opp_spin_strm << "#\t" << total_sample_weight << endl;
+
       for (int i=0; i<opp_spin_histogram.dim1(); i++)
         {
-          *opp_spin_strm << (i+1)*dr << "\t" << opp_spin_histogram(i);
-          *opp_spin_strm << endl;
+	  double rValue = (i+0.5)*dr;
+	  double dividedHist = opp_spin_histogram(i)/(4*PI*rValue*rValue);
+	  *opp_spin_strm << rValue << "\t" << opp_spin_histogram(i) << "\t";
+	  *opp_spin_strm << dividedHist << endl;
         }
       delete opp_spin_strm;
       opp_spin_strm = 0;
     }
+#undef PI
 }
 
 void QMCRun::unitWeightBranching()
