@@ -67,11 +67,22 @@ public:
 
   /**
     Proposes a trial walker move and accepts or rejects it. This method has
-    been broken into 2 parts. The first part moves the electrons and then
-    returns pointers to the new positions along with pointers to the
-    QMCWalkerData structs so they can be filled.
-    @param data to put a pointer to this walkerData
-    @param R to put a pointer to this' new configuration
+    been broken into 2 parts. The first part (this function) moves the
+    electrons and then returns pointers to the new positions along
+    with pointers to the QMCWalkerData structs so they can be filled.
+
+    The second part is the processPropagation function in this class.
+    See QMCRun::propagateWalkers for how the two functions work together.
+
+    The whole point of the * & (reference to pointer) is that the two
+    parameters are pointers, and are both outputs of this function.
+
+    Another way to do this might be to pass in the actual array of
+    pointers, and tell initializePropagation which index to assign,
+    but this was a good exercise in understanding pointers...
+
+    @param (output) data to put a pointer to this walkerData
+    @param (output) R to put a pointer to this' new configuration
   */
   void initializePropagation(QMCWalkerData * &data, Array2D<double> * &R);
 

@@ -210,7 +210,13 @@ private:
   void nonunitWeightBranching();
 
   /**
-    Proposes trial walker moves and accepts or rejects them.
+    Proposes trial walker moves and accepts or rejects them. This function
+    steps QMCWalker in two stages. First, it calculates the forward green's
+    function by calling initializePropagation, and then it calculates the
+    reverse green's function by calling processPropgatation. The purpose of
+    this is to enable this function to call QMCFunction for several walkers
+    at once (i.e. in chunks) by pausing the rest of the tasks that QMCWalker
+    has to do.
   */
   void propagateWalkers(bool writeConfigs);
 
