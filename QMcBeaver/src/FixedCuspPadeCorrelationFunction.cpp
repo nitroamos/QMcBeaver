@@ -95,7 +95,7 @@ void FixedCuspPadeCorrelationFunction::evaluate( double r )
 
   FunctionValue = aDIVb;
   dFunctionValue = apDIVb - bpDIVb*aDIVb;
-  d2FunctionValue = (app - bpp*aDIVb)/b - 2*bpDIVb*(apDIVb + bpDIVb*aDIVb);
+  d2FunctionValue = (app - bpp*aDIVb)/b + 2*bpDIVb*(bpDIVb*aDIVb - apDIVb);
 }
 
 double FixedCuspPadeCorrelationFunction::getFunctionValue()
@@ -112,11 +112,5 @@ double FixedCuspPadeCorrelationFunction::getSecondDerivativeValue()
 {
   return d2FunctionValue;
 }
-
-
-
-
-
-
 
 

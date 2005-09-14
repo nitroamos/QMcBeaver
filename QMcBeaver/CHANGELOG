@@ -1,3 +1,7 @@
+Wed, 14 Sep 2005, Daniel R. Fisher
+
+1. Fixed a sign error in FixedCuspPadeCorrelationFunction.cpp
+
 Thurs, 8 Sep 2005, Daniel R. Fisher
 1. Changed the way that the distances for the pair density histograms 
    are written.  Previously, the bins were labeled by their greatest
