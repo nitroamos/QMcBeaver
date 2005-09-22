@@ -32,7 +32,8 @@ void QMCInput::read(string inputfile)
  BF.initialize(&flags, &Molecule);
  BF.read(inputfile);
 
- WF.read(flags.Norbitals, flags.Nbasisfunc, flags.Ndeterminants, inputfile);
+ WF.read(flags.Norbitals, flags.Nbasisfunc, flags.Ndeterminants, 
+	 flags.trial_function_type, inputfile);
 
  JP.read(Molecule.NucleiTypes,flags.link_Jastrow_parameters,
 	 WF.getNumberAlphaElectrons(),WF.getNumberBetaElectrons(),inputfile);

@@ -899,8 +899,10 @@ void QMCWalker::writeCorrelatedSamplingConfiguration(ostream& strm)
   strm << (*walkerData.configOutput).str();
 }
 
-void QMCWalker::calculatePairDistances(double max_pair_distance, double dr,
-     Array1D<double> &pll_spin, Array1D<double> &opp_spin, double &totalWeight)
+void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
+                          Array1D<double> &pll_spin, Array1D<double> &opp_spin,
+		 Array2D<double> &alpha_density, Array2D<double> &beta_density,
+                                                           double &totalWeight)
 {
   int nalpha = Input->WF.getNumberAlphaElectrons();
   int nbeta = Input->WF.getNumberBetaElectrons();
@@ -918,8 +920,11 @@ void QMCWalker::calculatePairDistances(double max_pair_distance, double dr,
             dist = sqrt( (R(i,0) - R(j,0)) * (R(i,0) - R(j,0)) +
                          (R(i,1) - R(j,1)) * (R(i,1) - R(j,1)) +
                          (R(i,2) - R(j,2)) * (R(i,2) - R(j,2)) );
-            index = int(dist/dr);
-            pll_spin(index) += weight;
+	    if (dist < max_pair_distance)
+	      {
+		index = int(dist/dr);
+		pll_spin(index) += weight;
+	      }
           }
     }
     
@@ -931,8 +936,11 @@ void QMCWalker::calculatePairDistances(double max_pair_distance, double dr,
             dist = sqrt( (R(i,0) - R(j,0)) * (R(i,0) - R(j,0)) +
                          (R(i,1) - R(j,1)) * (R(i,1) - R(j,1)) +
                          (R(i,2) - R(j,2)) * (R(i,2) - R(j,2)) );
-            index = int(dist/dr);
-            pll_spin(index) += weight;
+	    if (dist < max_pair_distance)
+	      {
+		index = int(dist/dr);
+		pll_spin(index) += weight;
+	      }
           }
     }
     
@@ -944,9 +952,53 @@ void QMCWalker::calculatePairDistances(double max_pair_distance, double dr,
             dist = sqrt( (R(i,0) - R(j,0)) * (R(i,0) - R(j,0)) +
                          (R(i,1) - R(j,1)) * (R(i,1) - R(j,1)) +
                          (R(i,2) - R(j,2)) * (R(i,2) - R(j,2)) );
-            index = int(dist/dr);
-            opp_spin(index) += weight;
+	    if (dist < max_pair_distance)
+	      {
+		index = int(dist/dr);
+		opp_spin(index) += weight;
+	      }
           }
+    }
+
+  for (int i=0; i<Input->flags.Natoms; i++)
+    {
+      string NucleusType = Input->Molecule.Atom_Labels(i);
+
+      int nuc_index = -1;
+      for (int j=0; j<Input->Molecule.NucleiTypes.dim1(); j++)
+	if (Input->Molecule.NucleiTypes(j) == NucleusType)
+	  {
+	    nuc_index = j;
+	    break;
+	  }
+
+      double nuc_x = Input->Molecule.Atom_Positions(i,0);
+      double nuc_y = Input->Molecule.Atom_Positions(i,1);
+      double nuc_z = Input->Molecule.Atom_Positions(i,2);
+      
+      for (int k=0; k<nalpha; k++)
+	{
+	  dist = sqrt( (R(k,0) - nuc_x) * (R(k,0) - nuc_x) + 
+		       (R(k,1) - nuc_y) * (R(k,1) - nuc_y) +
+		       (R(k,2) - nuc_z) * (R(k,2) - nuc_z) );
+	  if (dist < max_pair_distance)
+	    {
+	      index = int(dist/dr);
+	      alpha_density(nuc_index,index) += weight;
+	    }
+	}
+
+      for (int l=nalpha; l<nalpha+nbeta; l++)
+	{
+	  dist = sqrt( (R(l,0) - nuc_x) * (R(l,0) - nuc_x) +
+		       (R(l,1) - nuc_y) * (R(l,1) - nuc_y) +
+		       (R(l,2) - nuc_z) * (R(l,2) - nuc_z) );
+	  if (dist < max_pair_distance)
+	    {
+	      index = int(dist/dr);
+	      beta_density(nuc_index,index) += weight;
+	    }
+	}
     }
 }
 

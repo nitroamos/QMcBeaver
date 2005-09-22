@@ -51,10 +51,11 @@ void QMCFunctions::initialize(QMCInput *INPUT)
 {
   Input = INPUT;
 
-  Alpha.initialize(Input,0,Input->WF.getNumberAlphaElectrons()-1,\
-                   Input->WF.AlphaOccupation);
+  Alpha.initialize(Input,0,Input->WF.getNumberAlphaElectrons()-1,
+		   &Input->WF.AlphaOccupation,&Input->WF.AlphaCoeffs);
   Beta.initialize(Input,Input->WF.getNumberAlphaElectrons(),
-                  Input->WF.getNumberElectrons()-1,Input->WF.BetaOccupation);
+		  Input->WF.getNumberElectrons()-1,&Input->WF.BetaOccupation,
+		  &Input->WF.BetaCoeffs);
 
   PE.initialize(Input);
   Jastrow.initialize(Input);

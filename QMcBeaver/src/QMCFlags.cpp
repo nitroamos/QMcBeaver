@@ -49,6 +49,8 @@ void QMCFlags::read_flags(string InFileName)
   old_walker_acceptance_parameter = 50;
   zero_out_checkpoint_statistics = 0;
   Ndeterminants                  = 1;
+  trial_function_type            = "restricted";
+
   dt                             = 0.001;
   dt_equilibration               = 0.02;
   
@@ -103,8 +105,8 @@ void QMCFlags::read_flags(string InFileName)
   equilibrate_every_opt_step     = 0;
   equilibrate_first_opt_step     = 1;
   write_all_energies_out         = 0;
-  write_pair_densities           = 0;
-  write_pair_densities_interval  = 10000;
+  write_electron_densities           = 0;
+  write_electron_densities_interval  = 10000;
   chip_and_mike_are_cool         = "false";
   
   //**********************************
@@ -321,6 +323,10 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           Ndeterminants = atoi(temp_string.c_str());
         }
+      else if(temp_string == "trial_function_type")
+	{
+	  input_file >> trial_function_type;
+	}
       else if(temp_string == "calculate_bf_density")
         {
           input_file >> temp_string;
@@ -439,15 +445,15 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           population_control_parameter = atof(temp_string.c_str());
         }
-      else if(temp_string == "write_pair_densities")
+      else if(temp_string == "write_electron_densities")
         {
           input_file >> temp_string;
-          write_pair_densities = atoi(temp_string.c_str());
+          write_electron_densities = atoi(temp_string.c_str());
         }
-      else if(temp_string == "write_pair_densities_interval")
+      else if(temp_string == "write_electron_densities_interval")
         {
           input_file >> temp_string;
-          write_pair_densities_interval = atoi(temp_string.c_str());
+          write_electron_densities_interval = atoi(temp_string.c_str());
         }
       else if(temp_string == "write_all_energies_out")
         {
@@ -649,6 +655,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "norbitals\n " << flags.Norbitals << endl;
   strm << "nbasisfunc\n " << flags.Nbasisfunc << endl;
   strm << "ndeterminants\n " << flags.Ndeterminants << endl;
+  strm << "trial_function_type\n " << flags.trial_function_type << endl;
   strm << "calculate_bf_density\n " << flags.calculate_bf_density << endl;
   strm << "energy\n " << flags.energy_trial << endl;
   strm << "correct_population_size_bias\n "
@@ -687,9 +694,10 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   << endl;
   strm << "population_control_parameter\n "
   << flags.population_control_parameter << endl;
-  strm << "write_pair_densities\n " << flags.write_pair_densities << endl;
-  strm << "write_pair_densities_interval\n "
-  << flags.write_pair_densities_interval << endl;
+  strm << "write_electron_densities\n " << flags.write_electron_densities 
+  << endl;
+  strm << "write_electron_densities_interval\n "
+  << flags.write_electron_densities_interval << endl;
   strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
   strm << "zero_out_checkpoint_statistics\n "
   << flags.zero_out_checkpoint_statistics << endl;

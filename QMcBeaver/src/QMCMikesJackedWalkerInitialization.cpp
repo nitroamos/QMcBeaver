@@ -262,75 +262,104 @@ Array2D <double> QMCMikesJackedWalkerInitialization::electrons_and_radii()
 {
     int Norbitals  = Input->flags.Norbitals;
     int Nbasisfunc = Input->flags.Nbasisfunc;
-    Array2D <qmcfloat> Scratch(Input->WF.Coeffs);
-    double sum;
-    
+
+    Array2D<qmcfloat> AlphaScratch(Input->WF.AlphaCoeffs);
+    Array2D<qmcfloat> BetaScratch(Input->WF.BetaCoeffs);
+
     //Square MO coefficients
     for(int i=0; i<Norbitals; i++)
-    {
-        for(int j=0; j<Nbasisfunc; j++)
+      for(int j=0; j<Nbasisfunc; j++)
         {
-            Scratch(i,j) = Scratch(i,j)*Scratch(i,j);
+	  AlphaScratch(i,j) = AlphaScratch(i,j)*AlphaScratch(i,j);
+	  BetaScratch(i,j) = BetaScratch(i,j)*BetaScratch(i,j);
         }
-    }
     
     //"Normalize" MO by summing the squared coeffs and dividing
+
+    double AlphaSum;
+    double BetaSum;
+
     for(int i=0; i<Norbitals; i++)
-    {
-        sum = 0;
-        for(int j=0; j<Nbasisfunc; j++) sum += Scratch(i,j);
+      {
+        AlphaSum = 0;
+	BetaSum = 0;
+        for(int j=0; j<Nbasisfunc; j++) 
+	  {
+	    AlphaSum += AlphaScratch(i,j);
+	    BetaSum += BetaScratch(i,j);
+	  }
         
         for(int j=0; j<Nbasisfunc; j++)
-        {
-            Scratch(i,j) = Scratch(i,j)/sum;
-        }
-    }
+	  {
+            AlphaScratch(i,j) = AlphaScratch(i,j)/AlphaSum;
+	    BetaScratch(i,j) = BetaScratch(i,j)/BetaSum;
+	  }
+      }
     
     // Create an Array that links the index of an orbital to the atom it 
     // is associated with
     Array1D <int> OrbPos(Input->WF.getNumberBasisFunctions());
+
+    int Natoms = Input->flags.Natoms;
     
-    int ii = 0;
-    for(int i=0; i<Input->flags.Natoms; i++)
-    {
-        for(int j=0; j<Input->BF.getNumberBasisFunctions(i); 
-            j++)
-        {
-            OrbPos(ii) = i; 
-            ii += 1;
-        }
-    }
+    int i=0;
+    for(int j=0; j<Natoms; j++)
+      for(int k=0; k<Input->BF.getNumberBasisFunctions(j); k++)
+	{
+	  OrbPos(i) = j; 
+	  i++;
+	}
     
     //Initialize the array to be returned.  The first column has the
     //number of electrons for the atom and the second column has the
     //radi of the atom
     
-    int Natoms = Input->flags.Natoms;
-    Array2D <double> EandR(Input->flags.Natoms,2);
-    for(int i=0; i<Natoms; i++) for(int j=0; j<2; j++) EandR(i,j) = 0.0;
+    Array2D <double> EandR(Natoms,2);
+    for(int i=0; i<Natoms; i++) 
+      for(int j=0; j<2; j++) 
+	EandR(i,j) = 0.0;
     
     double rv;  //uniform [0,1) random variable
+    double sum;
     for(int i=0; i<Norbitals; i++)
-    {
-        for(int j=0; j<(Input->WF.AlphaOccupation(0,i) 
-                        + Input->WF.BetaOccupation(0,i)); j++)
-        {
-            sum = 0;
+      {
+	if (Input->WF.AlphaOccupation(0,i) == 1)
+	  {
+	    sum = 0.0;
             rv = ran1(&Input->flags.iseed);
             
-            for(int k=0; k<Nbasisfunc; k++)
-            {
-                sum += Scratch(i,k);
-                if(sum >= rv) 
-                { EandR(OrbPos(k),0) += 1; break; }
-            }
-        }
-    }
-    
+            for(int j=0; j<Nbasisfunc; j++)
+	      {
+                sum += AlphaScratch(i,j);
+                if (sum >= rv) 
+		  { 
+		    EandR(OrbPos(j),0) += 1; 
+		    break; 
+		  }
+	      }
+	  }
+	
+	if (Input->WF.BetaOccupation(0,i) == 1)
+	  {
+	    sum = 0.0;
+	    rv = ran1(&Input->flags.iseed);
+
+	    for (int k=0; k<Nbasisfunc; k++)
+	      {
+		sum += BetaScratch(i,k);
+		if (sum >= rv)
+		  {
+		    EandR(OrbPos(k),0) += 1;
+		    break;
+		  }
+	      }
+	  }
+      }
+
     for(int i=0; i<Natoms; i++)
-    {
+      {
         EandR(i,1) = covalent_radi(Input->Molecule.Z(i));
-    }
+      }
     
     return EandR;
 }

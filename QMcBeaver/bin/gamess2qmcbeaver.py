@@ -81,7 +81,7 @@ Outfile = sys.argv[1][0:len(sys.argv[1])-7] + "ckmf"
 OUT = open(Outfile,'w')
 
 # Get the SCF type and run type of the calculation.  Usable SCF types are RHF,
-# ROHF, and MCSCF.  Usable run types are ENERGY and OPTIMIZE.
+# UHF, ROHF, and MCSCF.  Usable run types are ENERGY and OPTIMIZE.
 
 run_type = "ENERGY"
 scf_type = "RHF"
@@ -119,6 +119,9 @@ elif run_type == "OPTIMIZE":
                     break
                 elif string.find(gamess_output[j],'INTERNAL COORDINATES') !=-1:
                     end_geometry = j-3
+                    break
+                elif string.find(gamess_output[j],'SUBSTITUTED Z-MATRIX') !=-1:
+                    end_geometry = j-1
                     break
             break    
 
@@ -233,22 +236,41 @@ for line in gamess_output:
 
 # Find where the wavefunction is in the .dat file.
 
-if scf_type == "RHF":
+energy_line = -1
 
+if scf_type == "RHF":
     for i in range(len(gamess_data)):
         if string.find(gamess_data[i],'E(RHF)=') != -1:
-            energy_data = string.split(gamess_data[i])
-            for j in range(len(energy_data)):
-                if (energy_data[j] == "E(RHF)="):
-                    energy = energy_data[j+1]
-                    energy = energy[0:len(energy)-1]
-                    break
+            energy_line = i
+    energy_data = string.split(gamess_data[energy_line])
+    for j in range(len(energy_data)):
+        if (energy_data[j] == "E(RHF)="):
+            energy = energy_data[j+1]
+            energy = energy[0:len(energy)-1]
             break
 
     for i in range(len(gamess_data)):
         if string.find(gamess_data[i],'$VEC') != -1:
             start_wavefunction = i+1
+    for j in range(start_wavefunction,len(gamess_data)):
+        if string.find(gamess_data[j],'$END') != -1:
+            end_wavefunction = j
             break
+
+elif scf_type == "UHF":
+    for i in range(len(gamess_data)):
+        if string.find(gamess_data[i],'E(UHF)=') != -1:
+            energy_line = i
+    energy_data = string.split(gamess_data[energy_line])
+    for j in range(len(energy_data)):
+        if (energy_data[j] == "E(UHF)="):
+            energy = energy_data[j+1]
+            energy = energy[0:len(energy)-1]
+            break
+
+    for i in range(len(gamess_data)):
+        if string.find(gamess_data[i],'$VEC') != -1:
+            start_wavefunction = i+1
     for j in range(start_wavefunction,len(gamess_data)):
         if string.find(gamess_data[j],'$END') != -1:
             end_wavefunction = j
@@ -274,14 +296,14 @@ elif scf_type == "MCSCF":
     for j in range(start_mc,len(gamess_data)):
         if string.find(gamess_data[j],'$VEC') != -1:
             start_wavefunction = j+1
-            for k in range(j,len(gamess_data)):
-                if string.find(gamess_data[k],'$END') != -1:
-                    end_wavefunction = k
-                    break
+            break
+    for k in range(start_wavefunction,len(gamess_data)):
+        if string.find(gamess_data[k],'$END') != -1:
+            end_wavefunction = k
             break
 
 # Get the wavefunction parameters from the .dat file.
-                        
+
 orbital_coeffs = [] 
 for n in range(start_wavefunction, end_wavefunction):
     len_line = len(gamess_data[n])
@@ -295,28 +317,73 @@ for n in range(start_wavefunction, end_wavefunction):
     orbital_coeffs.append(line_data)
 
 wavefunction = []
+alpha_orbitals = []
+beta_orbitals = []
 
-current_index = 1
-m = start_wavefunction+1
-temp_coeffs = orbital_coeffs[0]
-while 1:
-    wavefunction_line = string.split(gamess_data[m])
-    if string.atoi(wavefunction_line[0]) == current_index:
-        temp_coeffs = temp_coeffs + orbital_coeffs[m-start_wavefunction]
-    else:
-        wavefunction.append(temp_coeffs)
-        current_index = current_index+1
-        temp_coeffs = orbital_coeffs[m-start_wavefunction]
-    if m == end_wavefunction-1:
-        wavefunction.append(temp_coeffs)
-        break
-    else:
-        m = m+1
-norbitals = len(wavefunction)
+trialFunctionType = "restricted"
+
+if scf_type != "UHF":
+
+    current_index = 1
+    m = start_wavefunction+1
+    temp_coeffs = orbital_coeffs[0]
+    while 1:
+        wavefunction_line = string.split(gamess_data[m])
+        if string.atoi(wavefunction_line[0]) == current_index:
+            temp_coeffs = temp_coeffs + orbital_coeffs[m-start_wavefunction]
+        else:
+            wavefunction.append(temp_coeffs)
+            current_index = current_index+1
+            temp_coeffs = orbital_coeffs[m-start_wavefunction]
+        if m == end_wavefunction-1:
+            wavefunction.append(temp_coeffs)
+            break
+        else:
+            m = m+1
+    norbitals = len(wavefunction)
+
+elif scf_type == "UHF":
+
+    trialFunctionType = "unrestricted"
+
+    current_index = 1
+    m = start_wavefunction+1
+    temp_coeffs = orbital_coeffs[0]
+    while 1:
+        wavefunction_line = string.split(gamess_data[m])
+        if string.atoi(wavefunction_line[0]) == current_index:
+            temp_coeffs = temp_coeffs + orbital_coeffs[m-start_wavefunction]
+        elif string.atoi(wavefunction_line[0]) > current_index:
+            alpha_orbitals.append(temp_coeffs)
+            current_index = current_index+1
+            temp_coeffs = orbital_coeffs[m-start_wavefunction]
+        if current_index != 1 and string.atoi(wavefunction_line[0]) == 1:
+            alpha_orbitals.append(temp_coeffs)
+            break
+        else:
+            m = m+1
+    current_index = 1
+    m = m+1
+    temp_coeffs = orbital_coeffs[m-start_wavefunction-1]
+    while 1:
+        wavefunction_line = string.split(gamess_data[m])
+        if string.atoi(wavefunction_line[0]) == current_index:
+            temp_coeffs = temp_coeffs + orbital_coeffs[m-start_wavefunction]
+        else:
+            beta_orbitals.append(temp_coeffs)
+            current_index = current_index+1
+            temp_coeffs = orbital_coeffs[m-start_wavefunction]
+        if m == end_wavefunction-1:
+            beta_orbitals.append(temp_coeffs)
+            break
+        else:
+            m = m+1
+    norbitals = len(alpha_orbitals)
 
 # Get the occupation and CI coefficents.
 
-if scf_type == "RHF":
+# RHF and UHF have one determinant.
+if scf_type != "MCSCF":
     AlphaOccupation = [0]
     BetaOccupation = [0]
     AlphaOccupation[0] = range(norbitals)
@@ -402,6 +469,7 @@ OUT.write('energy\n %s\n'%energy)
 OUT.write('norbitals\n %i\n'%norbitals)
 OUT.write('nbasisfunc\n %i\n'%nbasisfunc)
 OUT.write('ndeterminants\n %i\n'%ndeterminants)
+OUT.write('trial_function_type\n %s\n'%trialFunctionType)
 OUT.write('run_type\n variational\n')
 OUT.write('chip_and_mike_are_cool\n Yea_Baby!\n')
 OUT.write('&\n')
@@ -553,14 +621,33 @@ OUT.write('&\n')
 
 ##################  PRINT WAVEFUNCTION: BEGIN ###################
 
-OUT.write('&wavefunction\n')
+OUT.write('&wavefunction\n\n')
 
-for i in range(norbitals):
-    for j in range(nbasisfunc):
-        OUT.write('\t%s'%wavefunction[i][j])
-        if (j+1)%3 == 0  : OUT.write('\n')
-        else : OUT.write('\t')
-    OUT.write('\n\n')
+if scf_type != "UHF":
+
+    for i in range(norbitals):
+        for j in range(nbasisfunc):
+            OUT.write('\t%s'%wavefunction[i][j])
+            if (j+1)%3 == 0:
+                OUT.write('\n')
+        OUT.write('\n\n')
+
+elif scf_type == "UHF":
+
+    OUT.write("Alpha Molecular Orbitals\n\n")
+    for i in range(norbitals):
+        for j in range(nbasisfunc):
+            OUT.write('\t%s'%alpha_orbitals[i][j])
+            if (j+1)%3 == 0:
+                OUT.write('\n')
+        OUT.write('\n\n')
+    OUT.write("Beta Molecular Orbitals\n\n")
+    for i in range(norbitals):
+        for j in range(nbasisfunc):
+            OUT.write('\t%s'%beta_orbitals[i][j])
+            if (j+1)%3 == 0:
+                OUT.write('\n')
+        OUT.write('\n\n')
 
 OUT.write("Alpha Occupation\n")
 for i in range(ndeterminants):

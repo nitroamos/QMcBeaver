@@ -76,7 +76,8 @@ public:
     @param startEl first particle in this determinant.
     @param stopEl last particle in this determinant.
   */
-  void initialize(QMCInput *input, int startEl, int stopEl, Array2D<int> occ);
+  void initialize(QMCInput *input, int startEl, int stopEl, Array2D<int> *occ, 
+		  Array2D<qmcfloat> *coeffs);
 
   /**
     Evaluates the Slater determinants and their first two derivatives at X.
@@ -100,7 +101,6 @@ public:
     Assuming the basis functions ued to make the determinant are normalized, 
     the values can be normalized by dividing by \f$\sqrt{M!}\f$, where 
     \f$M\f$ is the number of electrons in the determinants.
-
     @param i of which walker we are requesting the information
   */
   Array1D<double>* getPsi(int i);
@@ -110,7 +110,6 @@ public:
     gradient over the Slater determinant for the last evaluated electronic 
     configuration.  These values do not depend on the normalization of the 
     Slater determinant.
-
     @param i of which walker we are requesting the information
   */
   Array3D<double>* getGradPsiRatio(int i);
@@ -120,7 +119,6 @@ public:
     laplacian over the Slater determinant for the last evaluated electronic 
     configuration.  These values do not depend on the normalization of the 
     Slater determinant.
-
     @param i of which walker we are requesting the information
   */
   Array1D<double>* getLaplacianPsiRatio(int i);
@@ -128,21 +126,19 @@ public:
   /**
     Gets an array of the densities for the basis functions for the last 
     evaluated electronic configuration.
-
     @param i of which walker we are requesting the information
   */
   Array1D<double>* getChiDensity(int i);
 
   /**
-     Returns true if the Slater determinant is singular and false otherwise.
-     
-     @param i of which walker we are requesting the information
+    Returns true if the Slater determinant is singular and false otherwise.
+    @param i of which walker we are requesting the information
   */
   bool isSingular(int i);
 
   /**
-     Sets two QMCSlater objects equal.
-     @param rhs object to set this object equal to
+    Sets two QMCSlater objects equal.
+    @param rhs object to set this object equal to
   */
   void operator=(const QMCSlater & rhs );
 
@@ -151,7 +147,9 @@ public:
   QMCBasisFunction *BF;
   QMCWavefunction  *WF;
   
-  /* The dimensions of these data are numWalkers x numDeterminants*/
+  /** 
+    The dimensions of these arrays are numWalkers x numDeterminants
+  */
   Array1D< Array1D<double> > Psi;
   Array1D< Array1D<double> > Laplacian_PsiRatio;
   Array1D< Array3D<double> > Grad_PsiRatio;
@@ -165,7 +163,10 @@ public:
 
   double PsiRatio_1electron;
 
-  /* The dimensions of these data are numWalkers x numDeterminants then numElec x numOrb*/
+  /** 
+    The dimensions of these data are numWalkers x numDeterminants then 
+    numElec x numOrb
+  */
   Array2D< Array2D<qmcfloat> > D;
   Array2D< Array2D<qmcfloat> > D_inv;
   Array2D< Array2D<qmcfloat> > Laplacian_D;
@@ -183,7 +184,9 @@ public:
   Array1D< Array2D<qmcfloat> > Chi_gradient;
 #endif
 
-  /* The dimensions of WF_coeffs is numDeterminants and then numBasisFunction x numOrb */
+  /** 
+    The dimensions of WF_coeffs is numDeterminants and then numOrb x nBasisFunc
+  */
   Array1D< Array2D<qmcfloat> > WF_coeffs;
 
   void allocate(int N);

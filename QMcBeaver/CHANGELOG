@@ -1,3 +1,17 @@
+Wed, 21 Sep 2005, Daniel R. Fisher
+
+1. Added the capability to calculate one electron density in
+   addition to electron pair density histograms.  To calculate all
+   electron densities, set the write_electron_densities flag to 1.
+   This replaces the write_pair_densities flag.
+2. Changed the way the histograms are normalized when they are written
+   out.
+3. Added the capability to use unrestricted trial functions in the SCF
+   part of the wavefunction.  Unrestricted trial functions can be
+   generated with Jaguar or GAMESS.  This will result in a .ckmf file
+   in which the alpha and beta orbitals have different coefficients.
+   The old input files can still be used. 
+
 Wed, 14 Sep 2005, Daniel R. Fisher
 
 1. Fixed a sign error in FixedCuspPadeCorrelationFunction.cpp

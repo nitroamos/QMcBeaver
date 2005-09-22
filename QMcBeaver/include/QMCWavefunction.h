@@ -25,7 +25,7 @@ using namespace std;
 /**
   The coefficients and parameters describing the trial wavefunction for 
   the system.  These are the coefficients for a wavefunction obtained 
-  through standard means (HF, MCSCF, DFT, etc.).
+  through standard means (RHF, UHF, MCSCF, DFT, etc).
 */
 
 class QMCWavefunction
@@ -38,6 +38,7 @@ class QMCWavefunction
   int Nbeta;
   int Nelectrons;
   int Ndeterminants;
+  string trialFunctionType;
 
  public:
 
@@ -83,7 +84,7 @@ class QMCWavefunction
   int getNumberDeterminants();
 
   /**
-    Array containing the coefficients used to construct the orbitals.
+    Array containing the coefficients used to construct the alpha orbitals.
 
     For example, orbitals are constructed so that
     \f[
@@ -93,8 +94,17 @@ class QMCWavefunction
     where the the \f$BasisFunction_{j}(x,y,z)\f$ are from QMCBasisFunction.
     It is assumed that the ordering of the coefficients is the same as
     the basisfunctions in the input file.
+    If the trial wavefunction is restricted, the alpha and beta orbitals will
+    be identical.
   */
-  Array2D<qmcfloat> Coeffs;
+  Array2D<qmcfloat> AlphaCoeffs;
+
+  /**
+    Array containing the coefficients used to construct the beta orbitals.
+    If the trial wavefunction is restricted, the alpha and beta orbitals will
+    be identical.
+  */
+  Array2D<qmcfloat> BetaCoeffs;
 
   /**
     Array containing the CI coefficients for a multideterminant wavefunction.
@@ -137,7 +147,7 @@ class QMCWavefunction
     @param runfile file to load the object state from.
   */
   void read(int numberOrbitals, int numberBasisFunctions, 
-	    int numberDeterminants, string runfile);
+	    int numberDeterminants, string functionType, string runfile);
 };
 
 #endif

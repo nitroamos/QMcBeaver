@@ -293,7 +293,11 @@ void QMCManager::run()
   
   
   if( Input.flags.equilibrate_every_opt_step > 0 )
-    equilibrating = true;
+    {
+      equilibrating = true;
+      Input.flags.dt = Input.flags.dt_equilibration;
+    }
+
     
   ofstream *config_strm_out = 0;
   if( Input.flags.optimize_Psi || Input.flags.print_configs == 1 )
@@ -362,7 +366,7 @@ snprintf( my_rank_str, 32, "%d", Input.flags.my_rank);
         }
         
       bool writeConfigs = !equilibrating &&
-                          ( Input.flags.optimize_Psi || Input.flags.print_configs == 1 ) &&
+              ( Input.flags.optimize_Psi || Input.flags.print_configs == 1 ) &&
                           iteration%Input.flags.print_config_frequency == 0;
                           
       QMCnode.step(writeConfigs);
@@ -416,11 +420,11 @@ snprintf( my_rank_str, 32, "%d", Input.flags.my_rank);
           QMCnode.writeEnergies(*energy_strm_out);
         }
         
-      if( !equilibrating && Input.flags.write_pair_densities == 1 )
+      if( !equilibrating && Input.flags.write_electron_densities == 1 )
         {
-          QMCnode.calculatePairDistances();
-          if (iteration%Input.flags.write_pair_densities_interval == 0)
-            QMCnode.writePairDensityHistograms();
+          QMCnode.calculateElectronDensities();
+          if (iteration%Input.flags.write_electron_densities_interval == 0)
+            QMCnode.writeElectronDensityHistograms();
         }
         
       if( equilibrating )
@@ -460,8 +464,8 @@ snprintf( my_rank_str, 32, "%d", Input.flags.my_rank);
               gatherProperties();
               if (Input.flags.calculate_bf_density == 1)
                 gatherDensities();
-              if (Input.flags.write_pair_densities == 1)
-                QMCnode.writePairDensityHistograms();
+              if (Input.flags.write_electron_densities == 1)
+                QMCnode.writeElectronDensityHistograms();
             }
             
           if( Input.flags.print_transient_properties &&
@@ -495,8 +499,8 @@ snprintf( my_rank_str, 32, "%d", Input.flags.my_rank);
               gatherProperties();
               if (Input.flags.calculate_bf_density == 1)
                 gatherDensities();
-              if (Input.flags.write_pair_densities == 1)
-                QMCnode.writePairDensityHistograms();
+              if (Input.flags.write_electron_densities == 1)
+                QMCnode.writeElectronDensityHistograms();
             }
           else if(poll_result == QMC_SYNCHRONIZE)
             {

@@ -252,4 +252,5 @@ class GPUQMCBasisFunction : public QMCBasisFunction, GPUGlobals
 #endif
 #endif
   
-  
+
+

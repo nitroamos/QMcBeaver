@@ -41,12 +41,11 @@ void QMCSlater::operator=(const QMCSlater & rhs )
   if (Input->flags.calculate_bf_density == 1)
     Chi_Density      = rhs.Chi_Density;
 
-  BF    = rhs.BF;
-  WF    = rhs.WF;
-
-  Start          = rhs.Start;
-  Stop           = rhs.Stop;
-  occupation     = rhs.occupation;
+  BF         = rhs.BF;
+  WF         = rhs.WF;
+  Start      = rhs.Start;
+  Stop       = rhs.Stop;
+  occupation = rhs.occupation;
 
   Singular = rhs.Singular;
 
@@ -57,15 +56,15 @@ void QMCSlater::operator=(const QMCSlater & rhs )
   allocate( Stop-Start+1 );
 }
 
-void QMCSlater::initialize
-(QMCInput *INPUT, int startEl, int stopEl, Array2D<int> occ)
+void QMCSlater::initialize(QMCInput *INPUT, int startEl, int stopEl, 
+			   Array2D<int> *occ, Array2D<qmcfloat> *coeffs)
 {
   Input = INPUT;
   BF = &Input->BF;
   WF = &Input->WF;
 
   setStartAndStopElectronPositions(startEl, stopEl);
-  occupation = occ;
+  occupation = *occ;
 
   for(int i=0; i<Singular.dim1(); i++)
     Singular(i) = false;
@@ -88,7 +87,8 @@ void QMCSlater::initialize
             {
               if(numRows != 0)
                 {
-                  WF_coeffs(i).setRows(orbital_index-numRows,j-numRows,numRows,WF->Coeffs);
+                  WF_coeffs(i).setRows(orbital_index-numRows,j-numRows,numRows,
+				       *coeffs);
                   numRows = 0;
                 }
               if (orbital_index == D(0,i).dim2()) break;
@@ -96,7 +96,8 @@ void QMCSlater::initialize
         }
     }
 #ifdef QMC_GPU
-  //i should put some more effort into this question of copy constructors/assignment
+  // I should put some more effort into this question of copy 
+  // constructors/assignment
   GPUQMCBasisFunction temp(*BF, (int)(WF_coeffs(0).dim1()), Input->flags.walkers_per_pass);
   gpuBF = temp;
   gpuMatMult = GPUQMCMatrix(WF_coeffs,Input->flags.walkers_per_pass);
@@ -152,11 +153,12 @@ void QMCSlater::allocate(int N)
   for(int j=0; j<bfData.dim1(); j++)
     bfData(j).allocate(N,nbasisfunc);
 
-  /*The dimensions of these data are numWalkers x numDeterminants then numElec x numOrb
-  What I'm doing here is filling the resultsCollector database with addresses of
-  our actual data storage. This creates an alias which I can then send to the
-  GPUQMC code without duplicating data storage or ruining the previously
-  existing data design*/
+  /* The dimensions of these data are numWalkers x numDeterminants then numElec
+     x numOrb.  What I'm doing here is filling the resultsCollector database 
+     with addresses of our actual data storage. This creates an alias which I
+     can then send to the GPUQMC code without duplicating data storage or 
+     ruining the previously existing data design
+  */
   resultsCollector.allocate(ndet, wpp*5);
   for(int iDet=0; iDet<ndet; iDet++)
     {
@@ -203,6 +205,10 @@ QMCSlater::~QMCSlater()
         Chi_Density(j).deallocate();
     }
 
+  for (int i=0; i<WF->getNumberDeterminants(); i++)
+    WF_coeffs(i).deallocate();
+  WF_coeffs.deallocate();
+
   D.deallocate();
   D_inv.deallocate();
   Laplacian_D.deallocate();
@@ -214,8 +220,6 @@ QMCSlater::~QMCSlater()
 
   if (Input->flags.calculate_bf_density == 1)
     Chi_Density.deallocate();
-
-  WF_coeffs.deallocate();
 
   occupation.deallocate();
 
@@ -244,8 +248,9 @@ void QMCSlater::setStartAndStopElectronPositions(int StartEl, int StopEl)
 
 void QMCSlater::evaluate(int num)
 {
-  //The new idea here is to split all the work that the evaluate function used to do
-  //This enables QMCFunction to control when the multiplication happens relative to the inverse
+  // The new idea here is to split all the work that the evaluate function used
+  // to do.  This enables QMCFunction to control when the multiplication 
+  // happens relative to the inverse
 
   // The LU Decomposition inverse used here is O(1*N^3)
   // Updating one electron at a time is O(2*N^3-N^2)
@@ -283,17 +288,19 @@ void QMCSlater::evaluate(int num)
 
 /**
 This function contains the meat of the QMC calculation.
-1) basis functions are calculated for each electron position
-for each determinant:
-2) a wavefunction coefficient matrix is composed of the input basis function coefficients
-some monkey business is required here because not all consecutive orbitals in the
-input coefficients are occupied.
-3) the Slater matrix is calculated along with the associated gradient and laplacian
-matricies:
-D(numElec x numOrb) = Chi(numElec x numBasisFunction) * WF_coeffs(numBasisFunction x numOrb)
+1) Basis functions are calculated for each electron position
+   for each determinant:
+2) A wavefunction coefficient matrix is composed of the input basis function 
+   coefficients.  Some monkey business is required here because not all 
+   consecutive orbitals in the input coefficients are occupied.
+3) The Slater matrix is calculated along with the associated gradient and 
+   laplacian matricies:
+   D(numElec x numOrb) = Chi(numElec x numBasisFunction) * 
+                                           WF_coeffs(numBasisFunction x numOrb)
  
-Note: the coefficient matricies are transposed. hand-coded matrix multiplication is faster
-with a transposed matrix, and it enables the use of memcpy for Array2D's row-major data.
+  Note: the coefficient matricies are transposed.  Hand-coded matrix 
+  multiplication is faster with a transposed matrix, and it enables the use of 
+  memcpy for Array2D's row-major data.
 */
 void QMCSlater::update_Ds(Array1D<Array2D<double>*> &X, int num)
 {
@@ -422,12 +429,12 @@ void QMCSlater::update_Ds(Array1D<Array2D<double>*> &X, int num)
 
   if(printBF)
     {/*
-              cout << i << ": ";
-              for (int j=0; j<WF->getNumberDeterminants(); j++){
-               printf("psi %s%8.5e ",(Psi(i))(j)<0?"":" ",(Psi(i))(j) );
-               printf("lap ratio %s%8.5g\n",(Psi(i))(j)<0?"":" ",(Laplacian_PsiRatio(i))(j) );
-              }
-             */
+       cout << i << ": ";
+       for (int j=0; j<WF->getNumberDeterminants(); j++){
+       printf("psi %s%8.5e ",(Psi(i))(j)<0?"":" ",(Psi(i))(j) );
+       printf("lap ratio %s%8.5g\n",(Psi(i))(j)<0?"":" ",(Laplacian_PsiRatio(i))(j) );
+       }
+     */
     }
 
   if(showTimings)
@@ -441,13 +448,14 @@ void QMCSlater::update_Ds(Array1D<Array2D<double>*> &X, int num)
 }
 
 /**
-This function calculates the derivative ratios. that is, del psi/psi, and lap psi/psi.
-D_inv is the transpose of the true inverse, but it turns out that if we use the transpose
-here, then the calculation of the ratios turns into a sort of dot product, which not only does ATLAS
-know how to do it, it makes the code look neater. the hand-coded dot product probably doesn't
-save much time.
-At this time, D_inv and Grad_D and Laplacian_D are all qmcfloat type. The explicit typecast
-when creating the final result (double) should emphasize this.
+This function calculates the derivative ratios. that is, del psi/psi, and lap 
+psi/psi.  D_inv is the transpose of the true inverse, but it turns out that if 
+we use the transpose here, then the calculation of the ratios turns into a sort
+of dot product, which not only does ATLAS know how to do it, it makes the code 
+look neater. the hand-coded dot product probably doesn't save much time.
+At this time, D_inv and Grad_D and Laplacian_D are all qmcfloat type. The 
+explicit typecast when creating the final result (double) should emphasize 
+this.
 */
 void QMCSlater::calculate_DerivativeRatios(int k)
 {

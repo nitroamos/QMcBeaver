@@ -174,5 +174,8 @@ class GPUGlobals
   
 #endif
 #endif
-  
-  
+
+
+
+
+

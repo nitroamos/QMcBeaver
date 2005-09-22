@@ -330,25 +330,36 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
   int Norbitals  = Input->flags.Norbitals;
   int Nbasisfunc = Input->flags.Nbasisfunc;
 
-  Array2D<qmcfloat> Scratch(Input->WF.Coeffs);
+  Array2D<qmcfloat> AlphaScratch(Input->WF.AlphaCoeffs);
+  Array2D<qmcfloat> BetaScratch(Input->WF.BetaCoeffs);
 
   // Square MO coefficients.
 
   for (int i=0; i<Norbitals; i++)
     for (int j=0; j<Nbasisfunc; j++)
-      Scratch(i,j) = Scratch(i,j)*Scratch(i,j);
-
+      {
+	AlphaScratch(i,j) = AlphaScratch(i,j)*AlphaScratch(i,j);
+	BetaScratch(i,j) = BetaScratch(i,j)*BetaScratch(i,j);
+      }
   //"Normalize" MO by summing the squared coeffs and dividing
 
-  double sum;
+  double AlphaSum;
+  double BetaSum;
 
   for (int i=0; i<Norbitals; i++)
     {
-      sum = 0.0;
-      for(int j=0; j<Nbasisfunc; j++) 
-	sum += Scratch(i,j);
+      AlphaSum = 0.0;
+      BetaSum = 0.0;
       for(int j=0; j<Nbasisfunc; j++)
-	Scratch(i,j) = Scratch(i,j)/sum;
+	{ 
+	  AlphaSum += AlphaScratch(i,j);
+	  BetaSum += BetaScratch(i,j);
+	}
+      for(int j=0; j<Nbasisfunc; j++)
+	{
+	  AlphaScratch(i,j) = AlphaScratch(i,j)/AlphaSum;
+	  BetaScratch(i,j) = BetaScratch(i,j)/BetaSum;
+	}
     }
 
   // Create an Array that links the index of an basis function to the atom it
@@ -371,6 +382,8 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
   Array2D <int> atom_occ(Natoms,3);
   atom_occ = 0;
 
+  double sum = 0.0;
+
   double rv;  //uniform [0,1] random variable
   for (int i=0; i<Norbitals; i++)
     {
@@ -381,7 +394,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 
           for (int j=0; j<Nbasisfunc; j++)
             {
-              sum += Scratch(i,j);
+              sum += AlphaScratch(i,j);
               if (sum >= rv) 
 		{
 		  atom_occ(OrbPos(j),0) += 1;
@@ -398,7 +411,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 
 	  for (int k=0; k<Nbasisfunc; k++)
 	    {
-	      sum += Scratch(i,k);
+	      sum += BetaScratch(i,k);
 	      if (sum >= rv)
 		{
 		  atom_occ(OrbPos(k),0) += 1;

@@ -212,4 +212,7 @@ class GPUQMCMatrix : public GPUGlobals
   };
 #endif
 #endif
-  
+
+
+
+

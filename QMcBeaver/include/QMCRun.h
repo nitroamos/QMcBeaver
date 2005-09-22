@@ -139,12 +139,12 @@ class QMCRun
     Calculates the distances between all pairs of electrons and records them in
     parallel and opposite spin histograms.
   */
-  void calculatePairDistances();
+  void calculateElectronDensities();
 
   /**
     Writes the parallel and opposite spin pair distance histograms to files.
   */
-  void writePairDensityHistograms();
+  void writeElectronDensityHistograms();
   
   /**
     Writes the state of this object to an XML stream.
@@ -239,13 +239,13 @@ private:
   void calculatePopulationSizeBiasCorrectionFactor();
 
   /**
-    The maximum distance between a pair of electrons that will be recorded in
-    the histogram.
+    The maximum distance between a pair of particles that will be recorded in
+    the histograms.
   */
   double max_pair_distance;
 
   /**
-    The size of a bin in the pair distance histograms.
+    The size of a bin in the pair histograms.
   */
   double dr;
 
@@ -258,6 +258,18 @@ private:
     The histogram of distances between opposite spin electrons.
   */
   Array1D<double> opp_spin_histogram;
+
+  /**
+    The alpha one electron density histograms.  There is one histogram for each
+    unique nucleus.
+  */
+  Array2D<double> alpha_density_histogram;
+
+  /**
+    The beta one electron density histograms.  There is one histogram for each
+    unique nucleus.
+  */
+  Array2D<double> beta_density_histogram;
 
   /**
     The total weight of all samples recorded in the histograms.

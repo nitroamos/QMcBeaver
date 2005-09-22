@@ -145,30 +145,85 @@ geometry = Qmcdata
 # End Get Geometry
 
 # Get Wavefunction
+trialFunctionType = "restricted"
 for i in range(len(jaguardata)):
-    if string.find(jaguardata[i],"&guess") == 0:
-        Start = i+1
+    if string.find(jaguardata[i],"iuhf=1") == 0:
+        trialFunctionType = "unrestricted"
         break
-for i in range(Start,len(jaguardata)):
-    if jaguardata[i][0] == '&':
-        End = i
-        break
-Wavefunction=[]
-Orbital=[]
-LongLine=[]
-Occupation=-1
-for i in range(Start,End):
-    Line=string.split(jaguardata[i])
-    Index=string.find(jaguardata[i],"Occupation")
-    if Index != -1:
-        if i != 0:
-             Wavefunction=Wavefunction + [[[Occupation],LongLine]]
-        Occupation=Line[5]
-        LongLine=[]
-        continue
-    LongLine=LongLine+Line
-Wavefunction=Wavefunction + [[[Occupation],LongLine]]
-Wavefunction=Wavefunction[1:End]
+
+Wavefunction = []
+AlphaOrbitals = []
+BetaOrbitals = []
+
+if trialFunctionType == "restricted":
+    for i in range(len(jaguardata)):
+        if string.find(jaguardata[i],"&guess") == 0:
+            Start = i+1
+            break
+    for i in range(Start,len(jaguardata)):
+        if jaguardata[i][0] == '&':
+            End = i
+            break
+    LongLine=[]
+    Occupation=-1
+    for i in range(Start,End):
+        Line=string.split(jaguardata[i])
+        Index=string.find(jaguardata[i],"Occupation")
+        if Index != -1:
+            if i != 0:
+                Wavefunction=Wavefunction + [[[Occupation],LongLine]]
+            Occupation=Line[5]
+            LongLine=[]
+            continue
+        LongLine=LongLine+Line
+    Wavefunction=Wavefunction + [[[Occupation],LongLine]]
+    Wavefunction=Wavefunction[1:End]
+
+elif trialFunctionType == "unrestricted":
+    for i in range(len(jaguardata)):
+        if string.find(jaguardata[i],"Alpha Molecular Orbitals") == 0:
+            start_alpha = i+1
+            break
+    for i in range(start_alpha,len(jaguardata)):
+        if string.find(jaguardata[i],"Beta Molecular Orbitals") == 0:
+            end_alpha = i
+            start_beta = i+1
+            break
+    for i in range(start_beta,len(jaguardata)):
+        if jaguardata[i][0] == '&':
+            end_beta = i
+            break
+
+    LongLine = []
+    Occupation = -1
+    for i in range(start_alpha,end_alpha):
+        Line = string.split(jaguardata[i])
+        Index = string.find(jaguardata[i],"Occupation")
+        if Index != -1:
+            if i!= 0:
+                AlphaOrbitals = AlphaOrbitals + [[[Occupation],LongLine]]
+            Occupation = Line[6]
+            LongLine = []
+            continue
+        LongLine = LongLine + Line
+    AlphaOrbitals = AlphaOrbitals + [[[Occupation],LongLine]]
+    AlphaOrbitals = AlphaOrbitals[1:]
+
+    LongLine = []
+    Occupation = -1
+    for i in range(start_beta,end_beta):
+        Line = string.split(jaguardata[i])
+        Index = string.find(jaguardata[i],"Occupation")
+        if Index != -1:
+            if i!= 0:
+                BetaOrbitals = BetaOrbitals + [[[Occupation],LongLine]]
+            Occupation = Line[6]
+            LongLine = []
+            continue
+        LongLine = LongLine + Line
+    BetaOrbitals = BetaOrbitals + [[[Occupation],LongLine]]
+    BetaOrbitals = BetaOrbitals[1:]
+
 # End Get Wavefunction
 
 # Get Basis Set
@@ -233,8 +288,15 @@ OUT.write("&flags\n")
 OUT.write("atoms\n %i\n"%(Natoms))
 OUT.write("charge\n %i\n"%(Charge))
 OUT.write("energy\n %s\n"%(Energy))
-OUT.write("norbitals\n %i\n"%(len(Wavefunction)))
-OUT.write("nbasisfunc\n %i\n"%(len(Wavefunction[0][1])))
+
+if trialFunctionType == "restricted":
+    OUT.write("norbitals\n %i\n"%(len(Wavefunction)))
+    OUT.write("nbasisfunc\n %i\n"%(len(Wavefunction[0][1])))
+elif trialFunctionType == "unrestricted":
+    OUT.write("norbitals\n %i\n"%(len(AlphaOrbitals)))
+    OUT.write("nbasisfunc\n %i\n"%(len(AlphaOrbitals[0][1])))
+
+OUT.write("trial_function_type\n %s\n"%(trialFunctionType))
 OUT.write("ndeterminants\n 1\n")
 OUT.write("run_type\n variational\n")
 OUT.write("chip_and_mike_are_cool\n Yea_Baby!\n")
@@ -342,43 +404,91 @@ OUT.write("&\n")
 nalpha = 0
 nbeta  = 0
 OUT.write("&wavefunction\n")
-for i in range(len(Wavefunction)):
-    # Get Occupation
-    if (string.atof(Wavefunction[i][0][0]) == 1.0):
-        nalpha = nalpha + 1
-        nbeta  = nbeta + 1
-    elif (string.atof(Wavefunction[i][0][0]) == 0.5):
-        nalpha = nalpha + 1
-    elif (string.atof(Wavefunction[i][0][0]) == 0.0):
-        continue
-    else:
-        OUT.write("ERROR\n\t")
+
+if trialFunctionType == "restricted":
+    for i in range(len(Wavefunction)):
+        # Get Occupation
+        if (string.atof(Wavefunction[i][0][0]) == 1.0):
+            nalpha = nalpha + 1
+            nbeta  = nbeta + 1
+        elif (string.atof(Wavefunction[i][0][0]) == 0.5):
+            nalpha = nalpha + 1
+        elif (string.atof(Wavefunction[i][0][0]) == 0.0):
+            continue
+        else:
+            OUT.write("ERROR\n\t")
 
     # Write Orbital
-for i in range(len(Wavefunction)):
-    for j in range(len(Wavefunction[i][1])):
-        OUT.write("\t%s" % (Wavefunction[i][1][j]))
-        if( j%3 == 2 ): OUT.write("\n")
+    for i in range(len(Wavefunction)):
+        for j in range(len(Wavefunction[i][1])):
+            OUT.write("\t%s" % (Wavefunction[i][1][j]))
+            if( j%3 == 2 ): OUT.write("\n")
+        OUT.write("\n\n")
+
+    OUT.write("Alpha Occupation\n")
+    for i in range(nalpha):
+        OUT.write("1\t")
+    for i in range(len(Wavefunction)-nalpha):
+        OUT.write("0\t")
     OUT.write("\n\n")
 
-OUT.write("Alpha Occupation\n")
-for i in range(nalpha):
-    OUT.write("1\t")
-for i in range(len(Wavefunction)-nalpha):
-    OUT.write("0\t")
-OUT.write("\n\n")
+    OUT.write("Beta Occupation\n")
+    for i in range(nbeta):
+        OUT.write("1\t")
+    for i in range(len(Wavefunction)-nbeta):
+        OUT.write("0\t")
+    OUT.write("\n\n")
 
-OUT.write("Beta Occupation\n")
-for i in range(nbeta):
-    OUT.write("1\t")
-for i in range(len(Wavefunction)-nbeta):
-    OUT.write("0\t")
-OUT.write("\n\n")
+elif trialFunctionType == "unrestricted":
+    for i in range(len(AlphaOrbitals)):
+        if (string.atof(AlphaOrbitals[i][0][0]) == 1.0):
+            nalpha = nalpha + 1
+        elif (string.atof(AlphaOrbitals[i][0][0]) == 0.0):
+            continue
+        else:
+            OUT.write("ERROR in getting Alpha Occupation\n\t")
+    for i in range(len(BetaOrbitals)):
+        if (string.atof(BetaOrbitals[i][0][0]) == 1.0):
+            nbeta = nbeta + 1
+        elif (string.atof(BetaOrbitals[i][0][0]) == 0.0):
+            continue
+        else:
+            OUT.write("ERROR in getting Beta Occupation\n\t")
+            
+    # Write Alpha Orbitals
+    OUT.write("Alpha Molecular Orbitals\n\n")
+    for i in range(len(AlphaOrbitals)):
+        for j in range(len(AlphaOrbitals[i][1])):
+            OUT.write("\t%s" % (AlphaOrbitals[i][1][j]))
+            if( j%3 == 2 ): OUT.write("\n")
+        OUT.write("\n\n")
+
+    # Write Beta Orbitals
+    OUT.write("Beta Molecular Orbitals\n\n")
+    for i in range(len(BetaOrbitals)):
+        for j in range(len(BetaOrbitals[i][1])):
+            OUT.write("\t%s" % (BetaOrbitals[i][1][j]))
+            if( j%3 == 2 ): OUT.write("\n")
+        OUT.write("\n\n")    
+
+    OUT.write("Alpha Occupation\n")
+    for i in range(nalpha):
+        OUT.write("1\t")
+    for i in range(len(AlphaOrbitals)-nalpha):
+        OUT.write("0\t")
+    OUT.write("\n\n")
+
+    OUT.write("Beta Occupation\n")
+    for i in range(nbeta):
+        OUT.write("1\t")
+    for i in range(len(BetaOrbitals)-nbeta):
+        OUT.write("0\t")
+    OUT.write("\n\n")
+
+# Write CI Coefficients
 
 OUT.write("CI Coeffs\n")
-OUT.write("1.0\n")
-OUT.write("\n\n")
-
+OUT.write("1.0\n\n")
 OUT.write("&\n")
 
 # End Write Wavefunction

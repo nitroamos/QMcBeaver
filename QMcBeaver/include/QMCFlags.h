@@ -216,14 +216,15 @@ class QMCFlags
   */
   long max_time_steps;
 
-	/**
-    This parameter is used in QMCRun to process several walkers simultaneously. The value
-    of this macro is how many walkers to treat at once. If this parameter is set to 1, then
-    the code will perform the way it did previously. Also, the amount of memory the
-    program requires is dependent on this because all the walkers have to be stored.
+  /**
+     This parameter is used in QMCRun to process several walkers 
+     simultaneously. The value of this macro is how many walkers to treat at 
+     once. If this parameter is set to 1, then the code will perform the way it
+     did previously. Also, the amount of memory the program requires is 
+     dependent on this because all the walkers have to be stored.
     
-    This used instead of the WALKERS_PER_PASS macro.
-    DON"T CHANGE THIS IN THE MIDDLE OF A CALCULATION!
+     This used instead of the WALKERS_PER_PASS macro.
+     DON"T CHANGE THIS IN THE MIDDLE OF A CALCULATION!
   */
   long walkers_per_pass;
   
@@ -369,6 +370,11 @@ class QMCFlags
      Number of determinants in the SCF part of the wavefunction.
   */
   int Ndeterminants;
+
+  /**
+    Restricted or unrestricted trial functions can be used.
+  */
+  string trial_function_type;
 
   /**
      1 if the basis function density is to be calculated, 0 if not.
@@ -532,13 +538,13 @@ class QMCFlags
      1 if the distance between each pair of electrons for every time step is to
      be collected and written out in a histogram, and 0 otherwise.
   */
-  int write_pair_densities;
+  int write_electron_densities;
 
   /**
      The interval at which the pair density histograms are to be written out to
      files.
   */
-  int write_pair_densities_interval;
+  int write_electron_densities_interval;
 
   /**
      Are Chip and Mike cool?  Answer: Yea Baby!
