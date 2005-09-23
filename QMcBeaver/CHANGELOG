@@ -1,3 +1,7 @@
+Fri, 23 Sep 2005, Daniel R. Fisher
+
+1. Fixed a memory leak in QMCJastrowElectronNuclear.cpp
+
 Wed, 21 Sep 2005, Daniel R. Fisher
 
 1. Added the capability to calculate one electron density in

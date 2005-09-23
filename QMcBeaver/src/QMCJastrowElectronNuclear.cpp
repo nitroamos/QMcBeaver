@@ -139,4 +139,7 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
             }
         }
     }
+
+  delete [] unitVector;
+  unitVector = 0;
 }
