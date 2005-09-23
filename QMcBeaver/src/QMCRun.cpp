@@ -155,11 +155,6 @@ void QMCRun::initialize(QMCInput *INPUT)
       // Histograms for the one electron densities.
       int nucleiTypes = Input->Molecule.NucleiTypes.dim1();
 
-      cout << "There are " << nucleiTypes << " unique nuclei in the molecule.";
-      cout << endl;
-      cout << "Allocating 2D arrays of dimension " << nucleiTypes << " x ";
-      cout << "5000 for the alpha and beta one electron densities." << endl;
-
       alpha_density_histogram.allocate(nucleiTypes,5000);
       beta_density_histogram.allocate(nucleiTypes,5000);
       

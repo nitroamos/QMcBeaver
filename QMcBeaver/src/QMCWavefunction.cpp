@@ -113,24 +113,6 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
 	  strm >> rhs.BetaCoeffs(i,j);
     }
     
-  cout << "Alpha Coeffs:" << endl << endl;
-  for (int i=0; i<rhs.Norbitals; i++)
-    {
-      for (int j=0; j<rhs.Nbasisfunc; j++)
-	cout << rhs.AlphaCoeffs(i,j) << "\t";
-      cout << endl;
-    }
-  cout << endl;
-
-  cout << "Beta Coeffs:" << endl << endl;
-  for (int i=0; i<rhs.Norbitals; i++)
-    {
-      for (int j=0; j<rhs.Nbasisfunc; j++)
-	cout << rhs.BetaCoeffs(i,j) << "\t";
-      cout << endl;
-    }
-  cout << endl;
-
   strm >> temp_string; 
   strm >> temp_string;
 
