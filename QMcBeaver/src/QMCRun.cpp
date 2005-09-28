@@ -249,6 +249,7 @@ void QMCRun::writeElectronDensityHistograms()
   double rValue;
   double normalHist;
   double dividedHist;
+  double orbital;
 
   if (nalpha > 1 || nbeta > 1)
     {
@@ -261,15 +262,17 @@ void QMCRun::writeElectronDensityHistograms()
 
       // Count number of same spin pairs.
       int sameSpinPairs = nalpha*(nalpha-1)/2 + nbeta*(nbeta-1)/2;
-      double normFactor = sameSpinPairs*total_sample_weight*dr;
+      double normFactor = sameSpinPairs*total_sample_weight;
       
       for (int i=0; i<pll_spin_histogram.dim1(); i++)
         {
 	  rValue = (i+0.5)*dr;
 	  normalHist = pll_spin_histogram(i)/normFactor;
-	  dividedHist = normalHist/(4*PI*rValue*rValue);
+	  dividedHist = normalHist/(4*PI*rValue*rValue*dr);
+	  orbital = sqrt(dividedHist);
 	  *pll_spin_strm << rValue << "\t" << pll_spin_histogram(i) << "\t";
-	  *pll_spin_strm << normalHist << "\t" << dividedHist << endl;
+	  *pll_spin_strm << normalHist << "\t" << dividedHist << "\t";
+	  *pll_spin_strm << orbital << endl;
         }
       delete pll_spin_strm;
       pll_spin_strm = 0;
@@ -286,15 +289,17 @@ void QMCRun::writeElectronDensityHistograms()
 
       // Count number of opposite spin pairs.
       int oppSpinPairs = nalpha*nbeta;
-      double normFactor = oppSpinPairs*total_sample_weight*dr;
+      double normFactor = oppSpinPairs*total_sample_weight;
 
       for (int i=0; i<opp_spin_histogram.dim1(); i++)
         {
 	  rValue = (i+0.5)*dr;
 	  normalHist = opp_spin_histogram(i)/normFactor;
-	  dividedHist = normalHist/(4*PI*rValue*rValue);
+	  dividedHist = normalHist/(4*PI*rValue*rValue*dr);
+	  orbital = sqrt(dividedHist);
 	  *opp_spin_strm << rValue << "\t" << opp_spin_histogram(i) << "\t";
-	  *opp_spin_strm << normalHist << "\t" << dividedHist << endl;
+	  *opp_spin_strm << normalHist << "\t" << dividedHist << "\t";
+	  *opp_spin_strm << orbital << endl;
         }
       delete opp_spin_strm;
       opp_spin_strm = 0;
@@ -327,16 +332,18 @@ void QMCRun::writeElectronDensityHistograms()
 	      *alpha_strm << "#\t" << total_sample_weight << endl;
 
 	      int numberPairs = count*nalpha;
-	      double normFactor = numberPairs*total_sample_weight*dr;
+	      double normFactor = numberPairs*total_sample_weight;
 
 	      for (int j=0; j<alpha_density_histogram.dim2(); j++)
 		{
 		  rValue = (j+0.5)*dr;
 		  normalHist = alpha_density_histogram(i,j)/normFactor;
-		  dividedHist = normalHist/(4*PI*rValue*rValue);
+		  dividedHist = normalHist/(4*PI*rValue*rValue*dr);
+		  orbital = sqrt(dividedHist);
 		  *alpha_strm << rValue << "\t";
 		  *alpha_strm << alpha_density_histogram(i,j) << "\t";
-		  *alpha_strm << normalHist << "\t" << dividedHist << endl;
+		  *alpha_strm << normalHist << "\t" << dividedHist << "\t";
+		  *alpha_strm << orbital << endl;
 		}
 	      delete alpha_strm;
 	      alpha_strm = 0;
@@ -353,16 +360,17 @@ void QMCRun::writeElectronDensityHistograms()
 	      *beta_strm << "#\t" << total_sample_weight << endl;
 
 	      int numberPairs = count*nbeta;
-	      double normFactor = numberPairs*total_sample_weight*dr;
+	      double normFactor = numberPairs*total_sample_weight;
 
 	      for (int j=0; j<beta_density_histogram.dim2(); j++)
 		{
 		  rValue = (j+0.5)*dr;
 		  normalHist = beta_density_histogram(i,j)/normFactor;
-		  dividedHist = normalHist/(4*PI*rValue*rValue);
+		  dividedHist = normalHist/(4*PI*rValue*rValue*dr);
+		  orbital = sqrt(dividedHist);
 		  *beta_strm << rValue << "\t" << beta_density_histogram(i,j);
 		  *beta_strm << "\t" << normalHist << "\t" << dividedHist;
-		  *beta_strm << endl;
+		  *beta_strm << "\t" << orbital << endl;
 		}
 	      delete beta_strm;
 	      beta_strm = 0;
