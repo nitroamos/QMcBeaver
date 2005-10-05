@@ -44,6 +44,8 @@ typedef float  qmcfloat;
 typedef double qmcfloat;
 #endif
 
+static const bool USE_KAHAN = false;
+
 using namespace std;
 
 /**
@@ -291,20 +293,48 @@ template <class T> class Array2D
       T * B = rhs.pArray;
       T * C = TEMP.pArray;
       int i, j, k;
-      for (i = 0; i < M; ++i)
+
+      if(USE_KAHAN)
+      {
+        T Cee;
+        T Why;
+        T Tee;
+
+        for (i = 0; i < M; ++i)
         {
           const register T *Ai_ = A + i*K;
           for (j = 0; j < N; ++j)
+          {
+            const register T *B_j = B + j*K;
+            register T cij = Ai_[0] * B_j[0];
+            Cee = 0;
+            for (k = 1; k < K; ++k)
             {
-              const register T *B_j = B + j*K;
-              register T cij = 0;
-              for (k = 0; k < K; ++k)
-                {
-                  cij += Ai_[k] * B_j[k];
-                }
-              C[i*N + j] = cij;
+              Why = Ai_[k] * B_j[k] - Cee;
+              Tee = cij + Why;
+              Cee = (Tee - cij) - Why;
+              cij = Tee;
             }
+            C[i*N + j] = cij;
+          }
         }
+      } else {
+        for (i = 0; i < M; ++i)
+        {
+          const register T *Ai_ = A + i*K;
+          for (j = 0; j < N; ++j)
+          {
+            const register T *B_j = B + j*K;
+            register T cij = 0;
+            for (k = 0; k < K; ++k)
+            {
+              cij += Ai_[k] * B_j[k];
+            }
+            C[i*N + j] = cij;
+          }
+        }
+      }
+
       return TEMP;
     }
 
@@ -468,8 +498,8 @@ template <class T> class Array2D
     */
     void setRow(int whichRow, Array1D<T> & rhs)
     {
-      if(whichRow >= n_1)  cout << "Error: invalid row index\n";
-      if(rhs.dim1() > n_2) cout << "Error: rhs length is incorrect\n";
+      if(whichRow >= n_1)  cerr << "Error: invalid row index\n";
+      if(rhs.dim1() > n_2) cerr << "Error: rhs length is incorrect\n";
       memcpy(pArray + n_2*whichRow, rhs.array(), sizeof(T)*n_2);
     }
 
