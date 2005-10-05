@@ -229,7 +229,6 @@ void openGLBootStrap()
     {
       // problem: glewInit failed, something is seriously wrong
       fprintf(stderr, "GLEW Error: %s\n", glewGetErrorString(err));
-      getchar();
       exit(-1);
     }
 
