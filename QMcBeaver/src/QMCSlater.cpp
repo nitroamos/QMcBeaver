@@ -100,7 +100,7 @@ void QMCSlater::initialize(QMCInput *INPUT, int startEl, int stopEl,
   // constructors/assignment
   GPUQMCBasisFunction temp(*BF, (int)(WF_coeffs(0).dim1()), Input->flags.walkers_per_pass);
   gpuBF = temp;
-  gpuMatMult = GPUQMCMatrix(WF_coeffs,Input->flags.walkers_per_pass);
+  gpuMatMult = GPUQMCMatrix(Input, WF_coeffs,Input->flags.walkers_per_pass);
 #endif
 }
 
