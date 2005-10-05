@@ -22,6 +22,7 @@
 #include "Array1D.h"
 #include "Array2D.h"
 #include "Stopwatch.h"
+#include "QMCInput.h"
 
 /**
  This class multiplies QMcBeaver matrices on the GPU.
@@ -38,7 +39,7 @@ class GPUQMCMatrix : public GPUGlobals
        @param Coeffs is the matrix of coefficients
        @param numCalcs is the walkers_per_pass parameter.
       */
-      GPUQMCMatrix(Array1D< Array2D<qmcfloat> > & Coeffs, int numCalcs);
+      GPUQMCMatrix(QMCInput *Input, Array1D< Array2D<qmcfloat> > & Coeffs, int numCalcs);
       
       /**
        This method was created instead of a regular deconstructor because...
@@ -119,6 +120,8 @@ class GPUQMCMatrix : public GPUGlobals
       */
       void mapData(ArrayGPU & data, int numRows, int numCols);
       
+			QMCInput *Input;
+
       /**
        The texture id's of the coefficient data. One is needed for each determinant
        in a multiconfiguration calculation
@@ -212,7 +215,3 @@ class GPUQMCMatrix : public GPUGlobals
   };
 #endif
 #endif
-
-
-
-
