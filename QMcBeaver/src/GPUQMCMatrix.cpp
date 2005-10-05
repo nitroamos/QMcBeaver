@@ -25,13 +25,14 @@ KAHAN_SUMS      ~ 55
 MRT 2x2 SepM    ~
 MRT 1x2 SepM    ~
 MRT 2x1 SepM    ~
-MRT 2x2 KS      ~
+MRT 2x2 KS      ~ not allowed
 MRT 1x2 KS      ~
 MRT 2x1 KS      ~
 if rolled must be less than 256 (it won't give an error if too large -- just the wrong answer)
 */
-static const  int LOOPS_PER_PASS   = 144;
-static const bool UNROLL_LOOP      = !true; //this penalizes the constructor
+//static const  int LOOPS_PER_PASS   = 144;
+static        int LOOPS_PER_PASS   = 144;
+static const bool UNROLL_LOOP      = true; //this penalizes the constructor
 static const bool USE_CHEAPER      = true;  //changes the precision of the coordinate vars. with this, 4 registers only?
 static const bool USE_TRIANGLES    = true;  //Slightly improves performance
 static const bool CHEAPER_FIRST    = false; //something is wrong with this.
@@ -41,7 +42,7 @@ static const  int SEPARATE_MAD     = 1; //Compiles to 2 mads in shader
 static const  int TOGETHER_MAD     = 2; //Compiles to 1 mad, 1 add, 1 mul
 static const  int KAHAN_SUMS       = 3; //Keeps summation error down to machine error
 static const  int EXPERIMENTAL     = 4; //Something else
-static const  int HOW_TO_ADD       = TOGETHER_MAD;
+static const  int HOW_TO_ADD       = SEPARATE_MAD;
 
 /**
 1 <= MRT_W*MRT_H <= 4 (max 4 render textures)
@@ -49,8 +50,8 @@ For matrices that don't evenly divide by 3 or 4, fringe cases are difficult,
 so they haven't been done. So these two must be either 1 or 2.
 According to cjiang, the important case is 2x2 anyway...
 */
-static const  int MRT_W            = 2;
-static const  int MRT_H            = 2;
+static const  int MRT_W            = 1;
+static const  int MRT_H            = 1;
 
 static const bool REUSE_SHADERS    = false;
 static       bool shadersCreated   = false; //this must be false
@@ -96,8 +97,11 @@ GPUQMCMatrix::GPUQMCMatrix()
   resultsIn = -1;
 }
 
-GPUQMCMatrix::GPUQMCMatrix(Array1D< Array2D<qmcfloat> > & Coeffs, int numCalcs)
+GPUQMCMatrix::GPUQMCMatrix(QMCInput *INPUT, Array1D< Array2D<qmcfloat> > & Coeffs, int numCalcs)
 {
+	Input = INPUT;
+	LOOPS_PER_PASS = Input->flags.programmersLongs[0];
+
   /*>>>>>>>>>>>>>>>>>>>> SET UP CONSTANTS <<<<<<<<<<<<<<<<<<<<*/
   getFactors(numCalcs,nRows,nCols);
   nDets = Coeffs.dim1();
@@ -114,17 +118,18 @@ GPUQMCMatrix::GPUQMCMatrix(Array1D< Array2D<qmcfloat> > & Coeffs, int numCalcs)
   
   deltaW = (int)(deltaOE/MRT_W);
   deltaH = (int)(deltaOE/MRT_H);
-  if(deltaOE%MRT_W != 0 || deltaOE%MRT_H != 0)
-    cout << "Error: MRT fringe cases not implemented\n";
+  if(nOrbitals%(MRT_W*2) != 0 || nOrbitals%(MRT_H*2) != 0)
+    cerr << "Error: MRT fringe cases not implemented\n";
   if(MRT_H*MRT_W < 1 || MRT_H*MRT_W > 4)
-    cout << "Error: 1 <= MRT_W*MRT_H <= 4 (max 4 render textures)\n";
+    cerr << "Error: 1 <= MRT_W*MRT_H <= 4 (max 4 render textures)\n";
     
   /*>>>>>>>>>>>>>>>>>>>> SET UP DATA STRUCTURES <<<<<<<<<<<<<<<<<<<<*/
   //CPU DATA
   //storage used to download data from GPU
   cpuData = new GLfloat[ nCols*deltaOE * nRows*nMats*deltaOE * 4 ];
   //storage used to upload data to GPU
-  pixelData = (GLfloat *) calloc( nCols*deltaOE * nRows*nMats*deltaOE * 4 , sizeof(GLfloat) );
+  int rebigulator = deltaBF*deltaOE*4;
+  pixelData = (GLfloat *) calloc( nCols*deltaOE * nRows*nMats*deltaOE * 4 + rebigulator, sizeof(GLfloat) );
   
   //GPU DATA
   gpuDataFB = new GPUQMCFramebuffer[nDets];
@@ -144,6 +149,9 @@ GPUQMCMatrix::GPUQMCMatrix(Array1D< Array2D<qmcfloat> > & Coeffs, int numCalcs)
       coeffA(0) = Coeffs(i);
       loadData(coeffA, coTexID[i], 1, 1);
     }
+  for(int i=0; i<coeffA.dim1(); i++)
+  coeffA(i).deallocate();
+  coeffA.deallocate();
   getOpenGLError("Error loading Coeffs");
   
   /*>>>>>>>>>>>>>>>>>>>> SET UP SHADERS <<<<<<<<<<<<<<<<<<<<*/
@@ -156,7 +164,7 @@ GPUQMCMatrix::GPUQMCMatrix(Array1D< Array2D<qmcfloat> > & Coeffs, int numCalcs)
 
 int GPUQMCMatrix::runCalculation(int numCalcs, GLuint bfInput)
 {
-  if(numCalcs == 0) cout << "ERROR: numCalcs can not be zero\n";
+  if(numCalcs == 0) cerr << "ERROR: numCalcs can not be zero\n";
   resultsIn = -1;
   getFactors(numCalcs,nRows,nCols);
   
@@ -252,7 +260,7 @@ int GPUQMCMatrix::runCalculation(int numCalcs, GLuint bfInput)
     }
   sw.stop();
   temp = (double)sw.timeMS()/TIMING_REPS;
-  printf(" mm_cg: %7.2f", temp );
+  printf("   mm_cg: %7.2f", temp );
 #endif
   
   resultsIn = (numPasses+1)%2;
@@ -261,7 +269,7 @@ int GPUQMCMatrix::runCalculation(int numCalcs, GLuint bfInput)
   return 0;
 }
 
-void GPUQMCMatrix::loadData(Array1D< Array2D<qmcfloat> > & data, GLuint & textureID, int numRows, int numCols)
+void GPUQMCMatrix::loadData(ArrayGPU & data, GLuint & textureID, int numRows, int numCols)
 {
   glBindTexture(TEXTURE_TARGET, textureID);
   mapData(data,numRows,numCols);
@@ -399,7 +407,7 @@ void GPUQMCMatrix::mapData(ArrayGPU & data, int numRows, int numCols)
 void GPUQMCMatrix::getResults(Array2D< Array2D<qmcfloat>* > & results)
 {
   if(resultsIn < 0)
-    cout << "Error: call runCalculation first!\n";
+    cerr << "Error: call runCalculation first!\n";
     
   Array2D<qmcfloat> * fetch;
   int subSize = 4 * nCols*deltaW * nRows*nMats*deltaH;
@@ -431,30 +439,12 @@ void GPUQMCMatrix::getResults(Array2D< Array2D<qmcfloat>* > & results)
                 }
             }
             
-          for(int whichRT=0; whichRT<4; whichRT++)
-            {
-              if(whichRT == 0 && !true)
-                {
-                  cout << "this rt is " << whichRT << endl;
-                  if(!true)
-                    {
-                      PrintRGBAPixelsBoxE( (GLfloat *)(cpuData + whichRT*subSize),
-                                           nCols*deltaW, nRows*nMats*deltaH, -1, 46, -1, 46, true);
-                    }
-                  else
-                    {
-                      PrintRGBAPixelsBoxE( (GLfloat *)(cpuData + whichRT*subSize),
-                                           nCols*deltaW, nRows*nMats*deltaH, 5, 5, -1, -1, true);
-                    }
-                }
-            }
-            
 #ifdef PRINT_TIMINGS
             
         }
       sw.stop();
       double temp = (double)sw.timeMS()/TIMING_REPS;
-      printf(" mm_reading: %7.2f", temp );
+      printf("   mm_reading: %7.2f", temp );
       
       sw.reset(); sw.start();
       for(int numReps=0; numReps<TIMING_REPS; numReps++)
@@ -752,15 +742,22 @@ string GPUQMCMatrix::generateShader(int start, int stop, bool isFirstPass)
     {
       for(int i=start; i<stop; i++)
         {
+          bNeeded = true;
           for(int mrth=0; mrth<MRT_H; mrth++)
             {
+							shader += aLoader;
               for(int mrtw=0; mrtw<MRT_W; mrtw++)
                 {
+								  if(bNeeded)
+                    {
+                      shader += bLoader;
+                    }
                   shader += innerLooper;
                   shader += mad;
                   findandreplace(shader,"II",  mrth+1);
                   findandreplace(shader,"JJ",  mrtw+1);
                 }
+              bNeeded = false;
             }
         }
     }
@@ -881,8 +878,8 @@ void GPUQMCMatrix::loadShaders()
         
       if(!fp[i])
         {
-          cout << "ERROR: Matrix multiply shader did not compile.\n";
-          cout << "     : LOOPS_PER_PASS is set to " << LOOPS_PER_PASS << endl;
+          cerr << "ERROR: Matrix multiply shader did not compile.\n";
+          cerr << "     : LOOPS_PER_PASS is set to " << LOOPS_PER_PASS << endl;
           exit(1);
         }
         

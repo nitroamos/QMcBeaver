@@ -21,8 +21,8 @@ void GPUGlobals::getOpenGLError(char *msg)
   GLenum e = glGetError();
   if (e != GL_NO_ERROR)
     {
-      cout << "OpenGL error " << error_txt[e-GL_INVALID_ENUM] << endl;
-      if(msg != NULL) cout << "Message: " << msg << endl;
+      cerr << "Error: OpenGL error " << error_txt[e-GL_INVALID_ENUM] << endl;
+      if(msg != NULL) cerr << "Message: " << msg << endl;
     }
 }
 
@@ -246,15 +246,16 @@ void GPUGlobals::PrintMatrix(Array2D<GLfloat> matrix)
 
 void GPUGlobals::getFactors(int num, int & fact1, int & fact2)
 {
+  //for hmx, cols (fact2) can be as high as 7, rows (fact1) can be as high as 21
   int max = (int) sqrt( (double)num );
-  fact1 = 1;
-  fact2 = num;
+  fact1 = num;
+  fact2 = 1;
   
   for(int i=2; i<=max; i++)
     if( num%i == 0 )
       {
-        fact2 = i;
         fact1 = num/i;
+        fact2 = i;// i <= num/i
       }
 }
 
@@ -383,7 +384,7 @@ void GPUGlobals::writeShader(const char * shader, const char * filename)
     }
   else
     {
-      cout << "ERROR: " << filename << " failed to open\n";
+      cerr << "ERROR: " << filename << " failed to open\n";
     }
 }
 
@@ -429,7 +430,8 @@ void GPUGlobals::checkExtensions()
     
   if(!ok)
     {
-      cout << "ERROR: required extensions are not supported, exiting.\n";
+      cerr << "ERROR: required extensions are not supported, exiting.\n";
+      exit(-1);
     }
 }
 

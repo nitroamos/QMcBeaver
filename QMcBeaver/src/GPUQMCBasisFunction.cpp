@@ -25,13 +25,15 @@ static const bool INT_FINISHES     = false;
  
  It's possibly that this trick will only work for light atoms.
 */
-static const  int EXP_SHIFT        = 70;     //if base 2, less than 100, if base e, less than 70
+static const  int EXP_SHIFT        = 35;     //if base 2, less than 100, if base e, less than 70
 static const  int MULTIPLIER       = 0;      //a change to this requires an additional change in GPUQMCMatrix
 static const bool USE_BASE_2       = true;   //it's possible that 2^x is faster than e^x
 static const bool NAN_CHECKS       = false;  //these might be necessary for some systems like He, and not necessary for others like HMX
 static const bool USE_TRIANGLES    = true;   //guess this should be true
 static const bool REUSE_SHADERS    = false;  //to use shaders compiled from a previous run
 static       bool shadersCreated   = false;  //don't change this
+static       bool warnedAboutSizeR = false;  //this is so that the nCols/nRows too large is output a max of 1 time
+static       bool warnedAboutSizeC = false;  //this is so that the nCols/nRows too large is output a max of 1 time
 
 /*Parameters used by all textures*/
 #define TEXTURE_INTERNAL_FORMAT    GL_FLOAT_RGBA32_NV
@@ -130,7 +132,7 @@ void GPUQMCBasisFunction::loadShaders()
         
       if(!fragProg[i])
         {
-          cout << "ERROR: Basisfunction shader did not compile.\n";
+          cerr << "ERROR: Basisfunction shader did not compile.\n";
           exit(1);
         }
         
@@ -167,7 +169,7 @@ void GPUQMCBasisFunction::loadShaders()
     
   if(!fxo_to_txt_CG)
     {
-      cout << "ERROR: Translation shader did not compile.\n";
+      cerr << "ERROR: Translation shader did not compile.\n";
       exit(1);
     }
     
@@ -192,8 +194,22 @@ GLuint GPUQMCBasisFunction::runCalculation(Array1D<Array2D<double>*> &X, int num
 {
   getFactors(num,nRows,nCols);
   if(nRows > allocatedRows || nCols > allocatedCols)
-    cout << "Error: remainder walkers chose bad dimensions.\n";
-    
+    {
+      cerr << "Error: remainder walkers chose bad dimensions.\n";
+      exit(-1);
+    }
+
+  if(nCols*fxo_deltaBF >= 3500 && !warnedAboutSizeC)//apparently 5 cols (516*5 = 2580) is ok and 7 cols (7*516 = 3612) is not
+    {
+      cerr << "Warning: nCols (" << nCols << ") may be too high for the GPU.\n";
+      warnedAboutSizeC = true;
+    }
+  if(nRows*nMats*txt_deltaOE >= 3500 && !warnedAboutSizeR)//previously determined barrier was 21
+    {
+      cerr << "Warning: nRows (" << nRows << ") may be too high for the GPU.\n";
+      warnedAboutSizeR = true;
+    }
+
 #ifdef PRINT_TIMINGS
   Stopwatch sw = Stopwatch();
   sw.reset(); sw.start();
@@ -205,7 +221,7 @@ GLuint GPUQMCBasisFunction::runCalculation(Array1D<Array2D<double>*> &X, int num
 #ifdef PRINT_TIMINGS
   sw.stop();
   double temp = (double)sw.timeMS()/TIMING_REPS;
-  printf(" bf_loading: %7.2f", temp );
+  printf("   bf_loading: %7.2f", temp );
   
   sw.reset(); sw.start();
   for(int numReps=0; numReps<TIMING_REPS; numReps++)
@@ -665,7 +681,7 @@ void GPUQMCBasisFunction::setUpInputs()
           //the gaussian coefficients
           for (int i=0; i<nGaussians; i++)
             {
-              if(2 + i/2 >= basisfunctionParamsH) cout << "ERROR: cpuData not big enough for all coefficients\n";
+              if(2 + i/2 >= basisfunctionParamsH) cerr << "ERROR: cpuData not big enough for all coefficients\n";
               index = mapping(2 + i/2,bf,basisfunctionParamsH,fxo_deltaBF);
               int add1 = (i%2)?2:0;//no idea why i couldn't just stick these between the braces...
               int add2 = (i%2)?3:1;

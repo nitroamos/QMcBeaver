@@ -47,9 +47,9 @@ void GPUQMCFramebuffer::initialize(int width, int height, int numFB, int numRT)
   h = height;
   
   if(numRT < 1 || numRT > 4)
-    cout << "Error: number render targets must be between 1 and 4\n";
+    cerr << "Error: number render targets must be between 1 and 4\n";
   if(width*height == 0)
-    cout << "Error: framebuffer must have non-zero dimensions\n";
+    cerr << "Error: framebuffer must have non-zero dimensions\n";
     
   theFrameBuffers.clear();
   attachedTextures.clear();
@@ -123,12 +123,12 @@ void GPUQMCFramebuffer::cleanAllBuffers()
 
 void GPUQMCFramebuffer::swapBuffers()
 {
-  cout << "Error: Function " << __FUNCTION__ << " is not implemented yet!\n";
+  cerr << "Error: Function " << __FUNCTION__ << " is not implemented yet!\n";
 }
 
 void GPUQMCFramebuffer::setupSwapBuffers(int first, int second)
 {
-  cout << "Error: Function " << __FUNCTION__ << " is not implemented yet!\n";
+  cerr << "Error: Function " << __FUNCTION__ << " is not implemented yet!\n";
 }
 
 GLuint GPUQMCFramebuffer::addTexture()
@@ -138,7 +138,7 @@ GLuint GPUQMCFramebuffer::addTexture()
   
   if(numRT >= 4)
     {
-      cout << "ERROR: too many buffers requested\n";
+      cerr << "ERROR: too many buffers requested\n";
       return 0;
     }
     
@@ -170,12 +170,12 @@ GLuint GPUQMCFramebuffer::addTexture()
 
 void GPUQMCFramebuffer::addTexture(GLuint newTexID)
 {
-  cout << "Error: Function " << __FUNCTION__ << " is not implemented yet!\n";
+  cerr << "Error: Function " << __FUNCTION__ << " is not implemented yet!\n";
 }
 
 void GPUQMCFramebuffer::removeTexture(int whichRT)
 {
-  cout << "Error: Function " << __FUNCTION__ << " is not implemented yet!\n";
+  cerr << "Error: Function " << __FUNCTION__ << " is not implemented yet!\n";
 }
 
 GLuint GPUQMCFramebuffer::getTextureID(int whichFB, int whichRT)
@@ -198,13 +198,13 @@ bool GPUQMCFramebuffer::testExistance(int whichFB, int whichRT)
 {
   if(whichRT >= getNumRT() || whichRT < 0)
     {
-      cout << "ERROR: render target " << whichRT << " does not exist.\n";
+      cerr << "ERROR: render target " << whichRT << " does not exist.\n";
       return false;
     }
     
   if(whichFB >= getNumFB() || whichFB < 0)
     {
-      cout << "ERROR: framebuffer " << whichFB << " does not exist.\n";
+      cerr << "ERROR: framebuffer " << whichFB << " does not exist.\n";
       return false;
     }
   return true;
@@ -257,7 +257,8 @@ void GPUQMCFramebuffer::checkFramebufferStatus()
         }
         default:
         {
-          assert(0);
+          cerr << "Error: Framebuffer screwed up for some odd reason...\n";
+          exit(-1);
         }
     }
 }
