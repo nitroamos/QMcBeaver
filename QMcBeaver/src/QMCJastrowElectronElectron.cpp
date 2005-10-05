@@ -122,7 +122,7 @@ inline void QMCJastrowElectronElectron::collectForPair(int Electron1, int Electr
 {
   // Find the unit vector between electron1 and electron2 and their
   // distance apart
-  double * unitVector = new double[3];
+  static double * unitVector = new double[3];
   double r = 0;
   double firstDeriv;
   double temp;
@@ -153,7 +153,4 @@ inline void QMCJastrowElectronElectron::collectForPair(int Electron1, int Electr
       grad_sum_U(Electron1,i) += temp;
       grad_sum_U(Electron2,i) -= temp;
     }
-
-  delete [] unitVector;
-  unitVector = 0;
 }

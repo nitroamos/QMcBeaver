@@ -80,7 +80,7 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
 
   // Loop over each atom calculating the e-n jastrow function
   double r;
-  double * unitVector = new double[3];
+  static double * unitVector = new double[3];
   for(int Nuclei=0; Nuclei<Input->Molecule.getNumberAtoms(); Nuclei++)
     {
       // Find the number of the current nucleus in the nuclei list
@@ -139,7 +139,4 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
             }
         }
     }
-
-  delete [] unitVector;
-  unitVector = 0;
 }
