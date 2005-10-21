@@ -383,11 +383,25 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
   atom_occ = 0;
 
   double sum = 0.0;
-
   double rv;  //uniform [0,1] random variable
+
+  // First we decide which determinant we will use to distribute the elecs.
+  rv = ran1(&Input->flags.iseed);
+
+  int determinant_index = 0;
+  for (int i=0; i<Input->WF.getNumberDeterminants(); i++)
+    {
+      sum += Input->WF.CI_coeffs(i)*Input->WF.CI_coeffs(i);
+      if (sum >= rv)
+	{
+	  determinant_index = i;
+	  break;
+	}
+    }
+
   for (int i=0; i<Norbitals; i++)
     {
-      if (Input->WF.AlphaOccupation(0,i) == 1)
+      if (Input->WF.AlphaOccupation(determinant_index,i) == 1)
 	{
           sum = 0.0;
           rv = ran1(&Input->flags.iseed);
@@ -404,7 +418,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 	    }
 	}
 
-      if (Input->WF.BetaOccupation(0,i) == 1)
+      if (Input->WF.BetaOccupation(determinant_index,i) == 1)
 	{
 	  sum = 0.0;
           rv = ran1(&Input->flags.iseed);
@@ -573,7 +587,7 @@ dist_energy_level(int Z, int n, int nalpha, int nbeta)
   // points in the energy level about it by a random angle.
 
   double phi = ran1(&Input->flags.iseed)*2*PI;
-  double theta = ran1(&Input->flags.iseed)*PI;
+  double theta = sindev(&Input->flags.iseed);
   double angle = ran1(&Input->flags.iseed)*2*PI;
 
   Array1D<double> axis(3);

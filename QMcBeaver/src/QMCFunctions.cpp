@@ -15,9 +15,15 @@
 QMCFunctions::QMCFunctions()
 {}
 
+QMCFunctions::QMCFunctions(QMCInput *INPUT, QMCHartreeFock *HF)
+{
+  initialize(INPUT,HF);
+}
+
 QMCFunctions::QMCFunctions(QMCInput *INPUT)
 {
-  initialize(INPUT);
+  QMCHartreeFock* HF = 0;
+  initialize(INPUT,HF);
 }
 
 QMCFunctions::QMCFunctions(const QMCFunctions & rhs )
@@ -47,7 +53,7 @@ void QMCFunctions::operator=(const QMCFunctions & rhs )
   E_Local                = rhs.E_Local;
 }
 
-void QMCFunctions::initialize(QMCInput *INPUT)
+void QMCFunctions::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
 {
   Input = INPUT;
 
@@ -57,7 +63,7 @@ void QMCFunctions::initialize(QMCInput *INPUT)
 		  Input->WF.getNumberElectrons()-1,&Input->WF.BetaOccupation,
 		  &Input->WF.BetaCoeffs);
 
-  PE.initialize(Input);
+  PE.initialize(Input,HF);
   Jastrow.initialize(Input);
 
   SCF_Grad_PsiRatio.allocate(Input->WF.getNumberElectrons(),3);
@@ -87,6 +93,8 @@ void QMCFunctions::evaluate(Array1D<QMCWalkerData *> &walkerData,
       (*walkerData(i)).localEnergy = getLocalEnergy();
       (*walkerData(i)).kineticEnergy = getKineticEnergy();
       (*walkerData(i)).potentialEnergy = getPotentialEnergy(i);
+      (*walkerData(i)).neEnergy = getEnergyNE(i);
+      (*walkerData(i)).eeEnergy = getEnergyEE(i);
       (*walkerData(i)).psi = getPsi();
 
       if(writeConfigs)
@@ -116,7 +124,9 @@ void QMCFunctions::evaluate(Array2D<double> &X, QMCWalkerData & data)
   data.localEnergy = getLocalEnergy();
   data.kineticEnergy = getKineticEnergy();
   data.potentialEnergy = getPotentialEnergy(0);
-  data.psi = getPsi();
+  data.eeEnergy = getEnergyEE(0);
+  data.neEnergy = getEnergyNE(0);
+  data.psi = getPsi();  
 }
 
 /*  we end up doing a division with SCF_sum. Therefore, it seems to be critical
@@ -341,6 +351,16 @@ double QMCFunctions::getKineticEnergy()
 double QMCFunctions::getPotentialEnergy(int i)
 {
   return PE.getEnergy(i);
+}
+
+double QMCFunctions::getEnergyEE(int i)
+{
+  return PE.getEnergyEE(i);
+}
+
+double QMCFunctions::getEnergyNE(int i)
+{
+  return PE.getEnergyNE(i);
 }
 
 void QMCFunctions::writeCorrelatedSamplingConfiguration(stringstream& strm, int which)

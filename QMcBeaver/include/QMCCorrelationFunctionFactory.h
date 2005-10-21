@@ -19,6 +19,7 @@
 #include "ZeroCorrelationFunction.h"
 #include "PadeCorrelationFunction.h"
 #include "FixedCuspPadeCorrelationFunction.h"
+#include "JuliusCorrelationFunction.h"
 
 using namespace std;
 

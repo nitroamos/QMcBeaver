@@ -29,6 +29,10 @@ QMCCorrelationFunction *
     {
       CorrelationFunction = new FixedCuspPadeCorrelationFunction();
     }
+  else if( Type == "Julius" )
+    {
+      CorrelationFunction = new JuliusCorrelationFunction();
+    }
   else
     {
       cerr << "ERROR: Unknown correlation function type (" 

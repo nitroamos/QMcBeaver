@@ -18,17 +18,26 @@ QMCPotential_Energy::QMCPotential_Energy()
 void QMCPotential_Energy::operator=( const QMCPotential_Energy & rhs )
 {
   Energy_total = rhs.Energy_total ;
-  Input  = rhs.Input;
+  Energy_ne    = rhs.Energy_ne;
+  Energy_ee    = rhs.Energy_ee;
+
+  Input        = rhs.Input;
+  HartreeFock  = rhs.HartreeFock;
 
   P_nn = rhs.P_nn;
   P_en = rhs.P_en;
   P_ee = rhs.P_ee;
 }
 
-void QMCPotential_Energy::initialize(QMCInput *Ip)
+void QMCPotential_Energy::initialize(QMCInput *Ip, QMCHartreeFock* HF)
 {
   Input = Ip;
+  HartreeFock = HF;
+
   Energy_total.allocate(Input->flags.walkers_per_pass);
+  Energy_ne.allocate(Input->flags.walkers_per_pass);
+  Energy_ee.allocate(Input->flags.walkers_per_pass);
+
   calc_P_nn();
 }
 
@@ -39,6 +48,9 @@ void QMCPotential_Energy::evaluate(Array1D<Array2D<double>*> &X, int num)
       calc_P_en(*X(walker));
       calc_P_ee(*X(walker));
       Energy_total(walker) = P_nn + P_ee + P_en;
+
+      Energy_ne(walker) = P_en;
+      Energy_ee(walker) = P_ee;
     }
 }
 
@@ -96,25 +108,27 @@ void QMCPotential_Energy::calc_P_ee(Array2D<double> &R)
   double r;
   double chargei, chargej;
 
-  //loop over every electron
-
-  for(int i=0;i<R.dim1();i++)
+  if (Input->flags.use_hf_potential == 1)
     {
-      chargei = -1.0;
+      for (int i=0; i<R.dim1(); i++)
+	P_ee += HartreeFock->GetVEff(i, R(i, 0), R(i, 1), R(i, 2));
+    }
+  else
+    {
+      // Loop over each unique pair of electrons.
+      for (int i=0; i<R.dim1(); i++)
+	{
+	  chargei = -1.0;
+	  for (int j=i+1; j<R.dim1(); j++)
+	    {
+	      chargej = -1.0;
 
-      // loop over every electron that the ee energy hasn't be calculaed
-      // yet for
-
-      for(int j=i+1;j<R.dim1();j++)
-        {
-          chargej = -1.0;
-
-          r = rij(R,i,j);
-          P_ee += (chargei*chargej)/r;
-        }
+	      r = rij(R,i,j);
+	      P_ee += (chargei*chargej)/r;
+	    }
+	}
     }
 }
-
 
 double QMCPotential_Energy::rij(Array2D<double> &position, int i, int j)
 {
@@ -146,5 +160,13 @@ double QMCPotential_Energy::getEnergy(int which)
   return Energy_total(which);
 }
 
+double QMCPotential_Energy::getEnergyNE(int which)
+{
+  return Energy_ne(which);
+}
 
+double QMCPotential_Energy::getEnergyEE(int which)
+{
+  return Energy_ee(which);
+}
 

@@ -166,16 +166,25 @@ public:
   */
   double getLocalEnergyEstimator();
 
+  /**
+    Gets the positions of the electrons.
+  */
+  Array2D<double> * getR();
+
 private:
   double weight;
   int age;
 
-  /*these energies are calculated by QMCWalker using the
-    acceptance probability as opposed to those calculated by QMCFunction
+  /**
+    These energies are calculated by QMCWalker using the acceptance probability
+    as opposed to those calculated by QMCFunction
   */
   double localEnergy;
   double kineticEnergy;
   double potentialEnergy;
+
+  double neEnergy;
+  double eeEnergy;
 
   double distanceMovedAccepted;
   double AcceptanceProbability;
@@ -266,7 +275,6 @@ private:
   QMCGreensRatioComponent \
                    calculateReverseGreensFunctionUmrigar93ImportanceSampling();
 
-  Array2D<double> * getR();
   int getAge();
   double getAcceptanceProbability();
 

@@ -1,3 +1,20 @@
+Thurs, 20 Oct 2005, Daniel R. Fisher
+
+1. In the case of multideterminant trial wavefunctions,
+   QMCDansWalkerInitialization now decides which determintant to use
+   when distributing the electrons among the nuclei based on the CI
+   expansion coefficients.
+2. The electron nuclear and electron electron components of the
+   potential energy are now recorded separately, in addition to the
+   total potential energy.
+3. Submitted, on behalf of Julius Su, changes that make it possible to
+   use a "mean field" potential, in which the electron positions are
+   averaged over several walkers.  This was written for use in DFT
+   development.  To use this, use "None" for all correlation function
+   types and set the flag "use_hf_potential" to 1.
+4. There is a new option called "lock_trial_energy" which fixes the
+   trial energy at its initial value in DMC calculations.
+
 Fri, 23 Sep 2005, Daniel R. Fisher
 
 1. Fixed a memory leak in QMCJastrowElectronNuclear.cpp

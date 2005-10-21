@@ -427,6 +427,11 @@ snprintf( my_rank_str, 32, "%d", Input.flags.my_rank);
             QMCnode.writeElectronDensityHistograms();
         }
         
+      if( Input.flags.use_hf_potential == 1 )
+	{
+	  QMCnode.updateHFPotential();
+	}
+
       if( equilibrating )
         {
           localTimers.getEquilibrationStopwatch()->stop();
@@ -824,7 +829,6 @@ void QMCManager::updateEstimatedEnergy(QMCProperties* Properties)
 void QMCManager::updateTrialEnergy(double weights, int nwalkers_init)
 {
   // Update the trial energy
-  
   if( equilibrating )
     {
       /*
@@ -835,13 +839,13 @@ void QMCManager::updateTrialEnergy(double weights, int nwalkers_init)
       in his notebook and possibly thesis.
        */
       Input.flags.energy_trial = Input.flags.energy_estimated -
-                                 1.0 / Input.flags.dt_effective * log( weights / nwalkers_init );
+               1.0 / Input.flags.dt_effective * log( weights / nwalkers_init );
     }
   else
     {
-      Input.flags.energy_trial = Input.flags.energy_estimated -
-                                 Input.flags.population_control_parameter *
-                                 log( weights / nwalkers_init );
+      if (Input.flags.lock_trial_energy == 0)
+	Input.flags.energy_trial = Input.flags.energy_estimated -
+     Input.flags.population_control_parameter * log( weights / nwalkers_init );
     }
 }
 

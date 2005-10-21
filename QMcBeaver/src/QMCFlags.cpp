@@ -108,6 +108,10 @@ void QMCFlags::read_flags(string InFileName)
   write_electron_densities           = 0;
   write_electron_densities_interval  = 10000;
   chip_and_mike_are_cool         = "false";
+
+  use_hf_potential               = 0;
+  hf_num_average                 = 100;
+  lock_trial_energy              = 0;
   
   //**********************************
   
@@ -479,6 +483,21 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> chip_and_mike_are_cool;
         }
+      else if(temp_string == "use_hf_potential")
+	{
+	  input_file >> temp_string;
+	  use_hf_potential = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "hf_num_average")
+	{
+	  input_file >> temp_string;
+	  hf_num_average = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "lock_trial_energy")
+	{
+	  input_file >> temp_string;
+	  lock_trial_energy = atoi(temp_string.c_str());
+	}
       else
         {
           cerr << "ERROR: Unknown input flag: " << temp_string << endl;
@@ -701,6 +720,9 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
   strm << "zero_out_checkpoint_statistics\n "
   << flags.zero_out_checkpoint_statistics << endl;
+  strm << "use_hf_potential\n " << flags.use_hf_potential << endl;
+  strm << "hf_num_average\n " << flags.hf_num_average << endl;
+  strm << "lock_trial_energy\n " << flags.lock_trial_energy << endl;
   strm << "chip_and_mike_are_cool\n " << flags.chip_and_mike_are_cool << endl;
   strm << "& " << endl;
   return strm;

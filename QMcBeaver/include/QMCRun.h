@@ -20,6 +20,7 @@
 #include "QMCEquilibrationArray.h"
 #include "QMCProperties.h"
 #include "QMCStopwatches.h"
+#include "QMCHartreeFock.h"
 
 using namespace std;
 
@@ -158,6 +159,8 @@ class QMCRun
   */
   void readXML(istream& strm);
 
+  void updateHFPotential();
+
 private:
 
   /**
@@ -276,6 +279,10 @@ private:
   */
   double total_sample_weight;
 
+  /**
+    These objects allow HF calculations to be done with QMC.
+  */
+  QMCHartreeFock HartreeFock;
 };
 
 #endif

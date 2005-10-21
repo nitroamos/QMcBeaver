@@ -50,6 +50,12 @@ public:
   QMCProperty potentialEnergy;
 
   /**
+    Keeps track of the nuc-e and e-e energy separately.
+  */
+  QMCProperty neEnergy;
+  QMCProperty eeEnergy;
+
+  /**
     Log of the weights on the walkers.
   */
   QMCProperty logWeights;

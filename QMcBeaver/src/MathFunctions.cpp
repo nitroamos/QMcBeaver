@@ -217,3 +217,121 @@ double MathFunctions::sign(double x, double y)
   return (y < 0.0) ? -abs_x : abs_x;
 }
 
+#define ITMAX 100
+#define EPS 3.0e-7
+#define FPMIN 1.0e-30
+
+double MathFunctions::F_gamma(double v, double t)
+{
+  /* Computes the function 
+      Integrate[u^(2 v) Exp(-t u^2), {u, 0, 1}]
+      = (1/2) t^(-1/2 - v) * Gamma(1/2 + v, t)
+  */
+  if (t < 0.000001) 
+    return 1.0 / (2.0 * v + 1.0); /* limiting case */
+  else
+    return 0.5 * pow(t, -0.5 - v) * gamma_inc(0.5 + v, t);
+}
+
+double MathFunctions::gamma_inc(double a, double x)
+{
+  /* From Numerical Recipes in Fortran, gammp.f 
+     Returns the incomplete gamma function 
+        Integrate[Exp[-t] t^(a - 1), {t, 0, x}] / Gamma[a].
+     Picks the series or continued fraction algorithm depending on input. 
+  */
+
+  if (x < 0 || a < 0) {printf("Bad argument in gamma function.\n"); exit(1);}
+  if (x < a + 1)
+    return gamma_series(a, x);
+  else
+    return gamma_cf(a, x);
+}
+
+double MathFunctions::gamma_log(double x2)
+{
+  /* From Numerical Recipes in C, gammln.c
+     Returns the value Log(gamma(x)), x > 0
+  */
+  
+  double x, y, tmp, ser;
+  static double cof[] = {76.18009172947146, -86.50532032941677, 
+			 24.01409824083091, -1.231739572450155,
+			 0.1208650973866179E-2, -0.5395239384953E-5, 
+			 2.5066282746310005};
+  int j;
+
+  y = x = x2;
+  tmp = x + 5.5;
+  tmp -= (x + 0.5) * log(tmp);
+  ser = 1.000000000190015;
+
+  for (j = 0; j < 6; j++)
+    {
+      y += 1.0;
+      ser +=  cof[j] / y;
+    }
+  return -tmp + log(2.5066282746310005 * ser/x);
+}
+
+double MathFunctions::gamma_series(double a, double x)
+{
+  /* From Numerical Recipes in C, gser.c
+     Returns the incomplete gamma function
+        Integrate[Exp[-t] t^(a - 1), {t, 0, x}].
+     Uses a series expansion.
+  */
+
+  if (x <= 0.0) {printf("x less than 0 in routine gamma_series.\n"); exit(1);}
+ 
+  int n; 
+  double sum, del, ap;
+
+  ap = a;
+  del = sum = 1.0 / a;
+  for (n = 1; n <= ITMAX; n++)
+  {
+    ++ap;
+    del *= x / ap;
+    sum += del;
+    if (fabs(del) < fabs(sum) * EPS)
+      return sum * exp(-x + a * log(x));
+  }
+  printf("a too large, ITMAX too small in routine gamma_series.\n"); exit(1);
+}
+
+double MathFunctions::gamma_cf(double a, double x)
+{
+  /* From Numerical Recipes in C, gcf.c
+     Returns the incomplete gamma function
+        Integrate[Exp[-t] t^(a - 1), {t, 0, x}] / Gamma[a].
+     Uses a continued fraction expansion.
+  */
+
+  double an, b, c, d, del, h;
+
+  b = x + 1.0 - a;
+  c = 1.0 / FPMIN;
+  d = 1.0 / b;
+  h = d;
+  int i;
+  for (i = 1; i <= ITMAX; i++)
+  {
+    an = -i * (i - a);
+    b += 2.0;
+    d = an * d + b;
+    if (fabs(d) < FPMIN) d = FPMIN;
+    c = b + an / c;
+    if (fabs(c) < FPMIN) c = FPMIN;
+    d = 1.0 / d;
+    del = d * c;
+    h *= del;
+    if (fabs(del - 1.0) < EPS) break;
+  }
+  if (i > ITMAX) 
+    {
+      printf("a too large, ITMAX too small in gamma_cf\n"); 
+      exit(1);
+    }
+  return exp(gamma_log(a)) - exp(-x + a * log(x)) * h;
+}

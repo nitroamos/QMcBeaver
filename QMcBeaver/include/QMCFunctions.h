@@ -21,6 +21,7 @@
 #include "QMCJastrow.h"
 #include "QMCPotential_Energy.h"
 #include "QMCGreensRatioComponent.h"
+#include "QMCHartreeFock.h"
 
 using namespace std;
 
@@ -33,6 +34,8 @@ using namespace std;
 */
 struct QMCWalkerData {
   double localEnergy, kineticEnergy, potentialEnergy;
+  double neEnergy, eeEnergy;
+
   QMCGreensRatioComponent psi;
   bool isSingular;
   
@@ -91,7 +94,16 @@ public:
 
   /**
     Creates a new instance of the class and initializes it with the data 
-    controling the QMC calculation.
+    controlling the QMC calculation.
+
+    @param input input data for the calculation
+    @param HF object for calculating mean field potential
+  */
+  QMCFunctions(QMCInput *input, QMCHartreeFock* HF);
+
+  /**
+    Creates a new instance of the class and initializes it with the data 
+    controlling the QMC calculation.
 
     @param input input data for the calculation
   */
@@ -115,7 +127,7 @@ public:
 
     @param input input data for the calculation
   */
-  void initialize(QMCInput *input); 
+  void initialize(QMCInput *input, QMCHartreeFock *HF); 
 
   /**
     Evaluates all of the calculated properties at X and places the calculated
@@ -130,8 +142,8 @@ public:
     the walkerData.configOutput will be given it's info
   */
   void evaluate(Array2D<double> &X, QMCWalkerData & data);
-  void evaluate(Array1D<QMCWalkerData *> &walkerData, Array1D<Array2D<double> * > &xData,
-		int num, bool writeConfig);
+  void evaluate(Array1D<QMCWalkerData *> &walkerData, 
+		Array1D<Array2D<double> * > &xData, int num, bool writeConfig);
 
   /**
     Sets two QMCFunctions objects equal.
@@ -152,8 +164,9 @@ public:
   QMCInput *Input; 
  
   /**
-     Corresponding to QMCFunction's ability to process several walkers simultaneously,
-     each QMCSlater object is able to do the same in analogous fashion.
+     Corresponding to QMCFunction's ability to process several walkers 
+     simultaneously, each QMCSlater object is able to do the same in analogous
+     fashion.
   */
   QMCSlater Alpha, Beta; 
   QMCJastrow Jastrow;  
@@ -218,6 +231,9 @@ public:
     @return potential energy.
   */
   double getPotentialEnergy(int which);
+
+  double getEnergyEE(int which);
+  double getEnergyNE(int which);
 
   /**
     Returns true if the last evaluated electronic configuration gives a

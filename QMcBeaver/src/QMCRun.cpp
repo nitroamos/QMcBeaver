@@ -105,7 +105,7 @@ void QMCRun::zeroOut()
 void QMCRun::initialize(QMCInput *INPUT)
 {
   Input = INPUT;
-  QMF.initialize(Input);
+  QMF.initialize(Input,&HartreeFock);
   
   if (Input->flags.calculate_bf_density == 1)
     {
@@ -165,6 +165,9 @@ void QMCRun::initialize(QMCInput *INPUT)
 	    beta_density_histogram(i,j) = 0.0;
 	  }
     }
+
+  if (Input->flags.use_hf_potential == 1)
+    HartreeFock.Initialize(Input);
 }
 
 void QMCRun::randomlyInitializeWalkers()
@@ -661,5 +664,21 @@ void QMCRun::calculatePopulationSizeBiasCorrectionFactor()
       temp = exp(temp);
       
       populationSizeBiasCorrectionFactor *= temp;
+    }
+}
+
+// Updates hartree-fock potential, adding all electrons over all walkers to the
+// object.
+void QMCRun::updateHFPotential()
+{
+  int numelecs = Input->WF.getNumberElectrons();
+
+  for (list<QMCWalker>::iterator wp = wlist.begin(); wp != wlist.end(); ++wp)
+    {
+      Array2D<double> positions = *(wp->getR());
+      for (int i = 0; i < numelecs; i++)
+	HartreeFock.AddElectron(i,wp->getWeight(),positions(i,0),
+				positions(i,1), positions(i, 2));
+      HartreeFock.IncrementSample();
     }
 }

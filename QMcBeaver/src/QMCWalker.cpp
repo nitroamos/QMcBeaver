@@ -59,6 +59,9 @@ void QMCWalker::operator=( const QMCWalker & rhs )
   localEnergy           = rhs.localEnergy;
   kineticEnergy         = rhs.kineticEnergy;
   potentialEnergy       = rhs.potentialEnergy;
+  neEnergy              = rhs.neEnergy;
+  eeEnergy              = rhs.eeEnergy;
+
   distanceMovedAccepted = rhs.distanceMovedAccepted;
   dR2                   = rhs.dR2;
   R                     = rhs.R;
@@ -766,26 +769,43 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
     p = 1;
     
   // if the aratio is NaN then reject the move
-  if( IeeeMath::isNaN(p) != 0 )
+  if( p+1 == p )
     {
       cerr << "WARNING: Rejecting trial walker with NaN aratio!" << endl;
       p = 0.0;
-      //the energies are assigned zero because the later multiplication by p = 0
-      //doesn't result in 0 contribution
-      TrialWalker->walkerData.kineticEnergy = 0;
+      // The energies are assigned zero because the later multiplication by 
+      // p=0 doesn't result in 0 contribution.
+      TrialWalker->walkerData.kineticEnergy   = 0;
       TrialWalker->walkerData.potentialEnergy = 0;
-      TrialWalker->walkerData.localEnergy = 0;
+      TrialWalker->walkerData.localEnergy     = 0;
+      TrialWalker->walkerData.neEnergy        = 0;
+      TrialWalker->walkerData.eeEnergy        = 0;
     }
     
-  //the particular NaN that this is correcting for is not revealed by isinf or isnan...
-  double energy = TrialWalker->walkerData.kineticEnergy;
-  if( energy++ == energy)
+  // The particular NaN that this is correcting for is not revealed by isinf or
+  // isnan...
+  double kineticEnergy = TrialWalker->walkerData.kineticEnergy;
+  if( kineticEnergy+1 == kineticEnergy)
     {
       cerr << "WARNING: Rejecting trial walker with NaN kinetic energy!" << endl;
       p = 0.0;
-      TrialWalker->walkerData.kineticEnergy = 0;
+      TrialWalker->walkerData.kineticEnergy   = 0;
       TrialWalker->walkerData.potentialEnergy = 0;
-      TrialWalker->walkerData.localEnergy = 0;
+      TrialWalker->walkerData.localEnergy     = 0;
+      TrialWalker->walkerData.neEnergy        = 0;
+      TrialWalker->walkerData.eeEnergy        = 0;
+    }
+
+  double potentialEnergy = TrialWalker->walkerData.potentialEnergy;
+  if( potentialEnergy+1 == potentialEnergy)
+    {
+      cerr << "WARNING: Rejecting trial walker with NaN potential energy!" << endl;
+      p = 0.0;
+      TrialWalker->walkerData.kineticEnergy   = 0;
+      TrialWalker->walkerData.potentialEnergy = 0;
+      TrialWalker->walkerData.localEnergy     = 0;
+      TrialWalker->walkerData.neEnergy        = 0;
+      TrialWalker->walkerData.eeEnergy        = 0;
     }
     
   // if the trial position is singular reject the move
@@ -793,9 +813,11 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
     {
       cerr << "WARNING: Rejecting singular trial walker!" << endl;
       p = 0.0;
-      TrialWalker->walkerData.kineticEnergy = 0;
+      TrialWalker->walkerData.kineticEnergy   = 0;
       TrialWalker->walkerData.potentialEnergy = 0;
-      TrialWalker->walkerData.localEnergy = 0;
+      TrialWalker->walkerData.localEnergy     = 0;
+      TrialWalker->walkerData.neEnergy        = 0;
+      TrialWalker->walkerData.eeEnergy        = 0;
     }
     
   // Fixed Node Condition
@@ -867,6 +889,8 @@ void QMCWalker::initialize(QMCInput *INPUT)
   walkerData.localEnergy     = 0.0;
   walkerData.kineticEnergy   = 0.0;
   walkerData.potentialEnergy = 0.0;
+  walkerData.neEnergy        = 0.0;
+  walkerData.eeEnergy        = 0.0;
   walkerData.psi             = 0.0;
   walkerData.configOutput    = new stringstream();
   if (Input->flags.calculate_bf_density == 1)
@@ -1054,8 +1078,7 @@ void QMCWalker::readXML(istream& strm)
   // Read the energy and don't save it
   strm >> temp >> temp >> temp >> temp >> temp;
   
-  QMCFunctions QMF;
-  QMF.initialize(Input);
+  QMCFunctions QMF(Input);
   QMF.evaluate(R,walkerData);
 }
 
@@ -1064,8 +1087,7 @@ void QMCWalker::initializeWalkerPosition()
   QMCInitializeWalker * IW =
     QMCInitializeWalkerFactory::initializeWalkerFactory(Input,
         Input->flags.walker_initialization_method);
-  QMCFunctions QMF;
-  QMF.initialize(Input);
+  QMCFunctions QMF(Input);
   
   R = IW->initializeWalkerPosition();
   QMF.evaluate(R,walkerData);
@@ -1145,6 +1167,12 @@ void QMCWalker::calculateObservables()
   potentialEnergy = p * TrialWalker->walkerData.potentialEnergy +
                     q * OriginalWalker->walkerData.potentialEnergy;
                     
+  // Calculate the ne and ee potential energy
+  neEnergy = p * TrialWalker->walkerData.neEnergy + 
+             q * OriginalWalker->walkerData.neEnergy;
+  eeEnergy = p * TrialWalker->walkerData.eeEnergy + 
+             q * OriginalWalker->walkerData.eeEnergy;
+
   // Calculate the acceptance probability
   AcceptanceProbability = p;
   
@@ -1174,6 +1202,10 @@ void QMCWalker::calculateObservables( QMCProperties & props )
   // Calculate the Potential Energy
   props.potentialEnergy.newSample( potentialEnergy, getWeight() );
   
+  // Calculate the ne and ee potential energy
+  props.neEnergy.newSample( neEnergy, getWeight() );
+  props.eeEnergy.newSample( eeEnergy, getWeight() );
+
   // Calculate the Acceptance Probability ...
   props.acceptanceProbability.newSample( AcceptanceProbability, getWeight() );
   

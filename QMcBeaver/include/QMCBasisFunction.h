@@ -55,7 +55,7 @@ using namespace std;
 class QMCBasisFunction
 {
 public:
-  
+  friend class QMCPsiPotential;
   /**
      Creates an instance of the class.
   */

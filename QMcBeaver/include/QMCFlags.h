@@ -39,7 +39,6 @@ class QMCFlags
   */
   vector<long> programmersLongs;
   
-  
   /**
      Base file name for the calculation.  This is the file name without
      any extension.
@@ -560,6 +559,23 @@ class QMCFlags
      Number of processors used in this calculation.
   */
   int nprocs;
+
+  /**
+    Hartree-Fock calculations using QMC, aimed at producing basis independent 
+    reference wavefunctions.  Computes V_eff for each electron by averaging 
+    over multiple walkers and configurations.  
+  */
+  int use_hf_potential;
+
+  /** 
+    Number of electron samples to average v_eff over.
+  */
+  int hf_num_average;
+
+  /**
+    Option to keep trial energy fixed to its original value.
+  */
+  int lock_trial_energy;
 
   /**
      Load this object's state from a QMC input file and initialize 

@@ -44,6 +44,8 @@ void QMCProperties::zeroOut()
   energy.zeroOut();
   kineticEnergy.zeroOut();
   potentialEnergy.zeroOut();
+  neEnergy.zeroOut();
+  eeEnergy.zeroOut();
   logWeights.zeroOut();
   acceptanceProbability.zeroOut();
   distanceMovedAccepted.zeroOut();
@@ -61,6 +63,8 @@ void QMCProperties::newSample(QMCProperties* newProperties, double weight,
   kineticEnergy.newSample(newProperties->kineticEnergy.getAverage(), weight);
   potentialEnergy.newSample(newProperties->potentialEnergy.getAverage(),
 			    weight);
+  neEnergy.newSample(newProperties->neEnergy.getAverage(), weight);
+  eeEnergy.newSample(newProperties->eeEnergy.getAverage(), weight);
   acceptanceProbability.newSample
     (newProperties->acceptanceProbability.getAverage(), weight);
   distanceMovedAccepted.newSample
@@ -80,6 +84,8 @@ void QMCProperties::operator = ( const QMCProperties &rhs )
   energy                = rhs.energy;
   kineticEnergy         = rhs.kineticEnergy;
   potentialEnergy       = rhs.potentialEnergy;
+  neEnergy              = rhs.neEnergy;
+  eeEnergy              = rhs.eeEnergy;
   logWeights            = rhs.logWeights;
   acceptanceProbability = rhs.acceptanceProbability;
   distanceMovedAccepted = rhs.distanceMovedAccepted;
@@ -93,6 +99,8 @@ QMCProperties QMCProperties::operator + ( QMCProperties &rhs )
   result.energy                = energy + rhs.energy;
   result.kineticEnergy         = kineticEnergy + rhs.kineticEnergy;
   result.potentialEnergy       = potentialEnergy + rhs.potentialEnergy;
+  result.neEnergy              = neEnergy + rhs.neEnergy;
+  result.eeEnergy              = eeEnergy + rhs.eeEnergy;
   result.logWeights            = logWeights + rhs.logWeights;
   result.acceptanceProbability = acceptanceProbability + 
     rhs.acceptanceProbability;
@@ -122,6 +130,16 @@ void QMCProperties::toXML(ostream& strm)
   strm << "<PotentialEnergy>" << endl;
   potentialEnergy.toXML(strm);
   strm << "</PotentialEnergy>" << endl;
+
+  // nuc-elec energy
+  strm << "<NucElecEnergy>" << endl;
+  neEnergy.toXML(strm);
+  strm << "</NucElecEnergy>" << endl;
+
+  // elec-elec energy;
+  strm << "<ElecElecEnergy>" << endl;
+  eeEnergy.toXML(strm);
+  strm << "</ElecElecEnergy>" << endl;
 
   // log weights
   strm << "<LogWeights>" << endl;
@@ -178,6 +196,16 @@ void QMCProperties::readXML(istream& strm)
   potentialEnergy.readXML(strm);
   strm >> temp;
 
+  // Read nuc-elec energy
+  strm >> temp;
+  neEnergy.readXML(strm);
+  strm >> temp;
+
+  // Read elec-elec energy
+  strm >> temp;
+  eeEnergy.readXML(strm);
+  strm >> temp;
+
   // Read log weights
   strm >> temp;
   logWeights.readXML(strm);
@@ -213,28 +241,32 @@ void QMCProperties::readXML(istream& strm)
 
 ostream& operator <<(ostream& strm, QMCProperties &rhs)
 {
-  strm << endl << "----------------- Energy --------------------" << endl;
+  strm << endl << "------------------- Energy -------------------" << endl;
   strm << rhs.energy;
 
-  strm << endl << "-------------- Kinetic Energy ---------------" << endl;
+  strm << endl << "--------------- Kinetic Energy ---------------" << endl;
   strm << rhs.kineticEnergy;
 
-  strm << endl << "------------ Potential Energy ---------------" << endl;
+  strm << endl << "-------------- Potential Energy --------------" << endl;
   strm << rhs.potentialEnergy;
 
-  strm << endl << "----------- AcceptanceProbability -----------" << endl;
+  strm << endl << "-------------- Nuc-Elec Energy ---------------" << endl;
+  strm << rhs.neEnergy;
+
+  strm << endl << "-------------- Elec-Elec Energy --------------" << endl;
+  strm << rhs.eeEnergy;
+
+  strm << endl << "------------ AcceptanceProbability -----------" << endl;
   strm << rhs.acceptanceProbability;
 
-
-  strm << endl << "----------- DistanceMovedAccepted -----------" << endl;
+  strm << endl << "------------ DistanceMovedAccepted -----------" << endl;
   strm << rhs.distanceMovedAccepted;
 
-
-  strm << endl << "------------ DistanceMovedTrial -------------" << endl;
+  strm << endl << "------------- DistanceMovedTrial -------------" << endl;
   strm << rhs.distanceMovedTrial;
 
 
-  strm << endl << "---------------- logWeights -----------------" << endl;
+  strm << endl << "----------------- logWeights -----------------" << endl;
   strm << rhs.logWeights;
 
   return strm;
@@ -255,7 +287,7 @@ void QMCProperties::buildMpiType()
 
   // The number of properties 
   // ADJUST THIS WHEN ADDING NEW PROPERTIES
-  const int NumberOfProperties = 7;
+  const int NumberOfProperties = 9;
 
   int          block_lengths[NumberOfProperties];
   MPI_Aint     displacements[NumberOfProperties];
@@ -279,6 +311,8 @@ void QMCProperties::buildMpiType()
   MPI_Address(&(indata.distanceMovedTrial), &addresses[5]);  
   MPI_Address(&(indata.kineticEnergy), &addresses[6]);  
   MPI_Address(&(indata.potentialEnergy), &addresses[7]);  
+  MPI_Address(&(indata.neEnergy), &addresses[8]);
+  MPI_Address(&(indata.eeEnergy), &addresses[9]);
 
   // Find the relative addresses of the data elements to the start of 
   // the struct

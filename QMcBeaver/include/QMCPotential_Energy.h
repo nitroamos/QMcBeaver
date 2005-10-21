@@ -18,6 +18,7 @@
 #include "Array1D.h"
 #include "Array2D.h"
 #include "QMCInput.h"
+#include "QMCHartreeFock.h"
 
 using namespace std;
 
@@ -41,7 +42,7 @@ public:
 
     @param input data input to control the calculation
     */
-  void initialize(QMCInput *input);
+  void initialize(QMCInput *input, QMCHartreeFock *HF);
 
 
   /**
@@ -56,23 +57,35 @@ public:
 
   /**
     Gets the potential energy of the last configuration evaluated.
-    */
+  */
   
   double getEnergy(int which);
 
+  /**
+    Gets the nuc-elec potential energy of the last config evaluated.
+  */
+  double getEnergyNE(int which);
+
+  /**
+    Gets the elec-elec potential energy of the last config evaluated.
+  */
+  double getEnergyEE(int which);
 
   /**
     Sets two QMCPotential_Energy objects equal.
 
     @param rhs object to set this object equal to
-    */
+  */
 
   void operator=( const QMCPotential_Energy & rhs );
 
  private:
   QMCInput *Input;
+  QMCHartreeFock *HartreeFock;
 
   Array1D<double> Energy_total;
+  Array1D<double> Energy_ne;
+  Array1D<double> Energy_ee;
 
   double P_nn;
   double P_en;
