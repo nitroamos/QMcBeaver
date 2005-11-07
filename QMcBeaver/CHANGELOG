@@ -1,3 +1,8 @@
+Mon, 7 Nov 2005, Chip Kent
+
+1. Modified the release creation script to generate the user guide in 
+   addition to the API guide.
+
 Thurs, 20 Oct 2005, Daniel R. Fisher
 
 1. In the case of multideterminant trial wavefunctions,
