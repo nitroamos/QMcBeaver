@@ -20,7 +20,7 @@
 #include "QMCMolecule.h"
 #include "QMCBasisFunction.h"
 #include "QMCWavefunction.h"
-
+#include "QMCConfigIO.h"
 #include "QMCJastrowParameters.h"
 
 using namespace std;
@@ -63,7 +63,12 @@ public:
      Jastrow function used in the QMC wavefunction.
   */
   QMCJastrowParameters JP;
-
+  
+  /**
+     This object is used to output the configuation file.
+  */
+  QMCConfigIO outputer;
+  
   /**
      Save parameters related to a parallel MPI calculation 
      in this class so that they are available throughout the

@@ -128,16 +128,6 @@ public:
   bool isSingular();
 
   /**
-    Writes the state of this walker to a stream in a format that is suitable
-    for correlated sampling.  This writes out more information than 
-    <code>toXML</code> so that parts of the wavefunction do not have to
-    be reevaluated every time properties are calculated using correlated
-    sampling.
-    @param strm stream to write correlated sampling information to.
-  */ 
-  void writeCorrelatedSamplingConfiguration(ostream& strm); 
-
-  /**
     Calculates the distance between each pair of electrons and records it in 
     the appropriate histogram.  This will be used to evaluate pair density 
     functions for DFT development.

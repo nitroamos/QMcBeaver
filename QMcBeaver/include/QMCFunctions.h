@@ -22,6 +22,7 @@
 #include "QMCPotential_Energy.h"
 #include "QMCGreensRatioComponent.h"
 #include "QMCHartreeFock.h"
+#include "QMCConfigIO.h"
 
 using namespace std;
 
@@ -151,14 +152,6 @@ public:
     @param rhs object to set this object equal to
   */
   void operator=(const QMCFunctions & rhs );
-
-  /**
-    Writes the state of this object to a stream for use in correlated
-    sampling calculations.
-    @param which indicates which walker
-    @param strm output stream
-  */
-  void writeCorrelatedSamplingConfiguration(stringstream& strm, int which);
 
  private:
   QMCInput *Input; 

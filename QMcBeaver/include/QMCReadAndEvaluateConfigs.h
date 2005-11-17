@@ -93,9 +93,6 @@ private:
   Array2D<double> D2;
   double lnJ;
   double PE;
-  
-  // Read in a new config
-  void read_next_config();
 
   // given a set of parameters perform the necessary calcualtions and
   // add the results to the properties.
@@ -119,9 +116,6 @@ private:
   // processor
   void MPI_reduce( Array1D <QMCProperties> &local_Properties, 
 		   Array1D < QMCProperties> &global_Properties);
-
-  // The file to read the configurations in from
-  ifstream config_in_stream;
 };
 
 #endif

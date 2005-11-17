@@ -126,17 +126,6 @@ class QMCRun
   void writeEnergies(ostream& strm);
 
   /**
-    Writes the state of this group of walkers to a stream in a 
-    format that is suitable for correlated sampling calculations.  
-    This writes out more information than 
-    <code>toXML</code> so that parts of the wavefunction do not have to
-    be reevaluated every time properties are calculated using correlated
-    sampling.
-    @param strm stream to write correlated sampling information to.
-  */ 
-  void writeCorrelatedSamplingConfigurations(ostream& strm);  
-
-  /**
     Calculates the distances between all pairs of electrons and records them in
     parallel and opposite spin histograms.
   */
