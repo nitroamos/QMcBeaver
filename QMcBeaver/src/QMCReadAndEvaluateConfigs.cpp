@@ -41,48 +41,6 @@ void QMCReadAndEvaluateConfigs::initialize(QMCInput *In, int cfgsToSkip)
   D2.allocate(Nelectrons,3);
 }
 
-// Read in a new config
-void QMCReadAndEvaluateConfigs::read_next_config()
-{
-  string stemp;
-  int itemp;
-
-  config_in_stream >> stemp;
-  config_in_stream >> stemp;
-  config_in_stream >> stemp;
-
-  // Read in the electronic positions
-  for(int i=0; i<Nelectrons; i++)
-    {
-      config_in_stream >> itemp;
-
-      config_in_stream >> R(i,0);
-      config_in_stream >> R(i,1);
-      config_in_stream >> R(i,2);
-    }
-
-  // read D1
-  config_in_stream >> stemp;
-  config_in_stream >> D1;
-
-  // read D2
-  config_in_stream >> stemp;
-  for(int i=0; i<Nelectrons; i++)
-    {
-      config_in_stream >> D2(i,0);
-      config_in_stream >> D2(i,1);
-      config_in_stream >> D2(i,2);
-    }
-
-  // read lnJ
-  config_in_stream >> stemp;
-  config_in_stream >> lnJ;
-
-  // read PE
-  config_in_stream >> stemp;
-  config_in_stream >> PE;
-}
-
 // Calculate the properites from the configs for all the parameters in params
 // using the root node
 void QMCReadAndEvaluateConfigs::rootCalculateProperties(
@@ -219,20 +177,10 @@ void QMCReadAndEvaluateConfigs::workerCalculateProperties()
 // on the current node
 void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
   Array1D < Array1D<double> > &Params, Array1D<QMCProperties> & Properties)
-{
-  config_in_stream.open(Input->flags.config_file_name.c_str());
-
-  if( config_in_stream.bad() )
-    {
-      cerr << "ERROR: Cannot open file " << Input->flags.config_file_name
-      << " in QMCReadAndEvaluateConfigs!" << endl;
-      exit(0);
-    }
-
-  config_in_stream.clear();
-
+{  
+  Input->outputer.open(Input->flags.config_file_name,false);
+  
   //zero out the properties
-
   Properties.allocate(Params.dim1());
   for(int j=0;j<Properties.dim1();j++)
     {
@@ -243,17 +191,17 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
 
   for (int i=0; i<configsToSkip; i++)
     {
-      read_next_config();
+      Input->outputer.readCorrelatedSamplingConfiguration(R,D1,D2,lnJ,PE);
     }
 
   // read configurations until the file is empty
 
-  while( !config_in_stream.eof() )
+  while( !Input->outputer.eof() )
     {
       // read the next configuration
 
-      read_next_config();
-
+      Input->outputer.readCorrelatedSamplingConfiguration(R,D1,D2,lnJ,PE);
+      
       // On some computers, it seems this class was reading one extra config
       // in, assiging zeros to all the parameters. Why was it doing this?
       // Probably some compilers had a different definition of eof() or
@@ -271,7 +219,7 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
             }
         }
     }
-  config_in_stream.close();
+  Input->outputer.close();
 }
 
 // given a set of parameters perform the necessary calculations and

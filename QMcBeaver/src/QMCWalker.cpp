@@ -904,25 +904,6 @@ void QMCWalker::initialize(QMCInput *INPUT)
   R.allocate(Input->WF.getNumberElectrons(),3);
 }
 
-void QMCWalker::writeCorrelatedSamplingConfiguration(ostream& strm)
-{
-  strm << "&" << endl;
-  int R_moved=R.dim1();
-  
-  strm << "R\t" << R_moved << endl;
-  for(int i=0;i<R_moved;i++)
-    {
-      //now we are printing out all the electrons
-      
-      strm << "\t" << i << "\t";
-      strm << R(i,0) << "\t";
-      strm << R(i,1) << "\t";
-      strm << R(i,2) << endl;
-    }
-    
-  strm << (*walkerData.configOutput).str();
-}
-
 void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
                           Array1D<double> &pll_spin, Array1D<double> &opp_spin,
 		 Array2D<double> &alpha_density, Array2D<double> &beta_density,

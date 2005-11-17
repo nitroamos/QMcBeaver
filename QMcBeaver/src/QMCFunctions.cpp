@@ -98,7 +98,12 @@ void QMCFunctions::evaluate(Array1D<QMCWalkerData *> &walkerData,
       (*walkerData(i)).psi = getPsi();
 
       if(writeConfigs)
-        writeCorrelatedSamplingConfiguration(*(walkerData(i)->configOutput),i);
+        Input->outputer.writeCorrelatedSamplingConfiguration(
+          *xData(i),
+          SCF_Laplacian_PsiRatio,
+          SCF_Grad_PsiRatio,
+          Jastrow.getLnJastrow(i),
+          PE.getEnergy(i));
     }
 }
 
@@ -361,31 +366,6 @@ double QMCFunctions::getEnergyEE(int i)
 double QMCFunctions::getEnergyNE(int i)
 {
   return PE.getEnergyNE(i);
-}
-
-void QMCFunctions::writeCorrelatedSamplingConfiguration(stringstream& strm, int which)
-{
-  strm.str("");
-  // Print the sum of the laplacians from the alpha and beta electrons
-  strm << "D1" << endl;
-  strm << "\t" << SCF_Laplacian_PsiRatio << endl;
-
-  // print the GradPsiRatio excluding the Jastrow
-  strm << "D2" << endl;
-
-  for(int i=0; i<Input->WF.getNumberElectrons(); i++)
-    {
-      for(int j=0; j<3; j++)
-        {
-          strm << "\t" << SCF_Grad_PsiRatio(i,j);
-        }
-      strm << endl;
-    }
-
-  strm << "lnJ\t" << endl;
-  strm << "\t" << Jastrow.getLnJastrow(which) << endl;
-  strm << "PE\t" << endl;
-  strm << "\t" << PE.getEnergy(which) << endl;
 }
 
 bool QMCFunctions::isSingular(int walker)

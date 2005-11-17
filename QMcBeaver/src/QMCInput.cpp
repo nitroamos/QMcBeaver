@@ -37,6 +37,10 @@ void QMCInput::read(string inputfile)
 
  JP.read(Molecule.NucleiTypes,flags.link_Jastrow_parameters,
 	 WF.getNumberAlphaElectrons(),WF.getNumberBetaElectrons(),inputfile);
+   
+ outputer = QMCConfigIO(WF.getNumberElectrons());
+ if( flags.optimize_Psi || flags.print_configs == 1 )
+   outputer.open(flags.config_file_name,true);
 }
 
 ostream& operator<<(ostream & strm, QMCInput & Input)

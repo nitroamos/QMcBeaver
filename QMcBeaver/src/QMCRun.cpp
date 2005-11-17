@@ -207,12 +207,6 @@ void QMCRun::calculateObservables()
                          getNumberOfWalkers());
 }
 
-void QMCRun::writeCorrelatedSamplingConfigurations(ostream& strm)
-{
-  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
-    wp->writeCorrelatedSamplingConfiguration(strm);
-}
-
 void QMCRun::writeEnergies(ostream& strm)
 {
   // Get the energy calculated in each walker and write out
