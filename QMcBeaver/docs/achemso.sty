@@ -1,0 +1,72 @@
+%%
+%% This is file `achemso.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% achemso.dtx  (with options: `paketkod')
+%% 
+%% Copyright (c) 1995-98 by Mats Dahlgren <matsd@sssk.se>.
+%% All rights reserved.  See the file `achemso.ins' for information
+%% on how you may (re-)distribute the `achemso' package files.
+%% You are not allowed to make any changes to this file without
+%% explicit permission from the author.
+%% 
+\NeedsTeXFormat{LaTeX2e}[1995/12/01]
+\ProvidesPackage{achemso}[1998/06/01 version 1.0.]
+\def\achemsover{\texttt{achemso} version 1.0 (1998/06/01)}
+\newif \ifsctnnmbr \sctnnmbrfalse
+\newif \iflst      \lstfalse
+\DeclareOption{note}{\renewcommand{\refname}{References and Notes}}
+\DeclareOption{number}{\global\sctnnmbrtrue}
+\DeclareOption{list}{\global\lsttrue}
+\DeclareOption*{\OptionNotUsed}
+\ProcessOptions
+\RequirePackage[nospace]{overcite}
+\iflst
+  \bibliographystyle{achemsol}
+  \if@twocolumn
+  \else
+    \reversemarginpar
+  \fi
+  \def\@bibitem#1{\item\if@filesw \immediate\write\@auxout
+    {\string\bibcite{#1}{\the\value{\@listctr}}}\fi\ignorespaces
+     \@showtag{#1}}
+  \def\@lbibitem[#1]#2{\item[\@biblabel{#1}\hfill]\if@filesw
+    {\let\protect\noexpand
+     \immediate
+     \write\@auxout{\string\bibcite{#2}{#1}}}\fi\ignorespaces
+     \@showtag{#2}}
+  \newcommand{\thecitetag}[1]{\fbox{\texttt{#1}}}
+  \def\@showtag#1{\@tempdima=\baselineskip
+    \addtolength{\@tempdima}{0.5ex}
+    \marginpar{\hfill\raisebox{-\@tempdima}[0pt][0pt]{\thecitetag{#1}}}}
+\else
+\bibliographystyle{achemso}
+\fi
+\renewenvironment{thebibliography}[1]
+     {\iflst \else \par\clearpage \fi
+      \ifsctnnmbr
+         \section{\refname
+          \@mkboth{\MakeUppercase\refname}{\MakeUppercase\refname}}%
+      \else
+         \section*{\refname
+          \@mkboth{\MakeUppercase\refname}{\MakeUppercase\refname}}%
+      \fi
+      \list{\@biblabel{\@arabic\c@enumiv}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \@openbib@code
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+      \sloppy\clubpenalty4000\widowpenalty4000%
+      \sfcode`\.\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+\def\@biblabel#1{#1.}
+%% 
+%%
+%% End of file `achemso.sty'.
