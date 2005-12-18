@@ -124,7 +124,7 @@ public:
   ~QMCFunctions();
 
   /**
-    Initializes the object with the data controling the QMC calculation.
+    Initializes the object with the data controlling the QMC calculation.
 
     @param input input data for the calculation
   */
@@ -139,8 +139,8 @@ public:
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
     @param data all the data that a QMCWalker should require
-    @param writeConfig if the program is writing configs, we need to know here. if true,
-    the walkerData.configOutput will be given it's info
+    @param writeConfig if the program is writing configs, we need to know here.
+    if true, the walkerData.configOutput will be given its info
   */
   void evaluate(Array2D<double> &X, QMCWalkerData & data);
   void evaluate(Array1D<QMCWalkerData *> &walkerData, 
@@ -156,6 +156,8 @@ public:
  private:
   QMCInput *Input; 
  
+  int nalpha, nbeta;
+
   /**
      Corresponding to QMCFunction's ability to process several walkers 
      simultaneously, each QMCSlater object is able to do the same in analogous

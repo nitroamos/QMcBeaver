@@ -906,8 +906,8 @@ void QMCWalker::initialize(QMCInput *INPUT)
 
 void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
                           Array1D<double> &pll_spin, Array1D<double> &opp_spin,
-		 Array2D<double> &alpha_density, Array2D<double> &beta_density,
-                                                           double &totalWeight)
+		                     Array1D< Array1D<double> > &alpha_density,
+                                      Array1D< Array1D<double> > &beta_density)
 {
   int nalpha = Input->WF.getNumberAlphaElectrons();
   int nbeta = Input->WF.getNumberBetaElectrons();
@@ -915,8 +915,8 @@ void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
   double dist = 0.0;
   int index = 0;
 
-  totalWeight += weight;
-  
+  // We calculate the distance between each same spin pair and record them in 
+  // the histogram.
   if (nalpha > 1)
     {
       for (int i=0; i<nalpha-1; i++)
@@ -948,7 +948,9 @@ void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
 	      }
           }
     }
-    
+
+  // We calculate the distance between each opposite spin pair and record them
+  // in the histogram.
   if (nalpha > 0 && nbeta > 0)
     {
       for (int i=0; i<nalpha; i++)
@@ -989,7 +991,7 @@ void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
 	  if (dist < max_pair_distance)
 	    {
 	      index = int(dist/dr);
-	      alpha_density(nuc_index,index) += weight;
+	      (alpha_density(nuc_index))(index) += weight;
 	    }
 	}
 
@@ -1001,7 +1003,7 @@ void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
 	  if (dist < max_pair_distance)
 	    {
 	      index = int(dist/dr);
-	      beta_density(nuc_index,index) += weight;
+	      (beta_density(nuc_index))(index) += weight;
 	    }
 	}
     }

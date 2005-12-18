@@ -1,3 +1,17 @@
+Wed, 7 Dec 2005, Daniel R. Fisher
+
+1. Modified the way that the electron density histograms are collected
+   so that only one file is written out, instead of one for every
+   processor.  The histograms are now collected at the MPI_Reduce
+   interval and written out by the root processor.  
+2. Changed the way that the multiconfiguration trial functions are
+   created.  In the output of a GAMESS MCSCF calculation, the CI
+   expansion does not correspond to the orbitals written in the data
+   file.  To get the right coefficients, run a calculation with
+   SCFTYP=NONE and CITYP=ALDET with the natural orbitals of a
+   converged MCSCF calculation as the read in $VEC.  Then run
+   gamess2qmcbeaver.py on the output of the CI calculation.
+
 Wed, 16 Nov 2005, Amos Anderson
 1. Modified the way configuration files are handled. It is all handled by
    a new class, QMCConfigIO, which allows you to choose whether it is

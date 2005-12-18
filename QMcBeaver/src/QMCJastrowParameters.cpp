@@ -403,7 +403,6 @@ Array1D<double> QMCJastrowParameters::getParameters()
   return ParamVect;
 }
 
-
 Array1D<Complex> QMCJastrowParameters::getPoles()
 {
   list<Complex> allPoles;
@@ -481,22 +480,18 @@ Array1D<Complex> QMCJastrowParameters::getPoles()
   return results;
 }
 
-
 void QMCJastrowParameters::read(Array1D<string> & nucleitypes, 
 				bool linkparams, int nelup, int neldn, 
 				string runfile)
 {
   // Set the internal variable telling if the electrons of different spins
   // should use the same parameters
-
   EquivalentElectronUpDownParams = linkparams;
 
   // Save an array containing all of nuclei types
-
   NucleiTypes = nucleitypes;
 
   // Save the number of up and down electrons
-
   NumberOfElectronsUp = nelup;
   NumberOfElectronsDown = neldn;
 
@@ -538,33 +533,23 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
   EupNuclear.allocate( NucleiTypes.dim1() );
 
   if( NumberOfElectronsDown > 0 )
-    {
-      EdnNuclear.allocate( NucleiTypes.dim1() );
-    }
+    EdnNuclear.allocate( NucleiTypes.dim1() );
 
   // Determine the number of correlation functions
 
   int NumberOfCorrelationFunctions = NucleiTypes.dim1();
   
   if( NumberOfElectronsDown > 0 )
-    {
-      NumberOfCorrelationFunctions += NucleiTypes.dim1();
-    }
+    NumberOfCorrelationFunctions += NucleiTypes.dim1();
 
   if( NumberOfElectronsUp >0 && NumberOfElectronsDown > 0 )
-    {
-      NumberOfCorrelationFunctions++;
-    }
+    NumberOfCorrelationFunctions++;
 
   if( NumberOfElectronsUp > 1 )
-    {
-      NumberOfCorrelationFunctions++;
-    }
+    NumberOfCorrelationFunctions++;
 
   if( NumberOfElectronsDown > 1 )
-    {
-      NumberOfCorrelationFunctions++;
-    }
+    NumberOfCorrelationFunctions++;
 
   // Load in the correlation functions
 
@@ -601,14 +586,12 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 	  else
 	    {
 	      // eup - nuclear
-
 	      for( int j=0; j<NucleiTypes.dim1(); j++ )
-		{
-		  if( NucleiTypes(j) == CP.getParticle2Type() )
+		if( NucleiTypes(j) == CP.getParticle2Type() )
 		    {
 		      EupNuclear(j) = CP;
+		      break;
 		    }
-		}
 	    }
 	}
       else
@@ -627,22 +610,19 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 	  else
 	    {
 	      // edn - nuclear
-
 	      for( int j=0; j<NucleiTypes.dim1(); j++ )
-		{
-		  if( NucleiTypes(j) == CP.getParticle2Type() )
-		    {
-		      if( NumberOfElectronsDown < 1 )
-			{
-			  cerr << "ERROR: Electron_down-Nuclear correlation "
-			       << "function loaded when one does not belong!"
-			       << endl;
-			  exit(0);
-			}
-
-		      EdnNuclear(j) = CP;
-		    }
-		}
+		if( NucleiTypes(j) == CP.getParticle2Type() )
+		  {
+		    if( NumberOfElectronsDown < 1 )
+		      {
+			cerr << "ERROR: Electron_down-Nuclear correlation "
+			     << "function loaded when one does not belong!"
+			     << endl;
+			exit(0);
+		      }
+		    EdnNuclear(j) = CP;
+		    break;
+		  }
 	    }
 	}
     }
@@ -654,7 +634,7 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
     {
       // Now set the things equal that need to be
 
-      if( NumberOfElectronsUp > 1 )
+      if( NumberOfElectronsUp > 1 && NumberOfElectronsDown > 1 )
 	{
 	  EdnEdn = EupEup;
 	  EdnEdn.setParticle1Type("Electron_down");
@@ -664,11 +644,8 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
       if( NumberOfElectronsDown > 0 )
 	{
 	  EdnNuclear = EupNuclear;
-	}
-
-      for(int i=0; i<EdnNuclear.dim1(); i++)
-	{
-	  EdnNuclear(i).setParticle1Type("Electron_down");
+	  for (int i=0; i<EdnNuclear.dim1(); i++)
+	    EdnNuclear(i).setParticle1Type("Electron_down");
 	}
     }
 }

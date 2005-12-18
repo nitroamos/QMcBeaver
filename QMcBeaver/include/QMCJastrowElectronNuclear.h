@@ -45,7 +45,7 @@ class QMCJastrowElectronNuclear
 {
 public:
   /**
-    Initializes the class with the data controling the calculation. 
+    Initializes the class with the data controlling the calculation. 
     
     @param input input data for the calculation
     */

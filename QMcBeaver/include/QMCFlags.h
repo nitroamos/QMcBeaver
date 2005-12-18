@@ -540,12 +540,6 @@ class QMCFlags
   int write_electron_densities;
 
   /**
-     The interval at which the pair density histograms are to be written out to
-     files.
-  */
-  int write_electron_densities_interval;
-
-  /**
      Are Chip and Mike cool?  Answer: Yea Baby!
   */
   string chip_and_mike_are_cool;

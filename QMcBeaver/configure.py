@@ -37,7 +37,6 @@
 import os
 import os.path
 import string
-import platform
 
 ####################### Define Compilers ####################
 
@@ -408,10 +407,7 @@ class CommandLineArgs:
         self.gpu = 0
         self.vtune = 0
         self.TAG = ''
-        if "CYGWIN" in platform.system():
-          self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).exe'
-        else:
-          self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).x'
+        self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).x'
         self.MAKE = self._getMake()
 
         if len(sys.argv) > 1 and sys.argv[1][0:2] != '--':

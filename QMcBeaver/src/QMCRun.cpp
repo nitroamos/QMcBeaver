@@ -140,30 +140,44 @@ void QMCRun::initialize(QMCInput *INPUT)
       max_pair_distance = 20.0/max_Z;
       dr = max_pair_distance/5000;
       
-      total_sample_weight = 0.0;
-
       // Histograms for parallel and opposite spin electron densities.
-      pll_spin_histogram.allocate(5000);
-      opp_spin_histogram.allocate(5000);
+	  int nalpha = Input->WF.getNumberAlphaElectrons();
+	  int nbeta = Input->WF.getNumberBetaElectrons();
 
-      for (int i=0; i<5000; i++)
-        {
-          pll_spin_histogram(i) = 0.0;
-          opp_spin_histogram(i) = 0.0;
-        }
+	  if (nalpha > 1 || nbeta > 1)
+	    {
+	      pllSpinHistogram.allocate(5000);
+	      pllSpinHistogram = 0.0;
+	    }
+	  
+	  if (nalpha > 0 && nbeta > 0)
+	    {
+	      oppSpinHistogram.allocate(5000);
+	      oppSpinHistogram = 0.0;
+	    }
 
       // Histograms for the one electron densities.
       int nucleiTypes = Input->Molecule.NucleiTypes.dim1();
 
-      alpha_density_histogram.allocate(nucleiTypes,5000);
-      beta_density_histogram.allocate(nucleiTypes,5000);
-      
-      for (int i=0; i<nucleiTypes; i++)
-	for (int j=0; j<nucleiTypes; j++)
-	  {
-	    alpha_density_histogram(i,j) = 0.0;
-	    beta_density_histogram(i,j) = 0.0;
-	  }
+	  if (nalpha > 0)
+	    {
+	      alphaHistograms.allocate(nucleiTypes);
+	      for (int k=0; k<nucleiTypes; k++)
+		{
+		  alphaHistograms(k).allocate(5000);
+		  alphaHistograms(k) = 0.0;
+		}
+	    }
+
+	  if (nbeta > 0)
+	    {
+	      betaHistograms.allocate(nucleiTypes);
+	      for (int k=0; k<nucleiTypes; k++)
+		{
+		  betaHistograms(k).allocate(5000);
+		  betaHistograms(k) = 0.0;
+		}
+	    }
     }
 
   if (Input->flags.use_hf_potential == 1)
@@ -218,163 +232,33 @@ void QMCRun::writeEnergies(ostream& strm)
 void QMCRun::calculateElectronDensities()
 {
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
-    wp->calculateElectronDensities(max_pair_distance, dr, pll_spin_histogram,
-           opp_spin_histogram, alpha_density_histogram, beta_density_histogram,
-		 		                          total_sample_weight);
+        wp->calculateElectronDensities(max_pair_distance, dr, pllSpinHistogram,
+		            oppSpinHistogram, alphaHistograms, betaHistograms);
 }
 
-void QMCRun::writeElectronDensityHistograms()
+Array1D<double>* QMCRun::getPllSpinHistogram()
 {
-  // Write out the electron density histograms for this processor.
+  return &pllSpinHistogram;
+}
 
-#define PI 3.14159265359
-  
-  int nalpha = Input->WF.getNumberAlphaElectrons();
-  int nbeta = Input->WF.getNumberBetaElectrons();
+Array1D<double>* QMCRun::getOppSpinHistogram()
+{
+  return &oppSpinHistogram;
+}
 
-  char my_rank_string[32];
-  int my_rank = Input->flags.my_rank;
+Array1D< Array1D<double> >* QMCRun::getAlphaHistograms()
+{
+  return &alphaHistograms;
+}
 
-  string baseFileName = Input->flags.base_file_name;
+Array1D< Array1D<double> >* QMCRun::getBetaHistograms()
+{
+  return &betaHistograms;
+}
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-  _snprintf( my_rank_string, 32, "%d", my_rank );
-#else
-  snprintf( my_rank_string, 32, "%d", my_rank );
-#endif
-  
-  double rValue;
-  double normalHist;
-  double dividedHist;
-  double orbital;
-
-  if (nalpha > 1 || nbeta > 1)
-    {
-      string pll_spin_filename = baseFileName + ".pll_pair_density." + 
-	my_rank_string;
-      ofstream * pll_spin_strm = new ofstream(pll_spin_filename.c_str());
-      pll_spin_strm->precision(15);
-
-      *pll_spin_strm << "#\t" <<  total_sample_weight << endl;
-
-      // Count number of same spin pairs.
-      int sameSpinPairs = nalpha*(nalpha-1)/2 + nbeta*(nbeta-1)/2;
-      double normFactor = sameSpinPairs*total_sample_weight;
-      
-      for (int i=0; i<pll_spin_histogram.dim1(); i++)
-        {
-	  rValue = (i+0.5)*dr;
-	  normalHist = pll_spin_histogram(i)/normFactor;
-	  dividedHist = normalHist/(4*PI*rValue*rValue*dr);
-	  orbital = sqrt(dividedHist);
-	  *pll_spin_strm << rValue << "\t" << pll_spin_histogram(i) << "\t";
-	  *pll_spin_strm << normalHist << "\t" << dividedHist << "\t";
-	  *pll_spin_strm << orbital << endl;
-        }
-      delete pll_spin_strm;
-      pll_spin_strm = 0;
-    }
-    
-  if (nalpha > 0 && nbeta > 0)
-    {
-      string opp_spin_filename = baseFileName + ".opp_pair_density." 
-	+ my_rank_string;
-      ofstream * opp_spin_strm = new ofstream(opp_spin_filename.c_str());
-      opp_spin_strm->precision(15);
-      
-      *opp_spin_strm << "#\t" << total_sample_weight << endl;
-
-      // Count number of opposite spin pairs.
-      int oppSpinPairs = nalpha*nbeta;
-      double normFactor = oppSpinPairs*total_sample_weight;
-
-      for (int i=0; i<opp_spin_histogram.dim1(); i++)
-        {
-	  rValue = (i+0.5)*dr;
-	  normalHist = opp_spin_histogram(i)/normFactor;
-	  dividedHist = normalHist/(4*PI*rValue*rValue*dr);
-	  orbital = sqrt(dividedHist);
-	  *opp_spin_strm << rValue << "\t" << opp_spin_histogram(i) << "\t";
-	  *opp_spin_strm << normalHist << "\t" << dividedHist << "\t";
-	  *opp_spin_strm << orbital << endl;
-        }
-      delete opp_spin_strm;
-      opp_spin_strm = 0;
-    }
-
-  if (nalpha > 0 || nbeta > 0)
-    {
-      int nucleiTypes = Input->Molecule.NucleiTypes.dim1();
-      string nucleusType;
-
-      // Write out one electron densities.
-      for (int i=0; i<nucleiTypes; i++)
-	{
-	  nucleusType = Input->Molecule.NucleiTypes(i);
-
-	  // Count how many nuclei are of this type.
-	  int count = 0;
-	  for (int j=0; j<Input->flags.Natoms; j++)
-	    if (Input->Molecule.Atom_Labels(j) == nucleusType)
-	      count++;
-
-	  if (nalpha > 0)
-	    {
-	      string alpha_filename = baseFileName + "." + nucleusType + 
-		"-alpha.density." + my_rank_string;
-
-	      ofstream * alpha_strm = new ofstream(alpha_filename.c_str());
-	      alpha_strm->precision(15);
-
-	      *alpha_strm << "#\t" << total_sample_weight << endl;
-
-	      int numberPairs = count*nalpha;
-	      double normFactor = numberPairs*total_sample_weight;
-
-	      for (int j=0; j<alpha_density_histogram.dim2(); j++)
-		{
-		  rValue = (j+0.5)*dr;
-		  normalHist = alpha_density_histogram(i,j)/normFactor;
-		  dividedHist = normalHist/(4*PI*rValue*rValue*dr);
-		  orbital = sqrt(dividedHist);
-		  *alpha_strm << rValue << "\t";
-		  *alpha_strm << alpha_density_histogram(i,j) << "\t";
-		  *alpha_strm << normalHist << "\t" << dividedHist << "\t";
-		  *alpha_strm << orbital << endl;
-		}
-	      delete alpha_strm;
-	      alpha_strm = 0;
-	    }
-
-	  if (nbeta > 0)
-	    {
-	      string beta_filename = baseFileName + "." + nucleusType + 
-		"-beta.density." + my_rank_string;
-
-	      ofstream * beta_strm = new ofstream(beta_filename.c_str());
-	      beta_strm->precision(15);
-	      
-	      *beta_strm << "#\t" << total_sample_weight << endl;
-
-	      int numberPairs = count*nbeta;
-	      double normFactor = numberPairs*total_sample_weight;
-
-	      for (int j=0; j<beta_density_histogram.dim2(); j++)
-		{
-		  rValue = (j+0.5)*dr;
-		  normalHist = beta_density_histogram(i,j)/normFactor;
-		  dividedHist = normalHist/(4*PI*rValue*rValue*dr);
-		  orbital = sqrt(dividedHist);
-		  *beta_strm << rValue << "\t" << beta_density_histogram(i,j);
-		  *beta_strm << "\t" << normalHist << "\t" << dividedHist;
-		  *beta_strm << "\t" << orbital << endl;
-		}
-	      delete beta_strm;
-	      beta_strm = 0;
-	    }
-	}
-    }
-#undef PI
+double QMCRun::getdr()
+{
+  return dr;
 }
 
 void QMCRun::unitWeightBranching()

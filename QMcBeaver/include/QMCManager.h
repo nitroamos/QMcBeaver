@@ -183,6 +183,30 @@ class QMCManager
   ofstream *qmcOut;
 
   /**
+     Storage location for the global parallel spin histogram on the root node 
+     and scratch space on other nodes.
+  */
+  Array1D<double> pllSpinHistogram_total;
+
+  /**
+     Storage location for the global opposite spin histogram on the root node
+     and scratch space on other nodes.
+  */
+  Array1D<double> oppSpinHistogram_total;
+
+  /**
+     Storage location for the global alpha one electron histograms on the root
+     node and scratch space on other nodes.
+  */
+  Array1D< Array1D<double> > alphaHistograms_total;
+
+  /**
+     Storage location for the global beta one electron histograms on the root
+     node and scratch space on other nodes.
+  */
+  Array1D< Array1D<double> > betaHistograms_total;
+
+  /**
      Initializes MPI on this processor for a parallel calculation.
   */ 
   void initializeMPI();
@@ -241,6 +265,16 @@ class QMCManager
      processors and saves the result in Properties_total.
   */
   void gatherDensities();
+
+  /**
+     Gathers the electron density histograms from all the processors.
+  */
+  void gatherHistograms();
+
+  /**
+     Writes out the electron density histograms to files.
+  */
+  void writeElectronDensityHistograms();
 
   /**
      The global results are collected and sent to all processors, where they 

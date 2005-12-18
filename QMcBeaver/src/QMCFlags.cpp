@@ -106,7 +106,6 @@ void QMCFlags::read_flags(string InFileName)
   equilibrate_first_opt_step     = 1;
   write_all_energies_out         = 0;
   write_electron_densities           = 0;
-  write_electron_densities_interval  = 10000;
   chip_and_mike_are_cool         = "false";
 
   use_hf_potential               = 0;
@@ -454,11 +453,6 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           write_electron_densities = atoi(temp_string.c_str());
         }
-      else if(temp_string == "write_electron_densities_interval")
-        {
-          input_file >> temp_string;
-          write_electron_densities_interval = atoi(temp_string.c_str());
-        }
       else if(temp_string == "write_all_energies_out")
         {
           input_file >> temp_string;
@@ -715,8 +709,6 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   << flags.population_control_parameter << endl;
   strm << "write_electron_densities\n " << flags.write_electron_densities 
   << endl;
-  strm << "write_electron_densities_interval\n "
-  << flags.write_electron_densities_interval << endl;
   strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
   strm << "zero_out_checkpoint_statistics\n "
   << flags.zero_out_checkpoint_statistics << endl;

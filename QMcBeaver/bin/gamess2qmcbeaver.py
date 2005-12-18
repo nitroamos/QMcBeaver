@@ -80,11 +80,16 @@ IN2.close()
 Outfile = sys.argv[1][0:len(sys.argv[1])-7] + "ckmf"
 OUT = open(Outfile,'w')
 
-# Get the SCF type and run type of the calculation.  Usable SCF types are RHF,
-# UHF, ROHF, and MCSCF.  Usable run types are ENERGY and OPTIMIZE.
+# Get the SCF type, run type, and CI type of the calculation.  Usable run types
+# are ENERGY and OPTIMIZE.    Usable SCF types are RHF, UHF, ROHF, and NONE.
+# To make a multideterminant trial function, do a MCSCF calculation, then do a
+# calculation with SCFTYP=NONE and CITYP=ALDET with the natural orbitals of the
+# MCSCF as the read in $VEC.  This will provide the right CI expansion
+# coefficients for the MCSCF wavefunction.
 
 run_type = "ENERGY"
 scf_type = "RHF"
+ci_type  = "NONE"
 
 # Get run type and scf type
 
@@ -96,6 +101,8 @@ for line in gamess_output:
                 scf_type = element[7:len(element)]
             elif string.find(element,'RUNTYP=') != -1:
                 run_type = element[7:len(element)]
+            elif string.find(element,'CITYP=') != -1:
+                ci_type = element[6:len(element)]
 
 #################### EXTRACT GEOMETRY: START ####################
 
@@ -248,10 +255,29 @@ if scf_type == "RHF":
             energy = energy_data[j+1]
             energy = energy[0:len(energy)-1]
             break
-
-    for i in range(len(gamess_data)):
+    for i in range(energy_line,len(gamess_data)):
         if string.find(gamess_data[i],'$VEC') != -1:
             start_wavefunction = i+1
+            break
+    for j in range(start_wavefunction,len(gamess_data)):
+        if string.find(gamess_data[j],'$END') != -1:
+            end_wavefunction = j
+            break
+
+elif scf_type == "ROHF":
+    for i in range(len(gamess_data)):
+        if string.find(gamess_data[i],'E(ROHF)=') != -1:
+            energy_line = i
+    energy_data = string.split(gamess_data[energy_line])
+    for j in range(len(energy_data)):
+        if (energy_data[j] == "E(ROHF)="):
+            energy = energy_data[j+1]
+            energy = energy[0:len(energy)-1]
+            break
+    for i in range(energy_line,len(gamess_data)):
+        if string.find(gamess_data[i],'$VEC') != -1:
+            start_wavefunction = i+1
+            break
     for j in range(start_wavefunction,len(gamess_data)):
         if string.find(gamess_data[j],'$END') != -1:
             end_wavefunction = j
@@ -267,40 +293,36 @@ elif scf_type == "UHF":
             energy = energy_data[j+1]
             energy = energy[0:len(energy)-1]
             break
-
-    for i in range(len(gamess_data)):
+    for i in range(energy_line,len(gamess_data)):
         if string.find(gamess_data[i],'$VEC') != -1:
             start_wavefunction = i+1
+            break
     for j in range(start_wavefunction,len(gamess_data)):
         if string.find(gamess_data[j],'$END') != -1:
             end_wavefunction = j
             break
 
-elif scf_type == "MCSCF":
+elif scf_type == "NONE" and ci_type == "ALDET":
 
     for i in range(len(gamess_data)):
-
-        if string.find(gamess_data[i],'NATURAL ORBITALS') != -1:
-            start_mc = i
-
-    for j in range(start_mc,len(gamess_data)):
-        if string.find(gamess_data[j],'E(MCSCF)=') != -1:
-            energy_line = string.split(gamess_data[j])
-            for k in range(len(energy_line)):
-                if (energy_line[k] == "E(MCSCF)="):
-                    energy = energy_line[k+1]
-                    energy = energy[0:len(energy)-1]
-                    break
+        if string.find(gamess_data[i],'NO-S OF CI') != -1:
+            energy_line = i
+    energy_data = string.split(gamess_data[energy_line])
+    for j in range(len(energy_data)):
+        if (energy_data[j] == "E="):
+            energy = energy_data[j+1]
+            break
+    for i in range(energy_line,len(gamess_data)):
+        if string.find(gamess_data[i],'$VEC') != -1:
+            start_wavefunction = i+1
+            break
+    for j in range(start_wavefunction,len(gamess_data)):
+        if string.find(gamess_data[j],'$END') != -1:
+            end_wavefunction = j
             break
 
-    for j in range(start_mc,len(gamess_data)):
-        if string.find(gamess_data[j],'$VEC') != -1:
-            start_wavefunction = j+1
-            break
-    for k in range(start_wavefunction,len(gamess_data)):
-        if string.find(gamess_data[k],'$END') != -1:
-            end_wavefunction = k
-            break
+else:
+    print "SCFTYP", scf_type, "is not supported."
 
 # Get the wavefunction parameters from the .dat file.
 
@@ -347,11 +369,18 @@ elif scf_type == "UHF":
     trialFunctionType = "unrestricted"
 
     current_index = 1
+
+    alpha_only = 0
+
     m = start_wavefunction+1
     temp_coeffs = orbital_coeffs[0]
+
     while 1:
         wavefunction_line = string.split(gamess_data[m])
-        if string.atoi(wavefunction_line[0]) == current_index:
+        if wavefunction_line[0] == "$END":
+            alpha_only = 1
+            break
+        elif string.atoi(wavefunction_line[0]) == current_index:
             temp_coeffs = temp_coeffs + orbital_coeffs[m-start_wavefunction]
         elif string.atoi(wavefunction_line[0]) > current_index:
             alpha_orbitals.append(temp_coeffs)
@@ -362,10 +391,14 @@ elif scf_type == "UHF":
             break
         else:
             m = m+1
-    current_index = 1
-    m = m+1
-    temp_coeffs = orbital_coeffs[m-start_wavefunction-1]
+
+    if alpha_only == 0:
+        current_index = 1
+        m = m+1
+        temp_coeffs = orbital_coeffs[m-start_wavefunction-1]
     while 1:
+        if alpha_only == 1:
+            break
         wavefunction_line = string.split(gamess_data[m])
         if string.atoi(wavefunction_line[0]) == current_index:
             temp_coeffs = temp_coeffs + orbital_coeffs[m-start_wavefunction]
@@ -382,8 +415,8 @@ elif scf_type == "UHF":
 
 # Get the occupation and CI coefficents.
 
-# RHF and UHF have one determinant.
-if scf_type != "MCSCF":
+# RHF, ROHF, and UHF have one determinant.
+if ci_type != "ALDET":
     AlphaOccupation = [0]
     BetaOccupation = [0]
     AlphaOccupation[0] = range(norbitals)
@@ -402,26 +435,19 @@ if scf_type != "MCSCF":
     ndeterminants = 1
     CI_coeffs = [1]
 
-elif scf_type == "MCSCF":
+elif scf_type == "NONE" and ci_type == "ALDET":
+    core_line_number = -1
     for i in range(len(gamess_output)):
         if string.find(gamess_output[i],'NUMBER OF CORE ORBITALS') != -1:
-            core_line = string.split(gamess_output[i])
+            core_line_number = i
+            core_line = string.split(gamess_output[core_line_number])
             ncore = string.atoi(core_line[5])
             break
 
-    if run_type == "ENERGY":
-
-        for i in range(len(gamess_output)):
-            if string.find(gamess_output[i],'FINAL MCSCF ENERGY') != -1:
-                start_mc_data = i
-                break
-
-    elif run_type == "OPTIMIZE":
-
-        for i in range(start_geometry,len(gamess_output)):
-            if string.find(gamess_output[i],'STATE   1  ENERGY=') != -1:
-                start_mc_data = i
-                break
+    for i in range(core_line_number,len(gamess_output)):
+        if string.find(gamess_output[i],'ENERGY=') != -1:
+            start_mc_data = i
+            break
 
     for j in range(start_mc_data,len(gamess_output)):
         if string.find(gamess_output[j],'ALPH') != -1:
@@ -429,11 +455,8 @@ elif scf_type == "MCSCF":
             break
     
     for i in range(start_ci,len(gamess_output)):
-        if string.find(gamess_output[i],'DENSITY MATRIX') != -1:
-            end_ci = i-1
-            break
-        elif string.find(gamess_output[i],'ENERGY COMPONENTS') != -1:
-            end_ci = i-2
+        if string.find(gamess_output[i],'DONE WITH DETERMINANT CI') != -1:
+            end_ci = i
             break
 
     ndeterminants = end_ci - start_ci
@@ -459,6 +482,9 @@ elif scf_type == "MCSCF":
         for j in range(len(alpha_occ)):
             AlphaOccupation[i][j+ncore] = string.atoi(alpha_occ[j])
             BetaOccupation[i][j+ncore] = string.atoi(beta_occ[j])
+        for k in range(len(alpha_occ)+ncore,norbitals):
+            AlphaOccupation[i][k] = 0
+            BetaOccupation[i][k] = 0
 
 ##################  PRINT FLAGS: BEGIN    ########################
 
@@ -641,13 +667,24 @@ elif scf_type == "UHF":
             if (j+1)%3 == 0:
                 OUT.write('\n')
         OUT.write('\n\n')
-    OUT.write("Beta Molecular Orbitals\n\n")
-    for i in range(norbitals):
-        for j in range(nbasisfunc):
-            OUT.write('\t%s'%beta_orbitals[i][j])
-            if (j+1)%3 == 0:
-                OUT.write('\n')
-        OUT.write('\n\n')
+
+    if alpha_only == 0:
+        OUT.write("Beta Molecular Orbitals\n\n")
+        for i in range(norbitals):
+            for j in range(nbasisfunc):
+                OUT.write('\t%s'%beta_orbitals[i][j])
+                if (j+1)%3 == 0:
+                    OUT.write('\n')
+            OUT.write('\n\n')
+
+    elif alpha_only == 1:
+        OUT.write("Beta Molecular Orbitals\n\n")
+        for i in range(norbitals):
+            for j in range(nbasisfunc):
+                OUT.write('\t%s'%alpha_orbitals[i][j])
+                if (j+1)%3 == 0:
+                    OUT.write('\n')
+            OUT.write('\n\n')        
 
 OUT.write("Alpha Occupation\n")
 for i in range(ndeterminants):

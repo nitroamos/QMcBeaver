@@ -298,6 +298,7 @@ double MathFunctions::gamma_series(double a, double x)
       return sum * exp(-x + a * log(x));
   }
   printf("a too large, ITMAX too small in routine gamma_series.\n"); exit(1);
+  return 0.0;
 }
 
 double MathFunctions::gamma_cf(double a, double x)

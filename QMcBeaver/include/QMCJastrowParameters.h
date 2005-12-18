@@ -25,7 +25,7 @@ using namespace std;
 
 
 /**
-  This class contains all of the parameters and corelation functons from 
+  This class contains all of the parameters and correlation functons from 
   which the Jastrow function is composed.
  
   The wavefunction is assumed to be of the form
@@ -90,7 +90,6 @@ public:
     @return up-down electron interaction parameters
   */
   QMCCorrelationFunctionParameters * getElectronUpElectronDownParameters();
-
 
   /**
     Gets the QMCCorrelationFunctionParameters describing up-up electron

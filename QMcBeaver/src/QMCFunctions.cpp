@@ -13,7 +13,10 @@
 #include "QMCFunctions.h"
 
 QMCFunctions::QMCFunctions()
-{}
+{
+  nalpha = 0;
+  nbeta = 0;
+}
 
 QMCFunctions::QMCFunctions(QMCInput *INPUT, QMCHartreeFock *HF)
 {
@@ -40,6 +43,9 @@ void QMCFunctions::operator=(const QMCFunctions & rhs )
 {
   Input = rhs.Input;
 
+  nalpha = rhs.nalpha;
+  nbeta  = rhs.nbeta;
+
   Alpha = rhs.Alpha;
   Beta  = rhs.Beta;
 
@@ -57,11 +63,17 @@ void QMCFunctions::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
 {
   Input = INPUT;
 
-  Alpha.initialize(Input,0,Input->WF.getNumberAlphaElectrons()-1,
-		   &Input->WF.AlphaOccupation,&Input->WF.AlphaCoeffs);
-  Beta.initialize(Input,Input->WF.getNumberAlphaElectrons(),
-		  Input->WF.getNumberElectrons()-1,&Input->WF.BetaOccupation,
-		  &Input->WF.BetaCoeffs);
+  nalpha = Input->WF.getNumberAlphaElectrons();
+  nbeta  = Input->WF.getNumberBetaElectrons();
+
+  if (nalpha > 0)
+    Alpha.initialize(Input,0,Input->WF.getNumberAlphaElectrons()-1,
+		     &Input->WF.AlphaOccupation,&Input->WF.AlphaCoeffs);
+
+  if (nbeta > 0)
+    Beta.initialize(Input,Input->WF.getNumberAlphaElectrons(),
+                    Input->WF.getNumberElectrons()-1,&Input->WF.BetaOccupation,
+		    &Input->WF.BetaCoeffs);
 
   PE.initialize(Input,HF);
   Jastrow.initialize(Input);
@@ -73,37 +85,42 @@ void QMCFunctions::evaluate(Array1D<QMCWalkerData *> &walkerData,
                             Array1D<Array2D<double> * > &xData,
                             int num, bool writeConfigs)
 {
-  Alpha.update_Ds(xData,num);
-  Beta.update_Ds(xData,num);
+  if (nalpha > 0)
+    {
+      Alpha.update_Ds(xData,num);
+      Alpha.evaluate(num);
+    }
+
+  if (nbeta > 0)
+    {
+      Beta.update_Ds(xData,num);
+      Beta.evaluate(num);
+    }
+
   Jastrow.evaluate(xData,num);
   PE.evaluate(xData,num);
-  Alpha.evaluate(num);
-  Beta.evaluate(num);
 
   for(int i=0; i<num; i++)
     {
-      calculate_Psi_quantities((*walkerData(i)).gradPsiRatio,
-                               (*walkerData(i)).chiDensity, i);
+      calculate_Psi_quantities(walkerData(i)->gradPsiRatio,
+                               walkerData(i)->chiDensity, i);
       calculate_Modified_Grad_PsiRatio(*xData(i),
-                                       (*walkerData(i)).modifiedGradPsiRatio,
-                                       (*walkerData(i)).gradPsiRatio);
+                                       walkerData(i)->modifiedGradPsiRatio,
+                                       walkerData(i)->gradPsiRatio);
       calculate_E_Local(i);
 
-      (*walkerData(i)).isSingular = isSingular(i);
-      (*walkerData(i)).localEnergy = getLocalEnergy();
-      (*walkerData(i)).kineticEnergy = getKineticEnergy();
-      (*walkerData(i)).potentialEnergy = getPotentialEnergy(i);
-      (*walkerData(i)).neEnergy = getEnergyNE(i);
-      (*walkerData(i)).eeEnergy = getEnergyEE(i);
-      (*walkerData(i)).psi = getPsi();
+      walkerData(i)->isSingular = isSingular(i);
+      walkerData(i)->localEnergy = getLocalEnergy();
+      walkerData(i)->kineticEnergy = getKineticEnergy();
+      walkerData(i)->potentialEnergy = getPotentialEnergy(i);
+      walkerData(i)->neEnergy = getEnergyNE(i);
+      walkerData(i)->eeEnergy = getEnergyEE(i);
+      walkerData(i)->psi = getPsi();
 
       if(writeConfigs)
-        Input->outputer.writeCorrelatedSamplingConfiguration(
-          *xData(i),
-          SCF_Laplacian_PsiRatio,
-          SCF_Grad_PsiRatio,
-          Jastrow.getLnJastrow(i),
-          PE.getEnergy(i));
+        Input->outputer.writeCorrelatedSamplingConfiguration(*xData(i),
+              SCF_Laplacian_PsiRatio,SCF_Grad_PsiRatio,Jastrow.getLnJastrow(i),
+							      PE.getEnergy(i));
     }
 }
 
@@ -113,16 +130,24 @@ void QMCFunctions::evaluate(Array2D<double> &X, QMCWalkerData & data)
   temp.allocate(1);
   temp(0) = &X;
 
-  Alpha.update_Ds(temp,1);
-  Beta.update_Ds(temp,1);
-  Alpha.evaluate(1);
-  Beta.evaluate(1);
+  if (nalpha > 0)
+    {
+      Alpha.update_Ds(temp,1);
+      Alpha.evaluate(1);
+    }
+
+  if (nbeta > 0)
+    {
+      Beta.update_Ds(temp,1);
+      Beta.evaluate(1);
+    }
 
   Jastrow.evaluate(temp,1);
   PE.evaluate(temp,1);
 
   calculate_Psi_quantities(data.gradPsiRatio,data.chiDensity,0);
-  calculate_Modified_Grad_PsiRatio(X, data.modifiedGradPsiRatio, data.gradPsiRatio);
+  calculate_Modified_Grad_PsiRatio(X,data.modifiedGradPsiRatio,
+				   data.gradPsiRatio);
   calculate_E_Local(0);
 
   data.isSingular = isSingular(0);
@@ -134,8 +159,8 @@ void QMCFunctions::evaluate(Array2D<double> &X, QMCWalkerData & data)
   data.psi = getPsi();  
 }
 
-/*  we end up doing a division with SCF_sum. Therefore, it seems to be critical
-    to make sure we aren't dividing by too small a number*/
+//  We end up doing a division with SCF_sum. Therefore, it seems to be critical
+//  to make sure we aren't dividing by too small a number
 void QMCFunctions::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
     Array1D<double> & Chi_Density, int walker)
 {
@@ -143,23 +168,56 @@ void QMCFunctions::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
   SCF_Laplacian_PsiRatio = 0.0;
   Laplacian_PsiRatio = 0.0;
 
+  SCF_Grad_PsiRatio = 0.0;
+  Grad_PsiRatio = 0.0;
+
   Array1D<QMCGreensRatioComponent> termPsi;
   termPsi.allocate(Input->WF.getNumberDeterminants());
 
-  Array1D<double>* alphaPsi = Alpha.getPsi(walker);
-  Array1D<double>* alphaLaplacian = Alpha.getLaplacianPsiRatio(walker);
-  Array3D<double>* alphaGrad = Alpha.getGradPsiRatio(walker);
+  Array1D<double>* alphaPsi = 0;
+  Array1D<double>* alphaLaplacian = 0;
+  Array3D<double>* alphaGrad = 0;
 
-  Array1D<double>* betaPsi = Beta.getPsi(walker);
-  Array1D<double>* betaLaplacian = Beta.getLaplacianPsiRatio(walker);
-  Array3D<double>* betaGrad = Beta.getGradPsiRatio(walker);
+  Array1D<double> tempPsi;
+  Array1D<double> tempLaplacian;
 
-  for (int i=0; i<Input->WF.getNumberElectrons(); i++)
-    for (int j=0; j<3; j++)
-      {
-        SCF_Grad_PsiRatio(i,j) = 0.0;
-        Grad_PsiRatio(i,j) = 0.0;
-      }
+  if (nalpha > 0)
+    {
+      alphaPsi       = Alpha.getPsi(walker);
+      alphaLaplacian = Alpha.getLaplacianPsiRatio(walker);
+      alphaGrad      = Alpha.getGradPsiRatio(walker);
+    }
+  else
+    {
+      tempPsi.allocate(Input->WF.getNumberDeterminants());
+      tempPsi = 1.0;
+      alphaPsi = &tempPsi;
+    
+      tempLaplacian.allocate(Input->WF.getNumberDeterminants());
+      tempLaplacian = 0.0;
+      alphaLaplacian = &tempLaplacian;
+    }
+
+  Array1D<double>* betaPsi = 0;
+  Array1D<double>* betaLaplacian = 0;
+  Array3D<double>* betaGrad = 0;
+
+  if (nbeta > 0)
+    {
+      betaPsi       = Beta.getPsi(walker);
+      betaLaplacian = Beta.getLaplacianPsiRatio(walker);
+      betaGrad      = Beta.getGradPsiRatio(walker);
+    }
+  else
+    {
+      tempPsi.allocate(Input->WF.getNumberDeterminants());
+      tempPsi = 1.0;
+      betaPsi = &tempPsi;
+    
+      tempLaplacian.allocate(Input->WF.getNumberDeterminants());
+      tempLaplacian = 0.0;
+      betaLaplacian = &tempLaplacian;
+    }      
 
   for (int i=0; i<Input->WF.getNumberDeterminants(); i++)
     {
@@ -171,17 +229,24 @@ void QMCFunctions::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
   for (int i=0; i<Input->WF.getNumberDeterminants(); i++)
     {
       double psiRatio = termPsi(i)/SCF_sum;
-      double** term_AlphaGrad = (*alphaGrad).array()[i];
-      double** term_BetaGrad  = (*betaGrad).array()[i];
 
-      for (int j=0; j<Input->WF.getNumberAlphaElectrons(); j++)
-        for (int k=0; k<3; k++)
-          SCF_Grad_PsiRatio(j,k) += psiRatio*term_AlphaGrad[j][k];
+      if (nalpha > 0)
+	{
+	  double** term_AlphaGrad = alphaGrad->array()[i];
 
-      for (int j=0; j<Input->WF.getNumberBetaElectrons(); j++)
-        for (int k=0; k<3; k++)
-          SCF_Grad_PsiRatio(Input->WF.getNumberAlphaElectrons()+j,k) +=
-            psiRatio*term_BetaGrad[j][k];
+	  for (int j=0; j<nalpha; j++)
+	    for (int k=0; k<3; k++)
+	      SCF_Grad_PsiRatio(j,k) += psiRatio*term_AlphaGrad[j][k];
+	}
+
+      if (nbeta > 0)
+	{
+	  double** term_BetaGrad = betaGrad->array()[i];
+
+	  for (int j=0; j<nbeta; j++)
+	    for (int k=0; k<3; k++)
+	      SCF_Grad_PsiRatio(j+nalpha,k) += psiRatio*term_BetaGrad[j][k];
+	}
 
       SCF_Laplacian_PsiRatio += psiRatio *
                                 ((*alphaLaplacian)(i) + (*betaLaplacian)(i));
@@ -189,6 +254,7 @@ void QMCFunctions::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
 
   QMCGreensRatioComponent jastrowValue =
     QMCGreensRatioComponent(1.0,1.0,0.0,Jastrow.getLnJastrow(walker));
+
   Psi = SCF_sum * jastrowValue;
 
   Array2D<double>* JastrowGrad = Jastrow.getGradientLnJastrow(walker);
@@ -197,7 +263,9 @@ void QMCFunctions::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
     for (int j=0; j<3; j++)
       Grad_PsiRatio(i,j) = SCF_Grad_PsiRatio(i,j) + (*JastrowGrad)(i,j);
 
-  Laplacian_PsiRatio = SCF_Laplacian_PsiRatio+Jastrow.getLaplacianLnJastrow(walker);
+  Laplacian_PsiRatio = SCF_Laplacian_PsiRatio + 
+    Jastrow.getLaplacianLnJastrow(walker);
+
   for(int i=0; i<Input->WF.getNumberElectrons(); i++)
     for(int j=0; j<3; j++)
       Laplacian_PsiRatio += (*JastrowGrad)(i,j) *
@@ -206,7 +274,13 @@ void QMCFunctions::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
   // Calculate the basis function density
 
   if (Input->flags.calculate_bf_density == 1)
-    Chi_Density = *(Alpha.getChiDensity(walker)) + *(Beta.getChiDensity(walker));
+    {
+      Chi_Density = 0.0;
+      if (nalpha > 0)
+	Chi_Density = Chi_Density + *(Alpha.getChiDensity(walker));
+      if (nbeta > 0)
+	Chi_Density = Chi_Density + *(Beta.getChiDensity(walker));
+    }
 }
 
 void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
@@ -216,10 +290,9 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
   // Call this after calculate_Grad_PsiRatio() is called
 
   if( Input->flags.QF_modification_type == "none" )
-    {
-      // do not modify the quantum force
-      Modified_Grad_PsiRatio = Grad_PsiRatio;
-    }
+    // do not modify the quantum force
+    Modified_Grad_PsiRatio = Grad_PsiRatio;
+
   else if( Input->flags.QF_modification_type == "umrigar93_equalelectrons" )
     {
       // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 34.
@@ -239,12 +312,8 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
       // Calculate the magnitude squared of the Grad_PsiRatio
       double magsqQF = 0.0;
       for(int i=0; i<Grad_PsiRatio.dim1(); i++)
-        {
-          for(int j=0; j<Grad_PsiRatio.dim2(); j++)
-            {
-              magsqQF += Grad_PsiRatio(i,j) * Grad_PsiRatio(i,j);
-            }
-        }
+	for(int j=0; j<Grad_PsiRatio.dim2(); j++)
+	  magsqQF += Grad_PsiRatio(i,j) * Grad_PsiRatio(i,j);
 
       double factor = ( -1.0 + sqrt( 1.0 + 2*a*magsqQF*Input->flags.dt )) /
                       ( a*magsqQF*Input->flags.dt);
@@ -271,7 +340,7 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
           for(int xyz=0; xyz<3; xyz++)
             {
               double temp = X(i,xyz) -
-                            Input->Molecule.Atom_Positions(closest_nucleus_index,xyz);
+                     Input->Molecule.Atom_Positions(closest_nucleus_index,xyz);
 
               closest_nucleus_distance_squared += temp * temp;
             }
@@ -370,11 +439,12 @@ double QMCFunctions::getEnergyNE(int i)
 
 bool QMCFunctions::isSingular(int walker)
 {
-  if( Alpha.isSingular(walker) || Beta.isSingular(walker) )
-    {
-      return true;
-    }
-  else return false;
+  if (nalpha > 0 && Alpha.isSingular(walker))
+    return true;
+  else if (nbeta > 0 && Beta.isSingular(walker))
+    return true;
+  else
+    return false;
 }
 
 

@@ -62,6 +62,11 @@ class QMCSlater
 {
 public:
   /**
+    Creates and uninitialized instance of the object.
+  */
+  QMCSlater();
+
+  /**
     Deallocates all memory used by the object.
   */
   ~QMCSlater();

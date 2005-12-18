@@ -133,9 +133,9 @@ public:
     functions for DFT development.
   */
   void calculateElectronDensities(double max_pair_distance, double dr, 
-                          Array1D<double> &pll_spin, Array1D<double> &opp_spin,
-	         Array2D<double> &alpha_density, Array2D<double> &beta_density,
-				                          double &totalWeight);
+			  Array1D<double> &pll_spin, Array1D<double> &opp_spin,
+                                     Array1D< Array1D<double> > &alpha_density,
+                                     Array1D< Array1D<double> > &beta_density);
 
   /**
     Writes the state of this object to an XML stream.

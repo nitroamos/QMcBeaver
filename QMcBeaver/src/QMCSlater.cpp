@@ -32,6 +32,12 @@ for more details.
 
 #include "QMCSlater.h"
 
+QMCSlater::QMCSlater()
+{
+  Start = 0;
+  Stop = 0;
+}
+
 void QMCSlater::operator=(const QMCSlater & rhs )
 {
   Input              = rhs.Input;
@@ -183,59 +189,62 @@ void QMCSlater::allocate(int N)
 
 QMCSlater::~QMCSlater()
 {
-#ifdef QMC_GPU
-  resultsCollector.deallocate();
-#endif
-
-  for(int j=0; j < Input->flags.walkers_per_pass; j++)
+  if (Start != Stop)
     {
+#ifdef QMC_GPU
+      resultsCollector.deallocate();
+#endif
+
+      for(int j=0; j < Input->flags.walkers_per_pass; j++)
+	{
+	  for (int i=0; i<WF->getNumberDeterminants(); i++)
+	    {
+	      D(j,i).deallocate();
+	      D_inv(j,i).deallocate();
+	      Laplacian_D(j,i).deallocate();
+	      for (int k=0; k<3; k++)
+		Grad_D(j,i,k).deallocate();
+	    }
+	  Singular(j).deallocate();
+	  Psi(j).deallocate();
+	  Laplacian_PsiRatio(j).deallocate();
+	  Grad_PsiRatio(j).deallocate();
+	  if (Input->flags.calculate_bf_density == 1)
+	    Chi_Density(j).deallocate();
+	}
+
       for (int i=0; i<WF->getNumberDeterminants(); i++)
-        {
-          D(j,i).deallocate();
-          D_inv(j,i).deallocate();
-          Laplacian_D(j,i).deallocate();
-          for (int k=0; k<3; k++)
-            Grad_D(j,i,k).deallocate();
-        }
-      Singular(j).deallocate();
-      Psi(j).deallocate();
-      Laplacian_PsiRatio(j).deallocate();
-      Grad_PsiRatio(j).deallocate();
+	WF_coeffs(i).deallocate();
+      WF_coeffs.deallocate();
+
+      D.deallocate();
+      D_inv.deallocate();
+      Laplacian_D.deallocate();
+      Grad_D.deallocate();
+      Singular.deallocate();
+      Psi.deallocate();
+      Laplacian_PsiRatio.deallocate();
+      Grad_PsiRatio.deallocate();
+
       if (Input->flags.calculate_bf_density == 1)
-        Chi_Density(j).deallocate();
-    }
+	Chi_Density.deallocate();
 
-  for (int i=0; i<WF->getNumberDeterminants(); i++)
-    WF_coeffs(i).deallocate();
-  WF_coeffs.deallocate();
-
-  D.deallocate();
-  D_inv.deallocate();
-  Laplacian_D.deallocate();
-  Grad_D.deallocate();
-  Singular.deallocate();
-  Psi.deallocate();
-  Laplacian_PsiRatio.deallocate();
-  Grad_PsiRatio.deallocate();
-
-  if (Input->flags.calculate_bf_density == 1)
-    Chi_Density.deallocate();
-
-  occupation.deallocate();
+      occupation.deallocate();
 
 #ifdef QMC_GPU
-  //gpuBF.destroy();
-  gpuMatMult.destroy();
-  for (int j=0; j<bfData.dim1(); j++)
-    bfData(j).deallocate();
-  bfData.deallocate();
+      //gpuBF.destroy();
+      gpuMatMult.destroy();
+      for (int j=0; j<bfData.dim1(); j++)
+	bfData(j).deallocate();
+      bfData.deallocate();
 #else
-  Chi.deallocate();
-  Chi_laplacian.deallocate();
-  for (int j=0; j<3; j++)
-    Chi_gradient(j).deallocate();
-  Chi_gradient.deallocate();
+      Chi.deallocate();
+      Chi_laplacian.deallocate();
+      for (int j=0; j<3; j++)
+	Chi_gradient(j).deallocate();
+      Chi_gradient.deallocate();
 #endif
+    }
 }
 
 void QMCSlater::setStartAndStopElectronPositions(int StartEl, int StopEl)

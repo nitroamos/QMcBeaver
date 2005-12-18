@@ -126,16 +126,42 @@ class QMCRun
   void writeEnergies(ostream& strm);
 
   /**
-    Calculates the distances between all pairs of electrons and records them in
-    parallel and opposite spin histograms.
+    Calculates the distances between all pairs of particles and records them in
+    histograms.
   */
   void calculateElectronDensities();
 
-  /**
-    Writes the parallel and opposite spin pair distance histograms to files.
+  /** 
+    Gets a pointer to the the histogram of distances between parallel spin
+    electrons.
+    @return parallel spin histogram.
   */
-  void writeElectronDensityHistograms();
-  
+  Array1D<double>* getPllSpinHistogram();
+
+  /**
+    Gets a pointer to the histogram of distances between opposite spin 
+    electrons.
+    @return opposite spin histogram.
+  */
+  Array1D<double>* getOppSpinHistogram();
+
+  /**
+    Gets a pointer to the alpha one electron density histograms.
+    @return alpha histograms.
+  */
+  Array1D< Array1D<double> >* getAlphaHistograms();
+
+  /**
+    Gets a pointer to the beta one electron density histograms.
+    @return beta histograms.
+  */
+  Array1D< Array1D<double> >* getBetaHistograms();
+
+  /**
+    Gets the size of a bin in the electron density histograms.
+  */
+  double getdr();
+
   /**
     Writes the state of this object to an XML stream.
     @param strm XML stream
@@ -244,29 +270,24 @@ private:
   /** 
     The histogram of distances between parallel spin electrons.
   */
-  Array1D<double> pll_spin_histogram;
+  Array1D<double> pllSpinHistogram;
 
   /**
     The histogram of distances between opposite spin electrons.
   */
-  Array1D<double> opp_spin_histogram;
+  Array1D<double> oppSpinHistogram;
 
   /**
     The alpha one electron density histograms.  There is one histogram for each
     unique nucleus.
   */
-  Array2D<double> alpha_density_histogram;
+  Array1D< Array1D<double> > alphaHistograms;
 
   /**
     The beta one electron density histograms.  There is one histogram for each
     unique nucleus.
   */
-  Array2D<double> beta_density_histogram;
-
-  /**
-    The total weight of all samples recorded in the histograms.
-  */
-  double total_sample_weight;
+  Array1D< Array1D<double> > betaHistograms;
 
   /**
     These objects allow HF calculations to be done with QMC.

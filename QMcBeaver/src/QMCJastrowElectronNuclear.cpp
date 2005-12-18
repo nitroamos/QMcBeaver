@@ -18,9 +18,9 @@ void QMCJastrowElectronNuclear::initialize(QMCInput * input)
 }
 
 /**
-* Find the unit vector and distance between X1 and X2.  The unit vector is in
- * the direction of X1-X2.
- */
+   Find the unit vector and distance between X1 and X2.  The unit vector is in
+   the direction of X1-X2.
+*/
 
 void QMCJastrowElectronNuclear::calculateDistanceAndUnitVector(
   Array2D<double> & X1, int x1particle, Array2D<double> &X2,
@@ -30,9 +30,7 @@ void QMCJastrowElectronNuclear::calculateDistanceAndUnitVector(
 
   for(int i=0; i<3; i++)
     {
-      UnitVector(i) =
-        X1(x1particle,i) - X2(x2particle,i);
-
+      UnitVector(i) = X1(x1particle,i) - X2(x2particle,i);
       r_sq += UnitVector(i) * UnitVector(i);
     }
 
@@ -58,25 +56,29 @@ double QMCJastrowElectronNuclear::getLnJastrow()
 }
 
 void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
-    Array2D<double> & X)
+					 Array2D<double> & X)
 {
   // initialize the results
-
   sum_U = 0.0;
   laplacian_sum_U = 0.0;
   grad_sum_U.allocate(X.dim1(),3);
   grad_sum_U = 0.0;
   double firstDeriv;
 
+  int nalpha = Input->WF.getNumberAlphaElectrons();
+  int nbeta = Input->WF.getNumberBetaElectrons();
+
   // Get values from JP that will be needed during the calc
 
   Array1D<string> * NucleiTypes = JP.getNucleiTypes();
 
-  Array1D<QMCCorrelationFunctionParameters> * EupNuclear =
-    JP.getElectronUpNuclearParameters();
+  Array1D<QMCCorrelationFunctionParameters> * EupNuclear = 0;
+  if (nalpha > 0)
+    EupNuclear = JP.getElectronUpNuclearParameters();
 
-  Array1D<QMCCorrelationFunctionParameters> * EdnNuclear =
-    JP.getElectronDownNuclearParameters();
+  Array1D<QMCCorrelationFunctionParameters> * EdnNuclear = 0;
+  if (nbeta > 0)
+    EdnNuclear = JP.getElectronDownNuclearParameters();
 
   // Loop over each atom calculating the e-n jastrow function
   double r;
@@ -86,13 +88,11 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
       // Find the number of the current nucleus in the nuclei list
       int CurrentNucleiNumber = -1;
       for( int i=0; i<NucleiTypes->dim1(); i++ )
-        {
-          if( Input->Molecule.Atom_Labels(Nuclei) ==
-              (*NucleiTypes)(i) )
-            {
-              CurrentNucleiNumber = i;
-            }
-        }
+	if( Input->Molecule.Atom_Labels(Nuclei) == (*NucleiTypes)(i) )
+	  {
+	    CurrentNucleiNumber = i;
+	    break;
+	  }
 
       for(int Electron=0; Electron<X.dim1(); Electron++)
         {
@@ -102,7 +102,8 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
           r = 0;
           for(int i=0; i<3; i++)
             {
-              unitVector[i] = X(Electron,i) - Input->Molecule.Atom_Positions(Nuclei,i);
+              unitVector[i] = X(Electron,i) - 
+		Input->Molecule.Atom_Positions(Nuclei,i);
               r += unitVector[i] * unitVector[i];
             }
           r = sqrt( r );
@@ -111,16 +112,12 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
 
           QMCCorrelationFunction *U_Function = 0;
 
-          if( Electron < Input->WF.getNumberAlphaElectrons() )
-            {
-              U_Function =
-                (*EupNuclear)(CurrentNucleiNumber).getCorrelationFunction();
-            }
+          if( Electron < nalpha )
+	    U_Function = 
+	      (*EupNuclear)(CurrentNucleiNumber).getCorrelationFunction();
           else
-            {
-              U_Function =
-                (*EdnNuclear)(CurrentNucleiNumber).getCorrelationFunction();
-            }
+	    U_Function =
+	      (*EdnNuclear)(CurrentNucleiNumber).getCorrelationFunction();
 
           U_Function->evaluate(r);
           firstDeriv = U_Function->getFirstDerivativeValue();
@@ -129,13 +126,12 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
           sum_U +=  U_Function->getFunctionValue();
 
           laplacian_sum_U += 2.0/r * firstDeriv +
-                             U_Function->getSecondDerivativeValue();
+	    U_Function->getSecondDerivativeValue();
 
           for(int i=0; i<3; i++)
             {
               unitVector[i] /= r;
-              grad_sum_U(Electron,i) +=
-                firstDeriv * unitVector[i];
+              grad_sum_U(Electron,i) += firstDeriv * unitVector[i];
             }
         }
     }

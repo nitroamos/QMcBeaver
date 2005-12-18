@@ -71,7 +71,7 @@ QMCWavefunction QMCWavefunction::operator=( const QMCWavefunction & rhs )
 }
 
 /*
-  The QSC didn't like my little commenting trick, so I just got rid
+  QSC didn't like my little commenting trick, so I just got rid
   of the old streaming operator -- the old files are still in CVS of course...
   This operator >> will read input files in the multi configuration style.
 */

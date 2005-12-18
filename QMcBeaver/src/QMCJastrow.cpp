@@ -61,8 +61,8 @@ void QMCJastrow::evaluate(QMCJastrowParameters & JP, Array1D<Array2D<double>*> &
       sum_U(walker) = JastrowElectronNuclear.getLnJastrow() +
                       JastrowElectronElectron.getLnJastrow();
 
-      laplacian_sum_U(walker) = JastrowElectronNuclear.getLaplacianLnJastrow() +
-                                JastrowElectronElectron.getLaplacianLnJastrow();
+      laplacian_sum_U(walker) = JastrowElectronNuclear.getLaplacianLnJastrow() 
+	+ JastrowElectronElectron.getLaplacianLnJastrow();
 
       grad_JEN = JastrowElectronNuclear.getGradientLnJastrow();
       grad_JEE = JastrowElectronElectron.getGradientLnJastrow();
@@ -70,13 +70,7 @@ void QMCJastrow::evaluate(QMCJastrowParameters & JP, Array1D<Array2D<double>*> &
       grad_sum_U(walker).allocate(X(walker)->dim1(),3);
 
       for(int i=0; i<grad_JEE->dim1(); i++)
-        {
-          for(int j=0; j<grad_JEE->dim2(); j++)
-            {
-              (grad_sum_U(walker))(i,j) = (*grad_JEE)(i,j) +
-                                          (*grad_JEN)(i,j);
-            }
-        }
-
+	for(int j=0; j<grad_JEE->dim2(); j++)
+	  (grad_sum_U(walker))(i,j) = (*grad_JEE)(i,j) + (*grad_JEN)(i,j);
     }
 }

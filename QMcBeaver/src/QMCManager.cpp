@@ -14,7 +14,7 @@
 
 QMCManager::QMCManager()
 {
-  localTimers.getTotalTimeStopwatch() ->start();
+  localTimers.getTotalTimeStopwatch()->start();
 }
 
 QMCManager::~QMCManager()
@@ -181,7 +181,7 @@ void QMCManager::finalize()
 void QMCManager::sendAllProcessorsACommand( int itag )
 {
 #ifdef PARALLEL
-  localTimers.getSendCommandStopwatch() ->start();
+  localTimers.getSendCommandStopwatch()->start();
 
   MPI_Request *request = new MPI_Request[ Input.flags.nprocs-1 ];
 
@@ -204,7 +204,7 @@ void QMCManager::sendAllProcessorsACommand( int itag )
   delete []  request;
   delete []  status;
 
-  localTimers.getSendCommandStopwatch() ->stop();
+  localTimers.getSendCommandStopwatch()->stop();
 #endif
 }
 
@@ -212,12 +212,12 @@ void QMCManager::gatherProperties()
 {
   Properties_total.zeroOut();
 #ifdef PARALLEL
-  localTimers.getGatherPropertiesStopwatch() ->start();
+  localTimers.getGatherPropertiesStopwatch()->start();
 
   MPI_Reduce( QMCnode.getProperties(), &Properties_total, 1,
-              QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, 0, MPI_COMM_WORLD );
+       QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, 0, MPI_COMM_WORLD );
 
-  localTimers.getGatherPropertiesStopwatch() ->stop();
+  localTimers.getGatherPropertiesStopwatch()->stop();
 #else
   Properties_total = *QMCnode.getProperties();
 #endif
@@ -227,14 +227,14 @@ void QMCManager::synchronizeDMCEnsemble()
 {
   Properties_total.zeroOut();
 #ifdef PARALLEL
-  localTimers.getCommunicationSynchronizationStopwatch() ->start();
+  localTimers.getCommunicationSynchronizationStopwatch()->start();
 
   // Collect the global properties and send to all nodes
 
   MPI_Allreduce( QMCnode.getProperties(), &Properties_total, 1,
-                 QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, MPI_COMM_WORLD );
+          QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, MPI_COMM_WORLD );
 
-  localTimers.getCommunicationSynchronizationStopwatch() ->stop();
+  localTimers.getCommunicationSynchronizationStopwatch()->stop();
 #else
   Properties_total = *QMCnode.getProperties();
 #endif
@@ -243,21 +243,111 @@ void QMCManager::synchronizeDMCEnsemble()
 void QMCManager::gatherDensities()
 {
 #ifdef PARALLEL
-  localTimers.getGatherPropertiesStopwatch() ->start();
+  localTimers.getGatherPropertiesStopwatch()->start();
 
   Array1D<QMCProperty> localChiDensity = QMCnode.getProperties() ->chiDensity;
 
-  MPI_Reduce( QMCnode.getProperties() ->chiDensity.array(),
-              Properties_total.chiDensity.array(),Input.WF.getNumberBasisFunctions(),
+  MPI_Reduce( QMCnode.getProperties()->chiDensity.array(),
+        Properties_total.chiDensity.array(),Input.WF.getNumberBasisFunctions(),
               QMCProperty::MPI_TYPE,QMCProperty::MPI_REDUCE,0,MPI_COMM_WORLD );
 
-  localTimers.getGatherPropertiesStopwatch() ->stop();
-
+  localTimers.getGatherPropertiesStopwatch()->stop();
 #else
 
   for ( int i=0; i<Input.WF.getNumberBasisFunctions(); i++ )
     {
-      Properties_total.chiDensity( i )  = QMCnode.getProperties() ->chiDensity( i );
+      Properties_total.chiDensity(i)=QMCnode.getProperties()->chiDensity( i );
+    }
+
+#endif
+}
+
+void QMCManager::gatherHistograms()
+{
+  int nalpha = Input.WF.getNumberAlphaElectrons();
+  int nbeta = Input.WF.getNumberBetaElectrons();
+  int nucleiTypes = Input.Molecule.NucleiTypes.dim1();
+
+#ifdef PARALLEL
+  localTimers.getGatherPropertiesStopwatch()->start();
+
+  if (nalpha > 1 || nbeta > 1)
+    {
+      pllSpinHistogram_total.allocate(5000);
+      pllSpinHistogram_total = 0.0;
+
+      MPI_Reduce( QMCnode.getPllSpinHistogram()->array(),
+     pllSpinHistogram_total.array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD );
+
+      if (Input.flags.my_rank != 0)
+	pllSpinHistogram_total.deallocate();
+    }
+
+  if (nalpha > 0 && nbeta > 0)
+    {
+      oppSpinHistogram_total.allocate(5000);
+      oppSpinHistogram_total = 0.0;
+
+      MPI_Reduce( QMCnode.getOppSpinHistogram()->array(),
+     oppSpinHistogram_total.array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD );
+      
+      if (Input.flags.my_rank != 0)
+	oppSpinHistogram_total.deallocate();
+    }
+
+  if (nalpha > 0)
+    {
+      alphaHistograms_total.allocate(nucleiTypes);
+      for (int k=0; k<nucleiTypes; k++)
+	{
+	  alphaHistograms_total(k).allocate(5000);
+	  alphaHistograms_total(k) = 0.0;
+	  MPI_Reduce( (*QMCnode.getAlphaHistograms())(k).array(),
+    alphaHistograms_total(k).array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+	  if (Input.flags.my_rank != 0)
+	    alphaHistograms_total(k).deallocate();
+	}
+      if (Input.flags.my_rank != 0)
+	alphaHistograms_total.deallocate();
+    }
+
+  if (nbeta > 0)
+    {
+      betaHistograms_total.allocate(nucleiTypes);
+      for (int k=0; k<nucleiTypes; k++)
+	{
+	  betaHistograms_total(k).allocate(5000);
+	  betaHistograms_total(k) = 0.0;
+	  MPI_Reduce( (*QMCnode.getBetaHistograms())(k).array(),
+     betaHistograms_total(k).array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+	  if (Input.flags.my_rank != 0)
+	    betaHistograms_total(k).deallocate();
+	}
+      if (Input.flags.my_rank != 0)
+	betaHistograms_total.deallocate();
+    }
+
+  localTimers.getGatherPropertiesStopwatch()->stop();
+#else
+  
+  if (nalpha > 1 || nbeta > 1)
+    pllSpinHistogram_total = *QMCnode.getPllSpinHistogram();
+
+  if (nalpha > 0 && nbeta > 0)
+    oppSpinHistogram_total = *QMCnode.getOppSpinHistogram();
+
+  if (nalpha > 0)
+    {
+      alphaHistograms_total.allocate(nucleiTypes);
+      for (int k=0; k<nucleiTypes; k++)
+	alphaHistograms_total(k) = (*QMCnode.getAlphaHistograms())(k);
+    }
+
+  if (nbeta > 0)
+    {
+      betaHistograms_total.allocate(nucleiTypes);
+      for (int k=0; k<nucleiTypes; k++)
+	betaHistograms_total(k) = (*QMCnode.getBetaHistograms())(k);
     }
 
 #endif
@@ -308,7 +398,7 @@ void QMCManager::run()
   iteration = 0;
 
 
-  if(  Input.flags.equilibrate_every_opt_step > 0 )
+  if( Input.flags.equilibrate_every_opt_step > 0 )
     {
       equilibrating = true;
       Input.flags.dt = Input.flags.dt_equilibration;
@@ -317,14 +407,14 @@ void QMCManager::run()
   // Create the file to write all energies out to
   ofstream *energy_strm_out = 0;
 
-  if(  Input.flags.write_all_energies_out == 1 )
+  if( Input.flags.write_all_energies_out == 1 )
     {
       // Create the file name
       char my_rank_str[ 32 ];
 #if defined(_WIN32) && !defined(__CYGWIN__)
       _snprintf(  my_rank_str, 32, "%d", Input.flags.my_rank );
 #else
-snprintf(  my_rank_str, 32, "%d", Input.flags.my_rank );
+snprintf( my_rank_str, 32, "%d", Input.flags.my_rank );
 #endif
       string filename = Input.flags.base_file_name + ".energy." +
                         my_rank_str;
@@ -335,11 +425,11 @@ snprintf(  my_rank_str, 32, "%d", Input.flags.my_rank );
     }
 
   // Check to make sure a valid parallelization algorithm is chosen
-  if(  Input.flags.parallelization_method == "pure_iterative" )
+  if( Input.flags.parallelization_method == "pure_iterative" )
     {
       cerr << "FIX Add back in PI parallel" << endl;
     }
-  else if(  Input.flags.parallelization_method == "manager_worker" )
+  else if( Input.flags.parallelization_method == "manager_worker" )
   {}
   else
     {
@@ -354,32 +444,32 @@ snprintf(  my_rank_str, 32, "%d", Input.flags.my_rank );
       //each process keeps track of an iteration counter
       iteration++;
 
-      if( equilibrating )  localTimers.getEquilibrationStopwatch() ->start();
+      if( equilibrating )  localTimers.getEquilibrationStopwatch()->start();
       else
         {
           if ( Input.flags.use_equilibration_array == 1 )  QMCnode.startTimers();
-          else localTimers.getPropagationStopwatch() ->start();
+          else localTimers.getPropagationStopwatch()->start();
         }
 
       bool writeConfigs = !equilibrating &&
-                          (  Input.flags.optimize_Psi || Input.flags.print_configs == 1 )  &&
+             ( Input.flags.optimize_Psi || Input.flags.print_configs == 1 )  &&
                           iteration%Input.flags.print_config_frequency == 0;
 
       QMCnode.step( writeConfigs );
 
-      if(  equilibrating )
+      if( equilibrating )
         {
           equilibrationProperties = equilibrationProperties +
                                     *QMCnode.getProperties();
           updateEffectiveTimeStep( &equilibrationProperties );
 
-          if(  Input.flags.run_type == "diffusion" )
+          if( Input.flags.run_type == "diffusion" )
             updateTrialEnergy( QMCnode.getWeights(),
                                Input.flags.number_of_walkers_initial );
         }
-      else if(  !equilibrating && Input.flags.run_type == "diffusion" )
+      else if( !equilibrating && Input.flags.run_type == "diffusion" )
         {
-          if(  Input.flags.synchronize_dmc_ensemble == 1 )
+          if( Input.flags.synchronize_dmc_ensemble == 1 )
             {
               double weight = QMCnode.getWeights();
               weight *= QMCnode.getPopulationSizeBiasCorrectionFactor();
@@ -399,34 +489,31 @@ snprintf(  my_rank_str, 32, "%d", Input.flags.my_rank );
         }
       else
         // If this is a variational calculation, the estimated energy and the
-        // trial energy aren't used.
+        // trial energy aren't updated.
         updateEffectiveTimeStep( QMCnode.getProperties() );
 
-      if(  Input.flags.checkpoint == 1 &&
+      if( Input.flags.checkpoint == 1 &&
            iteration%Input.flags.checkpoint_interval == 0 )
         {
           writeCheckpoint();
         }
 
-      if(  !equilibrating && Input.flags.write_all_energies_out == 1 )
+      if( !equilibrating && Input.flags.write_all_energies_out == 1 )
         {
           QMCnode.writeEnergies( *energy_strm_out );
         }
 
-      if(  !equilibrating && Input.flags.write_electron_densities == 1 )
+      if( !equilibrating && Input.flags.write_electron_densities == 1 )
         {
           QMCnode.calculateElectronDensities();
-
-          if ( iteration%Input.flags.write_electron_densities_interval == 0 )
-            QMCnode.writeElectronDensityHistograms();
         }
 
-      if(  Input.flags.use_hf_potential == 1 )
+      if( Input.flags.use_hf_potential == 1 )
         {
           QMCnode.updateHFPotential();
         }
 
-      if(  equilibrating )
+      if( equilibrating )
         {
           localTimers.getEquilibrationStopwatch() ->stop();
           QMCnode.zeroOut();
@@ -439,12 +526,17 @@ snprintf(  my_rank_str, 32, "%d", Input.flags.my_rank );
 
       //--------------------------------------------------
 
-      if(  Input.flags.my_rank == 0 )
+      if( Input.flags.my_rank == 0 )
         {
           if( iteration % Input.flags.mpireduce_interval == 0 )
             {
               sendAllProcessorsACommand( QMC_REDUCE );
               gatherProperties();
+	      if ( Input.flags.write_electron_densities == 1)
+		{
+		  gatherHistograms();
+		  writeElectronDensityHistograms();
+		}
               checkTerminationCriteria();
             }
 
@@ -457,20 +549,23 @@ snprintf(  my_rank_str, 32, "%d", Input.flags.my_rank );
               checkTerminationCriteria();
             }
 
-          if(  done )
+          if( done )
             {
               sendAllProcessorsACommand( QMC_TERMINATE );
               gatherProperties();
+	      
+	      if (Input.flags.write_electron_densities == 1)
+		{
+		  gatherHistograms();
+		  writeElectronDensityHistograms();
+		}
 
               if ( Input.flags.calculate_bf_density == 1 )
                 gatherDensities();
-
-              if ( Input.flags.write_electron_densities == 1 )
-                QMCnode.writeElectronDensityHistograms();
             }
 
-          if(  Input.flags.print_transient_properties &&
-               iteration%Input.flags.print_transient_properties_interval == 0 )
+          if( Input.flags.print_transient_properties &&
+	      iteration%Input.flags.print_transient_properties_interval == 0 )
             {
               writeTransientProperties( iteration );
             }
@@ -493,6 +588,8 @@ snprintf(  my_rank_str, 32, "%d", Input.flags.my_rank );
           if( poll_result == QMC_REDUCE )
             {
               gatherProperties();
+	      if ( Input.flags.write_electron_densities == 1)
+		gatherHistograms();
             }
 
           else if( poll_result == QMC_TERMINATE )
@@ -500,11 +597,12 @@ snprintf(  my_rank_str, 32, "%d", Input.flags.my_rank );
               done = true;
               gatherProperties();
 
+	      if (Input.flags.write_electron_densities == 1)
+		gatherHistograms();
+
               if ( Input.flags.calculate_bf_density == 1 )
                 gatherDensities();
 
-              if ( Input.flags.write_electron_densities == 1 )
-                QMCnode.writeElectronDensityHistograms();
             }
           else if( poll_result == QMC_SYNCHRONIZE )
             {
@@ -621,6 +719,158 @@ void QMCManager::equilibration_step()
       cerr << "ERROR: Incorrect Equilibration Method Selected!" << endl;
       exit( 1 );
     }
+}
+
+void QMCManager::writeElectronDensityHistograms()
+{
+  // Write out the electron density histograms.  This function will only be
+  // executed by the root processor.
+
+#define PI 3.14159265359
+  
+  int nalpha = Input.WF.getNumberAlphaElectrons();
+  int nbeta = Input.WF.getNumberBetaElectrons();
+
+  string baseFileName = Input.flags.base_file_name;
+
+  double rValue;
+  double normalHist;
+  double dividedHist;
+  double orbital;
+  double totalWeight;
+  double dr = QMCnode.getdr();
+
+  if (nalpha > 1 || nbeta > 1)
+    {
+      string pll_spin_filename = baseFileName + ".pll_pair_density";
+      ofstream * pll_spin_strm = new ofstream(pll_spin_filename.c_str());
+      pll_spin_strm->precision(15);
+
+      // We add up the total weight of all the samples.
+      totalWeight = 0.0;
+      for (int i=0; i<pllSpinHistogram_total.dim1(); i++)
+        totalWeight += pllSpinHistogram_total(i);
+
+      *pll_spin_strm << "#\t" <<  totalWeight << endl;
+
+      for (int i=0; i<pllSpinHistogram_total.dim1(); i++)
+        {
+          rValue = (i+0.5)*dr;
+          normalHist = pllSpinHistogram_total(i)/totalWeight;
+          dividedHist = normalHist/(4*PI*rValue*rValue*dr);
+          orbital = sqrt(dividedHist);
+          *pll_spin_strm << rValue << "\t" << pllSpinHistogram_total(i);
+	  *pll_spin_strm << "\t" << normalHist << "\t" << dividedHist << "\t";
+          *pll_spin_strm << orbital << endl;
+        }
+      delete pll_spin_strm;
+      pll_spin_strm = 0;
+      pllSpinHistogram_total.deallocate();
+    }
+    
+  if (nalpha > 0 && nbeta > 0)
+    {
+      string opp_spin_filename = baseFileName + ".opp_pair_density";
+      ofstream * opp_spin_strm = new ofstream(opp_spin_filename.c_str());
+      opp_spin_strm->precision(15);
+      
+      // We add up the total weight of all the samples.
+      totalWeight = 0.0;
+      for (int i=0; i<oppSpinHistogram_total.dim1(); i++)
+        totalWeight += oppSpinHistogram_total(i);
+
+      *opp_spin_strm << "#\t" << totalWeight << endl;
+
+      for (int i=0; i<oppSpinHistogram_total.dim1(); i++)
+        {
+          rValue = (i+0.5)*dr;
+          normalHist = oppSpinHistogram_total(i)/totalWeight;
+          dividedHist = normalHist/(4*PI*rValue*rValue*dr);
+          orbital = sqrt(dividedHist);
+          *opp_spin_strm << rValue << "\t" << oppSpinHistogram_total(i);
+	  *opp_spin_strm << "\t" << normalHist << "\t" << dividedHist << "\t";
+          *opp_spin_strm << orbital << endl;
+        }
+      delete opp_spin_strm;
+      opp_spin_strm = 0;
+      oppSpinHistogram_total.deallocate();
+    }
+
+  if (nalpha > 0 || nbeta > 0)
+    {
+      int nucleiTypes = Input.Molecule.NucleiTypes.dim1();
+      string nucleusType;
+
+      // Write out one electron densities.
+      for (int i=0; i<nucleiTypes; i++)
+        {
+          nucleusType = Input.Molecule.NucleiTypes(i);
+
+          if (nalpha > 0)
+            {
+              string alpha_filename = baseFileName + "." + nucleusType + 
+                "-alpha.density";
+
+              ofstream * alpha_strm = new ofstream(alpha_filename.c_str());
+              alpha_strm->precision(15);
+
+              // We add up the total weight of all the samples.
+              totalWeight = 0.0;
+              for (int j=0; j<alphaHistograms_total(i).dim1(); j++)
+                totalWeight += (alphaHistograms_total(i))(j);
+
+              *alpha_strm << "#\t" << totalWeight << endl;
+
+              for (int j=0; j<alphaHistograms_total(i).dim1(); j++)
+                {
+                  rValue = (j+0.5)*dr;
+                  normalHist = (alphaHistograms_total(i))(j)/totalWeight;
+                  dividedHist = normalHist/(4*PI*rValue*rValue*dr);
+                  orbital = sqrt(dividedHist);
+                  *alpha_strm << rValue << "\t";
+                  *alpha_strm << (alphaHistograms_total(i))(j) << "\t";
+                  *alpha_strm << normalHist << "\t" << dividedHist << "\t";
+                  *alpha_strm << orbital << endl;
+                }
+              delete alpha_strm;
+              alpha_strm = 0;
+	      alphaHistograms_total(i).deallocate();
+            }
+
+          if (nbeta > 0)
+            {
+              string beta_filename = baseFileName + "." + nucleusType + 
+                "-beta.density";
+
+              ofstream * beta_strm = new ofstream(beta_filename.c_str());
+              beta_strm->precision(15);
+
+              // We add up the total weight of all the samples.
+              totalWeight = 0.0;
+              for (int j=0; j<betaHistograms_total(i).dim1(); j++)
+                totalWeight += (betaHistograms_total(i))(j);
+              
+              *beta_strm << "#\t" << totalWeight << endl;
+
+              for (int j=0; j<betaHistograms_total(i).dim1(); j++)
+                {
+                  rValue = (j+0.5)*dr;
+                  normalHist = (betaHistograms_total(i))(j)/totalWeight;
+                  dividedHist = normalHist/(4*PI*rValue*rValue*dr);
+                  orbital = sqrt(dividedHist);
+                  *beta_strm << rValue << "\t" << (betaHistograms_total(i))(j);
+                  *beta_strm << "\t" << normalHist << "\t" << dividedHist;
+                  *beta_strm << "\t" << orbital << endl;
+                }
+              delete beta_strm;
+              beta_strm = 0;
+	      betaHistograms_total(i).deallocate();
+            }
+        }
+      alphaHistograms_total.deallocate();
+      betaHistograms_total.deallocate();
+    }
+#undef PI
 }
 
 void QMCManager::writeEnergyResultsSummary( ostream & strm )

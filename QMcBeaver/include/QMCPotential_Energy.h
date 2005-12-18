@@ -33,7 +33,6 @@ public:
   /**
     Creates an instance of the class.
     */
-
   QMCPotential_Energy();
 
 
@@ -44,21 +43,17 @@ public:
     */
   void initialize(QMCInput *input, QMCHartreeFock *HF);
 
-
   /**
     Evaluates the potential energy for the given electronic configuration.
 
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
     */
-
   void evaluate(Array1D<Array2D<double>*> &X, int num);
-
 
   /**
     Gets the potential energy of the last configuration evaluated.
   */
-  
   double getEnergy(int which);
 
   /**
@@ -76,7 +71,6 @@ public:
 
     @param rhs object to set this object equal to
   */
-
   void operator=( const QMCPotential_Energy & rhs );
 
  private:

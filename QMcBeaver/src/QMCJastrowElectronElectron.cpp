@@ -18,9 +18,9 @@ void QMCJastrowElectronElectron::initialize(QMCInput * input)
 }
 
 /**
-* Find the unit vector and distance between X1 and X2.  The unit vector is in
- * the direction of X1-X2.
- */
+   Find the unit vector and distance between X1 and X2.  The unit vector is in
+   the direction of X1-X2.
+*/
 
 void QMCJastrowElectronElectron::calculateDistanceAndUnitVector(
   Array2D<double> & X1, int x1particle, Array2D<double> &X2,
@@ -38,7 +38,6 @@ void QMCJastrowElectronElectron::calculateDistanceAndUnitVector(
 
   UnitVector *= 1.0/r;
 }
-
 
 double QMCJastrowElectronElectron::getLaplacianLnJastrow()
 {
@@ -59,66 +58,61 @@ void QMCJastrowElectronElectron::evaluate(QMCJastrowParameters & JP,
     Array2D<double> & X)
 {
   // initialize the results
-
   sum_U = 0.0;
   laplacian_sum_U = 0.0;
   grad_sum_U.allocate(X.dim1(),3);
   grad_sum_U = 0.0;
 
+  int nalpha = Input->WF.getNumberAlphaElectrons();
+  int nbeta = Input->WF.getNumberBetaElectrons();
+
   // Get values from JP that will be needed during the calc
 
   QMCCorrelationFunctionParameters * EupEdn = 0;
 
-  if( Input->WF.getNumberAlphaElectrons() > 0 &&
-      Input->WF.getNumberBetaElectrons() > 0 )
-    {
-      EupEdn = JP.getElectronUpElectronDownParameters();
-    }
+  if(nalpha > 0 && nbeta > 0)
+    EupEdn = JP.getElectronUpElectronDownParameters();
 
   QMCCorrelationFunctionParameters * EupEup = 0;
 
-  if( Input->WF.getNumberAlphaElectrons() > 1 )
-    {
-      EupEup = JP.getElectronUpElectronUpParameters();
-    }
+  if(nalpha > 1)
+    EupEup = JP.getElectronUpElectronUpParameters();
 
   QMCCorrelationFunctionParameters * EdnEdn = 0;
 
-  if( Input->WF.getNumberBetaElectrons() > 1 )
-    {
-      EdnEdn = JP.getElectronDownElectronDownParameters();
-    }
+  if(nbeta > 1 )
+    EdnEdn = JP.getElectronDownElectronDownParameters();
 
   // Loop over each electron calculating the e-e jastrow function
   //Array1D<double> UnitVector;
-  int numAlpha = Input->WF.getNumberAlphaElectrons();
 
   // Get the correct correlation function to use and evaluate it
   //I separated the collectForPair so that the inner loop didn't have
   //a giant if statement.
+
   QMCCorrelationFunction *U_Function = 0;
+
   if(EupEup != 0)
     U_Function = EupEup->getCorrelationFunction();
-  for(int Electron1=0; Electron1<numAlpha; Electron1++)
+  for(int Electron1=0; Electron1<nalpha; Electron1++)
     for(int Electron2=0; Electron2<Electron1; Electron2++)
       collectForPair(Electron1,Electron2,U_Function,X);
 
   if(EdnEdn != 0)
     U_Function = EdnEdn->getCorrelationFunction();
-  for(int Electron1=numAlpha; Electron1<X.dim1(); Electron1++)
-    for(int Electron2=numAlpha; Electron2<Electron1; Electron2++)
+  for(int Electron1=nalpha; Electron1<X.dim1(); Electron1++)
+    for(int Electron2=nalpha; Electron2<Electron1; Electron2++)
       collectForPair(Electron1,Electron2,U_Function,X);
 
   if(EupEdn != 0)
     U_Function = EupEdn->getCorrelationFunction();
-  for(int Electron1=0; Electron1<numAlpha; Electron1++)
-    for(int Electron2=numAlpha; Electron2<X.dim1(); Electron2++)
+  for(int Electron1=0; Electron1<nalpha; Electron1++)
+    for(int Electron2=nalpha; Electron2<X.dim1(); Electron2++)
       collectForPair(Electron1,Electron2,U_Function,X);
-
 }
 
-inline void QMCJastrowElectronElectron::collectForPair(int Electron1, int Electron2,
-    QMCCorrelationFunction *U_Function, Array2D<double> & X)
+inline void QMCJastrowElectronElectron::collectForPair(int Electron1, 
+        int Electron2, QMCCorrelationFunction *U_Function, Array2D<double> & X)
 {
   // Find the unit vector between electron1 and electron2 and their
   // distance apart
@@ -141,8 +135,7 @@ inline void QMCJastrowElectronElectron::collectForPair(int Electron1, int Electr
 
   sum_U +=  U_Function->getFunctionValue();
   firstDeriv = U_Function->getFirstDerivativeValue();
-  laplacian_sum_U += 2.0*(2.0/r *
-                          firstDeriv +
+  laplacian_sum_U += 2.0*(2.0/r * firstDeriv +
                           U_Function->getSecondDerivativeValue());
 
   for(int i=0; i<3; i++)
