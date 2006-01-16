@@ -256,7 +256,7 @@ Array2D <qmcfloat> inverse(Array2D <qmcfloat> a, bool *calcOK)
 
 //LAPACK doesn't seem to be much help here...
 #if defined USELAPACK
-void determinant_and_inverse(Array2D<qmcfloat> &a, Array2D<qmcfloat> &inv,
+void determinant_and_inverse(Array2D<float> &a, Array2D<float> &inv,
                              double& det, bool *calcOK)
 {
   static int dim = a.dim1();
@@ -268,13 +268,31 @@ void determinant_and_inverse(Array2D<qmcfloat> &a, Array2D<qmcfloat> &inv,
   /* int clapack_dgesv(const enum CBLAS_ORDER Order, const int N, const int NRHS,
                     double *A, const int lda, int *ipiv,
                     double *B, const int ldb);*/
-#if defined SINGLEPRECISION || defined QMC_GPU
   int info = clapack_sgesv(CBLAS_ORDER(CblasRowMajor),dim,dim,
                            a.array(),dim,pivots.array(),inv.array(),dim);
-#else
+
+  if(info == 0) *calcOK = true;
+  else *calcOK = false;
+
+  det = 1.0;
+  for(int i=0; i<dim; i++)
+    det *= a(i,i);
+}
+
+void determinant_and_inverse(Array2D<double> &a, Array2D<double> &inv,
+                             double& det, bool *calcOK)
+{
+  static int dim = a.dim1();
+  static Array1D<int> pivots = Array1D<int>(dim);
+  inv = 0;
+  for(int i=0; i<dim; i++)
+    inv(i,i) = 1.0;
+
+  /* int clapack_dgesv(const enum CBLAS_ORDER Order, const int N, const int NRHS,
+                    double *A, const int lda, int *ipiv,
+                    double *B, const int ldb);*/
   int info = clapack_dgesv(CBLAS_ORDER(CblasRowMajor),dim,dim,
                            a.array(),dim,pivots.array(),inv.array(),dim);
-#endif
 
   if(info == 0) *calcOK = true;
   else *calcOK = false;
@@ -297,6 +315,8 @@ void determinant_and_inverse(Array2D<qmcfloat> &a, Array2D<qmcfloat> &inv,
   double d;
   static int *INDX = new int[n];
   static Array1D<qmcfloat> col(n);
+
+  if(n > col.dim1()) col.allocate(n);
 
   ludcmp(a,INDX,&d,calcOK);
 
