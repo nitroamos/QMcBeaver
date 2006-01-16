@@ -78,27 +78,79 @@ void QMCFunctions::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
   PE.initialize(Input,HF);
   Jastrow.initialize(Input);
 
-  SCF_Grad_PsiRatio.allocate(Input->WF.getNumberElectrons(),3);
+  SCF_Grad_PsiRatio.allocate(Input->WF.getNumberElectrons(),3);    
 }
 
 void QMCFunctions::evaluate(Array1D<QMCWalkerData *> &walkerData,
                             Array1D<Array2D<double> * > &xData,
                             int num, bool writeConfigs)
 {
-  if (nalpha > 0)
-    {
-      Alpha.update_Ds(xData,num);
-      Alpha.evaluate(num);
-    }
+  //These are some useful benchmarking variables
+  static const bool printKE = false;
+  static const bool showTimings = !true;
+  static double averageT = 0, timeT = 0;
+  static double numT = -5;  
+  Stopwatch sw = Stopwatch();
+  if(showTimings)
+  {
+      sw.reset(); sw.start();
+  }
 
-  if (nbeta > 0)
-    {
-      Beta.update_Ds(xData,num);
-      Beta.evaluate(num);
-    }
+  /*
+    For the GPU code, if the INT_FINISHES flags
+    (set in each of the GPUQMC source files)
+    are not set, then these commands will simply
+    tell OpenGL what to start working
+    on. That is, glFlush() as opposed to glFinish().
+  */
 
-  Jastrow.evaluate(xData,num);
+  //When running without the GPU, gpp will recieve zero.
+  int gpp = Input->flags.getNumGPUWalkers();
+
+#ifdef QMC_GPU
+  //These are pure GPU routines
+  if (nalpha > 0) Alpha.gpuEvaluate(xData,gpp);
+  if (nbeta > 0)  Beta.gpuEvaluate(xData,gpp);
+  Jastrow.setUpGPU(Alpha.gpuBF.getElectronicTexture(),
+                    Beta.gpuBF.getElectronicTexture(), gpp);
+#endif
+
+  /*
+    num-gpp is the number the GPU didn't calculate
+    gpp is the first index the CPU needs to handle
+  */
+  //These are pure CPU routines
+  Jastrow.evaluate(xData,num-gpp,gpp);
+  if (nalpha > 0) Alpha.evaluate(xData,num-gpp,gpp);
+  if (nbeta > 0)  Beta.evaluate(xData,num-gpp,gpp);
+
   PE.evaluate(xData,num);
+
+#ifdef QMC_GPU
+  if(true){
+    Stopwatch finisher = Stopwatch();
+    finisher.reset(); finisher.start();
+    glFinish();
+    finisher.stop();
+    printf("finish time: %15d\n", finisher.timeMS() );
+  }
+#endif
+
+  //These are CPU if no GPU, otherwise mixed CPU/GPU
+  if (nalpha > 0) Alpha.update_Ds();
+  if (nbeta > 0)  Beta.update_Ds();
+#ifdef QMC_GPU
+  Jastrow.gpuEvaluate(xData,gpp);
+#endif
+
+  if(showTimings)
+  {
+    sw.stop();
+    timeT = sw.timeMS();
+    if(numT >= 0) averageT += sw.timeMS();
+    if( num > 1) numT++;
+    cout << "total time: " << (int)(timeT+0.5) << " ( " << (int)(averageT/(numT)+0.5) << ")\n";
+  }
 
   for(int i=0; i<num; i++)
     {
@@ -121,6 +173,12 @@ void QMCFunctions::evaluate(Array1D<QMCWalkerData *> &walkerData,
         Input->outputer.writeCorrelatedSamplingConfiguration(*xData(i),
               SCF_Laplacian_PsiRatio,SCF_Grad_PsiRatio,Jastrow.getLnJastrow(i),
 							      PE.getEnergy(i));
+      if(printKE)
+      {
+        printf("%4d: ",i);
+        printf("KE # %s%18.15e ",(*walkerData(i)).kineticEnergy<0?"":" ",(*walkerData(i)).kineticEnergy );
+        printf("TE # %s%18.15g\n",(*walkerData(i)).localEnergy<0?"":" ",(*walkerData(i)).localEnergy );
+      }
     }
 }
 
@@ -130,19 +188,20 @@ void QMCFunctions::evaluate(Array2D<double> &X, QMCWalkerData & data)
   temp.allocate(1);
   temp(0) = &X;
 
-  if (nalpha > 0)
-    {
-      Alpha.update_Ds(temp,1);
-      Alpha.evaluate(1);
-    }
+#ifdef QMC_GPU
+  //These are pure GPU
+  if (nalpha > 0) Alpha.gpuEvaluate(temp,1);
+  if (nbeta > 0)  Beta.gpuEvaluate(temp,1);
+#else
+  //These are pure CPU
+  if (nalpha > 0) Alpha.evaluate(temp,1,0);
+  if (nbeta > 0)  Beta.evaluate(temp,1,0);
+#endif
 
-  if (nbeta > 0)
-    {
-      Beta.update_Ds(temp,1);
-      Beta.evaluate(1);
-    }
-
-  Jastrow.evaluate(temp,1);
+  if (nalpha > 0) Alpha.update_Ds();
+  if (nbeta > 0)  Beta.update_Ds();
+  //We just let the CPU initialize the Jastrow
+  Jastrow.evaluate(temp,1,0);
   PE.evaluate(temp,1);
 
   calculate_Psi_quantities(data.gradPsiRatio,data.chiDensity,0);
