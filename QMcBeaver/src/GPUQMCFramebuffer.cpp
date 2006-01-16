@@ -86,7 +86,7 @@ void GPUQMCFramebuffer::drawTo(int whichFB)
   
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, theFrameBuffers[whichFB]);
   
-  if(getNumFB() == 1)
+  if(getNumRT() == 1)
     {
       glDrawBuffer(bufferAttachments[whichFB][0]);
     }

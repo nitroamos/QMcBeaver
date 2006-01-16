@@ -184,9 +184,8 @@ void GPUQMCBasisFunction::loadShaders()
 GPUQMCBasisFunction::~GPUQMCBasisFunction()
 {
   //basisFunctionsFB.destroy();
-  
   delete [] cpuData;
-  //glDeleteTextures(1, electronsTexID);
+  glDeleteTextures(1, &electronsTexID);
   //glDeleteTextures(1, bfParametersTexID);
 }
 
@@ -299,6 +298,8 @@ GLuint GPUQMCBasisFunction::runCalculation(Array1D<Array2D<double>*> &X, int num
       unloadData(outputFB, nCols*txt_deltaBF, nRows*nMats*txt_deltaOE);
     }
     
+  glFlush();
+
   return outputFB.getTextureID(0,0);
 }
 
@@ -324,6 +325,11 @@ void GPUQMCBasisFunction::loadElectronPositions(Array1D<Array2D<double>*> &X, in
   glBindTexture(TEXTURE_TARGET, electronsTexID);
   glTexImage2D(TEXTURE_TARGET, 0, TEXTURE_INTERNAL_FORMAT,
                elecW*nCols, elecH*nRows, 0, GL_RGB, GL_FLOAT, cpuData);
+}
+
+GLuint GPUQMCBasisFunction::getElectronicTexture()
+{
+  return electronsTexID;
 }
 
 void GPUQMCBasisFunction::translate()
@@ -364,7 +370,6 @@ void GPUQMCBasisFunction::translate()
   if(INT_FINISHES)
     {
       glFinish();
-      glFlush();
     }
     
   getOpenGLError("Error in QMC basis function translation");
@@ -742,6 +747,7 @@ void GPUQMCBasisFunction::operator=(GPUQMCBasisFunction & rhs)
   basisFunctionsFB = rhs.basisFunctionsFB;
   outputFB = rhs.outputFB;
   
+  glGenTextures(1, &electronsTexID);
   cpuData = (GLfloat *) calloc( nCols*fxo_deltaBF * nRows*nMats*max(fxo_deltaOE,basisfunctionParamsH) * 4 , sizeof(GLfloat) );
 }
 

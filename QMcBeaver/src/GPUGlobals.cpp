@@ -65,6 +65,9 @@ void GPUGlobals::PrintRGBAPixelsBoxE(float* pix, int w, int h,
   if(maxJ < 0 || maxJ > w) maxJ = w;
   if(maxI < 0 || maxI > h) maxI = h;
   
+  if(wBorder > w) wBorder = -1;
+  if(hBorder > h) hBorder = -1;
+
   int wAdjuster = 0;
   if(wBorder < 0 && maxJ%2 == 1)
     wAdjuster = 1;

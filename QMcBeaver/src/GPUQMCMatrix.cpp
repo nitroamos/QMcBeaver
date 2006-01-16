@@ -32,7 +32,7 @@ if rolled must be less than 256 (it won't give an error if too large -- just the
 */
 //static const  int LOOPS_PER_PASS   = 144;
 static        int LOOPS_PER_PASS   = 144;
-static const bool UNROLL_LOOP      = true; //this penalizes the constructor
+static const bool UNROLL_LOOP      = true;  //this penalizes the constructor
 static const bool USE_CHEAPER      = true;  //changes the precision of the coordinate vars. with this, 4 registers only?
 static const bool USE_TRIANGLES    = true;  //Slightly improves performance
 static const bool CHEAPER_FIRST    = false; //something is wrong with this.
@@ -101,6 +101,7 @@ GPUQMCMatrix::GPUQMCMatrix(QMCInput *INPUT, Array1D< Array2D<qmcfloat> > & Coeff
 {
 	Input = INPUT;
 	LOOPS_PER_PASS = Input->flags.programmersLongs[0];
+  //LOOPS_PER_PASS = 100;
 
   /*>>>>>>>>>>>>>>>>>>>> SET UP CONSTANTS <<<<<<<<<<<<<<<<<<<<*/
   getFactors(numCalcs,nRows,nCols);
@@ -118,8 +119,13 @@ GPUQMCMatrix::GPUQMCMatrix(QMCInput *INPUT, Array1D< Array2D<qmcfloat> > & Coeff
   
   deltaW = (int)(deltaOE/MRT_W);
   deltaH = (int)(deltaOE/MRT_H);
-  if(nOrbitals%(MRT_W*2) != 0 || nOrbitals%(MRT_H*2) != 0)
-    cerr << "Error: MRT fringe cases not implemented\n";
+
+  if(MRT_W > 1 || MRT_H > 1)
+  {
+    //the 2 is because we are using 2x2 pixel format
+    if(nOrbitals%(MRT_W*2) != 0 || nOrbitals%(MRT_H*2) != 0)
+      cerr << "Error: MRT fringe cases not implemented\n";
+  }
   if(MRT_H*MRT_W < 1 || MRT_H*MRT_W > 4)
     cerr << "Error: 1 <= MRT_W*MRT_H <= 4 (max 4 render textures)\n";
     
@@ -246,14 +252,15 @@ int GPUQMCMatrix::runCalculation(int numCalcs, GLuint bfInput)
                 }
             }
         }
-        
+
+      glDisable(GL_SCISSOR_TEST);
+      glFlush();
+
       if(INT_FINISHES)
         {
           glFinish();
-          glFlush();
         }
         
-      glDisable(GL_SCISSOR_TEST);
       
 #ifdef PRINT_TIMINGS
       
@@ -404,12 +411,12 @@ void GPUQMCMatrix::mapData(ArrayGPU & data, int numRows, int numCols)
   //*/
 }
 
-void GPUQMCMatrix::getResults(Array2D< Array2D<qmcfloat>* > & results)
+void GPUQMCMatrix::getResults(Array2D< Array2D<float>* > & results)
 {
   if(resultsIn < 0)
     cerr << "Error: call runCalculation first!\n";
     
-  Array2D<qmcfloat> * fetch;
+  Array2D<float> * fetch;
   int subSize = 4 * nCols*deltaW * nRows*nMats*deltaH;
   
   if(results.dim1() != nDets)
@@ -417,7 +424,7 @@ void GPUQMCMatrix::getResults(Array2D< Array2D<qmcfloat>* > & results)
       cout << "results data structure has incorrect dimensions";
       return;
     }
-    
+  
   for(int iDet=0; iDet<nDets; iDet++)
     {
     
@@ -913,9 +920,9 @@ void GPUQMCMatrix::destroy()
     {
       //gpuDataFB[i].destroy();
     }
-    
+
   glDeleteTextures(1, coTexID);
-  
+  delete [] gpuDataFB;
   delete [] cpuData;
   delete [] pixelData;
 }
