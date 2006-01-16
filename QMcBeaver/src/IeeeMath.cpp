@@ -33,7 +33,7 @@ for more details.
 
 bool IeeeMath::isNaN(double x)
 {
-  if( x != x )
+  if( x != x || x+1 == x)
     {
       return true;
     }

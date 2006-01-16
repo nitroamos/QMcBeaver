@@ -77,7 +77,7 @@ void QMCWalker::initializePropagation(QMCWalkerData * &data,
   rToCalc = & TrialWalker->R;
 }
 
-void QMCWalker::processPropagation()
+void QMCWalker::processPropagation(QMCFunctions & QMF)
 {
   QMCGreensRatioComponent reverseGreensFunction =
     calculateReverseGreensFunction();
@@ -93,7 +93,7 @@ void QMCWalker::processPropagation()
   if( TrialWalker->isSingular() )
     {
       cerr << "WARNING: Reinitializing a singular walker!!" << endl;
-      initializeWalkerPosition();
+      initializeWalkerPosition(QMF);
     }
 }
 
@@ -769,7 +769,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
     p = 1;
     
   // if the aratio is NaN then reject the move
-  if( p+1 == p )
+  if( IeeeMath::isNaN(p) )
     {
       cerr << "WARNING: Rejecting trial walker with NaN aratio!" << endl;
       p = 0.0;
@@ -785,7 +785,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
   // The particular NaN that this is correcting for is not revealed by isinf or
   // isnan...
   double kineticEnergy = TrialWalker->walkerData.kineticEnergy;
-  if( kineticEnergy+1 == kineticEnergy)
+  if( IeeeMath::isNaN(kineticEnergy) )
     {
       cerr << "WARNING: Rejecting trial walker with NaN kinetic energy!" << endl;
       p = 0.0;
@@ -797,7 +797,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
     }
 
   double potentialEnergy = TrialWalker->walkerData.potentialEnergy;
-  if( potentialEnergy+1 == potentialEnergy)
+  if( IeeeMath::isNaN(potentialEnergy) )
     {
       cerr << "WARNING: Rejecting trial walker with NaN potential energy!" << endl;
       p = 0.0;
@@ -1065,12 +1065,11 @@ void QMCWalker::readXML(istream& strm)
   QMF.evaluate(R,walkerData);
 }
 
-void QMCWalker::initializeWalkerPosition()
+void QMCWalker::initializeWalkerPosition(QMCFunctions & QMF)
 {
   QMCInitializeWalker * IW =
     QMCInitializeWalkerFactory::initializeWalkerFactory(Input,
         Input->flags.walker_initialization_method);
-  QMCFunctions QMF(Input);
   
   R = IW->initializeWalkerPosition();
   QMF.evaluate(R,walkerData);
@@ -1080,9 +1079,9 @@ void QMCWalker::initializeWalkerPosition()
     {
       cerr << "Regenerating Walker..." << endl;
       
-      if( initilization_try > 100 )
+      if( initilization_try > 10 )
         {
-          cerr << "ERROR: 100 consecutive singular configurations while "
+          cerr << "ERROR: 10 consecutive singular configurations while "
           << "trying to initilize walker!" << endl;
           exit(0);
         }
