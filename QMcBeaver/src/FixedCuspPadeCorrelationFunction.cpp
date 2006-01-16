@@ -19,46 +19,46 @@ void FixedCuspPadeCorrelationFunction::initializeParameters(
   Array1D<double> & Constants)
 {
   if( Constants.dim1() < 1 )
-    {
-      cerr << "ERROR: Fixed Cusp Pade correlation function entered "
+  {
+    cerr << "ERROR: Fixed Cusp Pade correlation function entered "
       << "without a constant for the cusp condition!" << endl;
-      exit(0);
-    }
+    exit(0);
+  }
   else if( Constants.dim1() > 1 )
-    {
-      cerr << "ERROR: Fixed Cusp Pade correlation function entered "
+  {
+    cerr << "ERROR: Fixed Cusp Pade correlation function entered "
       << "with more than one constant!" << endl;
-      exit(0);
-    }
+    exit(0);
+  }
 
   if( BeginningIndexOfParameterType.dim1() != 2 )
-    {
-      cerr << "ERROR: Pade correlation function entered with an incorrect "
+  {
+    cerr << "ERROR: Pade correlation function entered with an incorrect "
       << "number of parameter types!" << endl;
-      exit(0);
-    }
+    exit(0);
+  }
 
   Array1D<double> numeratorParameters(BeginningIndexOfParameterType(1)+2);
 
   numeratorParameters(0) = 0.0;
   numeratorParameters(1) = Constants(0);
   for(int i=0; i<numeratorParameters.dim1()-2; i++)
-    {
-      numeratorParameters(i+2) = Parameters(i);
-    }
+  {
+    numeratorParameters(i+2) = Parameters(i);
+  }
 
   Numerator.initialize(numeratorParameters);
 
   Array1D<double> denominatorParameters(Parameters.dim1()-
-                                        numeratorParameters.dim1()+3);
+    numeratorParameters.dim1()+3);
 
   denominatorParameters(0) = 1.0;
 
   for(int i=0; i<denominatorParameters.dim1()-1; i++)
-    {
-      denominatorParameters(i+1) =
-        Parameters(i+BeginningIndexOfParameterType(1));
-    }
+  {
+    denominatorParameters(i+1) =
+      Parameters(i+BeginningIndexOfParameterType(1));
+  }
 
   Denominator.initialize(denominatorParameters);
 }
@@ -95,7 +95,7 @@ void FixedCuspPadeCorrelationFunction::evaluate( double r )
 
   FunctionValue = aDIVb;
   dFunctionValue = apDIVb - bpDIVb*aDIVb;
-  d2FunctionValue = (app - bpp*aDIVb)/b + 2*bpDIVb*(bpDIVb*aDIVb - apDIVb);
+  d2FunctionValue = (app - bpp*aDIVb)/b - 2*bpDIVb*dFunctionValue;
 }
 
 double FixedCuspPadeCorrelationFunction::getFunctionValue()
@@ -112,5 +112,16 @@ double FixedCuspPadeCorrelationFunction::getSecondDerivativeValue()
 {
   return d2FunctionValue;
 }
+
+Array1D<double> FixedCuspPadeCorrelationFunction::getNumeratorCoeffs()
+{
+  return Numerator.getCoefficients();
+}
+
+Array1D<double> FixedCuspPadeCorrelationFunction::getDenominatorCoeffs()
+{
+  return Denominator.getCoefficients();
+}
+
 
 

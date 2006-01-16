@@ -97,6 +97,16 @@ double PadeCorrelationFunction::getSecondDerivativeValue()
   return d2FunctionValue;
 }
 
+Array1D<double> PadeCorrelationFunction::getNumeratorCoeffs()
+{
+  return Numerator.getCoefficients();
+}
+
+Array1D<double> PadeCorrelationFunction::getDenominatorCoeffs()
+{
+  return Denominator.getCoefficients();
+}
+
 
 
 

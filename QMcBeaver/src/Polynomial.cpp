@@ -170,6 +170,11 @@ double Polynomial::getCoefficient(int i)
   return coefficients(i);
 }
 
+Array1D<double> Polynomial::getCoefficients()
+{
+  return coefficients;
+}
+
 Array1D<Complex> Polynomial::getRoots()
 {
   Array1D<Complex> complexCoeffs(coefficients.dim1());
