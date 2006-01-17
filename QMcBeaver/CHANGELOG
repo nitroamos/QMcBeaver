@@ -1,3 +1,36 @@
+Mon, 16 Jan 2006 Amos Anderson
+I committed many changes that I had made over the last several months.
+1. QMCRun now keeps one copy of QMCFunctions, meaning that QMCWalker's
+   initializeWalkerPosition does not have to create one. This is simply
+   to save a bit of memory...
+
+2. I added the NaN check x+1==x to IeeeMath, and modified QMCWalker to
+   reflect this.
+   
+3. I added the GPUQMCJastrowElectronElectron class that I had written. To
+   program this, I had to modify the abstract QMCCorrelationFunction class
+   to force all correlation function classes to allow other classes to query
+   the polynomial coefficients. The JuliusCorrelationFunction is not compatible
+   with what I've programmed. Changes were made to QMCJastrow.
+   
+4. I changed Array2D so that many of its functions are now in a separate file
+   called Array2D.cpp. I also modified it so that it itself computes the inverse
+   and determinant.
+   
+5. I changed how QMCSlater is arranged. I wanted to let QMCFunction choose when
+   it wanted the determinant/inverse computed relative to when the matrices were
+   multiplied. This permits the GPU to get started on some work, letting the CPU
+   do some other stuff before wrapping up the calculation.
+   
+6. QMcBeaver can now run CPU calculations and GPU calculations simultaneously. That is,
+   I can tell it to calculate a certain number of walkers on the GPU, and the rest
+   of the walkers from the walkers_per_pass parameter get processed on the CPU. This
+   is my attempt at balancing the CPU and the GPU, and is related to #5 above.
+
+7. I monkeyed with the Stopwatches class. Its internal storage is now in microseconds
+   instead of milliseconds. This helps preserve some of the information. I don't
+   think I had the Windows/Cygwin compatibility quite finished.
+
 Wed, 7 Dec 2005, Daniel R. Fisher
 
 1. Modified the way that the electron density histograms are collected
