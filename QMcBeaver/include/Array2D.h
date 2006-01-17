@@ -36,15 +36,24 @@ for more details.
 #include "cppblas.h"
 #include <assert.h>
 #include "Array1D.h"
+#include "math.h"
+
+#ifdef USELAPACK
+#include "cpplapack.h"
+#endif
 
 //Array2D is included in all the classes where this change is relevant
-#if defined SINGLEPRECISION || defined QMC_GPU
+#if defined SINGLEPRECISION
 typedef float  qmcfloat;
 #else
 typedef double qmcfloat;
 #endif
 
-static const bool USE_KAHAN = false;
+#if defined SINGLEPRECISION || defined QMC_GPU
+#define REALLYTINY 1e-35f
+#else
+#define REALLYTINY 1e-250
+#endif
 
 using namespace std;
 
@@ -83,10 +92,7 @@ template <class T> class Array2D
     Gets a pointer to an array containing the array elements.  
     The ordering of this array is NOT specified.  
     */
-    T* array()
-    {
-      return pArray;
-    }
+    T* array();
 
     /**
     Gets the number of elements in the array's first dimension.
@@ -167,235 +173,94 @@ template <class T> class Array2D
 
 #ifdef USEATLAS
     /**This matrix multiplication requires rhs to be transposed.*/
-    Array2D<double> operator*(const Array2D<double> & rhs)
-    {
-      if(n_2 != rhs.n_2)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
-          exit(1);
-        }
-      Array2D<T> TEMP(n_1,rhs.n_1);
-      TEMP = 0;
-      cblas_dgemm(CBLAS_ORDER(CblasRowMajor),
-                  CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasTrans),
-                  n_1, rhs.n_1, n_2,
-                  1.0, pArray, n_2,
-                  rhs.pArray, rhs.n_2,
-                  0.0, TEMP.pArray, TEMP.n_2);
-      return TEMP;
-    }
+    Array2D<double> operator*(const Array2D<double> & rhs);
 
     /**This matrix multiplication requires rhs to be transposed.*/
-    Array2D<float> operator*(const Array2D<float> & rhs)
-    {
-      if(n_2 != rhs.n_2)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
-          exit(1);
-        }
-      Array2D<T> TEMP(n_1,rhs.n_1);
-      TEMP = 0;
-      cblas_sgemm(CBLAS_ORDER(CblasRowMajor),
-                  CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasTrans),
-                  n_1, rhs.n_1, n_2,
-                  1.0, pArray, n_2,
-                  rhs.pArray, rhs.n_2,
-                  0.0, TEMP.pArray, TEMP.n_2);
-      return TEMP;
-    }
+    Array2D<float> operator*(const Array2D<float> & rhs);
 
     /**rhs is NOT transposed*/
-    Array2D<double> multiply(const Array2D<double> & rhs)
-    {
-      if(n_2 != rhs.n_1)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
-          exit(1);
-        }
-      Array2D<T> TEMP(n_1,rhs.n_2);
-      TEMP = 0;
-      cblas_dgemm(CBLAS_ORDER(CblasRowMajor),
-                  CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasNoTrans),
-                  n_1, rhs.n_2, n_2,
-                  1.0, pArray, n_2,
-                  rhs.pArray, rhs.n_2,
-                  0.0, TEMP.pArray, TEMP.n_2);
-      return TEMP;
-    }
+    Array2D<double> multiply(const Array2D<double> & rhs);
 
     /**rhs is NOT transposed*/
-    Array2D<float> multiply(const Array2D<float> & rhs)
-    {
-      if(n_2 != rhs.n_1)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
-          exit(1);
-        }
-      Array2D<T> TEMP(n_1,rhs.n_2);
-      TEMP = 0;
-      cblas_sgemm(CBLAS_ORDER(CblasRowMajor),
-                  CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasNoTrans),
-                  n_1, rhs.n_2, n_2,
-                  1.0, pArray, n_2,
-                  rhs.pArray, rhs.n_2,
-                  0.0, TEMP.pArray, TEMP.n_2);
-      return TEMP;
-    }
+    Array2D<float> multiply(const Array2D<float> & rhs);
 
     /**
     This uses ATLAS to calculate a dot product between all the elements in one
     Array2D and all the elements in another Array2D
     */
-    double dotAllElectrons(const Array2D<double> & rhs)
-    {
-      return cblas_ddot(n_1*n_2, pArray, 1, rhs.pArray, 1);
-    }
+    double dotAllElectrons(const Array2D<double> & rhs);
 
     /**
     This uses ATLAS to calculate a dot product between all the elements in one
     row from one Array2D and one row in another Array2D
     */
-    double dotOneElectron(const Array2D<double> & rhs, int whichElectron)
-    {
-      return cblas_ddot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
-    }
+    double dotOneElectron(const Array2D<double> & rhs, int whichElectron);
 
-    float dotAllElectrons(const Array2D<float> & rhs)
-    {
-      return cblas_sdot(n_1*n_2, pArray, 1, rhs.pArray, 1);
-    }
+    float dotAllElectrons(const Array2D<float> & rhs);
 
-    float dotOneElectron(const Array2D<float> & rhs, int whichElectron)
-    {
-      return cblas_sdot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
-    }
+    float dotOneElectron(const Array2D<float> & rhs, int whichElectron);
 
 #else
 
     /**This requires rhs to be transposed*/
-    Array2D operator*(const Array2D & rhs)
-    {
-      if(n_2 != rhs.n_2)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
-          exit(1);
-        }
-      int M = n_1;
-      int N = rhs.n_1;
-      int K = n_2;
-      Array2D<T> TEMP(M,N);
-      T * A = pArray;
-      T * B = rhs.pArray;
-      T * C = TEMP.pArray;
-      int i, j, k;
-
-      if(USE_KAHAN)
-      {
-        T Cee;
-        T Why;
-        T Tee;
-
-        for (i = 0; i < M; ++i)
-        {
-          const register T *Ai_ = A + i*K;
-          for (j = 0; j < N; ++j)
-          {
-            const register T *B_j = B + j*K;
-            register T cij = Ai_[0] * B_j[0];
-            Cee = 0;
-            for (k = 1; k < K; ++k)
-            {
-              Why = Ai_[k] * B_j[k] - Cee;
-              Tee = cij + Why;
-              Cee = (Tee - cij) - Why;
-              cij = Tee;
-            }
-            C[i*N + j] = cij;
-          }
-        }
-      } else {
-        for (i = 0; i < M; ++i)
-        {
-          const register T *Ai_ = A + i*K;
-          for (j = 0; j < N; ++j)
-          {
-            const register T *B_j = B + j*K;
-            register T cij = 0;
-            for (k = 0; k < K; ++k)
-            {
-              cij += Ai_[k] * B_j[k];
-            }
-            C[i*N + j] = cij;
-          }
-        }
-      }
-
-      return TEMP;
-    }
+    Array2D operator*(const Array2D & rhs);
 
     /**rhs is NOT transposed*/
-    Array2D multiply(const Array2D & rhs)
-    {
-      if(n_2 != rhs.n_1)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
-          exit(1);
-        }
-      int M = n_1;
-      int N = rhs.n_2;
-      int K = n_2;
-      Array2D<T> TEMP(M,N);
-      T * A = pArray;
-      T * B = rhs.pArray;
-      T * C = TEMP.pArray;
-      for (int i = 0; i < M; ++i)
-        {
-          register T *Ai_ = A + i*K;
-          for (int j = 0; j < N; ++j)
-            {
-              register T cij = 0;
-              for (int k = 0; k < K; ++k)
-                {
-                  cij += Ai_[k] * B[k*N+j];
-                }
-              C[i*N + j] = cij;
-            }
-        }
-      return TEMP;
-    }
+    Array2D multiply(const Array2D & rhs);
 
     /**
     Calculates a dot product between all the elements in one
     Array2D and all the elements in another Array2D
     */
-    T dotAllElectrons(const Array2D<T> & rhs)
-    {
-      register T temp = 0;
-      for(int i=0; i<n_1*n_2; i++)
-        temp += pArray[i]*rhs.pArray[i];
-      return temp;
-    }
+    T dotAllElectrons(const Array2D<T> & rhs);
 
     /**
     Calculates a dot product between all the elements in one
     row from one Array2D and one row in another Array2D
     */
-    T dotOneElectron(const Array2D<T> & rhs, int whichElectron)
-    {
-      register T temp = 0;
-      T * l = pArray + whichElectron*n_2;
-      T * r = rhs.pArray + whichElectron*n_2;
-      for(int i=0; i<n_1; i++)
-        temp += l[i]*r[i];
-      return temp;
-    }
+    T dotOneElectron(const Array2D<T> & rhs, int whichElectron);
 #endif
+
+    /**
+    Calculates the inverse and determinant of a matrix using a 
+    dense LU solver.  This 
+    method scales as \f$O(1 N^3)\f$.
+
+    @param a a \f$N \times N\f$ matrix 
+    @param inv inverse of a is returned here
+    @param det determinant of a is returned here
+    @param calcOK returns false if the calculation is singular and true otherwise
+    */
+
+    void determinant_and_inverse(Array2D<T> &inv, double& det, bool *calcOK);
+
+    /**
+    LU decomposition using the algorithm in numerical recipes for a dense matrix.
+
+
+    @param a a \f$N \times N\f$ matrix which is destroyed during the operation.
+    The resulting LU decompositon is placed here.
+    @param indx a \f$N\f$ dimensional array which records the row permutation 
+    from partial pivoting.
+    @param d used to give det(a) the correct sign
+    @param calcOK returns false if the calculation is singular and true otherwise
+    */
+
+    void ludcmp(int *indx, double *d, bool *calcOK);
+
+
+    /**
+    LU backsubstitution using the algorithm in numerical
+    recipes for a dense matrix. 
+
+    @param a the LU decomposition of a matrix produced by ludcmp
+    @param indx a \f$N\f$ dimensional array which records the row permutation 
+    from partial pivoting generated by ludcmp
+    @param b the \f$N\f$ dimensional array right hand side of the system of 
+    equations to solve
+    */
+
+    void lubksb(int *indx, Array1D<T>& b);
 
     /**
     Sets two arrays equal. memcpy would probably break if T is a class. is this a problem?
@@ -426,34 +291,20 @@ template <class T> class Array2D
     /**
     Returns the product of an array and a scalar.
     */
-    Array2D operator*(const T C)
-    {
-      Array2D<T> TEMP(n_1,n_2);
-      for(int i=0; i<n_1*n_2; i++)
-        TEMP.pArray[i] = C*pArray[i];
-      return TEMP;
-    }
+    Array2D operator*(const T C);
 
 
     /**
     Sets this array equal to itself times a scalar value.
     */
-    void operator*=(const T C)
-    {
-      for(int i=0; i<n_1*n_2; i++)
-        pArray[i] *= C;
-    }
+    void operator*=(const T C);
 
 
     /**
     Sets this array equal to itself divided by a scalar value.
     */
 
-    void operator/=(const T C)
-    {
-      T inv = 1.0/C;
-      operator*=(inv);
-    }
+    void operator/=(const T C);
 
 
     /**
@@ -496,30 +347,18 @@ template <class T> class Array2D
     /**
     This function makes it easy to replace a row with an Array1D
     */
-    void setRow(int whichRow, Array1D<T> & rhs)
-    {
-      if(whichRow >= n_1)  cerr << "Error: invalid row index\n";
-      if(rhs.dim1() > n_2) cerr << "Error: rhs length is incorrect\n";
-      memcpy(pArray + n_2*whichRow, rhs.array(), sizeof(T)*n_2);
-    }
+    void setRow(int whichRow, Array1D<T> & rhs);
 
     /**
     This function takes advantage of the row-major format of the matricies
     to copy numRows worth of data from one Array2D to another
     */
-    void setRows(int to, int from, int numRows, const Array2D<T> & rhs)
-    {
-      memcpy(pArray + n_2*to, rhs.pArray + n_2*from, sizeof(T)*n_2*numRows);
-    }
+    void setRows(int to, int from, int numRows, const Array2D<T> & rhs);
 
     /**
     Copies a column from one Array2D to another
     */
-    void setColumn(int to, int from, const Array2D<T> & rhs)
-    {
-      for(int i=0; i<n_1; i++)
-        pArray[map(i,to)] = rhs.pArray[rhs.map(i,from)];
-    }
+    void setColumn(int to, int from, const Array2D<T> & rhs);
 
     /**
     Destroy's the array and cleans up the memory.
@@ -561,23 +400,8 @@ template <class T> class Array2D
     printf("%11.3e",pix[index +1]);
     printf("   ");
     */
-    friend ostream& operator<<(ostream & strm, const Array2D<T> & rhs)
-    {
-      strm.precision(4);
-      strm.setf(ios_base::scientific);
-      int maxJ = 45;
-      for(int i=0; i<rhs.n_1;i++)
-        {
-          for(int j=0; j<rhs.n_2 && j<maxJ; j++)
-            {
-              strm.width(20);
-              strm.precision(12);
-              strm << rhs.pArray[rhs.map(i,j)];
-            }
-          strm << endl;
-        }
-      return strm;
-    }
+    template <class TT>
+    friend ostream& operator<<(ostream & strm, const Array2D<TT> & rhs);
   };
 
 #endif
