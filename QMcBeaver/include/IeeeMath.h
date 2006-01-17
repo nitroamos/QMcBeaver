@@ -43,7 +43,10 @@ class IeeeMath
 {
  public:
   /**
-     Determines if a number is a NaN.
+     Determines if a number is a NaN. It is now improved
+     to check for the possibility that
+     x+1 == x
+     for which it will return true.
 
      @param x determines if this number is NaN
      @return true if x is NaN and false otherwise.
