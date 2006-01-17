@@ -57,7 +57,7 @@ void QMCRun::propagateWalkers(bool writeConfigs)
    */
   for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
     {
-      wp->processPropagation();
+      wp->processPropagation(QMF);
     }
 }
 
@@ -192,7 +192,7 @@ void QMCRun::randomlyInitializeWalkers()
       w.initialize(Input);
       
       // randomly initialize the walkers position
-      w.initializeWalkerPosition();
+      w.initializeWalkerPosition(QMF);
       
       wlist.push_back(w);
     }
