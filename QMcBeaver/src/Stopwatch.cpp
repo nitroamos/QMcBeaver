@@ -32,7 +32,7 @@ Stopwatch::Stopwatch()
 
 void Stopwatch::reset()
 {
-  total_ms=0;
+  total_us=0;
   running=false;
 }
 
@@ -50,7 +50,7 @@ void Stopwatch::start()
     {
       gettimeofday(&tp,&tz);
       stime1 = tp.tv_sec;
-      milli1 = tp.tv_usec/1000;
+      micro1 = tp.tv_usec;
       running=true;
     }
 }
@@ -61,10 +61,9 @@ void Stopwatch::stop()
     {
       gettimeofday(&tp,&tz);
       stime2 = tp.tv_sec;
-      milli2 = tp.tv_usec/1000;
-
-      result_ms = ((stime2-stime1)*1000 + milli2 - milli1);
-      total_ms += result_ms;
+      micro2 = tp.tv_usec;
+      result_us = ((stime2-stime1)*1e6 + micro2 - micro1);
+      total_us += result_us;
       running   = false;
     }
   else
@@ -80,7 +79,12 @@ void Stopwatch::stop()
 
 long Stopwatch::timeMS()
 {
-  return total_ms;
+  return total_us/1000;
+}
+
+long Stopwatch::timeUS()
+{
+  return total_us;
 }
 
 bool Stopwatch::isRunning()
@@ -97,7 +101,7 @@ string Stopwatch::toString()
 
 void Stopwatch::operator =( const Stopwatch & rhs )
 {
-  total_ms = rhs.total_ms;
+  total_us = rhs.total_us;
 
   // don't include any members that are not in the mpi type because
   // they can cause seg faults with some MPI implementations.
@@ -106,7 +110,7 @@ void Stopwatch::operator =( const Stopwatch & rhs )
 Stopwatch Stopwatch::operator+(Stopwatch & rhs)
 {
   Stopwatch result;
-  result.total_ms = this->total_ms + rhs.total_ms;
+  result.total_us = this->total_us + rhs.total_us;
   result.running = false;
 
   return result;
@@ -145,7 +149,7 @@ void Stopwatch::buildMpiType()
   block_lengths[0] = 1;
   
   MPI_Address(&indata, &addresses[0]);
-  MPI_Address(&(indata.total_ms), &addresses[1]);
+  MPI_Address(&(indata.total_us), &addresses[1]);
 
   displacements[0] = addresses[1] - addresses[0];
   
