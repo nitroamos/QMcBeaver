@@ -32,6 +32,9 @@ for more details.
 
 #include "QMCSlater.h"
 
+static const bool showTimings = !false;
+static const bool printPsi    = false;
+
 QMCSlater::QMCSlater()
 {
   Start = 0;
@@ -97,16 +100,16 @@ void QMCSlater::initialize(QMCInput *INPUT, int startEl, int stopEl,
 				       *coeffs);
                   numRows = 0;
                 }
-              if (orbital_index == D(0,i).dim2()) break;
+              if (orbital_index == Stop-Start+1) break;
             }
         }
     }
 #ifdef QMC_GPU
   // I should put some more effort into this question of copy 
   // constructors/assignment
-  GPUQMCBasisFunction temp(*BF, (int)(WF_coeffs(0).dim1()), Input->flags.walkers_per_pass);
+  GPUQMCBasisFunction temp(*BF, (int)(WF_coeffs(0).dim1()), Input->flags.getNumGPUWalkers());
   gpuBF = temp;
-  gpuMatMult = GPUQMCMatrix(Input, WF_coeffs,Input->flags.walkers_per_pass);
+  gpuMatMult = GPUQMCMatrix(Input, WF_coeffs,Input->flags.getNumGPUWalkers());
 #endif
 }
 
@@ -115,11 +118,41 @@ void QMCSlater::allocate(int N)
   int ndet = WF->getNumberDeterminants();
   int nbasisfunc = WF->getNumberBasisFunctions();
   int wpp = Input->flags.walkers_per_pass;
+  int gpp = Input->flags.getNumGPUWalkers();
 
-  D.allocate(wpp,ndet);
-  D_inv.allocate(wpp,ndet);
-  Laplacian_D.allocate(wpp,ndet);
-  Grad_D.allocate(wpp,ndet,3);
+
+  D.allocate(wpp-gpp,ndet);
+  D_inv.allocate(wpp-gpp,ndet);
+  Laplacian_D.allocate(wpp-gpp,ndet);
+  Grad_D.allocate(wpp-gpp,ndet,3);
+  for(int j=0; j<D.dim1(); j++)
+    {
+      for (int i=0; i<D.dim2(); i++)
+        {
+          D(j,i).allocate(N,N);
+          D_inv(j,i).allocate(N,N);
+          Laplacian_D(j,i).allocate(N,N);
+          for(int k=0; k<3; k++)
+            Grad_D(j,i,k).allocate(N,N);
+        }
+    }
+#ifdef QMC_GPU
+  gpu_D.allocate(gpp,ndet);
+  gpu_D_inv.allocate(gpp,ndet);
+  gpu_Laplacian_D.allocate(gpp,ndet);
+  gpu_Grad_D.allocate(gpp,ndet,3);
+  for(int j=0; j<gpu_D.dim1(); j++)
+    {
+      for (int i=0; i<gpu_D.dim2(); i++)
+        {
+          gpu_D(j,i).allocate(N,N);
+          gpu_D_inv(j,i).allocate(N,N);
+          gpu_Laplacian_D(j,i).allocate(N,N);
+          for(int k=0; k<3; k++)
+            gpu_Grad_D(j,i,k).allocate(N,N);
+        }
+    }
+#endif
 
   Singular.allocate(wpp);
   Psi.allocate(wpp);
@@ -131,15 +164,6 @@ void QMCSlater::allocate(int N)
 
   for(int j=0; j<wpp; j++)
     {
-      for (int i=0; i<ndet; i++)
-        {
-          D(j,i).allocate(N,N);
-          D_inv(j,i).allocate(N,N);
-          Laplacian_D(j,i).allocate(N,N);
-          for(int k=0; k<3; k++)
-            Grad_D(j,i,k).allocate(N,N);
-        }
-
       Singular(j).allocate(ndet);
       Psi(j).allocate(ndet);
       Laplacian_PsiRatio(j).allocate(ndet);
@@ -155,96 +179,113 @@ void QMCSlater::allocate(int N)
   occupation.allocate(ndet,WF->getNumberOrbitals());
 
 #ifdef QMC_GPU
-  bfData.allocate(wpp*5);
-  for(int j=0; j<bfData.dim1(); j++)
-    bfData(j).allocate(N,nbasisfunc);
-
   /* The dimensions of these data are numWalkers x numDeterminants then numElec
      x numOrb.  What I'm doing here is filling the resultsCollector database 
      with addresses of our actual data storage. This creates an alias which I
      can then send to the GPUQMC code without duplicating data storage or 
-     ruining the previously existing data design
+     ruining the previously existing data design.
+
+     resultsCollector will be assigned the first gpu_walkers_per_pass elements.
   */
-  resultsCollector.allocate(ndet, wpp*5);
+  resultsCollector.allocate(ndet, gpp*5);
   for(int iDet=0; iDet<ndet; iDet++)
     {
-      for(int iWalker=0; iWalker<wpp; iWalker++)
+      for(int iWalker=0; iWalker<gpp; iWalker++)
         {
-          resultsCollector(iDet,iWalker*5    ) = & D(iWalker, iDet);
-          resultsCollector(iDet,iWalker*5 + 1) = & Grad_D(iWalker, iDet, 0);
-          resultsCollector(iDet,iWalker*5 + 2) = & Grad_D(iWalker, iDet, 1);
-          resultsCollector(iDet,iWalker*5 + 3) = & Grad_D(iWalker, iDet, 2);
-          resultsCollector(iDet,iWalker*5 + 4) = & Laplacian_D(iWalker, iDet);
+          resultsCollector(iDet,iWalker*5    ) = & gpu_D(iWalker, iDet);
+          resultsCollector(iDet,iWalker*5 + 1) = & gpu_Grad_D(iWalker, iDet, 0);
+          resultsCollector(iDet,iWalker*5 + 2) = & gpu_Grad_D(iWalker, iDet, 1);
+          resultsCollector(iDet,iWalker*5 + 3) = & gpu_Grad_D(iWalker, iDet, 2);
+          resultsCollector(iDet,iWalker*5 + 4) = & gpu_Laplacian_D(iWalker, iDet);
         }
     }
+#endif
 
-#else
   Chi.allocate(N,nbasisfunc);
   Chi_laplacian.allocate(N,nbasisfunc);
   Chi_gradient.allocate(3);
   for(int j=0; j<3; j++)
     Chi_gradient(j).allocate(N,nbasisfunc);
-#endif
 }
 
 QMCSlater::~QMCSlater()
 {
   if (Start != Stop)
+  {
+    for(int j=0; j<D.dim1(); j++)
     {
-#ifdef QMC_GPU
-      resultsCollector.deallocate();
-#endif
-
-      for(int j=0; j < Input->flags.walkers_per_pass; j++)
-	{
-	  for (int i=0; i<WF->getNumberDeterminants(); i++)
-	    {
-	      D(j,i).deallocate();
-	      D_inv(j,i).deallocate();
-	      Laplacian_D(j,i).deallocate();
-	      for (int k=0; k<3; k++)
-		Grad_D(j,i,k).deallocate();
-	    }
-	  Singular(j).deallocate();
-	  Psi(j).deallocate();
-	  Laplacian_PsiRatio(j).deallocate();
-	  Grad_PsiRatio(j).deallocate();
-	  if (Input->flags.calculate_bf_density == 1)
-	    Chi_Density(j).deallocate();
-	}
-
-      for (int i=0; i<WF->getNumberDeterminants(); i++)
-	WF_coeffs(i).deallocate();
-      WF_coeffs.deallocate();
-
-      D.deallocate();
-      D_inv.deallocate();
-      Laplacian_D.deallocate();
-      Grad_D.deallocate();
-      Singular.deallocate();
-      Psi.deallocate();
-      Laplacian_PsiRatio.deallocate();
-      Grad_PsiRatio.deallocate();
-
-      if (Input->flags.calculate_bf_density == 1)
-	Chi_Density.deallocate();
-
-      occupation.deallocate();
-
-#ifdef QMC_GPU
-      //gpuBF.destroy();
-      gpuMatMult.destroy();
-      for (int j=0; j<bfData.dim1(); j++)
-	bfData(j).deallocate();
-      bfData.deallocate();
-#else
-      Chi.deallocate();
-      Chi_laplacian.deallocate();
-      for (int j=0; j<3; j++)
-	Chi_gradient(j).deallocate();
-      Chi_gradient.deallocate();
-#endif
+      for (int i=0; i<D.dim2(); i++)
+      {
+        D(j,i).deallocate();
+        D_inv(j,i).deallocate();
+        Laplacian_D(j,i).deallocate();
+        for(int k=0; k<3; k++)
+          Grad_D(j,i,k).deallocate();
+      }
     }
+    D.deallocate();
+    D_inv.deallocate();
+    Laplacian_D.deallocate();
+    Grad_D.deallocate();
+
+#ifdef QMC_GPU
+    for(int j=0; j<gpu_D.dim1(); j++)
+    {
+      for (int i=0; i<gpu_D.dim2(); i++)
+      {
+        gpu_D(j,i).deallocate();
+        gpu_D_inv(j,i).deallocate();
+        gpu_Laplacian_D(j,i).deallocate();
+        for(int k=0; k<3; k++)
+          gpu_Grad_D(j,i,k).deallocate();
+      }
+    }
+    gpu_D.deallocate();
+    gpu_D_inv.deallocate();
+    gpu_Laplacian_D.deallocate();
+    gpu_Grad_D.deallocate();
+#endif
+
+    for(int j=0; j < Input->flags.walkers_per_pass; j++)
+    {
+      Singular(j).deallocate();
+      Psi(j).deallocate();
+      Laplacian_PsiRatio(j).deallocate();
+      Grad_PsiRatio(j).deallocate();
+      if (Input->flags.calculate_bf_density == 1)
+        Chi_Density(j).deallocate();
+    }
+
+    for (int i=0; i<WF->getNumberDeterminants(); i++)
+      WF_coeffs(i).deallocate();
+    WF_coeffs.deallocate();
+
+    Singular.deallocate();
+    Psi.deallocate();
+    Laplacian_PsiRatio.deallocate();
+    Grad_PsiRatio.deallocate();
+
+    if (Input->flags.calculate_bf_density == 1)
+      Chi_Density.deallocate();
+
+    occupation.deallocate();
+
+#ifdef QMC_GPU
+    //We do not need to deallocate the contents of
+    //resultsCollector because the contents were
+    //references to gpu_D, gpu_Laplacian, etc
+    //and those were already deallocated.
+    resultsCollector.deallocate();
+
+    gpuMatMult.destroy();
+#endif
+
+    Chi.deallocate();
+    Chi_laplacian.deallocate();
+    for (int j=0; j<3; j++)
+      Chi_gradient(j).deallocate();
+    Chi_gradient.deallocate();
+  }
 }
 
 void QMCSlater::setStartAndStopElectronPositions(int StartEl, int StopEl)
@@ -255,45 +296,64 @@ void QMCSlater::setStartAndStopElectronPositions(int StartEl, int StopEl)
   allocate(StopEl-StartEl+1);
 }
 
-void QMCSlater::evaluate(int num)
+void QMCSlater::update_Ds()
 {
   // The new idea here is to split all the work that the evaluate function used
   // to do.  This enables QMCFunction to control when the multiplication 
   // happens relative to the inverse
 
+#ifdef QMC_GPU
+  /* This will fill the resultsCollector with
+  the results from the GPU. However, all of 
+  resultsCollector's elements are really
+  just pointers to the D object.*/
+  gpuMatMult.getResults(resultsCollector);
+  processInverse(0,gpu_D,gpu_D_inv,gpu_Laplacian_D,gpu_Grad_D);
+#endif
+  int gpp = Input->flags.getNumGPUWalkers();
+  processInverse(gpp,D,D_inv,Laplacian_D,Grad_D);
+}
+
+template <class T>
+void QMCSlater::processInverse(int start,
+      Array2D< Array2D<T> > & psi, Array2D< Array2D<T> > & inv, 
+      Array2D< Array2D<T> > & lap, Array3D< Array2D<T> > & grad)
+{
   // The LU Decomposition inverse used here is O(1*N^3)
   // Updating one electron at a time is O(2*N^3-N^2)
   bool calcOK = true;
-  bool printPsi = !true;
-
-#ifdef QMC_GPU
-  gpuMatMult.getResults(resultsCollector);
-#endif
-
-  for(int i=0; i<num; i++)
+  for(int i=0; i<psi.dim1(); i++)
     {
       for (int j=0; j<WF->getNumberDeterminants(); j++)
         {
-          determinant_and_inverse(D(i,j),D_inv(i,j),(Psi(i))(j),&calcOK);
-          (Singular(i))(j) = !calcOK;
+          psi(i,j).determinant_and_inverse(inv(i,j),(Psi(i+start))(j),&calcOK);
+          (Singular(i+start))(j) = !calcOK;
         }
 
-      if( !isSingular(i) )
+      if( !isSingular(i+start) )
         {
-          calculate_DerivativeRatios(i);
+          calculate_DerivativeRatios(i,start,inv,lap,grad);
 
           if(printPsi)
             {
-              printf("%4d: ",i);
+              printf("%4d: ",i+start);
               for (int j=0; j<WF->getNumberDeterminants(); j++)
                 {
-                  printf("psi # %s%18.15e ",(Psi(i))(j)<0?"":" ",(Psi(i))(j) );
-                  printf("lap ratio # %s%18.15g\n",(Laplacian_PsiRatio(i))(j)<0?"":" ",(Laplacian_PsiRatio(i))(j) );
+                  printf("psi # %s%18.15e ",(Psi(i))(j)<0?"":" ",(Psi(i+start))(j) );
+                  printf("lap ratio # %s%18.15g\n",(Laplacian_PsiRatio(i+start))(j)<0?"":" ",(Laplacian_PsiRatio(i+start))(j) );
                 }
             }
         }
     }
 }
+
+template void QMCSlater::processInverse<float>
+(int start, Array2D< Array2D<float> > & psi, Array2D< Array2D<float> > & inv, 
+            Array2D< Array2D<float> > & lap, Array3D< Array2D<float> > & grad);
+
+template void QMCSlater::processInverse<double>
+(int start, Array2D< Array2D<double> > & psi, Array2D< Array2D<double> > & inv, 
+            Array2D< Array2D<double> > & lap, Array3D< Array2D<double> > & grad);
 
 /**
 This function contains the meat of the QMC calculation.
@@ -311,55 +371,70 @@ This function contains the meat of the QMC calculation.
   multiplication is faster with a transposed matrix, and it enables the use of 
   memcpy for Array2D's row-major data.
 */
-void QMCSlater::update_Ds(Array1D<Array2D<double>*> &X, int num)
+#ifdef QMC_GPU
+void QMCSlater::gpuEvaluate(Array1D<Array2D<double>*> &X, int num)
 {
   static double averageM = 0, timeM = 0;
   static double averageB = 0, timeB = 0;
   static double numT = -5;
   static int nBF = WF_coeffs(0).dim2();
   static int nOE = WF_coeffs(0).dim1();
-  static const bool showTimings = false;
-  static const bool printBF = false;//is there a good way to do this?
+  static int mat_multiplier = gpuMatMult.getNumIterations();
+  static int bas_multiplier = gpuBF.getNumIterations();
   // 1 add + 1 mul per nBF * nOE * nOE
   double numOps = 5*num*(nBF * nOE * nOE * 2.0 - nOE * nOE) / 1000.0;
 
-#ifdef QMC_GPU
   GLuint texture;
-#endif
   Stopwatch sw = Stopwatch();
   sw.reset();
 
-#ifdef QMC_GPU
-  static int mat_multiplier = gpuMatMult.getNumIterations();
-  static int bas_multiplier = gpuBF.getNumIterations();
+  if(showTimings){sw.reset(); sw.start();}
 
-  if(showTimings)
-    {
-      sw.reset(); sw.start();
-    }
   texture = gpuBF.runCalculation(X,num, Start, Stop);
+  
   if(showTimings)
     {
+      glFinish();
       sw.stop();
       timeB = sw.timeMS();
       if(numT >= 0) averageB += sw.timeMS();
     }
 
-  if(showTimings)
-    {
-      sw.reset(); sw.start();
-    }
+  if(showTimings){sw.reset(); sw.start();}
+
   gpuMatMult.runCalculation(num,texture);
+  
   if(showTimings)
     {
+      gpuMatMult.getResults(resultsCollector);
+      glFinish();
       sw.stop();
       timeM = sw.timeMS();
       if(numT >= 0) averageM += sw.timeMS();
+      if( num > 1) numT++;
+      cout << "\ngpu bf: " << (int)(timeB/bas_multiplier+0.5) << " ( " << (int)(averageB/(numT*bas_multiplier)+0.5) << ") ";
+      cout << "mm: " << (int)(timeM/mat_multiplier+0.5) << " (" << (int)(averageM/(numT*mat_multiplier)+0.5) << ") ";
+      cout << "; mflops: " << (int)(mat_multiplier*numOps/timeM+0.5) <<
+      " (" << (int)(mat_multiplier*numOps/(averageM/numT)+0.5) << ")\n";
     }
+}
+#endif
 
-#else
-  static int mat_multiplier = 1;
-  static int bas_multiplier = 1;
+void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
+{
+  static double averageM = 0, timeM = 0;
+  static double averageB = 0, timeB = 0;
+  static double numT = -5;
+  static int nBF = WF_coeffs(0).dim2();
+  static int nOE = WF_coeffs(0).dim1();
+  static int mat_multiplier = 1000;
+  static int bas_multiplier = 1000;
+  // 1 add + 1 mul per nBF * nOE * nOE
+  double numOps = 5*num*(nBF * nOE * nOE * 2.0 - nOE * nOE) / 1000.0;
+
+  Stopwatch sw = Stopwatch();
+  sw.reset();
+
   timeB = 0; timeM = 0;
   for(int walker = 0; walker < num; walker++)
     {
@@ -367,7 +442,7 @@ void QMCSlater::update_Ds(Array1D<Array2D<double>*> &X, int num)
         {
           sw.reset(); sw.start();
         }
-      BF->evaluateBasisFunctions(*X(walker),Start,Stop,
+      BF->evaluateBasisFunctions(*X(walker+start),Start,Stop,
                                  Chi,
                                  Chi_gradient(0),
                                  Chi_gradient(1),
@@ -376,24 +451,8 @@ void QMCSlater::update_Ds(Array1D<Array2D<double>*> &X, int num)
       if(showTimings)
         {
           sw.stop();
-          timeB += sw.timeMS();
-          if(numT >= 0) averageB += sw.timeMS();
-        }
-
-      if(num > 1 && false)
-        {
-          cout << "\npsi_bf" << walker << ":\n" << Chi;
-          if(!false)
-            {
-              cout << "grx_bf" << walker << ":\n" << Chi_gradient(0);
-              cout << "gry_bf" << walker << ":\n" << Chi_gradient(1);
-              cout << "grz_bf" << walker << ":\n" << Chi_gradient(2);
-              cout << "lap_bf" << walker << ":\n" << Chi_laplacian;
-            }
-        }
-
-      if(showTimings)
-        {
+          timeB += sw.timeUS();
+          if(numT >= 0) averageB += sw.timeUS();
           sw.reset(); sw.start();
         }
       for(int i=0; i<WF->getNumberDeterminants(); i++)
@@ -407,26 +466,17 @@ void QMCSlater::update_Ds(Array1D<Array2D<double>*> &X, int num)
       if(showTimings)
         {
           sw.stop();
-          timeM += sw.timeMS();
-          if(numT >= 0) averageM += sw.timeMS();
+          timeM += sw.timeUS();
+          //cout << "swtime " << sw.timeUS() << endl;
+          if(numT >= 0) averageM += sw.timeUS();
         }
-
-      if(num >= 1 && false)
-        {
-          //cout << "\npsi_mm" << walker << ":\n" << D(walker,0);
-          //cout << "grx_mm" << walker << ":\n" << Grad_D(walker,0,0);
-          //cout << "gry_mm" << walker << ":\n" << Grad_D(walker,0,1);
-          //cout << "grz_mm" << walker << ":\n" << Grad_D(walker,0,2);
-          cout << "lap_mm" << walker << ":\n" << Laplacian_D(walker,0);
-        }
-
     }
 
   for(int walker = 0; walker < num; walker++)
     {
       if (Input->flags.calculate_bf_density == 1)
         {
-          Chi_Density(walker) = 0.0;
+          Chi_Density(walker+start) = 0.0;
           for (int i=0; i<WF->getNumberBasisFunctions(); i++)
             for (int j=0; j<D(0,0).dim1(); j++)
               {
@@ -434,23 +484,12 @@ void QMCSlater::update_Ds(Array1D<Array2D<double>*> &X, int num)
               }
         }
     }
-#endif
-
-  if(printBF)
-    {/*
-       cout << i << ": ";
-       for (int j=0; j<WF->getNumberDeterminants(); j++){
-       printf("psi %s%8.5e ",(Psi(i))(j)<0?"":" ",(Psi(i))(j) );
-       printf("lap ratio %s%8.5g\n",(Psi(i))(j)<0?"":" ",(Laplacian_PsiRatio(i))(j) );
-       }
-     */
-    }
 
   if(showTimings)
     {
-      if( num > 1) numT++;
-      cout << "bf: " << (int)(timeB/bas_multiplier+0.5) << " (" << (int)(averageB/(numT*bas_multiplier)+0.5) << ") ";
-      cout << "mm: " << (int)(timeM+0.5) << " (" << (int)(averageM/numT+0.5) << ") ";
+      numT++;
+      cout << "cpu bf: " << (int)(timeB/bas_multiplier+0.5) << " ( " << (int)(averageB/(numT*bas_multiplier)+0.5) << ") ";
+      cout << "mm: " << (int)(timeM/mat_multiplier+0.5) << " (" << (int)(averageM/(numT*mat_multiplier)+0.5) << ") ";
       cout << "; mflops: " << (int)(mat_multiplier*numOps/timeM+0.5) <<
       " (" << (int)(mat_multiplier*numOps/(averageM/numT)+0.5) << ")\n";
     }
@@ -466,23 +505,33 @@ At this time, D_inv and Grad_D and Laplacian_D are all qmcfloat type. The
 explicit typecast when creating the final result (double) should emphasize 
 this.
 */
-void QMCSlater::calculate_DerivativeRatios(int k)
+template <class T>
+void QMCSlater::calculate_DerivativeRatios(int k, int start, Array2D< Array2D<T> > & inv, 
+      Array2D< Array2D<T> > & lap, Array3D< Array2D<T> > & grad)
 {
-  int numElectrons = (D(0,0)).dim1();
+  int numElectrons = Stop-Start+1;
   for(int i=0; i<WF->getNumberDeterminants(); i++)
     {
-      double** grad_psiratioArray = Grad_PsiRatio(k).array()[i];
+      double** grad_psiratioArray = Grad_PsiRatio(k+start).array()[i];
 
-      (Laplacian_PsiRatio(k))(i) = (double)((Laplacian_D(k,i)).dotAllElectrons(D_inv(k,i)));
+      (Laplacian_PsiRatio(k+start))(i) = (double)((lap(k,i)).dotAllElectrons(inv(k,i)));
 
       for(int j=0; j<numElectrons; j++)
         {
-          grad_psiratioArray[j][0] = (double)((Grad_D(k,i,0)).dotOneElectron(D_inv(k,i),j));
-          grad_psiratioArray[j][1] = (double)((Grad_D(k,i,1)).dotOneElectron(D_inv(k,i),j));
-          grad_psiratioArray[j][2] = (double)((Grad_D(k,i,2)).dotOneElectron(D_inv(k,i),j));
+          grad_psiratioArray[j][0] = (double)((grad(k,i,0)).dotOneElectron(inv(k,i),j));
+          grad_psiratioArray[j][1] = (double)((grad(k,i,1)).dotOneElectron(inv(k,i),j));
+          grad_psiratioArray[j][2] = (double)((grad(k,i,2)).dotOneElectron(inv(k,i),j));
         }
     }
 }
+
+template void QMCSlater::calculate_DerivativeRatios<float>
+(int k, int start, Array2D< Array2D<float> > & inv, 
+ Array2D< Array2D<float> > & lap, Array3D< Array2D<float> > & grad);
+
+template void QMCSlater::calculate_DerivativeRatios<double>
+(int k, int start, Array2D< Array2D<double> > & inv, 
+ Array2D< Array2D<double> > & lap, Array3D< Array2D<double> > & grad);
 
 Array1D<double>* QMCSlater::getPsi(int i)
 {
