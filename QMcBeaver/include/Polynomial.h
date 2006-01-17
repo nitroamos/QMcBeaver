@@ -111,6 +111,12 @@ public:
   double getSecondDerivativeValue();
 
   /**
+    This gives us access to the coefficients that
+    this polynomial uses.
+  */
+  Array1D<double> getCoefficients();
+
+  /**
     Gets the roots of the polynomial.
 
     @return roots of the polynomial.

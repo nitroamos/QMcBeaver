@@ -50,6 +50,10 @@ public:
   double getFirstDerivativeValue();
   
   double getSecondDerivativeValue();
+
+  Array1D<double> getNumeratorCoeffs();
+
+  Array1D<double> getDenominatorCoeffs();
 };
 
 #endif
