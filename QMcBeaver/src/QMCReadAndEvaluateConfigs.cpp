@@ -235,7 +235,7 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
   Array1D< Array2D<double>* > temp;
   temp.allocate(1);
   temp(0) = &R;
-  Jastrow.evaluate(temp,1);
+  Jastrow.evaluate(temp,1,0);
 
   double E_Local;
   double logWeight;
