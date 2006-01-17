@@ -24,12 +24,6 @@
 #include "QMCBasisFunction.h"
 
 /**
- The texture id for that texture which holds all the electron positions.
- Is it ok to have this as a static variable?
-*/
-static GLuint electronsTexID;
-
-/**
  The texture id for that texture which holds all the other random parameters
  needed for a basis function calculation. (e.g. the a's, b's, klm's, Rc)
 */
@@ -77,6 +71,8 @@ class GPUQMCBasisFunction : public QMCBasisFunction, GPUGlobals
       */
       int getNumIterations();
       
+      GLuint getElectronicTexture();
+
       /**
        The Destroyer.
       */
@@ -243,7 +239,12 @@ class GPUQMCBasisFunction : public QMCBasisFunction, GPUGlobals
       
       GPUQMCFramebuffer basisFunctionsFB;
       GPUQMCFramebuffer outputFB;
-      
+
+      /**
+        The texture id for that texture which holds all the electron positions.
+      */
+      GLuint electronsTexID;
+
       /**
        Some data storage space used by several functions.
       */
@@ -251,6 +252,3 @@ class GPUQMCBasisFunction : public QMCBasisFunction, GPUGlobals
   };
 #endif
 #endif
-  
-
-

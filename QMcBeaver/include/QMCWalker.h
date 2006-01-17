@@ -63,7 +63,7 @@ public:
     generated, up to 100 configurations are generated until one is not 
     singular.
   */
-  void initializeWalkerPosition(); 
+  void initializeWalkerPosition(QMCFunctions & QMF); 
 
   /**
     Proposes a trial walker move and accepts or rejects it. This method has
@@ -92,7 +92,7 @@ public:
      initializePropagation, no parameters need to be passed. This function 
      should not be called without first calling initializePropagation.
   */
-  void processPropagation();
+  void processPropagation(QMCFunctions & QMF);
 
   /**
     Calculates the observables for this walker and adds them to the input

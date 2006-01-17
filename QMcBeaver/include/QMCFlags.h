@@ -226,7 +226,9 @@ class QMCFlags
      DON"T CHANGE THIS IN THE MIDDLE OF A CALCULATION!
   */
   long walkers_per_pass;
-  
+
+  long gpu_walkers_per_pass;
+
   /**
      Current number of walkers.
   */
@@ -587,6 +589,36 @@ class QMCFlags
   */
   void set_filenames(string runfile);
 
+  /**
+     If we are going to allow the GPU to
+     calculate a subset of walkers out of the
+     walkers_per_pass batch, then we need to
+     know how many it is going to process.
+
+     If we never set this parameter in the
+     input file, then set it to be the entire
+     walkers_per_pass batch.
+
+     If QMC_GPU is not set (we aren't using
+     the GPU, then return ZERO, since the
+     GPU will be calculating ZERO of the
+     results).
+
+     @return number of walkers the GPU will process per pass
+  */
+  int getNumGPUWalkers()
+  {
+#if defined QMC_GPU
+    if(gpu_walkers_per_pass < 0)
+    {
+      return walkers_per_pass;
+    } else {
+      return gpu_walkers_per_pass;
+    }
+#else
+    return 0;
+#endif
+  }
   /**
      Write this object's state out to a stream. The same format is 
      used as in the QMC input file.

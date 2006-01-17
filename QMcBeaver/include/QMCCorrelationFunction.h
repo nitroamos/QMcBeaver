@@ -87,6 +87,17 @@ public:
     */
 
   virtual double getSecondDerivativeValue() = 0;
+
+  /**
+    Returns the coefficients for the numerator of the Jastrow's function
+    */
+
+  virtual Array1D<double> getNumeratorCoeffs() = 0;
+  
+  /**
+    Returns the coefficients for the denominator of the Jastrow's function
+    */
+  virtual Array1D<double> getDenominatorCoeffs() = 0;
 };
 
 

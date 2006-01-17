@@ -21,6 +21,11 @@
 #include "QMCJastrowParameters.h"
 #include "QMCJastrowElectronNuclear.h"
 #include "QMCJastrowElectronElectron.h"
+#include "Stopwatch.h"
+
+#ifdef QMC_GPU
+#include "GPUQMCJastrowElectronElectron.h"
+#endif
 
 using namespace std;
 
@@ -46,6 +51,7 @@ using namespace std;
 class QMCJastrow
 {
 public:
+
   /**
     Initializes the class with the data controlling the calculation. 
     
@@ -57,10 +63,38 @@ public:
     Evaluates the Jastrow function and its derivatives at X using the 
     QMCJastrowParameters stored in the QMCInput class.
 
+    This function only evaluates on the CPU. It is set up to process
+    the walkers that the GPU did not process.
+
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
-    a \f$N \times 3\f$ matrix
+    a \f$N \times 3\f$ matrix indexed by walker
+    @param num how many walkers to process
+    @param start where the GPU left off (is 0 when the GPU isn't used)
+    */
+  void evaluate(Array1D<Array2D<double>*> &X, int num, int start);
+
+#ifdef QMC_GPU
+
+  /**
+    This gets the GPU started in evaluating Jastrow functions.
+
+    @param a the texture ID for alpha electrons
+    @param b the texture ID for beta electrons
+    @param num how many walkers are to be processed
   */
-  void evaluate(Array1D<Array2D<double>*> &X, int num);
+  void setUpGPU(GLuint aElectrons, GLuint bElectrons, int num);
+
+  /**
+    Calculates the ElectronNuclear Jastrow data and then merges
+    that with the ElectronElectron Jastrow data.
+
+    @param X \f$3N\f$ dimensional configuration of electrons represented by 
+    a \f$N \times 3\f$ matrix indexed by which walker.
+    @param num how many walkers are to be processed
+  */
+  void gpuEvaluate(Array1D<Array2D<double>*> &X, int num);
+
+#endif
 
   /**
     Evaluates the Jastrow function and its derivatives at X using a
@@ -69,8 +103,8 @@ public:
     @param JP Jastrow parameters to use during the evaluation
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
-  */
-  void evaluate( QMCJastrowParameters & JP, Array1D<Array2D<double>*> &X, int num);
+    */
+  void evaluate( QMCJastrowParameters & JP, Array1D<Array2D<double>*> &X, int num, int start);
 
   /**
     Gets the value of the Jastrow function for the last evaluated
@@ -113,11 +147,20 @@ public:
   */
   double getLaplacianLnJastrow(int which);
   
-private:
+  void operator=(const QMCJastrow & rhs );
+
+protected:
   Array1D<double> sum_U;
   Array1D< Array2D<double> > grad_sum_U;
   Array1D<double> laplacian_sum_U;
+  
+private:
   QMCJastrowElectronNuclear JastrowElectronNuclear;
+
+#ifdef QMC_GPU
+  GPUQMCJastrowElectronElectron gpuJEE;
+#endif
+
   QMCJastrowElectronElectron JastrowElectronElectron;
   QMCInput* Input;
 };

@@ -70,7 +70,7 @@ class GPUQMCMatrix : public GPUGlobals
        @param results this is the data structure the function will use to put numbers
         into. The top dimensions are arranged like: results(iDet,c*nRows*nMats + r)
       */
-      void getResults(Array2D< Array2D<qmcfloat>* > & results);
+      void getResults(Array2D< Array2D<float>* > & results);
       
       /**
        When timing OpenGL operations, to eliminate system dependent effects on the timings,

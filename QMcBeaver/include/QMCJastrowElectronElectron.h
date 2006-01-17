@@ -91,7 +91,13 @@ public:
     (\f$\nabla^2\ln(J)=\nabla^2\sum{u_{i,j}(r_{i,j})}\f$)
     */
   double getLaplacianLnJastrow();
-  
+
+protected:
+  QMCInput* Input;
+  double sum_U;
+  Array2D<double> grad_sum_U;
+  double laplacian_sum_U;
+
 private:  
 
   void collectForPair(int el1, int el2,
@@ -101,11 +107,6 @@ private:
 				      Array2D<double> &X2, int x2particle, 
 				      double & r, 
 				      Array1D<double> & UnitVector);
-
-  double sum_U;
-  Array2D<double> grad_sum_U;
-  double laplacian_sum_U;
-  QMCInput* Input;
 };
 
 #endif

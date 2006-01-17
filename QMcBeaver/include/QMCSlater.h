@@ -62,7 +62,7 @@ class QMCSlater
 {
 public:
   /**
-    Creates and uninitialized instance of the object.
+    Creates an uninitialized instance of the object.
   */
   QMCSlater();
 
@@ -88,17 +88,43 @@ public:
     Evaluates the Slater determinants and their first two derivatives at X.
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
+
+    This function only processes on the CPU.
+
     @param num how many configurations to process in the X array.
+    @param start which index in X to start at
+    @param X the array of electronic positions indexed by their walker
   */
-  void evaluate(int num);
+  void evaluate(Array1D<Array2D<double>*> &X, int num, int start);
 
   /**
-    An array of configurations are processed simultaneously. Call this function
-    to set up the basis function and matrix multiplication work, and then
-    when the results are actually needed, THEN call evaluate for psi et al
-    to be filled in.
+    Calling this function will wrap up the evaluation by unloading results
+    from the GPU (if used) and then calculating the inverse.
   */
-  void update_Ds(Array1D<Array2D<double>*> &X, int num);
+  void update_Ds();
+
+  /**
+    This method will have the inverse and derivative ratios calculated. This function
+    was templated to allow flexibility in allowing both double and float without recompiling.
+
+    @param start useful to indicate whether the GPU results have been filled in yet or not
+    @param inv, grad, psi, lap: these are the collections of data
+  */
+  template <class T>
+  void processInverse(int start,
+      Array2D< Array2D<T> > & psi, Array2D< Array2D<T> > & inv, 
+      Array2D< Array2D<T> > & lap, Array3D< Array2D<T> > & grad);
+
+#ifdef QMC_GPU
+  /*
+    This function is pure GPU calculations.
+
+    @param num how many configurations to process in the X array.
+    @param X the array of electronic positions indexed by their walker
+  */
+  void gpuEvaluate(Array1D<Array2D<double>*> &X, int num);
+#endif
+
 
   /**
     Gets an array of values of the Slater determinants for the last evaluated 
@@ -147,6 +173,11 @@ public:
   */
   void operator=(const QMCSlater & rhs );
 
+#ifdef QMC_GPU
+  GPUQMCBasisFunction gpuBF;
+  GPUQMCMatrix gpuMatMult;
+#endif
+
  private:
   QMCInput *Input;
   QMCBasisFunction *BF;
@@ -171,23 +202,42 @@ public:
   /** 
     The dimensions of these data are numWalkers x numDeterminants then 
     numElec x numOrb
+
+    These data: D, D_inv, Laplacian_D, and Grad_D are meant to hold
+    only the results that were calculated on the CPU
   */
+
   Array2D< Array2D<qmcfloat> > D;
   Array2D< Array2D<qmcfloat> > D_inv;
   Array2D< Array2D<qmcfloat> > Laplacian_D;
   Array3D< Array2D<qmcfloat> > Grad_D;
+
 #ifdef QMC_GPU
-  GPUQMCBasisFunction gpuBF;
-  GPUQMCMatrix gpuMatMult;
-  // Scratch Space
-  Array1D< Array2D<qmcfloat> > bfData;
-  Array2D< Array2D<qmcfloat>* > resultsCollector;
-#else
+  /** 
+    The dimensions of these data are numWalkers x numDeterminants then 
+    numElec x numOrb
+
+    These data: D, D_inv, Laplacian_D, and Grad_D are meant to hold
+    only the results that were calculated on the GPU
+  */
+
+  Array2D< Array2D<float> > gpu_D;
+  Array2D< Array2D<float> > gpu_D_inv;
+  Array2D< Array2D<float> > gpu_Laplacian_D;
+  Array3D< Array2D<float> > gpu_Grad_D;
+
+  /**
+    This holds pointers to the GPU data. It is currently
+    (unless i'm forgetting something i did) only useful for
+    getting data from GPUQMCMatrix.
+  */
+  Array2D< Array2D<float>* > resultsCollector;
+#endif
+
   // Scratch Space
   Array2D<qmcfloat> Chi;
   Array2D<qmcfloat> Chi_laplacian;
   Array1D< Array2D<qmcfloat> > Chi_gradient;
-#endif
 
   /** 
     The dimensions of WF_coeffs is numDeterminants and then numOrb x nBasisFunc
@@ -207,7 +257,9 @@ public:
   */
   void setStartAndStopElectronPositions(int startEl, int stopEl); 
 
-  void calculate_DerivativeRatios(int walker);
+  template <class T>
+  void calculate_DerivativeRatios(int walker, int start, Array2D< Array2D<T> > & inv, 
+      Array2D< Array2D<T> > & lap, Array3D< Array2D<T> > & grad);
 };
 
 #endif
