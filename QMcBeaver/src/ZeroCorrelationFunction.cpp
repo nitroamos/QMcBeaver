@@ -50,3 +50,18 @@ double ZeroCorrelationFunction::getSecondDerivativeValue()
 {
   return 0.0;
 }
+
+Array1D<double> ZeroCorrelationFunction::getNumeratorCoeffs()
+{
+  Array1D<double> temp(1);
+  temp = 0;
+  return temp;
+}
+
+Array1D<double> ZeroCorrelationFunction::getDenominatorCoeffs()
+{
+  Array1D<double> temp(1);
+  temp = 0;
+  return temp;
+}
+
