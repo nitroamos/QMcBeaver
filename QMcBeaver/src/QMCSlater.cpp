@@ -32,7 +32,7 @@ for more details.
 
 #include "QMCSlater.h"
 
-static const bool showTimings = !false;
+static const bool showTimings = false;
 static const bool printPsi    = false;
 
 QMCSlater::QMCSlater()

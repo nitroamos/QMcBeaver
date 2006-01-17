@@ -22,13 +22,13 @@ void QMCFlags::read_flags(string InFileName)
 {
   ifstream input_file(InFileName.c_str());
   string temp_string;
-  
+
   if(!input_file)
     {
       cerr << "ERROR: Can't open input " << InFileName.c_str() << endl;
       exit(1);
     }
-    
+
   //***** Default Flag Values ********
   programmersLongs.clear();
   walker_initialization_method   = "mikes_jacked_initialization";
@@ -53,37 +53,37 @@ void QMCFlags::read_flags(string InFileName)
 
   dt                             = 0.001;
   dt_equilibration               = 0.02;
-  
+
   use_basis_function_interpolation = 0;
   number_basis_function_interpolation_grid_points = 1000;
   basis_function_interpolation_first_point = 1e-10;
-  
+
   equilibration_steps            = 10000;
   equilibration_function         = "ramp";
   CKAnnealingEquilibration1_parameter = 500;
   use_equilibration_array        = 0;
   calculate_bf_density           = 0;
-  
+
   correct_population_size_bias   = 0;
-  
+
   desired_convergence            = 0.0;
   max_time_steps                 = 1000000;
   number_of_walkers              = 1;
   walkers_per_pass               = 1;
   population_control_parameter   = 1.0;
-  
+
   output_interval                = 1000;
   mpireduce_interval             = 1000;
   mpipoll_interval               = 1;
   checkpoint_interval            = 1000;
   checkpoint                     = 1;
   use_available_checkpoints      = 0;
-  
+
   print_transient_properties     = 1;
   print_transient_properties_interval = 10000;
   print_configs                  = 0;
   print_config_frequency         = 50;
-  
+
   optimize_Psi                   = 0;
   max_optimize_Psi_steps         = 10;
   optimize_Psi_barrier_parameter = 1.0;
@@ -91,16 +91,16 @@ void QMCFlags::read_flags(string InFileName)
   optimize_Psi_method            = "BFGSQuasiNewton";
   numerical_derivative_surface   = "umrigar88";
   line_search_step_length        = "Wolfe";
-  
+
   optimization_max_iterations    = 100;
   optimization_error_tolerance   = 0.001;
-  
+
   ck_genetic_algorithm_1_population_size = 30;
   ck_genetic_algorithm_1_mutation_rate = 0.2;
   ck_genetic_algorithm_1_initial_distribution_deviation = 1.0;
-  
+
   singularity_penalty_function_parameter = 1.0e-6;
-  
+
   link_Jastrow_parameters        = 0;
   equilibrate_every_opt_step     = 0;
   equilibrate_first_opt_step     = 1;
@@ -111,17 +111,17 @@ void QMCFlags::read_flags(string InFileName)
   use_hf_potential               = 0;
   hf_num_average                 = 100;
   lock_trial_energy              = 0;
-  
+
   //**********************************
-  
+
   input_file >> temp_string;
   while(temp_string != "&flags")
     {
       input_file >> temp_string;
     }
-    
+
   input_file >> temp_string;
-  
+
   while((temp_string != "&") && (input_file.eof() != 1))
     {
       if(temp_string == "run_type")
@@ -242,6 +242,11 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           walkers_per_pass = atoi(temp_string.c_str());
         }
+      else if(temp_string == "gpu_walkers_per_pass")
+        {
+          input_file >> temp_string;
+          gpu_walkers_per_pass = atoi(temp_string.c_str());
+        }
       else if(temp_string == "number_of_walkers")
         {
           input_file >> temp_string;
@@ -327,9 +332,9 @@ void QMCFlags::read_flags(string InFileName)
           Ndeterminants = atoi(temp_string.c_str());
         }
       else if(temp_string == "trial_function_type")
-	{
-	  input_file >> trial_function_type;
-	}
+        {
+          input_file >> trial_function_type;
+        }
       else if(temp_string == "calculate_bf_density")
         {
           input_file >> temp_string;
@@ -478,20 +483,20 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> chip_and_mike_are_cool;
         }
       else if(temp_string == "use_hf_potential")
-	{
-	  input_file >> temp_string;
-	  use_hf_potential = atoi(temp_string.c_str());
-	}
+        {
+          input_file >> temp_string;
+          use_hf_potential = atoi(temp_string.c_str());
+        }
       else if(temp_string == "hf_num_average")
-	{
-	  input_file >> temp_string;
-	  hf_num_average = atoi(temp_string.c_str());
-	}
+        {
+          input_file >> temp_string;
+          hf_num_average = atoi(temp_string.c_str());
+        }
       else if(temp_string == "lock_trial_energy")
-	{
-	  input_file >> temp_string;
-	  lock_trial_energy = atoi(temp_string.c_str());
-	}
+        {
+          input_file >> temp_string;
+          lock_trial_energy = atoi(temp_string.c_str());
+        }
       else
         {
           cerr << "ERROR: Unknown input flag: " << temp_string << endl;
@@ -500,34 +505,34 @@ void QMCFlags::read_flags(string InFileName)
       input_file >> temp_string;
     }
   input_file.close();
-  
+
   if(run_type == "" )
     {
       cerr << "ERROR: run_type not set!" << endl;
       exit(1);
     }
-    
+
   if(mpireduce_interval < output_interval)
     {
       cerr << "ERROR: mpireduce_interval < output_interval!" << endl;
       exit(1);
     }
-    
+
   if(optimize_Psi == 1 && run_type != "variational")
     {
       cerr << "ERROR: attempting to optimize the wavefunction for"
       << " run_type = " << run_type << "!" << endl;
     }
-    
+
   set_filenames(InFileName);
-  
+
   dt_effective = dt;
   dt_run = dt;
   dt = dt_equilibration;
   number_of_walkers_initial = number_of_walkers;
   energy_estimated = energy_trial;
   energy_estimated_original = energy_estimated;
-  
+
   if(chip_and_mike_are_cool != "Yea_Baby!")
     {
       cerr << "ERROR: Incorrect value for chip_and_mike_are_cool set" << endl;
@@ -540,22 +545,22 @@ void QMCFlags::set_filenames(string runfile)
   string tempstring;
   string basename;
   int restart_number = 0;
-  
+
   input_file_name   = runfile;
   string file_name  = input_file_name.substr(0,input_file_name.size()-5);
   output_file_name  = file_name + ".qmc";
   results_file_name = file_name + ".rslts";
   base_file_name    = file_name;
   density_file_name = file_name + ".density";
-  
+
   char my_rank_string[32];
 #ifdef _WIN32
   _snprintf( my_rank_string, 32, "%d", my_rank );
 #else
-snprintf( my_rank_string, 32, "%d", my_rank );
+  snprintf( my_rank_string, 32, "%d", my_rank );
 #endif
   config_file_name = temp_dir + base_file_name + "." +my_rank_string + ".cfgs";
-  
+
   basename = file_name;
   if(file_name[file_name.size()-3] == '.')
     {
@@ -563,13 +568,13 @@ snprintf( my_rank_string, 32, "%d", my_rank );
       restart_number = atoi(tempstring.c_str());
       basename = input_file_name.substr(0,file_name.size()-3);
     }
-    
+
   restart_number += 1;
-  
+
   char Tens, Ones;
   int tens = restart_number/10;
   int ones = restart_number%10;
-  
+
   switch(tens)
     {
         case 0:     Tens = '0'; break;
@@ -606,7 +611,7 @@ snprintf( my_rank_string, 32, "%d", my_rank );
           exit(1);
         }
     }
-    
+
   restart_file_name = basename + '.' + Tens + Ones + ".ckmf";
 }
 
@@ -707,7 +712,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   << endl;
   strm << "population_control_parameter\n "
   << flags.population_control_parameter << endl;
-  strm << "write_electron_densities\n " << flags.write_electron_densities 
+  strm << "write_electron_densities\n " << flags.write_electron_densities
   << endl;
   strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
   strm << "zero_out_checkpoint_statistics\n "

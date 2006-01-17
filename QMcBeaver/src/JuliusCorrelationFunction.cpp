@@ -130,7 +130,17 @@ double JuliusCorrelationFunction::getSecondDerivativeValue()
   return d2FunctionValue;
 }
 
+Array1D<double> JuliusCorrelationFunction::getNumeratorCoeffs()
+{
+  return Numerator.getCoefficients();
+}
 
+Array1D<double> JuliusCorrelationFunction::getDenominatorCoeffs()
+{
+  Array1D<double> temp(1);
+  temp(0) = 1;
+  return temp;
+}
 
 
 

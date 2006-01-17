@@ -290,6 +290,9 @@
 				RelativePath="..\src\AngleDistributions.cpp">
 			</File>
 			<File
+				RelativePath="..\src\Array2D.cpp">
+			</File>
+			<File
 				RelativePath="..\src\AtomicOrbitalInverter.cpp">
 			</File>
 			<File
@@ -326,10 +329,16 @@
 				RelativePath="..\src\GPUQMCFramebuffer.cpp">
 			</File>
 			<File
+				RelativePath="..\src\GPUQMCJastrowElectronElectron.cpp">
+			</File>
+			<File
 				RelativePath="..\src\GPUQMCMatrix.cpp">
 			</File>
 			<File
 				RelativePath="..\src\IeeeMath.cpp">
+			</File>
+			<File
+				RelativePath="..\src\JuliusCorrelationFunction.cpp">
 			</File>
 			<File
 				RelativePath="..\src\LinearSpline.cpp">
@@ -360,6 +369,9 @@
 			</File>
 			<File
 				RelativePath="..\src\QMCBFGSQuasiNewtonLineSearch.cpp">
+			</File>
+			<File
+				RelativePath="..\src\QMCConfigIO.cpp">
 			</File>
 			<File
 				RelativePath="..\src\QMCCopyright.cpp">
@@ -393,6 +405,9 @@
 			</File>
 			<File
 				RelativePath="..\src\QMCGreensRatioComponent.cpp">
+			</File>
+			<File
+				RelativePath="..\src\QMCHartreeFock.cpp">
 			</File>
 			<File
 				RelativePath="..\src\QMCInitializeWalkerFactory.cpp">
@@ -453,6 +468,9 @@
 			</File>
 			<File
 				RelativePath="..\src\QMCProperty.cpp">
+			</File>
+			<File
+				RelativePath="..\src\QMCPsiPotential.cpp">
 			</File>
 			<File
 				RelativePath="..\src\QMCReadAndEvaluateConfigs.cpp">
@@ -529,6 +547,9 @@
 				RelativePath="..\include\AtomicOrbitalInverter.h">
 			</File>
 			<File
+				RelativePath="..\include\cblas.h">
+			</File>
+			<File
 				RelativePath="..\include\CKGeneticAlgorithm1.h">
 			</File>
 			<File
@@ -536,6 +557,12 @@
 			</File>
 			<File
 				RelativePath="..\include\Complex.h">
+			</File>
+			<File
+				RelativePath="..\include\cppblas.h">
+			</File>
+			<File
+				RelativePath="..\include\cpplapack.h">
 			</File>
 			<File
 				RelativePath="..\include\CubicSpline.h">
@@ -568,10 +595,16 @@
 				RelativePath="..\include\GPUQMCFramebuffer.h">
 			</File>
 			<File
+				RelativePath="..\include\GPUQMCJastrowElectronElectron.h">
+			</File>
+			<File
 				RelativePath="..\include\GPUQMCMatrix.h">
 			</File>
 			<File
 				RelativePath="..\include\IeeeMath.h">
+			</File>
+			<File
+				RelativePath="..\include\JuliusCorrelationFunction.h">
 			</File>
 			<File
 				RelativePath="..\include\LinearSpline.h">
@@ -599,6 +632,9 @@
 			</File>
 			<File
 				RelativePath="..\include\QMCBFGSQuasiNewtonLineSearch.h">
+			</File>
+			<File
+				RelativePath="..\include\QMCConfigIO.h">
 			</File>
 			<File
 				RelativePath="..\include\QMCCopyright.h">
@@ -635,6 +671,9 @@
 			</File>
 			<File
 				RelativePath="..\include\QMCGreensRatioComponent.h">
+			</File>
+			<File
+				RelativePath="..\include\QMCHartreeFock.h">
 			</File>
 			<File
 				RelativePath="..\include\QMCInitializeWalker.h">
@@ -704,6 +743,9 @@
 			</File>
 			<File
 				RelativePath="..\include\QMCProperty.h">
+			</File>
+			<File
+				RelativePath="..\include\QMCPsiPotential.h">
 			</File>
 			<File
 				RelativePath="..\include\QMCReadAndEvaluateConfigs.h">
