@@ -20,34 +20,49 @@ import os
 # r - run
 
 if len(sys.argv) < 2: 
-	print "pbsqmcbeaverrun.py <filename> <number of nodes> <processors per node> <queue name>"
+	print "pbsqmcbeaverrun.py <exe> <filename> <number of nodes> <processors per node> <queue name>"
 	sys.exit(0)
 
-filename   = sys.argv[1]
-nodes      = sys.argv[2]
-ppn        = sys.argv[3]
-queue      = sys.argv[4]
+exe        = sys.argv[1]
+filename   = sys.argv[2]   
 
+if len(sys.argv) > 3:
+	nodes      = sys.argv[3]
+else:
+	nodes      = "1"
+
+if len(sys.argv) > 4:
+	ppn        = sys.argv[4]
+else:
+	ppn        = "2"
+
+if len(sys.argv) > 5:
+	queue      = sys.argv[5]
+else:
+	queue      = "default"
+				
 processors = string.atoi(nodes)*string.atoi(ppn)
 
 file = open(filename[:len(filename)-4]+'run','w')
 
 #file.write("#!/bin/bash    \n")
 file.write("#PBS -l nodes=" + nodes + ":ppn=" + ppn + " \n")
+file.write("#PBS -N " + filename + " \n")
 file.write("#PBS -me        \n")
 file.write("#PBS -mb        \n")
-file.write("#PBS -q " + queue + " \n")
+if queue != "default":
+	file.write("#PBS -q " + queue + " \n")
 file.write("\n")
 file.write("#!/bin/bash     \n")
 file.write("cd " + os.getcwd() + "\n")
 file.write("echo " + filename + "\n")
 
 if processors == 1:
-	file.write("QMcBeaver " + filename + " >& " + filename[:-4] + \
+	file.write(exe + " " + filename + " >& " + filename[:-4] + \
 		   "output \n")
 else:
-	file.write("mpirun -np " + processors + \
-		   " -machinefile $PBS_NODEFILE pQMcBeaver " + filename + \
+	file.write("mpirun -np " + str(processors) + \
+		   " -machinefile $PBS_NODEFILE " + exe + " " + filename + \
 		   " >& " + filename[:-4] + "output \n")	
 file.close()
 
