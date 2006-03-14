@@ -250,3 +250,4 @@ void QMCConfigIO::setPrecision()
   config_strm->setf(ios::fixed,ios::floatfield);
   config_strm->precision(10);
 }
+
