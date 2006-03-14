@@ -140,7 +140,7 @@ class CompilerCrayX1(Compiler):
 class CompilerGCC(Compiler):
     def __init__(self,optimize,debug,profile):
         self.CXX = 'g++'
-        self.FLAGS = '-Wall -Wno-unused -Wno-unused-function -Wno-format'
+        self.FLAGS = '-Wall -Wno-unused -Wno-unused-function -Wno-format -Wno-long-double'
         self.INCLUDE = ''
         self.DEPENDENCY = '-MM'
         self.LINK = '-lm'
@@ -348,6 +348,13 @@ class MpiLAMPI(Mpi):
         self.INCLUDE = ' -I$(MPI_ROOT)/include'
         self.LINK = ' -L$(MPI_ROOT)/lib -lmpi'
 
+class MpiOpenMPI(Mpi):
+    def __init__(self):
+        self.PARALLEL = '-DPARALLEL'
+        self.FLAGS = ''
+        self.INCLUDE = ' -I$(MPI_ROOT)/include -I$(MPI_ROOT)/include/openmpi/ompi'
+        self.LINK = ' -L$(MPI_ROOT)/lib -lmpi'
+
 class MpiSgiIrix(Mpi):
     def __init__(self):
         self.PARALLEL = '-DPARALLEL'
@@ -366,6 +373,7 @@ mpis = {
     'None'    : MpiNone,
     'LAMPI'   : MpiLAMPI,
     'MPICH'   : Mpi,
+    'OpenMPI' : MpiOpenMPI,
     'SgiIrix' : MpiSgiIrix,
     'Tru64'   : MpiTru64,
     }

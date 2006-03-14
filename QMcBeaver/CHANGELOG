@@ -1,3 +1,18 @@
+Mon, 14 Mar 2006 Chip Kent
+1. Fixed a bug in the MPI type created for Stopwatch.  MPI_LONG_INT
+   is a struct containing a long and and int not a long int.  This was
+   changed to MPI_LONG which is a long int.
+
+2. Changed a strcpy to strncpy in QMCManager::sendAllProcessorsInputFileName
+   to avoid any chance of stack crashing attacks using QMcBeaver.
+
+3. Added support for Open-MPI.
+
+4. Fixed a bug in Stopwatch.h which prevented the file from building
+   properly on Linux.
+
+5. Disabled long double warning messages from GCC.
+
 Mon, 16 Jan 2006 Amos Anderson
 I committed many changes that I had made over the last several months.
 1. QMCRun now keeps one copy of QMCFunctions, meaning that QMCWalker's
