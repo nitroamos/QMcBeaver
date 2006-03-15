@@ -251,3 +251,6 @@ void QMCConfigIO::setPrecision()
   config_strm->precision(10);
 }
 
+
+
+

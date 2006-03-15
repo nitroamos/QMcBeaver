@@ -55,6 +55,8 @@ void QMCSlater::operator=(const QMCSlater & rhs )
   Start      = rhs.Start;
   Stop       = rhs.Stop;
   occupation = rhs.occupation;
+  if (Input->flags.replace_electron_nucleus_cusps == 1)
+    ElectronNucleusCusp = rhs.ElectronNucleusCusp;
 
   Singular = rhs.Singular;
 
@@ -104,6 +106,14 @@ void QMCSlater::initialize(QMCInput *INPUT, int startEl, int stopEl,
             }
         }
     }
+
+  if (Input->flags.replace_electron_nucleus_cusps == 1)
+    for (int i=0; i<WF->getNumberDeterminants(); i++)
+      {
+        ElectronNucleusCusp(i).initialize(Input,startEl,stopEl,WF_coeffs(i));
+        ElectronNucleusCusp(i).fitReplacementOrbitals();
+      }
+
 #ifdef QMC_GPU
   // I should put some more effort into this question of copy 
   // constructors/assignment
@@ -177,6 +187,9 @@ void QMCSlater::allocate(int N)
     WF_coeffs(i).allocate(N,nbasisfunc);
 
   occupation.allocate(ndet,WF->getNumberOrbitals());
+
+  if (Input->flags.replace_electron_nucleus_cusps == 1)
+    ElectronNucleusCusp.allocate(WF->getNumberDeterminants());    
 
 #ifdef QMC_GPU
   /* The dimensions of these data are numWalkers x numDeterminants then numElec
@@ -269,6 +282,9 @@ QMCSlater::~QMCSlater()
       Chi_Density.deallocate();
 
     occupation.deallocate();
+
+    if (Input->flags.replace_electron_nucleus_cusps == 1)
+      ElectronNucleusCusp.deallocate();
 
 #ifdef QMC_GPU
     //We do not need to deallocate the contents of
@@ -442,12 +458,8 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
         {
           sw.reset(); sw.start();
         }
-      BF->evaluateBasisFunctions(*X(walker+start),Start,Stop,
-                                 Chi,
-                                 Chi_gradient(0),
-                                 Chi_gradient(1),
-                                 Chi_gradient(2),
-                                 Chi_laplacian);
+      BF->evaluateBasisFunctions(*X(walker+start),Start,Stop,Chi,
+                Chi_gradient(0),Chi_gradient(1),Chi_gradient(2),Chi_laplacian);
       if(showTimings)
         {
           sw.stop();
@@ -462,6 +474,8 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
           Grad_D(walker,i,0)    = Chi_gradient(0) * WF_coeffs(i);
           Grad_D(walker,i,1)    = Chi_gradient(1) * WF_coeffs(i);
           Grad_D(walker,i,2)    = Chi_gradient(2) * WF_coeffs(i);
+          if (Input->flags.replace_electron_nucleus_cusps == 1)
+            ElectronNucleusCusp(i).replaceCusps(*X(walker+start),D(walker,i),Grad_D(walker,i,0),Grad_D(walker,i,1),Grad_D(walker,i,2),Laplacian_D(walker,i));
         }
       if(showTimings)
         {

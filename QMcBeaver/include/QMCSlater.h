@@ -41,6 +41,7 @@ for more details.
 #include "LU.h"
 #include "QMCInput.h"
 #include "Stopwatch.h"
+#include "QMCElectronNucleusCusp.h"
 
 #ifdef QMC_GPU
 #include "GPUQMCMatrix.h"
@@ -196,6 +197,8 @@ public:
   int Start;
   int Stop;
   Array2D<int> occupation;
+
+  Array1D< QMCElectronNucleusCusp > ElectronNucleusCusp;
 
   double PsiRatio_1electron;
 

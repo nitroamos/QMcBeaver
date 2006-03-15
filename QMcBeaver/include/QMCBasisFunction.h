@@ -117,6 +117,14 @@ public:
   */
   int getNumberBasisFunctions(int i);
   
+  /**
+    Returns the basis function coefficients for atom i
+
+    @param i the index of the atom whose BF coefficients we want
+    @return BFCoeffs of atom i
+  */
+  QMCBasisFunctionCoefficients* getBFCoeffs(int i);
+
 protected:  
   QMCFlags *flags;
   QMCMolecule *Molecule;

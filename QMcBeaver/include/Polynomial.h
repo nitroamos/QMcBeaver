@@ -104,7 +104,6 @@ public:
     */
   void initialize(Array1D<double> & coeffs);
 
-
   void evaluate(double x);
   double getFunctionValue();
   double getFirstDerivativeValue();
@@ -124,6 +123,13 @@ public:
     @throws Exception if problems were encounted during the root calculation.
     */
   Array1D<Complex> getRoots();
+
+  /**
+    Sets this polynomial equal to another one
+
+    @param rhs polynomial to set this one equal to
+  */
+  void operator=(Polynomial rhs);
 
 protected:
   /**
@@ -149,7 +155,6 @@ protected:
     */
   double getCoefficient(int i);
 
-
 private:
   /**
     Initialize all of the member variables of this object.
@@ -167,7 +172,6 @@ private:
     <code>x</code>.
     */
   double evaluate(double x, Array1D<double> & coeffs);
-
 
   /**
     Evaluates a polynomial at \f$x\f$ defined by the entered coefficients.

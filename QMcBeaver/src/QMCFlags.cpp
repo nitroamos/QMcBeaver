@@ -102,6 +102,7 @@ void QMCFlags::read_flags(string InFileName)
   singularity_penalty_function_parameter = 1.0e-6;
 
   link_Jastrow_parameters        = 0;
+  replace_electron_nucleus_cusps = 0;
   equilibrate_every_opt_step     = 0;
   equilibrate_first_opt_step     = 1;
   write_all_energies_out         = 0;
@@ -438,6 +439,11 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           link_Jastrow_parameters = atoi(temp_string.c_str());
         }
+      else if(temp_string == "replace_electron_nucleus_cusps")
+	{
+	  input_file >> temp_string;
+	  replace_electron_nucleus_cusps = atoi(temp_string.c_str());
+	}
       else if(temp_string == "equilibrate_every_opt_step")
         {
           input_file >> temp_string;
@@ -622,33 +628,33 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "temp_dir\n " << flags.temp_dir << endl;
   strm << "parallelization_method\n " << flags.parallelization_method << endl;
   strm << "walker_initialization_method\n "
-  << flags.walker_initialization_method << endl;
+       << flags.walker_initialization_method << endl;
   strm << "walker_initialization_combinations\n "
-  << flags.walker_initialization_combinations << endl;
+       << flags.walker_initialization_combinations << endl;
   if (flags.iseed > 0) strm << "iseed\n " << -1*flags.iseed << endl;
   else if (flags.iseed <= 0) strm << "iseed\n " << flags.iseed << endl;
   strm << "sampling_method\n " << flags.sampling_method << endl;
   strm << "QF_modification_type\n " << flags.QF_modification_type << endl;
   strm << "energy_modification_type\n " << flags.energy_modification_type
-  << endl;
+       << endl;
   strm << "umrigar93_equalelectrons_parameter\n "
-  << flags.umrigar93_equalelectrons_parameter << endl;
+       << flags.umrigar93_equalelectrons_parameter << endl;
   strm << "walker_reweighting_method\n " << flags.walker_reweighting_method
-  << endl;
+       << endl;
   strm << "branching_method\n " << flags.branching_method << endl;
   strm << "branching_threshold\n " << flags.branching_threshold << endl;
   strm << "synchronize_dmc_ensemble\n " << flags.synchronize_dmc_ensemble
-  << endl;
+       << endl;
   strm << "synchronize_dmc_ensemble_interval\n "
-  << flags.synchronize_dmc_ensemble_interval << endl;
+       << flags.synchronize_dmc_ensemble_interval << endl;
   strm << "old_walker_acceptance_parameter\n "
-  << flags.old_walker_acceptance_parameter << endl;
+       << flags.old_walker_acceptance_parameter << endl;
   strm << "use_basis_function_interpolation\n "
-  << flags.use_basis_function_interpolation << endl;
+       << flags.use_basis_function_interpolation << endl;
   strm << "number_basis_function_interpolation_grid_points\n "
-  << flags.number_basis_function_interpolation_grid_points << endl;
+       << flags.number_basis_function_interpolation_grid_points << endl;
   strm << "basis_function_interpolation_first_point\n "
-  << flags.basis_function_interpolation_first_point << endl;
+       << flags.basis_function_interpolation_first_point << endl;
   strm << "fusion_threshold\n " << flags.fusion_threshold << endl;
   strm << "dt\n " << flags.dt_run << endl;
   strm << "desired_convergence\n " << flags.desired_convergence << endl;
@@ -657,8 +663,9 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "equilibration_steps\n " << flags.equilibration_steps << endl;
   strm << "equilibration_function\n " << flags.equilibration_function << endl;
   strm << "CKAnnealingEquilibration1_parameter\n "
-  << flags.CKAnnealingEquilibration1_parameter << endl;
-  strm << "use_equilibration_array\n " << flags.use_equilibration_array << endl;
+       << flags.CKAnnealingEquilibration1_parameter << endl;
+  strm << "use_equilibration_array\n " << flags.use_equilibration_array 
+       << endl;
   strm << "number_of_walkers\n " << flags.number_of_walkers << endl;
   strm << "walkers_per_pass\n " << flags.walkers_per_pass << endl;
   strm << "output_interval\n " << flags.output_interval << endl;
@@ -667,7 +674,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "checkpoint_interval\n " << flags.checkpoint_interval << endl;
   strm << "checkpoint\n " << flags.checkpoint << endl;
   strm << "use_available_checkpoints\n " << flags.use_available_checkpoints
-  << endl;
+       << endl;
   strm << "atoms\n " << flags.Natoms << endl;
   strm << "charge\n " << flags.charge << endl;
   strm << "norbitals\n " << flags.Norbitals << endl;
@@ -677,11 +684,11 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "calculate_bf_density\n " << flags.calculate_bf_density << endl;
   strm << "energy\n " << flags.energy_trial << endl;
   strm << "correct_population_size_bias\n "
-  << flags.correct_population_size_bias << endl;
+       << flags.correct_population_size_bias << endl;
   strm << "print_transient_properties\n " << flags.print_transient_properties
-  << endl;
+       << endl;
   strm << "print_transient_properties_interval\n "
-  << flags.print_transient_properties_interval << endl;
+       << flags.print_transient_properties_interval << endl;
   strm << "print_configs\n " << flags.print_configs << endl;
   strm << "print_config_frequency\n " << flags.print_config_frequency << endl;
   strm << "optimize_Psi\n " << flags.optimize_Psi << endl;
@@ -689,34 +696,38 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "optimize_Psi_criteria\n " << flags.optimize_Psi_criteria << endl;
   strm << "optimize_Psi_method\n " << flags.optimize_Psi_method << endl;
   strm << "singularity_penalty_function_parameter\n "
-  << flags.singularity_penalty_function_parameter << endl;
+       << flags.singularity_penalty_function_parameter << endl;
   strm << "optimize_Psi_barrier_parameter\n "
-  << flags.optimize_Psi_barrier_parameter << endl;
+       << flags.optimize_Psi_barrier_parameter << endl;
   strm << "numerical_derivative_surface\n "
-  << flags.numerical_derivative_surface << endl;
-  strm << "line_search_step_length\n " << flags.line_search_step_length << endl;
+       << flags.numerical_derivative_surface << endl;
+  strm << "line_search_step_length\n " << flags.line_search_step_length 
+       << endl;
   strm << "optimization_max_iterations\n "
-  << flags.optimization_max_iterations << endl;
+       << flags.optimization_max_iterations << endl;
   strm << "optimization_error_tolerance\n "
-  << flags.optimization_error_tolerance << endl;
+       << flags.optimization_error_tolerance << endl;
   strm << "ck_genetic_algorithm_1_population_size\n "
-  << flags.ck_genetic_algorithm_1_population_size << endl;
+       << flags.ck_genetic_algorithm_1_population_size << endl;
   strm << "ck_genetic_algorithm_1_mutation_rate\n "
-  << flags.ck_genetic_algorithm_1_mutation_rate << endl;
+       << flags.ck_genetic_algorithm_1_mutation_rate << endl;
   strm << "ck_genetic_algorithm_1_initial_distribution_deviation\n "
-  << flags.ck_genetic_algorithm_1_initial_distribution_deviation << endl;
-  strm << "link_Jastrow_parameters\n " << flags.link_Jastrow_parameters << endl;
+       << flags.ck_genetic_algorithm_1_initial_distribution_deviation << endl;
+  strm << "link_Jastrow_parameters\n " << flags.link_Jastrow_parameters 
+       << endl;
+  strm << "replace_electron_nucleus_cusps\n " 
+       << flags.replace_electron_nucleus_cusps << endl;
   strm << "equilibrate_first_opt_step\n " << flags.equilibrate_first_opt_step
-  << endl;
+       << endl;
   strm << "equilibrate_every_opt_step\n " << flags.equilibrate_every_opt_step
-  << endl;
+       << endl;
   strm << "population_control_parameter\n "
-  << flags.population_control_parameter << endl;
+       << flags.population_control_parameter << endl;
   strm << "write_electron_densities\n " << flags.write_electron_densities
-  << endl;
+       << endl;
   strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
   strm << "zero_out_checkpoint_statistics\n "
-  << flags.zero_out_checkpoint_statistics << endl;
+       << flags.zero_out_checkpoint_statistics << endl;
   strm << "use_hf_potential\n " << flags.use_hf_potential << endl;
   strm << "hf_num_average\n " << flags.hf_num_average << endl;
   strm << "lock_trial_energy\n " << flags.lock_trial_energy << endl;

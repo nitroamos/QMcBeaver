@@ -509,6 +509,12 @@ class QMCFlags
   int link_Jastrow_parameters;
 
   /**
+     1 if Gaussian orbitals are to be replaced by exponentials that 
+     satisfy the electron nucleus cusp consitions near nuclei and 0 otherwise.
+  */
+  int replace_electron_nucleus_cusps;
+
+  /**
      1 if every VMC calculation used to generated correlated-sampling
      configurations for an optimization equilibrates for the specified 
      equilibration time, and 0 otherwise.

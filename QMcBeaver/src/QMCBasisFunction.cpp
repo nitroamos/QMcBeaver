@@ -169,6 +169,11 @@ int QMCBasisFunction::getNumberBasisFunctions(int i)
   return BFCoeffs(i).getNumberBasisFunctions();
 }
 
+QMCBasisFunctionCoefficients* QMCBasisFunction::getBFCoeffs(int i)
+{
+  return &BFCoeffs(i);
+}
+
 istream& operator >>(istream &strm, QMCBasisFunction &rhs)
 {
   rhs.BFCoeffs.allocate(rhs.flags->Natoms);

@@ -1,4 +1,14 @@
-Mon, 14 Mar 2006 Chip Kent
+Tues, 14 March 2006 Daniel R. Fisher
+1. Added two classes, QMCElectronNucleusCusp and
+   QMCElectronNucleusCuspParameters, which replace Gaussian orbitals
+   with exponential functions near the nuclei.  The replacement
+   functions satisfy the electron nucleus cusp conditions and match
+   the value and first and second derivatives of the original orbital
+   at the radius of correction.  To use this feature, set the flag
+   replace_electron_nucleus_cusps to 1 and set all the electron
+   nucleus Jastrow types to "None."
+
+Mon, 13 Mar 2006 Chip Kent
 1. Fixed a bug in the MPI type created for Stopwatch.  MPI_LONG_INT
    is a struct containing a long and and int not a long int.  This was
    changed to MPI_LONG which is a long int.

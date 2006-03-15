@@ -43,6 +43,12 @@ Polynomial::Polynomial(Array1D<double> & coeffs)
   initialize(coeffs);
 }
 
+void Polynomial::operator=(Polynomial rhs)
+{
+  initialize();
+  initialize(rhs.coefficients);
+}
+
 void Polynomial::initialize()
 {
   evaluatedF   = false;
