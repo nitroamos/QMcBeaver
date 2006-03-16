@@ -665,6 +665,9 @@ void QMCManager::optimize()
         {
           *qmcRslts << Input.JP << endl;
         }
+
+      //reopen the config file                                                                                                                           
+      Input.openConfigFile();   
     }
 
   localTimers.getOptimizationStopwatch() ->stop();

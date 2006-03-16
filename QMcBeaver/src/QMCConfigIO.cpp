@@ -35,13 +35,19 @@ QMCConfigIO::QMCConfigIO(int numE)
 
 void QMCConfigIO::open(string name, bool forWriting)
 {
+  if( name == filename && areWriting == forWriting && config_strm != 0 )                                                                               
+    {
+      config_strm->clear();
+      return;
+    }
+
   areWriting = forWriting;
   filename = name;
   close();
     
   if(filename == "")
   {
-    cerr << "Error: empty filename\n";
+    cout << "Error: empty filename" << endl;
     return;
   }
   
@@ -63,7 +69,7 @@ void QMCConfigIO::open(string name, bool forWriting)
   
   if( !(*config_strm) || config_strm->bad() )
   {
-    cerr << "Error: Can't open " << filename << " (rdstate = " 
+    cout << "Error: Can't open " << filename << " (rdstate = " 
          << config_strm->rdstate() << ")" << endl;
     exit(0);
   }
@@ -81,13 +87,13 @@ void QMCConfigIO::writeCorrelatedSamplingConfiguration(
 {
   if(config_strm == 0)
   {
-    cerr << "Error: no file is open.\n";
+    cout << "Error: no file is open." << endl;
     return;    
   }
   
   if(!areWriting)
   {
-    cerr << "Error: the file is open for reading, not writing.\n";
+    cout << "Error: the file is open for reading, not writing." << endl;
     return;
   }
   
@@ -150,13 +156,13 @@ void QMCConfigIO::readCorrelatedSamplingConfiguration(
 {
   if(config_strm == 0)
   {
-    cerr << "Error: no file is open.\n";
+    cout << "Error: no file is open." << endl;
     return;    
   }
   
   if(areWriting)
   {
-    cerr << "Error: the file is open for writing, not reading.\n";
+    cout << "Error: the file is open for writing, not reading." << endl;
     return;
   }
   
@@ -232,7 +238,7 @@ bool QMCConfigIO::eof()
 {
   if(config_strm == 0)
   {
-    cerr << "Error: no file is open.\n";
+    cout << "Error: no file is open." << endl;
     return true;    
   }
     
@@ -243,7 +249,7 @@ void QMCConfigIO::setPrecision()
 {
   if(config_strm == 0)
   {
-    cerr << "Error: no file is open.\n";
+    cout << "Error: no file is open." << endl;
     return;    
   }
   
