@@ -1,3 +1,12 @@
+Wed, 15 March 2006 Daniel R. Fisher
+1. Moved the function that randomly generates and evaluates initial
+   electronic configurations for the walkers from QMCWalker to QMCRun.
+   This way, there is only one QMCInitializeWalker object, which is
+   used to generate the initial configurations for the entire
+   ensemble.  The initial configurations are evaluated by the
+   QMCFunctions that is already in QMCRun.  Previously, each walker
+   had its own QMCInitializeWalker and QMCFunctions to do this. 
+
 Tues, 14 March 2006 Daniel R. Fisher
 1. Added two classes, QMCElectronNucleusCusp and
    QMCElectronNucleusCuspParameters, which replace Gaussian orbitals

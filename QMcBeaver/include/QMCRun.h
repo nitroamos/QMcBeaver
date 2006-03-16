@@ -21,6 +21,7 @@
 #include "QMCProperties.h"
 #include "QMCStopwatches.h"
 #include "QMCHartreeFock.h"
+#include "QMCInitializeWalkerFactory.h"
 
 using namespace std;
 

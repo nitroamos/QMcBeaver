@@ -186,16 +186,44 @@ void QMCRun::initialize(QMCInput *INPUT)
 
 void QMCRun::randomlyInitializeWalkers()
 {
-  for(int i=0;i<Input->flags.number_of_walkers;i++)
+  Array2D<double> temp_R;
+  int initialization_try = 0;
+
+  QMCInitializeWalker * IW =
+    QMCInitializeWalkerFactory::initializeWalkerFactory(Input,
+        Input->flags.walker_initialization_method);
+  
+  for (int i=0; i<Input->flags.number_of_walkers; i++)
     {
       QMCWalker w;
       w.initialize(Input);
+
+      temp_R = IW->initializeWalkerPosition();
+
+      w.setR(temp_R);
+      QMF.evaluate(*w.getR(),*w.getWalkerData());
+  
+      initialization_try = 1;
+      while( w.isSingular() )
+	{
+	  cerr << "Regenerating Walker..." << endl;
       
-      // randomly initialize the walkers position
-      w.initializeWalkerPosition(QMF);
-      
+	  if( initialization_try > 10 )
+	    {
+	      cerr << "ERROR: 10 consecutive singular configurations while "
+		   << "trying to initialize walker!" << endl;
+	      exit(0);
+	    }
+        
+	  temp_R = IW->initializeWalkerPosition();
+	  w.setR(temp_R);
+	  QMF.evaluate(*w.getR(),*w.getWalkerData());
+	  initialization_try++;
+	}
       wlist.push_back(w);
     }
+  delete IW;
+  IW = 0;
 }
 
 void QMCRun::calculateObservables()

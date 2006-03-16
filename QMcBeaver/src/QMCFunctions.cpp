@@ -61,6 +61,7 @@ void QMCFunctions::operator=(const QMCFunctions & rhs )
 
 void QMCFunctions::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
 {
+  cout << "Initializing QMCFunctions." << endl;
   Input = INPUT;
 
   nalpha = Input->WF.getNumberAlphaElectrons();

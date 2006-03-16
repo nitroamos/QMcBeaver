@@ -161,6 +161,18 @@ public:
   */
   Array2D<double> * getR();
 
+  /**
+    Sets the positions of the electrons.
+    @param temp_R the positions of the electrons
+  */
+  void setR(Array2D<double>& temp_R);
+
+  /**
+    Gets the walkerData for this walker
+    @return walkerData for this walker
+  */
+  QMCWalkerData* getWalkerData();
+
 private:
   double weight;
   int age;

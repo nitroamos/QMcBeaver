@@ -1125,6 +1125,16 @@ Array2D<double> * QMCWalker::getR()
   return &R;
 }
 
+void QMCWalker::setR(Array2D<double>& temp_R)
+{
+  R = temp_R;
+}
+
+QMCWalkerData* QMCWalker::getWalkerData()
+{
+  return &walkerData;
+}
+
 void QMCWalker::calculateObservables()
 {
   double p = TrialWalker->AcceptanceProbability;
