@@ -88,6 +88,12 @@ public:
  void read(string inputfile);
 
  /**
+    This function will make sure that the config is open
+    for writing.
+ */
+ void openConfigFile();  
+
+ /**
     Write this object's state out to a stream. The same format is 
     used as in the QMC input file.
  */
