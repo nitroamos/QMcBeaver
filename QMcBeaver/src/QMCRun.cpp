@@ -24,7 +24,7 @@ void QMCRun::propagateWalkers(bool writeConfigs)
   int wpp = Input->flags.walkers_per_pass;
   // Propagate all of the walkers
   Array1D<QMCWalkerData *> dataPointers = 0;
-  Array1D<Array2D<double> * > rPointers = 0;
+  Array1D<Array2D<double> *> rPointers = 0;
   dataPointers.allocate(wpp);
   rPointers.allocate(wpp);
   
@@ -43,10 +43,7 @@ void QMCRun::propagateWalkers(bool writeConfigs)
       count++;
       index = count%wpp;
       if(index == 0 || count == (int)(wlist.size()))
-        {
-          QMF.evaluate(dataPointers, rPointers,
-                       index==0?wpp:index, writeConfigs);
-        }
+	QMF.evaluate(dataPointers,rPointers,index==0?wpp:index, writeConfigs);
     }
     
   /*At this point, all of the dataPointers have been filled, so we
@@ -56,9 +53,7 @@ void QMCRun::propagateWalkers(bool writeConfigs)
     different order.
    */
   for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
-    {
-      wp->processPropagation(QMF);
-    }
+    wp->processPropagation(QMF);
 }
 
 void QMCRun::branchWalkers()
@@ -567,6 +562,13 @@ void QMCRun::calculatePopulationSizeBiasCorrectionFactor()
                     
       temp *= -Input->flags.dt;
       
+      if (IeeeMath::isNaN(temp))
+	{
+	  cerr << "Error in QMCRun::calculatePopulationSizeBiasCorrectionFactor()" << endl;
+	  cerr << "energy_trial = " << Input->flags.energy_trial << endl;
+	  exit(1);
+	}
+
       temp = exp(temp);
       
       populationSizeBiasCorrectionFactor *= temp;

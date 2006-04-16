@@ -34,7 +34,7 @@ private:
   long double sum;
   long double sum2;
   long double weights;
-  long nsamples;
+  unsigned long nsamples;
 
 public:
   /**
@@ -56,7 +56,7 @@ public:
     Gets the number of data samples entered into the object.
     */
 
-  long getNumberSamples();
+  unsigned long getNumberSamples();
 
 
   /**

@@ -42,7 +42,7 @@ void QMCEquilibrationArray::newSample(QMCProperties * timeStepProps,
 					   nWalkers);
 
   // Activates the ith element on the 2^ith step.
-  long check = power(2,decorr_objects);
+  unsigned long check = power(2,decorr_objects);
 
   if (Eq_Array[0].getProperties()->energy.getNumberSamples() == check-1)
     {

@@ -18,6 +18,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <vector>
+#include <climits>
 
 using namespace std;
 
@@ -213,7 +214,7 @@ class QMCFlags
   /**
      Maximum number of time steps the calculation will run for.
   */
-  long max_time_steps;
+  unsigned long max_time_steps;
 
   /**
      This parameter is used in QMCRun to process several walkers 
@@ -271,7 +272,7 @@ class QMCFlags
   /**
      Number of time steps to take for the calculation to equilibrate.
   */
-  unsigned int equilibration_steps;
+  unsigned long equilibration_steps;
 
   /**
      Initial time step used during the equilibration of the calculation.

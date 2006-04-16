@@ -47,7 +47,7 @@ void QMCProperty::zeroOut()
     }
 }
 
-long QMCProperty::getNumberSamples()
+unsigned long QMCProperty::getNumberSamples()
 {
   return DeCorr[0].getNumberSamples();
 }

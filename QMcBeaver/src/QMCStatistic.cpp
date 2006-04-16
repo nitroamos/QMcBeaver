@@ -35,7 +35,7 @@ void QMCStatistic::zeroOut()
   nsamples = 0;
 }
 
-long QMCStatistic::getNumberSamples()
+unsigned long QMCStatistic::getNumberSamples()
 {
   return nsamples;
 }

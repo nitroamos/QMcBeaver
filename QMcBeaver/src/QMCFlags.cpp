@@ -153,9 +153,14 @@ void QMCFlags::read_flags(string InFileName)
         }
       else if(temp_string == "iseed")
         {
+	  // At this point, my_rank and nprocs have already been set.  We check
+	  // the iseed to be sure that it does not overflow the int data type.
+
           input_file >> temp_string;
-          iseed = atoi(temp_string.c_str());
+          iseed = atol(temp_string.c_str());
           if (iseed > 0) iseed *= -1;
+	  if ((iseed - LONG_MIN) < nprocs)
+	    iseed = LONG_MIN + nprocs;
         }
       else if(temp_string == "sampling_method")
         {
@@ -236,22 +241,22 @@ void QMCFlags::read_flags(string InFileName)
       else if(temp_string == "max_time_steps")
         {
           input_file >> temp_string;
-          max_time_steps = atoi(temp_string.c_str());
+          max_time_steps = atol(temp_string.c_str());
         }
       else if(temp_string == "walkers_per_pass")
         {
           input_file >> temp_string;
-          walkers_per_pass = atoi(temp_string.c_str());
+          walkers_per_pass = atol(temp_string.c_str());
         }
       else if(temp_string == "gpu_walkers_per_pass")
         {
           input_file >> temp_string;
-          gpu_walkers_per_pass = atoi(temp_string.c_str());
+          gpu_walkers_per_pass = atol(temp_string.c_str());
         }
       else if(temp_string == "number_of_walkers")
         {
           input_file >> temp_string;
-          number_of_walkers = atoi(temp_string.c_str());
+          number_of_walkers = atol(temp_string.c_str());
         }
       else if(temp_string == "output_interval")
         {

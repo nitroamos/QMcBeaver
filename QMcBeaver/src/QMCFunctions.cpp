@@ -61,7 +61,6 @@ void QMCFunctions::operator=(const QMCFunctions & rhs )
 
 void QMCFunctions::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
 {
-  cout << "Initializing QMCFunctions." << endl;
   Input = INPUT;
 
   nalpha = Input->WF.getNumberAlphaElectrons();
@@ -279,57 +278,99 @@ void QMCFunctions::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
       betaLaplacian = &tempLaplacian;
     }      
 
+  double tempAlphaPsi = 0.0;
+  double tempBetaPsi = 0.0;
+
   for (int i=0; i<Input->WF.getNumberDeterminants(); i++)
     {
+      // If a determinant is NaN we exclude it from the sum.
       termPsi(i) = Input->WF.CI_coeffs(i);
-      termPsi(i).multiplyBy((*alphaPsi)(i)).multiplyBy((*betaPsi)(i));
+      
+      tempAlphaPsi = (*alphaPsi)(i);
+      if (IeeeMath::isNaN(tempAlphaPsi))
+	termPsi(i).multiplyBy(0.0);
+      else
+	termPsi(i).multiplyBy(tempAlphaPsi);
+
+      tempBetaPsi = (*betaPsi)(i);
+      if (IeeeMath::isNaN(tempBetaPsi))
+	termPsi(i).multiplyBy(0.0);
+      else
+	termPsi(i).multiplyBy(tempBetaPsi);
+
       SCF_sum += termPsi(i);
     }
 
+  double psiRatio = 0.0;
+
   for (int i=0; i<Input->WF.getNumberDeterminants(); i++)
     {
-      double psiRatio = termPsi(i)/SCF_sum;
+      tempAlphaPsi = (*alphaPsi)(i);
+      tempBetaPsi = (*betaPsi)(i);
 
-      if (nalpha > 0)
+      if (IeeeMath::isNaN(tempBetaPsi) || IeeeMath::isNaN(tempAlphaPsi))
 	{
-	  double** term_AlphaGrad = alphaGrad->array()[i];
-
-	  for (int j=0; j<nalpha; j++)
-	    for (int k=0; k<3; k++)
-	      SCF_Grad_PsiRatio(j,k) += psiRatio*term_AlphaGrad[j][k];
+	  // If a determinant is NaN we exclude it from the gradient and 
+	  // laplacian sums as well.
 	}
-
-      if (nbeta > 0)
+      else
 	{
-	  double** term_BetaGrad = betaGrad->array()[i];
+	  psiRatio = termPsi(i)/SCF_sum;
 
-	  for (int j=0; j<nbeta; j++)
-	    for (int k=0; k<3; k++)
-	      SCF_Grad_PsiRatio(j+nalpha,k) += psiRatio*term_BetaGrad[j][k];
-	}
+	  if (nalpha > 0)
+	    {
+	      double** term_AlphaGrad = alphaGrad->array()[i];
+	      
+	      for (int j=0; j<nalpha; j++)
+		for (int k=0; k<3; k++)
+		  SCF_Grad_PsiRatio(j,k) += psiRatio*term_AlphaGrad[j][k];
+	    }
 
-      SCF_Laplacian_PsiRatio += psiRatio *
+	  if (nbeta > 0)
+	    {
+	      double** term_BetaGrad = betaGrad->array()[i];
+
+	      for (int j=0; j<nbeta; j++)
+		for (int k=0; k<3; k++)
+		  SCF_Grad_PsiRatio(j+nalpha,k)+=psiRatio*term_BetaGrad[j][k];
+	    }
+
+	  SCF_Laplacian_PsiRatio += psiRatio *
                                 ((*alphaLaplacian)(i) + (*betaLaplacian)(i));
+	}
     }
 
-  QMCGreensRatioComponent jastrowValue =
-    QMCGreensRatioComponent(1.0,1.0,0.0,Jastrow.getLnJastrow(walker));
+  termPsi.deallocate();
 
-  Psi = SCF_sum * jastrowValue;
+  double lnJastrow = Jastrow.getLnJastrow(walker);
 
-  Array2D<double>* JastrowGrad = Jastrow.getGradientLnJastrow(walker);
+  if (IeeeMath::isNaN(lnJastrow))
+    {
+      cerr << "WARNING: lnJastrow = " << lnJastrow << endl;
+      cerr << "lnJastrow is being set to 0 to avoid ruining the " << endl;
+      cerr << "calculation." << endl; 
+    }
+  else
+    {
+      QMCGreensRatioComponent jastrowValue = 
+	QMCGreensRatioComponent(1.0,1.0,0.0,Jastrow.getLnJastrow(walker));
 
-  for (int i=0; i<Input->WF.getNumberElectrons(); i++)
-    for (int j=0; j<3; j++)
-      Grad_PsiRatio(i,j) = SCF_Grad_PsiRatio(i,j) + (*JastrowGrad)(i,j);
+      Psi = SCF_sum * jastrowValue;
 
-  Laplacian_PsiRatio = SCF_Laplacian_PsiRatio + 
-    Jastrow.getLaplacianLnJastrow(walker);
+      Array2D<double>* JastrowGrad = Jastrow.getGradientLnJastrow(walker);
 
-  for(int i=0; i<Input->WF.getNumberElectrons(); i++)
-    for(int j=0; j<3; j++)
-      Laplacian_PsiRatio += (*JastrowGrad)(i,j) *
-                            (2*Grad_PsiRatio(i,j) - (*JastrowGrad)(i,j));
+      for (int i=0; i<Input->WF.getNumberElectrons(); i++)
+	for (int j=0; j<3; j++)
+	  Grad_PsiRatio(i,j) = SCF_Grad_PsiRatio(i,j) + (*JastrowGrad)(i,j);
+      
+      Laplacian_PsiRatio = SCF_Laplacian_PsiRatio + 
+	Jastrow.getLaplacianLnJastrow(walker);
+
+      for(int i=0; i<Input->WF.getNumberElectrons(); i++)
+	for(int j=0; j<3; j++)
+	  Laplacian_PsiRatio += (*JastrowGrad)(i,j) *
+	    (2*Grad_PsiRatio(i,j) - (*JastrowGrad)(i,j));
+    }
 
   // Calculate the basis function density
 
@@ -394,63 +435,51 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
           // Find the closest nucleus to electron i
           int closest_nucleus_index  =
             Input->Molecule.findClosestNucleusIndex(X,i);
-
-          double closest_nucleus_distance_squared = 0.0;
-
-          for(int xyz=0; xyz<3; xyz++)
-            {
-              double temp = X(i,xyz) -
-                     Input->Molecule.Atom_Positions(closest_nucleus_index,xyz);
-
-              closest_nucleus_distance_squared += temp * temp;
-            }
-
           // now we have the closest nucleus identified
 
           // Charge of this nucleus
           int closest_nucleus_Z =
             Input->Molecule.Z(closest_nucleus_index);
 
+          double closest_nucleus_distance_squared = 0.0;
+	  double temp;
+
           // Unit vector from nearest nucleus to the electron
           for(int xyz=0; xyz<3; xyz++)
             {
-              closest_nucleus_to_electron_norm_vector(xyz) =
-                X(i,xyz) -
+	      temp = X(i,xyz) -
                 Input->Molecule.Atom_Positions(closest_nucleus_index,xyz);
+
+              closest_nucleus_to_electron_norm_vector(xyz) = temp;
+              closest_nucleus_distance_squared += temp*temp;
             }
-          closest_nucleus_to_electron_norm_vector *= 1.0/sqrt(
-                closest_nucleus_to_electron_norm_vector *
-                closest_nucleus_to_electron_norm_vector);
+          closest_nucleus_to_electron_norm_vector *= 
+	    1.0/sqrt(closest_nucleus_distance_squared);
 
           // Unit vector in the direction of electron velocity
           for(int xyz=0; xyz<3; xyz++)
-            {
-              electron_velocity_norm_vector(xyz) =
-                Grad_PsiRatio(i,xyz);
-            }
+	    electron_velocity_norm_vector(xyz) = Grad_PsiRatio(i,xyz);
+
           double electron_velocity_norm_squared =
             electron_velocity_norm_vector * electron_velocity_norm_vector;
           electron_velocity_norm_vector *= 1.0/sqrt(
                                              electron_velocity_norm_squared );
 
           // Now calculate the a(r) for the equation
-          double temp = closest_nucleus_Z * closest_nucleus_Z *
-                        closest_nucleus_distance_squared;
+          temp = closest_nucleus_Z * closest_nucleus_Z *
+	    closest_nucleus_distance_squared;
 
           double a = 0.5*(1.0 + closest_nucleus_to_electron_norm_vector *
-                          electron_velocity_norm_vector) +
-                     temp/(10.0*(4.0+temp));
+                       electron_velocity_norm_vector) + temp/(10.0*(4.0+temp));
 
           // Now calculate the factor the QF of this electron is modified by
           double factor = (-1.0 + sqrt(1.0+
-                                       2.0*a*electron_velocity_norm_squared*Input->flags.dt))/
+                        2.0*a*electron_velocity_norm_squared*Input->flags.dt))/
                           (a*electron_velocity_norm_squared*Input->flags.dt);
 
           // Now adjust the QF of electron I
           for(int xyz=0; xyz<3; xyz++)
-            {
-              Modified_Grad_PsiRatio(i,xyz) *= factor;
-            }
+	    Modified_Grad_PsiRatio(i,xyz) *= factor;
         }
     }
   else

@@ -84,7 +84,10 @@ void QMCWalker::processPropagation(QMCFunctions & QMF)
   double GreensFunctionRatio =
     reverseGreensFunction/forwardGreensFunction;
     
-  calculateMoveAcceptanceProbability(GreensFunctionRatio);
+  if (IeeeMath::isNaN(GreensFunctionRatio))
+    calculateMoveAcceptanceProbability(0.0);
+  else
+    calculateMoveAcceptanceProbability(GreensFunctionRatio);
   
   acceptOrRejectMove();
   reweight_walker();
@@ -107,22 +110,15 @@ QMCGreensRatioComponent QMCWalker::moveElectrons()
     }
     
   if(Input->flags.sampling_method == "no_importance_sampling")
-    {
-      return moveElectronsNoImportanceSampling();
-    }
+    return moveElectronsNoImportanceSampling();
   else if(Input->flags.sampling_method == "importance_sampling" )
-    {
-      return moveElectronsImportanceSampling();
-    }
+    return moveElectronsImportanceSampling();
   else if(Input->flags.sampling_method == "umrigar93_importance_sampling")
-    {
-      return moveElectronsUmrigar93ImportanceSampling();
-    }
+    return moveElectronsUmrigar93ImportanceSampling();
   else
     {
       cerr << "ERROR: Improper value for sampling_method set ("
-      << Input->flags.sampling_method
-      << ")!" << endl;
+	   << Input->flags.sampling_method << ")!" << endl;
       exit(0);
     }
     
@@ -145,31 +141,19 @@ QMCGreensRatioComponent QMCWalker::moveElectronsNoImportanceSampling()
   
   // Add the randomness to the displacement
   for(int i=0; i<Displacement.dim1(); i++)
-    {
-      for(int j=0; j<Displacement.dim2(); j++)
-        {
-          Displacement(i,j) += sigma*gasdev(&Input->flags.iseed);
-        }
-    }
+    for(int j=0; j<Displacement.dim2(); j++)
+      Displacement(i,j) += sigma*gasdev(&Input->flags.iseed);
     
   // Calculate the square of the magnitude of the displacement
   dR2 = 0;
   for(int i=0; i<Displacement.dim1(); i++)
-    {
-      for(int j=0; j<Displacement.dim2(); j++)
-        {
-          dR2 += Displacement(i,j) * Displacement(i,j);
-        }
-    }
+    for(int j=0; j<Displacement.dim2(); j++)
+      dR2 += Displacement(i,j) * Displacement(i,j);
     
   // Now update the R
   for(int i=0; i<Displacement.dim1(); i++)
-    {
-      for(int j=0; j<Displacement.dim2(); j++)
-        {
-          R(i,j) += Displacement(i,j);
-        }
-    }
+    for(int j=0; j<Displacement.dim2(); j++)
+      R(i,j) += Displacement(i,j);
     
   // Return the greens function for the forward move
   
@@ -192,22 +176,14 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
   
   // Add the randomness to the displacement
   for(int i=0; i<Displacement.dim1(); i++)
-    {
-      for(int j=0; j<Displacement.dim2(); j++)
-        {
-          Displacement(i,j) += sigma*gasdev(&Input->flags.iseed);
-        }
-    }
+    for(int j=0; j<Displacement.dim2(); j++)
+      Displacement(i,j) += sigma*gasdev(&Input->flags.iseed);
     
   // Calculate the square of the magnitude of the displacement
   dR2 = 0.0;
   for(int i=0; i<Displacement.dim1(); i++)
-    {
-      for(int j=0; j<Displacement.dim2(); j++)
-        {
-          dR2 += Displacement(i,j) * Displacement(i,j);
-        }
-    }
+    for(int j=0; j<Displacement.dim2(); j++)
+      dR2 += Displacement(i,j) * Displacement(i,j);
     
   // Calculate the Green's function for the forward move
   
@@ -215,15 +191,11 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
   double tau = Input->flags.dt;
   
   for(int i=0; i<Displacement.dim1(); i++)
-    {
-      for(int j=0; j<3; j++)
-        {
-          double temp = Displacement(i,j)-
-                        tau*Displacement(i,j);
-                        
-          greens += temp*temp;
-        }
-    }
+    for(int j=0; j<3; j++)
+      {
+	double temp = Displacement(i,j)-tau*Displacement(i,j);
+	greens += temp*temp;
+      }
     
   greens = greens/(2*tau);
   
@@ -236,20 +208,16 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
   
   // Now update the R
   for(int i=0; i<Displacement.dim1(); i++)
-    {
-      for(int j=0; j<Displacement.dim2(); j++)
-        {
-          R(i,j) += Displacement(i,j);
-        }
-    }
-    
+    for(int j=0; j<Displacement.dim2(); j++)
+      R(i,j) += Displacement(i,j);
+
   return GF;
 }
 
 QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 {
   double tau = Input->flags.dt;
-  QMCGreensRatioComponent GF(1.0);
+
   dR2 = 0.0;
   Array2D<double> & Displacement = walkerData.modifiedGradPsiRatio;
   
@@ -257,6 +225,11 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
   Array1D<double> radialUnitVector(3);
   Array1D<double> newPosition(3);
   
+  QMCGreensRatioComponent GF(1.0);
+  QMCGreensRatioComponent GaussianGF;
+  QMCGreensRatioComponent SlaterGF;
+  QMCGreensRatioComponent OneE;
+
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
     {
       // Find the nearest nucleus to this electron
@@ -282,9 +255,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       double zComponentQF = 0.0;
       
       for(int i=0; i<3; i++)
-        {
-          zComponentQF += zUnitVector(i)*Displacement(electron,i);
-        }
+	zComponentQF += zUnitVector(i)*Displacement(electron,i);
         
       double radialComponentQF = 0.0;
       
@@ -300,11 +271,10 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       radialUnitVector /= radialComponentQF;
       
       // Calculate the gaussian drift components in cylindrical coordinates
-      double zCoordinate = max(distanceFromNucleus + zComponentQF * tau,
-                               0.0);
+      double zCoordinate = max(distanceFromNucleus + zComponentQF * tau,0.0);
                                
       double radialCoordinate = 2.0 * radialComponentQF * tau *
-                                zCoordinate / ( distanceFromNucleus + zCoordinate );
+                           zCoordinate / ( distanceFromNucleus + zCoordinate );
                                 
       // Calculate the hydrogen like exponential factor
       
@@ -317,9 +287,21 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       // atom type slater function centered on the closest nucleus
       
       double probabilitySlaterTypeMove = 0.5 *
-                                         MathFunctions::erfc( (distanceFromNucleus + zComponentQF * tau) /
-                                                              sqrt(2.0 * tau) );
-                                                              
+              MathFunctions::erfc( (distanceFromNucleus + zComponentQF * tau) /
+                                                             sqrt(2.0 * tau) );
+      if (probabilitySlaterTypeMove > 1.0)
+	{
+	  cerr << "Warning: probabilitySlaterTypeMove = ";
+	  cerr << probabilitySlaterTypeMove << endl;
+	  probabilitySlaterTypeMove = 1.0;
+	}
+      if (probabilitySlaterTypeMove < 0.0)
+	{
+	  cerr << "Warning: probabilitySlaterTypeMove = ";
+	  cerr << probabilitySlaterTypeMove << endl;
+	  probabilitySlaterTypeMove = 0.0;
+	}
+
       double probabilityGaussianTypeMove = 1.0 - probabilitySlaterTypeMove;
       // Randomly decide which electron moving method to use
       
@@ -332,22 +314,16 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
           //   zCoordinate * zUnitVector +
           //   gaussian random number with standard deviation sqrt(tau)
           for(int i=0; i<3; i++)
-            {
-              newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i)
-                               + radialCoordinate * radialUnitVector(i) +
-                               zCoordinate * zUnitVector(i) +
-                               sqrt(tau)*gasdev(&Input->flags.iseed);
-            }
+	    newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i)
+      + radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) +
+	                                 sqrt(tau)*gasdev(&Input->flags.iseed);
         }
       else
         {
           // Slater Type Move
           
           for(int i=0; i<3; i++)
-            {
-              newPosition(i) =
-                Input->Molecule.Atom_Positions(nearestNucleus,i);
-            }
+	    newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i);
             
           // add random part
           
@@ -362,13 +338,13 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
         
       // Update the greens function
       double distance1Sq = 0.0;
+      double temp;
       
       for(int i=0; i<3; i++)
         {
-          double temp = newPosition(i) -
+          temp = newPosition(i) -
                         ( Input->Molecule.Atom_Positions(nearestNucleus,i) +
-                          radialCoordinate * radialUnitVector(i) +
-                          zCoordinate * zUnitVector(i) );
+       radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) );
                           
           distance1Sq += temp*temp;
         }
@@ -377,14 +353,14 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       double gb = -1.5;
       double gc = -distance1Sq/(2*tau);
       
-      QMCGreensRatioComponent GaussianGF(probabilityGaussianTypeMove,ga,gb,gc);
+      GaussianGF=QMCGreensRatioComponent(probabilityGaussianTypeMove,ga,gb,gc);
       
       double distance2Sq = 0.0;
       
       for(int i=0; i<3; i++)
         {
-          double temp = newPosition(i) -
-                        Input->Molecule.Atom_Positions(nearestNucleus,i);
+          temp = newPosition(i) -
+                              Input->Molecule.Atom_Positions(nearestNucleus,i);
                         
           distance2Sq += temp*temp;
         }
@@ -394,25 +370,21 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       double sb = 3.0;
       double sc = -2.0*expParam*sqrt(distance2Sq);
       
-      QMCGreensRatioComponent SlaterGF(sk,sa,sb,sc);
+      SlaterGF = QMCGreensRatioComponent(sk,sa,sb,sc);
       
-      QMCGreensRatioComponent OneE = GaussianGF + SlaterGF;
+      // The addition and multiplication operations here have been causing a
+      // lot of problems.
+      OneE = SlaterGF + GaussianGF;
       
       GF *= OneE;
       
-      // Update the distance attempted to move squared
+      // Update the distance attempted to move squared and move the electron.
       
       for(int i=0; i<3; i++)
         {
-          double temp = newPosition(i) - R(electron,i);
+          temp = newPosition(i) - R(electron,i);
           dR2 += temp*temp;
-        }
-        
-      // Move the electron
-      
-      for(int i=0; i<3; i++)
-        {
-          R(electron,i) = newPosition(i);
+	  R(electron,i) = newPosition(i);
         }
     }
   return GF;
@@ -428,22 +400,15 @@ QMCGreensRatioComponent QMCWalker::calculateReverseGreensFunction()
     }
     
   if(Input->flags.sampling_method == "no_importance_sampling")
-    {
-      return calculateReverseGreensFunctionNoImportanceSampling();
-    }
+    return calculateReverseGreensFunctionNoImportanceSampling();
   else if(Input->flags.sampling_method == "importance_sampling" )
-    {
-      return calculateReverseGreensFunctionImportanceSampling();
-    }
+    return calculateReverseGreensFunctionImportanceSampling();
   else if(Input->flags.sampling_method == "umrigar93_importance_sampling")
-    {
-      return calculateReverseGreensFunctionUmrigar93ImportanceSampling();
-    }
+    return calculateReverseGreensFunctionUmrigar93ImportanceSampling();
   else
     {
       cerr << "ERROR: Improper value for sampling_method set ("
-      << Input->flags.sampling_method
-      << ")!" << endl;
+	   << Input->flags.sampling_method << ")!" << endl;
       exit(0);
     }
     
@@ -468,15 +433,13 @@ QMCWalker::calculateReverseGreensFunctionImportanceSampling()
   double greens = 0.0;
   
   for(int i=0; i< R.dim1(); i++)
-    {
-      for(int j=0; j<3; j++)
-        {
-          double temp = OriginalWalker->R(i,j) - TrialWalker->R(i,j) -
-                        tau*TrialWalker->walkerData.modifiedGradPsiRatio(i,j);
+    for(int j=0; j<3; j++)
+      {
+	double temp = OriginalWalker->R(i,j) - TrialWalker->R(i,j) -
+	  tau*TrialWalker->walkerData.modifiedGradPsiRatio(i,j);
                         
-          greens += temp*temp;
-        }
-    }
+	greens += temp*temp;
+      }
     
   greens = greens/(2*tau);
   
@@ -494,10 +457,14 @@ QMCGreensRatioComponent \
 QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
 {
   double tau = Input->flags.dt;
-  QMCGreensRatioComponent GF(1.0);
-  
   Array1D<double> zUnitVector(3);
   Array1D<double> radialUnitVector(3);
+
+  QMCGreensRatioComponent GF(1.0);
+  QMCGreensRatioComponent GaussianGF;
+  QMCGreensRatioComponent SlaterGF;
+  QMCGreensRatioComponent OneE;
+
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
     {
       // Find the nearest nucleus to this electron
@@ -524,10 +491,8 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
       double zComponentQF = 0.0;
       
       for(int i=0; i<3; i++)
-        {
-          zComponentQF += zUnitVector(i)*
-                          TrialWalker->walkerData.modifiedGradPsiRatio(electron,i);
-        }
+	zComponentQF += zUnitVector(i)*
+	  TrialWalker->walkerData.modifiedGradPsiRatio(electron,i);
         
       double radialComponentQF = 0.0;
       
@@ -543,13 +508,11 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
       radialComponentQF = sqrt(radialComponentQF);
       radialUnitVector /= radialComponentQF;
       
-      
       // Calculate the gaussian drift components in cylindrical coordinates
-      double zCoordinate = max(distanceFromNucleus + zComponentQF * tau,
-                               0.0);
+      double zCoordinate = max(distanceFromNucleus + zComponentQF * tau,0.0);
                                
       double radialCoordinate = 2.0 * radialComponentQF * tau *
-                                zCoordinate / ( distanceFromNucleus + zCoordinate );
+                           zCoordinate / ( distanceFromNucleus + zCoordinate );
                                 
       // Calculate the hydrogen like exponential factor
       
@@ -562,21 +525,34 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
       // atom type slater function centered on the closest nucleus
       
       double probabilitySlaterTypeMove = 0.5 *
-                                         MathFunctions::erfc( (distanceFromNucleus + zComponentQF * tau) /
-                                                              sqrt(2.0 * tau) );
+              MathFunctions::erfc( (distanceFromNucleus + zComponentQF * tau) /
+                                                             sqrt(2.0 * tau) );
+
+      if (probabilitySlaterTypeMove > 1.0)
+	{
+	  cerr << "Warning: probabilitySlaterTypeMove = ";
+	  cerr << probabilitySlaterTypeMove << endl;
+	  probabilitySlaterTypeMove = 1.0;
+	}
+      if (probabilitySlaterTypeMove < 0.0)
+	{
+	  cerr << "Warning: probabilitySlaterTypeMove = ";
+	  cerr << probabilitySlaterTypeMove << endl;
+	  probabilitySlaterTypeMove = 0.0;
+	}
+
       double probabilityGaussianTypeMove = 1.0 - probabilitySlaterTypeMove;
-      
       
       // Update the greens function
       
       double distance1Sq = 0.0;
+      double temp;
       
       for(int i=0; i<3; i++)
         {
-          double temp = OriginalWalker->R(electron,i) -
-                        ( Input->Molecule.Atom_Positions(nearestNucleus,i) +
-                          radialCoordinate * radialUnitVector(i) +
-                          zCoordinate * zUnitVector(i) );
+          temp = OriginalWalker->R(electron,i) -
+                           ( Input->Molecule.Atom_Positions(nearestNucleus,i) +
+       radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) );
                           
           distance1Sq += temp*temp;
         }
@@ -585,13 +561,13 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
       double gb = -1.5;
       double gc = -distance1Sq/(2*tau);
       
-      QMCGreensRatioComponent GaussianGF(probabilityGaussianTypeMove,ga,gb,gc);
+      GaussianGF=QMCGreensRatioComponent(probabilityGaussianTypeMove,ga,gb,gc);
       
       double distance2Sq = 0.0;
       
       for(int i=0; i<3; i++)
         {
-          double temp = OriginalWalker->R(electron,i) - \
+          temp = OriginalWalker->R(electron,i) - \
                         Input->Molecule.Atom_Positions(nearestNucleus,i);
                         
           distance2Sq += temp*temp;
@@ -602,9 +578,11 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
       double sb = 3.0;
       double sc = -2.0*expParam*sqrt(distance2Sq);
       
-      QMCGreensRatioComponent SlaterGF(sk,sa,sb,sc);
-      
-      QMCGreensRatioComponent OneE = GaussianGF + SlaterGF;
+      SlaterGF = QMCGreensRatioComponent(sk,sa,sb,sc);
+
+      // The addition and multiplication operations here have been causing a
+      // a lot of problems.
+      OneE = SlaterGF + GaussianGF;
       
       GF *= OneE;
     }
@@ -616,112 +594,156 @@ void QMCWalker::reweight_walker()
   double dW = 0.0;
   // determine the weighting factor dW so that the new weight = weight*dW
   
+  bool weightIsNaN = false;
+
   if( Input->flags.run_type == "variational" )
-    {
-      // Keep weights constant for VMC
-      dW = 1.0;
-    }
-    
+    // Keep weights constant for VMC
+    dW = 1.0;
+
   else
     {
-      double S_trial;
-      double S_original;
+      double S_trial = 0.0;
+      double S_original = 0.0;
       
       double trialEnergy = TrialWalker->walkerData.localEnergy;
       double originalEnergy = OriginalWalker->walkerData.localEnergy;
       
-      if( Input->flags.energy_modification_type == "none" )
-        {
-          S_trial    = Input->flags.energy_trial - trialEnergy;
-          S_original = Input->flags.energy_trial - originalEnergy;
-        }
+      if( IeeeMath::isNaN(trialEnergy) )
+	{
+	  cerr << "WARNING: trial energy = ";
+	  cerr << TrialWalker->walkerData.localEnergy << "!" << endl;
+	  weightIsNaN = true;
+	}
+      else if( Input->flags.energy_modification_type == "none" )
+	{
+	  S_trial    = Input->flags.energy_trial - trialEnergy;
+	  S_original = Input->flags.energy_trial - originalEnergy;
+	}
       else
-        {
-          Array2D<double> * tMGPR =
-            & TrialWalker->walkerData.modifiedGradPsiRatio;
-          Array2D<double> * tGPR = & TrialWalker->walkerData.gradPsiRatio;
-          Array2D<double> * oMGPR =
-            & OriginalWalker->walkerData.modifiedGradPsiRatio;
-          Array2D<double> * oGPR = & OriginalWalker->walkerData.gradPsiRatio;
+	{
+	  Array2D<double> * tMGPR =
+	    & TrialWalker->walkerData.modifiedGradPsiRatio;
+	  Array2D<double> * tGPR = & TrialWalker->walkerData.gradPsiRatio;
+	  Array2D<double> * oMGPR =
+	    & OriginalWalker->walkerData.modifiedGradPsiRatio;
+	  Array2D<double> * oGPR = & OriginalWalker->walkerData.gradPsiRatio;
           
-          double lengthGradTrialModified =
-            sqrt((*tMGPR).dotAllElectrons(*tMGPR));
-          double lengthGradTrialUnmodified =
-            sqrt((*tGPR).dotAllElectrons(*tGPR));
-          double lengthGradOriginalModified =
-            sqrt((*oMGPR).dotAllElectrons(*oMGPR));
-          double lengthGradOriginalUnmodified =
-            sqrt((*oGPR).dotAllElectrons(*oGPR));
+	  double lengthGradTrialModified =
+	    sqrt((*tMGPR).dotAllElectrons(*tMGPR));
+	  double lengthGradTrialUnmodified =
+	    sqrt((*tGPR).dotAllElectrons(*tGPR));
+	  double lengthGradOriginalModified =
+	    sqrt((*oMGPR).dotAllElectrons(*oMGPR));
+	  double lengthGradOriginalUnmodified =
+	    sqrt((*oGPR).dotAllElectrons(*oGPR));
             
-          if( Input->flags.energy_modification_type == "modified_umrigar93" )
-            {
-              S_trial = (Input->flags.energy_trial - trialEnergy)*
-                        (lengthGradTrialModified/lengthGradTrialUnmodified);
-                        
-              S_original = (Input->flags.energy_trial - originalEnergy) *
-                           (lengthGradOriginalModified/lengthGradOriginalUnmodified);
-            }
-          else if( Input->flags.energy_modification_type == "umrigar93" )
-            {
-              S_trial =
-                (Input->flags.energy_trial - Input->flags.energy_estimated) +
-                (Input->flags.energy_estimated - trialEnergy)*
-                (lengthGradTrialModified/lengthGradTrialUnmodified);
-                
-              S_original =
-                (Input->flags.energy_trial - Input->flags.energy_estimated) +
-                (Input->flags.energy_estimated - originalEnergy) *
-                (lengthGradOriginalModified/lengthGradOriginalUnmodified);
-            }
-          else
-            {
-              cerr << "ERROR: unknown energy modification method!" << endl;
-              exit(0);
-            }
-        }
+	  if (IeeeMath::isNaN(lengthGradTrialModified) || IeeeMath::isNaN(lengthGradTrialUnmodified))
+	    {
+	      cerr << "WARNING: modified Grad Psi Ratio is NaN in "; 
+	      cerr << "QMCWalker::reweight_walker()" << endl;
+	      weightIsNaN = true;
+	    }
+	  if (IeeeMath::isNaN(lengthGradOriginalModified) || IeeeMath::isNaN(lengthGradOriginalUnmodified))
+	    {
+	      cerr << "WARNING: original Grad Psi Ratio is NaN in "; 
+	      cerr << "QMCWalker::reweight_walker()" << endl;
+	      weightIsNaN = true;
+	    }
+	  else if(Input->flags.energy_modification_type=="modified_umrigar93")
+	    {
+	      S_trial = (Input->flags.energy_trial - trialEnergy)*
+		(lengthGradTrialModified/lengthGradTrialUnmodified);
+	      
+	      S_original = (Input->flags.energy_trial - originalEnergy) *
+		(lengthGradOriginalModified/lengthGradOriginalUnmodified);
+	    }
+	  else if( Input->flags.energy_modification_type == "umrigar93" )
+	    {
+	      S_trial =
+		(Input->flags.energy_trial - Input->flags.energy_estimated)
+		+(Input->flags.energy_estimated - trialEnergy)*
+		(lengthGradTrialModified/lengthGradTrialUnmodified);
+	      
+	      S_original =
+		(Input->flags.energy_trial - Input->flags.energy_estimated)
+		+(Input->flags.energy_estimated - originalEnergy) *
+		(lengthGradOriginalModified/lengthGradOriginalUnmodified);
+	    }
+	  else
+	    {
+	      cerr << "ERROR: unknown energy modification method!" << endl;
+	      exit(0);
+	    }
+	}
         
       if( Input->flags.walker_reweighting_method == "simple_symmetric" )
-        {
-          // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 8
-          // This is the "classical" reweighting factor most people use.
-          // umrigar says this has larger timestep and statistical errors than
-          // umrigar93_probability_weighted
-          double temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
-          dW = exp(temp);
-        }
+	{
+	  // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 8
+	  // This is the "classical" reweighting factor most people use.
+	  // umrigar says this has larger timestep and statistical errors than
+	  // umrigar93_probability_weighted
+	  double temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
+	  
+	  if (IeeeMath::isNaN(temp) || weightIsNaN == true)
+	    {
+	      cerr << "WARNING: dW = exp(" << temp << ")" << endl;
+	      cerr << "Walker's weight is being set to zero so that it does"
+		   << " not ruin the whole calculation." << endl;
+	      dW = 0.0;
+	    }
+	  else
+	    dW = exp(temp);
+	}
       else if( Input->flags.walker_reweighting_method == "simple_asymmetric" )
-        {
-          // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 23
-          // supposedly between simple_symmetric and
-          // umrigar93_probability_weighted in terms of its timestep error and
-          // statistical performance
-          double temp;
-          if( move_accepted )
-            temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
-          else
-            temp = S_original*Input->flags.dt_effective;
-          dW = exp(temp);
-        }
+	{
+	  // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 23
+	  // supposedly between simple_symmetric and
+	  // umrigar93_probability_weighted in terms of its timestep error and
+	  // statistical performance
+	  double temp;
+	  if( move_accepted )
+	    temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
+	  else
+	    temp = S_original*Input->flags.dt_effective;
+
+	  if (IeeeMath::isNaN(temp) || weightIsNaN == true)
+	    {
+	      cerr << "WARNING: dW = exp(" << temp << ")" << endl;
+	      cerr << "Walker's weight is being set to zero so that it does"
+		   << " not ruin the whole calculation." << endl;
+	      dW = 0.0;
+	    }
+	  else
+	    dW = exp(temp);	
+	}
       else if( Input->flags.walker_reweighting_method ==
-               "umrigar93_probability_weighted" )
-        {
-          // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993
-          // Umrigar claims this has a small time step error and a small
-          // statistical error compared to simple_asymmetric and
-          // simple_symmetric
-          double p = TrialWalker->getAcceptanceProbability();
-          double q = OriginalWalker->getAcceptanceProbability();
-          
-          double temp = (p/2.0*(S_original+S_trial) + q*S_original) *
-                        Input->flags.dt_effective;
-                        
-          dW = exp(temp);
-        }
+	       "umrigar93_probability_weighted" )
+	{
+	  // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993
+	  // Umrigar claims this has a small time step error and a small
+	  // statistical error compared to simple_asymmetric and
+	  // simple_symmetric
+	  double p = TrialWalker->getAcceptanceProbability();
+	  double q = OriginalWalker->getAcceptanceProbability();
+	      
+	  double temp = (p*0.5*(S_original+S_trial) + q*S_original) *
+	    Input->flags.dt_effective;
+
+	  if (IeeeMath::isNaN(temp) || weightIsNaN == true)
+	    {
+	      cerr << "WARNING: dW = exp(" << temp << ")" << endl;
+	      cerr << "Walker's weight is being set to zero so that it does"
+		   << " not ruin the whole calculation." << endl;
+	      dW = 0.0;
+	    }
+	  else
+	    dW = exp(temp);
+	}
       else
-        {
-          cerr << "ERROR: unknown branching method!" << endl;
-          exit(0);
-        }
+	{
+	  cerr << "ERROR: unknown reweighting method!" << endl;
+	  exit(0);
+	}
     }
     
 #ifdef DELETE_LARGE_WEIGHT_WALKERS
@@ -751,7 +773,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
   // This tells us the probability of accepting or rejecting a proposed move
   
   double PsiRatio = TrialWalker->walkerData.psi/OriginalWalker->walkerData.psi;
-  
+
   // increase the probability of accepting a move if the walker has not
   // moved in a long time
   
@@ -763,9 +785,8 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
       
   // calculate the probability of accepting the trial move
   double p = PsiRatio * PsiRatio * GreensRatio * MoveOldWalkerFactor;
-  
-  // Force the walker to move if it is too old
-  if( age > 2*Input->flags.old_walker_acceptance_parameter )
+
+  if( !(IeeeMath::isNaN(p)) && age > 2*Input->flags.old_walker_acceptance_parameter )
     p = 1;
     
   // if the aratio is NaN then reject the move

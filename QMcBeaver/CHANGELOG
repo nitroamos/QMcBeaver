@@ -1,4 +1,9 @@
-Wed, 15 March 2006 Daniel R. Fisher
+Sun, 16 April 2006, Daniel R. Fisher
+1. Made some changes to the addition and multiplication operations in
+   QMCGreensRatioComponent to avoid some numerical errors that were
+   happening.  
+
+Wed, 15 March 2006, Daniel R. Fisher
 1. Moved the function that randomly generates and evaluates initial
    electronic configurations for the walkers from QMCWalker to QMCRun.
    This way, there is only one QMCInitializeWalker object, which is
@@ -7,7 +12,7 @@ Wed, 15 March 2006 Daniel R. Fisher
    QMCFunctions that is already in QMCRun.  Previously, each walker
    had its own QMCInitializeWalker and QMCFunctions to do this. 
 
-Tues, 14 March 2006 Daniel R. Fisher
+Tues, 14 March 2006, Daniel R. Fisher
 1. Added two classes, QMCElectronNucleusCusp and
    QMCElectronNucleusCuspParameters, which replace Gaussian orbitals
    with exponential functions near the nuclei.  The replacement
@@ -17,7 +22,7 @@ Tues, 14 March 2006 Daniel R. Fisher
    replace_electron_nucleus_cusps to 1 and set all the electron
    nucleus Jastrow types to "None."
 
-Mon, 13 Mar 2006 Chip Kent
+Mon, 13 Mar 2006, Chip Kent
 1. Fixed a bug in the MPI type created for Stopwatch.  MPI_LONG_INT
    is a struct containing a long and and int not a long int.  This was
    changed to MPI_LONG which is a long int.
@@ -32,7 +37,7 @@ Mon, 13 Mar 2006 Chip Kent
 
 5. Disabled long double warning messages from GCC.
 
-Mon, 16 Jan 2006 Amos Anderson
+Mon, 16 Jan 2006, Amos Anderson
 I committed many changes that I had made over the last several months.
 1. QMCRun now keeps one copy of QMCFunctions, meaning that QMCWalker's
    initializeWalkerPosition does not have to create one. This is simply

@@ -85,7 +85,7 @@ public:
     Gets the number of data samples entered into the object.
     @return number of samples in the object.
   */
-  long getNumberSamples();
+  unsigned long getNumberSamples();
 
   /**
     Gets the average of the data entered into the object.

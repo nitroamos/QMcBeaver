@@ -23,6 +23,7 @@
 #include "QMCGreensRatioComponent.h"
 #include "QMCHartreeFock.h"
 #include "QMCConfigIO.h"
+#include "IeeeMath.h"
 
 using namespace std;
 
