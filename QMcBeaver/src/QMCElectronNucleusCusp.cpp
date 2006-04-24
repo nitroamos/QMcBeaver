@@ -172,6 +172,7 @@ void QMCElectronNucleusCusp::fitReplacementOrbitals()
 	  // orbital.  The deviation of the local energy of the replacement 
 	  // orbital is optimized with respect to its value at the nucleus.
 	  ORParams(i,m) = fitOrbitalParameters();
+	  // ORParams(i,m).printParameters();
 	}
     }
 }
@@ -423,10 +424,28 @@ QMCElectronNucleusCuspParameters QMCElectronNucleusCusp::fitOrbitalParameters()
   midParams.initialize(sTypeCoeffs,n0,rc,idealCurve,Z);
   hiParams.initialize(sTypeCoeffs,n0,rc,idealCurve,Z);
 
-  double mid_phi = evaluateOrigOrbital(0.0);
-  double hi_phi = mid_phi + fabs(mid_phi*0.05);
-  double lo_phi = mid_phi - fabs(mid_phi*0.05);
+  // The value of phi0 will always have the same sign as the original orbital,
+  // with equal or greater magnitude.
+  double origAtOrigin = evaluateOrigOrbital(0.0);
+  double origAtRc = evaluateOrigOrbital(rc);
 
+  double lo_phi = 0.0;
+  double mid_phi = 0.0;
+  double hi_phi = 0.0;
+
+  if (origAtOrigin-origAtRc < 0.0)
+    {
+      hi_phi = origAtOrigin;
+      mid_phi = origAtOrigin - fabs(origAtOrigin*0.05);
+      lo_phi = origAtOrigin - fabs(origAtOrigin*0.1);
+    }
+  else
+    {
+      lo_phi = origAtOrigin;
+      mid_phi = origAtOrigin + fabs(origAtOrigin*0.05);
+      hi_phi = origAtOrigin + fabs(origAtOrigin*0.1);
+    }
+  
   loParams.fitReplacementOrbital(lo_phi);
   midParams.fitReplacementOrbital(mid_phi);
   hiParams.fitReplacementOrbital(hi_phi);
@@ -444,37 +463,47 @@ QMCElectronNucleusCuspParameters QMCElectronNucleusCusp::fitOrbitalParameters()
       if (midSigmaSq < hiSigmaSq && midSigmaSq < loSigmaSq)
 	// The minimum is bracketed by these three points.
 	break;
-      else if (loSigmaSq < hiSigmaSq)
+      if (origAtOrigin-origAtRc > 0.0)
 	{
-	  hi_phi = mid_phi;
-	  mid_phi = lo_phi;
-	  lo_phi -= (1+GOLD)*(hi_phi-mid_phi);
-	  
-	  hiParams = midParams;
-	  midParams = loParams;
-	  loParams.fitReplacementOrbital(lo_phi);
+	  if (hiSigmaSq > loSigmaSq)
+	    break;
+	  else
+	    {
+	      lo_phi = mid_phi;
+	      mid_phi = hi_phi;
+	      hi_phi += (1+GOLD)*(mid_phi-lo_phi);
 
-	  hiSigmaSq = midSigmaSq;
-	  midSigmaSq = loSigmaSq;
-	  loSigmaSq = loParams.getSigmaSq();
+	      loParams = midParams;
+	      midParams = hiParams;
+	      hiParams.fitReplacementOrbital(hi_phi);
+
+	      loSigmaSq = midSigmaSq;
+	      midSigmaSq = hiSigmaSq;
+	      hiSigmaSq = hiParams.getSigmaSq();
+	    }
 	}
-      else if (hiSigmaSq < loSigmaSq)
+      else
 	{
-	  lo_phi = mid_phi;
-	  mid_phi = hi_phi;
-	  hi_phi += (1+GOLD)*(mid_phi-lo_phi);
+	  if (loSigmaSq > hiSigmaSq)
+	    break;
+	  else
+	    {
+	      hi_phi = mid_phi;
+	      mid_phi = lo_phi;
+	      lo_phi -= (1+GOLD)*(hi_phi-mid_phi);
+	      
+	      hiParams = midParams;
+	      midParams = loParams;
+	      loParams.fitReplacementOrbital(lo_phi);
 
-	  loParams = midParams;
-	  midParams = hiParams;
-	  hiParams.fitReplacementOrbital(hi_phi);
-
-	  loSigmaSq = midSigmaSq;
-	  midSigmaSq = hiSigmaSq;
-	  hiSigmaSq = hiParams.getSigmaSq();
+	      hiSigmaSq = midSigmaSq;
+	      midSigmaSq = loSigmaSq;
+	      loSigmaSq = loParams.getSigmaSq();
+	    }
 	}
     }
 
-  // Now we have the minimum bracketed.
+  // Now we will look for the minimum between hi_phi and lo_phi.
   double new_phi = 0.0;
   double newSigmaSq = 0.0;
   QMCElectronNucleusCuspParameters newParams;
@@ -486,51 +515,54 @@ QMCElectronNucleusCuspParameters QMCElectronNucleusCusp::fitOrbitalParameters()
       // We choose a new phi0 in the larger interval.
       if (mid_phi-lo_phi >= hi_phi-mid_phi)
 	{
-	  new_phi = lo_phi + GOLD*(mid_phi-lo_phi);
+	  new_phi = mid_phi - GOLD*(mid_phi-lo_phi);
 	  newParams.fitReplacementOrbital(new_phi);
 	  newSigmaSq = newParams.getSigmaSq();
-	  if (newSigmaSq < midSigmaSq)
+	  if (loSigmaSq < hiSigmaSq)
 	    {
-	      hi_phi = mid_phi;
-	      hiParams = midParams;
-	      hiSigmaSq = midSigmaSq;
-	      mid_phi = new_phi;
 	      midParams = newParams;
+	      hiParams = midParams;
+	      
+	      mid_phi = new_phi;
+	      hi_phi = mid_phi;
+
 	      midSigmaSq = newSigmaSq;
+	      hiSigmaSq = midSigmaSq;
 	    }
-	  else if(midSigmaSq < newSigmaSq)
+	  else
 	    {
-	      lo_phi = new_phi;
 	      loParams = newParams;
+	      lo_phi = new_phi;
 	      loSigmaSq = newSigmaSq;
 	    }
 	}
       else
 	{
-	  new_phi = hi_phi - GOLD*(hi_phi-mid_phi);
+	  new_phi = mid_phi + GOLD*(hi_phi-mid_phi);
 	  newParams.fitReplacementOrbital(new_phi);
 	  newSigmaSq = newParams.getSigmaSq();
-	  if (newSigmaSq < midSigmaSq)
+	  if (loSigmaSq < hiSigmaSq)
 	    {
-	      lo_phi = mid_phi;
-	      loParams = midParams;
-	      loSigmaSq = midSigmaSq;
-	      mid_phi = new_phi;
-	      midParams = newParams;
-	      midSigmaSq = newSigmaSq;
-	    }
-	  else if (midSigmaSq < newSigmaSq)
-	    {
-	      hi_phi = new_phi;
 	      hiParams = newParams;
+	      hi_phi = new_phi;
 	      hiSigmaSq = newSigmaSq;
+	    }
+	  else
+	    {
+	      loParams = midParams;
+	      midParams = newParams;
+
+	      lo_phi = mid_phi;
+	      mid_phi = new_phi;
+
+	      loSigmaSq = midSigmaSq;
+	      midSigmaSq = newSigmaSq;
 	    }
 	}
     }
 #undef GOLD
 
   // The best set of parameters is returned.
-  //  midParams.printParameters();
   return midParams;
 }
 

@@ -289,23 +289,64 @@ void QMCElectronNucleusCuspParameters::fitReplacementOrbital(double temp_phi0)
       orig_secondDerivative += 2*p0*(2*p0*rc_sq-1)*term_value;
     }
 
-  // We check if the replacement orbital has to change sign between 0 and rc.
-  if (orig_value*phi0 < 0)
-    {
-      noC = false;
-      C = 2*orig_value;
-    }
-  else
-    C = 0.0;
-
   // We determine the sign of the exponential.
   if (phi0-orig_value > 0)
     sgn0 = 1;
   else
     sgn0 = -1;
 
+  // We check if the replacement orbital has to change sign between 0 and rc.
+  noC = true;
+  C = 0.0;
+  if (orig_value*phi0 < 0)
+    {
+      noC = false;
+      if (orig_value > 0.0 && orig_value < 0.1)
+	C = orig_value + 0.1;
+      else if (orig_value < 0.0 && orig_value > -0.1)
+	C = orig_value - 0.1;
+      else
+	C = 2*orig_value;
+    }
+  else
+    {
+      // If the magnitude of the value of the original orbital at the 
+      // correction radius is less than 0.1, the fitting function does not have
+      // enough space to work with, and the replacement orbitals end up being
+      // very strange.  We use the constant shift to put the orbital where it
+      // has greater magnitude.
+
+      if (orig_value > 0.0 && orig_value < 0.1)
+	{
+	  noC = false;
+	  C = orig_value - 0.1;
+	}
+      else if (orig_value < 0.0 && orig_value > -0.1)
+	{
+	  noC = false;
+	  C = orig_value + 0.1;
+	}
+    }
+ 
+  if (sgn0 == 1 && phi0 < 0.0)
+    {
+      noC = false;
+      if (orig_value > -0.1)
+	C = orig_value - 0.1;
+      else
+	C = 2*orig_value;
+    }
+  else if (sgn0 == -1 && phi0 > 0.0)
+    {
+      noC = false;
+      if (orig_value < 0.1)
+	C = orig_value + 0.1;
+      else
+	C = 2*orig_value;
+    }
+
   // Set Zeff for calculating the local energy of the replacement orbital.
-  Zeff = Z*(1+n0/phi0);
+  Zeff = Z*fabs(1+(n0/phi0));
 
   // Match the value at rc.
   double x1 = log(fabs(orig_value-C));
@@ -316,8 +357,19 @@ void QMCElectronNucleusCuspParameters::fitReplacementOrbital(double temp_phi0)
   // Match the second derivative at rc.
   double x3 = orig_secondDerivative/(orig_value-C);
 
-  // Cusp condition at the nucleus.
-  double x4 = -Z*(phi0+n0)/(phi0-C);
+  // Cusp condition at the nucleus.  There are two possibilities to prevent 
+  // Zeff from being negative.
+  double x4;
+
+  if (n0/phi0 >= -1.0)
+    x4 = -Z*(phi0+n0)/(phi0-C);
+  else 
+    x4 = Z*(phi0+n0)/(phi0-C);
+
+  // If the orbital is negative at the origin and has a negative first
+  // derivative, we change the sign of the cusp condition.
+  if ( (sgn0 == 1 && phi0<0.0) || (sgn0 == -1 && phi0>0.0) )
+    x4 *= -1;
 
   // Value of the replacement orbital at the nucleus.
   double x5 = log(fabs(phi0-C));
@@ -491,13 +543,44 @@ void QMCElectronNucleusCuspParameters::printParameters()
   cout << "Zeff = " << Zeff << endl;
   cout << "Orbital coefficients:" << endl;
   for (int i=0; i<orbitalCoefficients.dim1(); i++)
-    cout << "\t" << orbitalCoefficients(i,0) << "\t" << orbitalCoefficients(i,1) << endl;
-
+    {
+      cout << "\t" << orbitalCoefficients(i,0) << "\t";
+      cout << orbitalCoefficients(i,1) << endl;
+    }
   cout << "The local energy of the replacement orbital at rc = ";
   cout << calculateLocalEnergy(rc,false) << endl;
   idealCurve.evaluate(rc);
   cout << "The ideal local energy at rc = ";
   cout << Z*Z*idealCurve.getFunctionValue() << endl;
+
+  double ovalue,ogradx,ogrady,ogradz,olap,ox,oy,oz,nor;
+
+  ovalue = 0.0;
+  ogradx = 0.0;
+  ogrady = 0.0;
+  ogradz = 0.0;
+  olap = 0.0;
+
+  ox = rc;
+  oy = 0.0;
+  oz = 0.0;
+  nor = rc;
+
+  evaluateOriginalOrbital(ox,oy,oz,nor,ovalue,ogradx,ogrady,ogradz,olap);
+  cout << "Original orbital value at rc = " << ovalue << endl;
+  cout << "Original gradient at rc = " << ogradx << endl;
+  cout << "Original laplacian at rc = " << olap << endl;
+
+  ovalue = 0.0;
+  ogradx = 0.0;
+  ogrady = 0.0;
+  ogradz = 0.0;
+  olap = 0.0;
+
+  evaluateReplacementOrbital(ox,oy,oz,nor,ovalue,ogradx,ogrady,ogradz,olap);
+  cout << "Replacement orbital value at rc = " << ovalue << endl;
+  cout << "Replacement gradient at rc = " << ogradx << endl;
+  cout << "Replacement laplacian at rc = " << olap << endl;
   cout << endl << endl;
 }
 
