@@ -1,3 +1,8 @@
+Mon, 24 April 2006, Daniel R. Fisher
+1. Improved QMCElectronNucleusCusp and
+   QMCElectronNucleusCuspParameters to fix some problems that came up
+   in calculations.
+
 Sun, 16 April 2006, Daniel R. Fisher
 1. Made some changes to the addition and multiplication operations in
    QMCGreensRatioComponent to avoid some numerical errors that were
