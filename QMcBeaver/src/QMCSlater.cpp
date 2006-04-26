@@ -342,7 +342,7 @@ void QMCSlater::processInverse(int start,
     {
       for (int j=0; j<WF->getNumberDeterminants(); j++)
         {
-	  determinant_and_inverse(D(i,j),D_inv(i,j),(Psi(i))(j),&calcOK);
+  	      determinant_and_inverse(psi(i,j),inv(i,j),(Psi(i+start))(j),&calcOK);
           (Singular(i+start))(j) = !calcOK;
         }
 
@@ -447,6 +447,7 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
   static int bas_multiplier = 1000;
   // 1 add + 1 mul per nBF * nOE * nOE
   double numOps = 5*num*(nBF * nOE * nOE * 2.0 - nOE * nOE) / 1000.0;
+  int aveB=0, aveM=0, aveF=0;
 
   Stopwatch sw = Stopwatch();
   sw.reset();
@@ -460,6 +461,7 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
         }
       BF->evaluateBasisFunctions(*X(walker+start),Start,Stop,Chi,
                 Chi_gradient(0),Chi_gradient(1),Chi_gradient(2),Chi_laplacian);
+
       if(showTimings)
         {
           sw.stop();
@@ -469,11 +471,12 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
         }
       for(int i=0; i<WF->getNumberDeterminants(); i++)
         {
-          D(walker,i)           = Chi * WF_coeffs(i);
-          Laplacian_D(walker,i) = Chi_laplacian * WF_coeffs(i);
-          Grad_D(walker,i,0)    = Chi_gradient(0) * WF_coeffs(i);
-          Grad_D(walker,i,1)    = Chi_gradient(1) * WF_coeffs(i);
-          Grad_D(walker,i,2)    = Chi_gradient(2) * WF_coeffs(i);
+          Chi.mult(WF_coeffs(i),D(walker,i));
+          Chi_laplacian.mult(WF_coeffs(i),Laplacian_D(walker,i));
+          Chi_gradient(0).mult(WF_coeffs(i),Grad_D(walker,i,0));
+          Chi_gradient(1).mult(WF_coeffs(i),Grad_D(walker,i,1));
+          Chi_gradient(2).mult(WF_coeffs(i),Grad_D(walker,i,2));
+
           if (Input->flags.replace_electron_nucleus_cusps == 1)
             ElectronNucleusCusp(i).replaceCusps(*X(walker+start),D(walker,i),Grad_D(walker,i,0),Grad_D(walker,i,1),Grad_D(walker,i,2),Laplacian_D(walker,i));
         }
@@ -481,7 +484,6 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
         {
           sw.stop();
           timeM += sw.timeUS();
-          //cout << "swtime " << sw.timeUS() << endl;
           if(numT >= 0) averageM += sw.timeUS();
         }
     }
@@ -501,11 +503,24 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
 
   if(showTimings)
     {
-      numT++;
-      cout << "cpu bf: " << (int)(timeB/bas_multiplier+0.5) << " ( " << (int)(averageB/(numT*bas_multiplier)+0.5) << ") ";
-      cout << "mm: " << (int)(timeM/mat_multiplier+0.5) << " (" << (int)(averageM/(numT*mat_multiplier)+0.5) << ") ";
+      //if you don't check this, your averages might be off
+      //when switching from equilibration calls to production calls
+      if(num>1) numT++;
+
+      if(numT > 0){
+        aveB = (int)(averageB/(numT*bas_multiplier)+0.5);
+        aveM = (int)(averageM/(numT*mat_multiplier)+0.5);
+        aveF = (int)(numOps/(averageM/(numT*mat_multiplier))+0.5);
+      } else {
+        aveB = 0;
+        aveM = 0;
+        aveF = 0;
+      }
+
+      cout << "cpu bf: " << (int)(timeB/bas_multiplier+0.5) << " (" << aveB << ") ";
+      cout << "mm: "     << (int)(timeM/mat_multiplier+0.5) << " (" << aveM << ") ";
       cout << "; mflops: " << (int)(mat_multiplier*numOps/timeM+0.5) <<
-      " (" << (int)(mat_multiplier*numOps/(averageM/numT)+0.5) << ")\n";
+        " (" << aveF << ")\n";
     }
 }
 
