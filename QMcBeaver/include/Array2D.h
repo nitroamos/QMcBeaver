@@ -40,8 +40,14 @@ for more details.
 //Array2D is included in all the classes where this change is relevant
 #if defined SINGLEPRECISION || defined QMC_GPU
 typedef float  qmcfloat;
+const static  float REALLYTINY = 1e-35f;
 #else
 typedef double qmcfloat;
+const static double REALLYTINY = 1e-250;
+#endif
+
+#if defined SINGLEPRECISION || defined QMC_GPU
+#else
 #endif
 
 static const bool USE_KAHAN = false;
@@ -165,85 +171,59 @@ template <class T> class Array2D
        DGEMM convention: MxN = MxK * KxN; lda, ldb, and ldc are the n_2 of their respective Array2Ds
     */
 
+    void setupMatrixMultiply(const Array2D<T> & rhs, Array2D<T> & result,
+                             bool rhsIsTransposed)
+    {
+      if(rhsIsTransposed)
+        {
+          if(n_2 != rhs.n_2)
+            {
+              cerr << "ERROR: Transposed Matrix multiplication: " << n_1 << "x"
+              << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
+              exit(1);
+            }
+          result.allocate(n_1,rhs.n_1);
+        }
+      else
+        {
+          if(n_2 != rhs.n_1)
+            {
+              cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
+              << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
+              exit(1);
+            }
+          result.allocate(n_1,rhs.n_2);
+        }
+
+      result = (T)(0.0);
+    }
+
 #ifdef USEATLAS
-    /**This matrix multiplication requires rhs to be transposed.*/
-    Array2D<double> operator*(const Array2D<double> & rhs)
+
+    void gemm(const Array2D<double> & rhs, Array2D<double> & result,
+              bool rhsIsTransposed)
     {
-      if(n_2 != rhs.n_2)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
-          exit(1);
-        }
-      Array2D<T> TEMP(n_1,rhs.n_1);
-      TEMP = 0;
+      setupMatrixMultiply(rhs,result,rhsIsTransposed);
+      CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
       cblas_dgemm(CBLAS_ORDER(CblasRowMajor),
-                  CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasTrans),
+                  CBLAS_TRANSPOSE(CblasNoTrans),myTrans,
                   n_1, rhs.n_1, n_2,
                   1.0, pArray, n_2,
                   rhs.pArray, rhs.n_2,
-                  0.0, TEMP.pArray, TEMP.n_2);
-      return TEMP;
+                  0.0, result.pArray, result.n_2);
     }
 
-    /**This matrix multiplication requires rhs to be transposed.*/
-    Array2D<float> operator*(const Array2D<float> & rhs)
+    void gemm(const Array2D<float> & rhs, Array2D<float> & result,
+              bool rhsIsTransposed)
     {
-      if(n_2 != rhs.n_2)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
-          exit(1);
-        }
-      Array2D<T> TEMP(n_1,rhs.n_1);
-      TEMP = 0;
+      setupMatrixMultiply(rhs,result,rhsIsTransposed);
+      CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
       cblas_sgemm(CBLAS_ORDER(CblasRowMajor),
-                  CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasTrans),
+                  CBLAS_TRANSPOSE(CblasNoTrans),myTrans,
                   n_1, rhs.n_1, n_2,
                   1.0, pArray, n_2,
                   rhs.pArray, rhs.n_2,
-                  0.0, TEMP.pArray, TEMP.n_2);
-      return TEMP;
-    }
-
-    /**rhs is NOT transposed*/
-    Array2D<double> multiply(const Array2D<double> & rhs)
-    {
-      if(n_2 != rhs.n_1)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
-          exit(1);
-        }
-      Array2D<T> TEMP(n_1,rhs.n_2);
-      TEMP = 0;
-      cblas_dgemm(CBLAS_ORDER(CblasRowMajor),
-                  CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasNoTrans),
-                  n_1, rhs.n_2, n_2,
-                  1.0, pArray, n_2,
-                  rhs.pArray, rhs.n_2,
-                  0.0, TEMP.pArray, TEMP.n_2);
-      return TEMP;
-    }
-
-    /**rhs is NOT transposed*/
-    Array2D<float> multiply(const Array2D<float> & rhs)
-    {
-      if(n_2 != rhs.n_1)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
-          exit(1);
-        }
-      Array2D<T> TEMP(n_1,rhs.n_2);
-      TEMP = 0;
-      cblas_sgemm(CBLAS_ORDER(CblasRowMajor),
-                  CBLAS_TRANSPOSE(CblasNoTrans),CBLAS_TRANSPOSE(CblasNoTrans),
-                  n_1, rhs.n_2, n_2,
-                  1.0, pArray, n_2,
-                  rhs.pArray, rhs.n_2,
-                  0.0, TEMP.pArray, TEMP.n_2);
-      return TEMP;
+                  0.0, result.pArray, result.n_2);
     }
 
     /**
@@ -276,98 +256,80 @@ template <class T> class Array2D
 
 #else
 
-    /**This requires rhs to be transposed*/
-    Array2D operator*(const Array2D & rhs)
+    void gemm(const Array2D<T> & rhs, Array2D<T> & result,
+              bool rhsIsTransposed)
     {
-      if(n_2 != rhs.n_2)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
-          exit(1);
-        }
+      setupMatrixMultiply(rhs,result,rhsIsTransposed);
+
       int M = n_1;
       int N = rhs.n_1;
       int K = n_2;
-      Array2D<T> TEMP(M,N);
       T * A = pArray;
       T * B = rhs.pArray;
-      T * C = TEMP.pArray;
+      T * C = result.pArray;
       int i, j, k;
 
-      if(USE_KAHAN)
-      {
-        T Cee;
-        T Why;
-        T Tee;
-
-        for (i = 0; i < M; ++i)
+      if(rhsIsTransposed)
         {
-          const register T *Ai_ = A + i*K;
-          for (j = 0; j < N; ++j)
-          {
-            const register T *B_j = B + j*K;
-            register T cij = Ai_[0] * B_j[0];
-            Cee = 0;
-            for (k = 1; k < K; ++k)
+          if(USE_KAHAN)
             {
-              Why = Ai_[k] * B_j[k] - Cee;
-              Tee = cij + Why;
-              Cee = (Tee - cij) - Why;
-              cij = Tee;
-            }
-            C[i*N + j] = cij;
-          }
-        }
-      } else {
-        for (i = 0; i < M; ++i)
-        {
-          const register T *Ai_ = A + i*K;
-          for (j = 0; j < N; ++j)
-          {
-            const register T *B_j = B + j*K;
-            register T cij = 0;
-            for (k = 0; k < K; ++k)
-            {
-              cij += Ai_[k] * B_j[k];
-            }
-            C[i*N + j] = cij;
-          }
-        }
-      }
+              T Cee;
+              T Why;
+              T Tee;
 
-      return TEMP;
-    }
-
-    /**rhs is NOT transposed*/
-    Array2D multiply(const Array2D & rhs)
-    {
-      if(n_2 != rhs.n_1)
-        {
-          cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-          << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
-          exit(1);
-        }
-      int M = n_1;
-      int N = rhs.n_2;
-      int K = n_2;
-      Array2D<T> TEMP(M,N);
-      T * A = pArray;
-      T * B = rhs.pArray;
-      T * C = TEMP.pArray;
-      for (int i = 0; i < M; ++i)
-        {
-          register T *Ai_ = A + i*K;
-          for (int j = 0; j < N; ++j)
-            {
-              register T cij = 0;
-              for (int k = 0; k < K; ++k)
+              for (i = 0; i < M; ++i)
                 {
-                  cij += Ai_[k] * B[k*N+j];
+                  const register T *Ai_ = A + i*K;
+                  for (j = 0; j < N; ++j)
+                    {
+                      const register T *B_j = B + j*K;
+                      register T cij = Ai_[0] * B_j[0];
+                      Cee = 0;
+                      for (k = 1; k < K; ++k)
+                        {
+                          Why = Ai_[k] * B_j[k] - Cee;
+                          Tee = cij + Why;
+                          Cee = (Tee - cij) - Why;
+                          cij = Tee;
+                        }
+                      C[i*N + j] = cij;
+                    }
                 }
-              C[i*N + j] = cij;
+            }
+          else//no kahan summation formula
+            {
+              for (i = 0; i < M; ++i)
+                {
+                  const register T *Ai_ = A + i*K;
+                  for (j = 0; j < N; ++j)
+                    {
+                      const register T *B_j = B + j*K;
+                      register T cij = 0;
+                      for (k = 0; k < K; ++k)
+                        {
+                          cij += Ai_[k] * B_j[k];
+                        }
+                      C[i*N + j] = cij;
+                    }
+                }
             }
         }
-      return TEMP;
+      else// rhs is not transposed, KSF not implemented here
+        {
+          for (int i = 0; i < M; ++i)
+            {
+              register T *Ai_ = A + i*K;
+              for (int j = 0; j < N; ++j)
+                {
+                  register T cij = 0;
+                  for (int k = 0; k < K; ++k)
+                    {
+                      cij += Ai_[k] * B[k*N+j];
+                    }
+                  C[i*N + j] = cij;
+                }
+            }
+        }
     }
 
     /**
@@ -394,6 +356,270 @@ template <class T> class Array2D
       for(int i=0; i<n_1; i++)
         temp += l[i]*r[i];
       return temp;
+    }
+#endif
+
+    Array2D<T> operator*(const Array2D<T> & rhs)
+    {
+      Array2D<T> TEMP;
+      TEMP = 0;
+      gemm(rhs,TEMP,false);
+      return TEMP;
+    }
+
+    /**
+    LU decomposition using the algorithm in numerical recipes for a dense matrix.
+
+
+    @param a a \f$N \times N\f$ matrix which is destroyed during the operation.
+    The resulting LU decompositon is placed here.
+    @param indx a \f$N\f$ dimensional array which records the row permutation 
+    from partial pivoting.
+    @param d used to give det(a) the correct sign
+    @param calcOK returns false if the calculation is singular and true otherwise
+    */
+    void ludcmp(int *indx, double *d, bool *calcOK)
+    {
+      int i,j,k;
+      int imax = -1;
+      T big,dum,temp;
+      register T sum;
+      T *vv = new T[n_1];
+      T one = (T)(1.0);
+      T zero = (T)(0.0);
+
+      *calcOK = true;
+      *d=1.0;
+
+      //this section finds the largest value from each column
+      //and puts its inverse in the vv vector.
+      for (i=0;i<n_1;i++)
+        {
+          big=zero;
+          for (j=0;j<n_1;j++)
+            if ((temp=(T)(fabs((double)get(i,j)))) > big)
+              big=temp;
+
+          //checks if the column is full of zeros
+          if (big == zero)
+            {
+              // cerr << "Singular matrix in routine ludcmp*********" << endl;
+              *calcOK = false;
+              return;
+            }
+
+          vv[i]=one/big;
+        }
+
+      //loop over columns
+      for (j=0;j<n_1;j++)
+        {
+
+          //part 1: i < j
+          for (i=0;i<j;i++)
+            {
+              sum=get(i,j);
+              for (k=0;k<i;k++)
+                sum -= get(i,k)*get(k,j);
+              pArray[map(i,j)]=sum;
+            }
+
+          //part 2: i >= j
+          big=zero;
+          for (i=j;i<n_1;i++)
+            {
+              sum=get(i,j);
+              for (k=0;k<j;k++)
+                sum -= get(i,k)*get(k,j);
+              pArray[map(i,j)]=sum;
+
+              //find the best row to pivot
+              if ( (dum=vv[i]*(T)(fabs((double)sum))) >= big)
+                {
+                  big=dum;
+                  imax=i;
+                }
+            }
+
+          //if our row isn't the best to pivot, we need to
+          //change to the best
+          if (j != imax)
+            {
+
+              //swap rows
+              for (k=0;k<n_1;k++)
+                {
+                  dum=get(imax,k);
+                  pArray[map(imax,k)]=get(j,k);
+                  pArray[map(j,k)]=dum;
+                }
+              //a.swapRows(imax,j);
+
+              //indicate permutation change
+              *d = -(*d);
+
+              //update vv
+              vv[imax]=vv[j];
+            }
+          indx[j]=imax;
+
+          //make sure we don't divide by zero
+          if (get(j,j) == zero)
+            pArray[map(j,j)]=(T)(REALLYTINY);
+
+          //each element needs to be divided by it's diagonal
+          if (j != n_1)
+            {
+              dum=one/(get(j,j));
+              for (i=j+1;i<n_1;i++)
+                pArray[map(i,j)] *= dum;
+            }
+
+        }
+      delete [] vv;
+    }
+
+    /**
+    LU backsubstitution using the algorithm in numerical
+    recipes for a dense matrix. 
+
+    @param a the LU decomposition of a matrix produced by ludcmp
+    @param indx a \f$N\f$ dimensional array which records the row permutation 
+    from partial pivoting generated by ludcmp
+    @param b the \f$N\f$ dimensional array right hand side of the system of 
+    equations to solve
+    */
+
+    void lubksb(int *indx, Array1D<T> &b)
+    {
+      int ii=-1, ip;
+      T sum;
+
+      for (int i=0;i<n_1;i++)
+        {
+          ip=indx[i];
+          sum=b(ip);
+          b(ip)=b(i);
+
+          if (ii>=0)   // in previous version had if(ii<0) Checked with NR. ck
+            for (int j=ii;j<=i-1;j++)
+              sum -= get(i,j)*b(j);//we do forward-subsitution to find "y"
+          else if (sum)//our first non-zero element
+            ii=i;
+
+          b(i)=sum;
+        }
+
+      for (int i=n_1-1;i>=0;i--)
+        {
+          sum=b(i);
+          for (int j=i+1;j<n_1;j++)
+            sum -= get(i,j)*b(j);//back-substitution to find "x"
+          b(i)=sum/get(i,i);
+        }
+    }
+
+    /**
+    Calculates the inverse and determinant of a matrix using a 
+    dense LU solver.  This 
+    method scales as \f$O(1 N^3)\f$.
+
+    @param a a \f$N \times N\f$ matrix 
+    @param inv inverse of a is returned here
+    @param det determinant of a is returned here
+    @param calcOK returns false if the calculation is singular and true otherwise
+    */
+#if defined USELAPACK
+    void determinant_and_inverse(Array2D<double> &inv, double& det, bool *calcOK)
+    {
+      Array1D<int> pivots = Array1D<int>(n_1);
+      inv = 0;
+      for(int i=0; i<n_1; i++)
+        inv(i,i) = 1.0;
+
+      /* int clapack_dgesv(const enum CBLAS_ORDER Order, const int N, const int NRHS,
+                        double *A, const int lda, int *ipiv,
+                        double *B, const int ldb);*/
+      int info = clapack_dgesv(CBLAS_ORDER(CblasRowMajor),n_1,n_1,
+                               pArray,n_1,pivots.array(),inv.array(),n_1);
+
+      if(info == 0) *calcOK = true;
+      else *calcOK = false;
+
+      det = 1.0;
+      for(int i=0; i<n_1; i++)
+        det *= get(i,i);
+
+      pivots.deallocate();
+    }
+
+    void determinant_and_inverse(Array2D<float> &inv, double& det, bool *calcOK)
+    {
+      Array1D<int> pivots = Array1D<int>(n_1);
+      inv = 0;
+      for(int i=0; i<n_1; i++)
+        inv(i,i) = 1.0;
+
+      /* int clapack_dgesv(const enum CBLAS_ORDER Order, const int N, const int NRHS,
+                        double *A, const int lda, int *ipiv,
+                        double *B, const int ldb);*/
+      int info = clapack_sgesv(CBLAS_ORDER(CblasRowMajor),n_1,n_1,
+                               pArray,n_1,pivots.array(),inv.array(),n_1);
+
+      if(info == 0) *calcOK = true;
+      else *calcOK = false;
+
+      det = 1.0;
+      for(int i=0; i<n_1; i++)
+        det *= get(i,i);
+
+      pivots.deallocate();
+    }
+#else
+    /**
+    this is O(1*N^3)
+    WARNING!!!
+    this has been modified and returns the transpose of the inverse, not the inverse
+    this makes calculate_DerivativeRatios in QMCSlater.cpp look nicer
+
+    I originally had several of the arrays here as function-static variables, but
+    this was causing the program to randomly crash in other parts of the code. I
+    don't know why.
+    */
+    void determinant_and_inverse(Array2D<T> &inv, double& det, bool *calcOK)
+    {
+      int n=dim1();
+      double d;
+      int *INDX = new int[n];
+      Array1D<T> col(n);
+      T one = (T)1.0;
+      T zero = (T)0.0;
+
+      if(n > col.dim1()) col.allocate(n);
+
+      ludcmp(INDX,&d,calcOK);
+
+      inv.allocate(n,n);
+
+      if( *calcOK )
+        {
+          for(int j=0;j<n;j++)
+            {
+              for(int i=0;i<n;i++) col(i) = zero;
+              col(j) = one;
+              lubksb(INDX,col);
+              //lubksbForInverse(a,INDX,col,j);
+              //for(int i=0;i<n;i++) inv(i,j) = col(i);
+              inv.setRow(j,col);
+              //for(int i=0;i<n;i++) inv(j,i) = col(i);
+            }
+        }
+
+      for(int i=0; i<n; i++) d*= get(i,i);
+      det = d;
+
+      delete [] INDX;
+      col.deallocate();
     }
 #endif
 

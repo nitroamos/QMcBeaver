@@ -342,7 +342,8 @@ void QMCSlater::processInverse(int start,
     {
       for (int j=0; j<WF->getNumberDeterminants(); j++)
         {
-  	      determinant_and_inverse(psi(i,j),inv(i,j),(Psi(i+start))(j),&calcOK);
+  	      //determinant_and_inverse(psi(i,j),inv(i,j),(Psi(i+start))(j),&calcOK);
+          psi(i,j).determinant_and_inverse(inv(i,j),(Psi(i+start))(j),&calcOK);
           (Singular(i+start))(j) = !calcOK;
         }
 
@@ -471,11 +472,11 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
         }
       for(int i=0; i<WF->getNumberDeterminants(); i++)
         {
-          Chi.mult(WF_coeffs(i),D(walker,i));
-          Chi_laplacian.mult(WF_coeffs(i),Laplacian_D(walker,i));
-          Chi_gradient(0).mult(WF_coeffs(i),Grad_D(walker,i,0));
-          Chi_gradient(1).mult(WF_coeffs(i),Grad_D(walker,i,1));
-          Chi_gradient(2).mult(WF_coeffs(i),Grad_D(walker,i,2));
+          Chi.gemm(WF_coeffs(i),D(walker,i),true);
+          Chi_laplacian.gemm(WF_coeffs(i),Laplacian_D(walker,i),true);
+          Chi_gradient(0).gemm(WF_coeffs(i),Grad_D(walker,i,0),true);
+          Chi_gradient(1).gemm(WF_coeffs(i),Grad_D(walker,i,1),true);
+          Chi_gradient(2).gemm(WF_coeffs(i),Grad_D(walker,i,2),true);
 
           if (Input->flags.replace_electron_nucleus_cusps == 1)
             ElectronNucleusCusp(i).replaceCusps(*X(walker+start),D(walker,i),Grad_D(walker,i,0),Grad_D(walker,i,1),Grad_D(walker,i,2),Laplacian_D(walker,i));
