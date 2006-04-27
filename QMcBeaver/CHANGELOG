@@ -1,3 +1,6 @@
+Wed, 26 April 2006 Amos Anderson
+1. Put the LU code back into Array2D
+
 Mon, 24 April 2006, Daniel R. Fisher
 1. Improved QMCElectronNucleusCusp and
    QMCElectronNucleusCuspParameters to fix some problems that came up
