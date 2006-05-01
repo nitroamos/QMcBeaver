@@ -62,7 +62,7 @@ class QMCElectronNucleusCusp
     an orbital arising from the s type Gaussian basis functions centered on a
     nucleus.
   */
-  Array2D<double> sTypeCoeffs;
+  Array2D<qmcfloat> sTypeCoeffs;
 
   /**
     The ideal curve is a benchmark for judging the behavior of the local 

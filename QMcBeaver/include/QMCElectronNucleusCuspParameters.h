@@ -197,6 +197,7 @@ double& orig_value, double& orig_gradx, double& orig_grady, double& orig_gradz,
   /**
     Sets the coefficients of the original orbital, the nuclear charge, and the
     value of the part of the orbital due to basis functions centered on other
+
     nuclei at this nucleus.
 
     @param temp_OrbitalCoefficients the part of the orbital arising from s type
