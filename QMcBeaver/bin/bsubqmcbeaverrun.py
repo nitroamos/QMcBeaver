@@ -16,11 +16,13 @@ import sys
 import string
 import os
 
-# FLAGS
-# r - run
+#this script will email you <input>out when it's done if you
+#change this address
+emailaddress = "your@address.edu"
 
 if len(sys.argv) < 2: 
-	print "pbsqmcbeaverrun.py <exe> <filename> <number of nodes> <processors per node> <queue name>"
+	print "bsubqmcbeaverrun.py <exe> <filename> <number of nodes> <processors per node> <queue name>"
+	print "(you can edit this script for it to email you the output file!)"
 	sys.exit(0)
 
 exe        = sys.argv[1]
@@ -83,11 +85,16 @@ else:
 		file.write("totalview prun -a -t " + " " + exe + " " + filename +  " >& " + base + "out\n")
 	else:
 		file.write("prun " + " " + exe + " " + filename +  " >& " + base + "out\n")
-
+if emailaddress != "your@address.edu":
+	file.write("csh -c \"cat " + base + "run; cat " + base + "out;\" | /bin/mailx -s \"[qsc] " + base + "out\" " + emailaddress + "\n\n\n")
 file.close()
 
 print "Submitting " + filename + " to " + str(processors) + " processors on " + queue
 command = "bsub < " + base +"run"
 print command
 os.system(command)
+
+
+
+
 
