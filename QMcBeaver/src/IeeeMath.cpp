@@ -34,12 +34,11 @@ for more details.
 template <class T>
 bool IeeeMath::isNaN(T x)
 {
-  
-  if( x != x ||
-      (numeric_limits<T>::has_quiet_NaN() &&
-      x == numeric_limits<T>::quiet_NaN()) ||
-      (numeric_limits<T>::has_signaling_NaN() &&
-      x == numeric_limits<T>::signaling_NaN()) )
+  if( x != x
+      || ( std::numeric_limits<T>::has_quiet_NaN
+	  && x == std::numeric_limits<T>::quiet_NaN())
+      || (std::numeric_limits<T>::has_signaling_NaN
+	  && x == std::numeric_limits<T>::signaling_NaN()) )
     {
       return true;
     }
@@ -49,5 +48,6 @@ bool IeeeMath::isNaN(T x)
     }
 }
 
+template bool IeeeMath::isNaN<double>(double x);
 
 
