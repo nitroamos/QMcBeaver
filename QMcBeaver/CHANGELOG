@@ -1,3 +1,8 @@
+Mon, 16 May 2006 Amos Anderson
+1.	I changed how IeeeMath checks for NaN.
+
+2.	I cleaned a bunch of the non-source files.
+
 Mon, 15 May 2006 Amos Anderson
 An important note. There are quite a few changes here, many are "here to stay"
 while others will be removed eventually. There are 3 significant changes: future
@@ -9,23 +14,23 @@ a different branch that will be difficult to merge later. Instead, I've tagged a
 the source files with "may_15_2006" in case you want to get the code as it was
 before all these changes.
 
-1. In CubicSpline, the intitializers now use Array1D array copying.
+1.	In CubicSpline, the intitializers now use Array1D array copying.
 	Also, added an integrate function.
 
 2.	In LU.cpp, determinant_and_inverse changed the static arrays to
 	the regular storage class since the static arrays caused problems
 	when inverting matrices of different dimensions.
 	
-3. Improved error handling in QMCConfigIO. Also, fixed a bug wrt when
+3.	Improved error handling in QMCConfigIO. Also, fixed a bug wrt when
 	the files were opened in the course of a wavefunction optimization.
 
-4. QMCDerivativeProperties now uses the Future Walking KE and PE so
+4.	QMCDerivativeProperties now uses the Future Walking KE and PE so
 	that it produces several virial ratios.
 	
-5. QMCFlags just gives a warning if it gets a flag it doesn't know
+5.	QMCFlags just gives a warning if it gets a flag it doesn't know
 	about. It used to exit.
 	
-6. QMcBeaver can now process some system signals! Previously, a QMcBeaver
+6.	QMcBeaver can now process some system signals! Previously, a QMcBeaver
 	process would crash if it ever received a signal from the system. Now,
 	by default as set in QMcBeaver.cpp, it will trap SIGUSR1 and signal 40.
 	If SIGUSR1 is sent to a QMcBeaver process, it will immediately seek to
@@ -40,15 +45,15 @@ before all these changes.
 	also trap SIGTERM, which does the same as SIGUSR1 except that in addition
 	it quits.
 	
-7. I generalized a bit of code out of the synchronize_dmc_ensemble section of
+7.	I generalized a bit of code out of the synchronize_dmc_ensemble section of
 	QMCManager.cpp with the intention of letting the output always have new
 	data to show, regardless of whether we've had a reduction since the last
 	output. Similarly, QMcBeaver no longer exits if
 	mpireduce_interval < output_interval; it just gives a warning.
 
-8. I removed Eave+Estd and Eave-Estd from the output.
+8.	I removed Eave+Estd and Eave-Estd from the output.
 
-9. There were some bug fixes in QMCProperties and QMCProperty with respect
+9.	There were some bug fixes in QMCProperties and QMCProperty with respect
 	to MPI_reduce. As noticed by Chip, they used to ignore the len parameter
 	in their Reduce_Function. This has been fixed. Previous calculations
 	in which a reduction was performed over an array of QMCProperties
@@ -63,13 +68,13 @@ before all these changes.
 	and LANL QSC (its own MPI?), but I'd appreciate an independent
 	verification since i'm really green when it comes to MPI...
 	
-10.QMCProperty now uses memcpy in operator = ( const QMCProperty & rhs ). This
+10.	QMCProperty now uses memcpy in operator = ( const QMCProperty & rhs ). This
 	was a slight performance improvement. QMCProperty is now a bit more intelligent
 	about writing out its data.
 	
-11.QMCRun will now kill the program if all the walkers die or if getWeights() <= 0.
+11.	QMCRun will now kill the program if all the walkers die or if getWeights() <= 0.
 
-12.I am now including my future walking code. For any observable that
+12.	I am now including my future walking code. For any observable that
 	does not commute with the Hamiltonian (e.g. KE, PE, forces) the property
 	has a much larger measurement error. Future walking can correct for this problem
 	using (for example) an algorithm described by Casulleras and coworkers in
@@ -86,7 +91,7 @@ before all these changes.
 	eventually. Specifically, the code will measure r^2 and r_{12} -- useful for validating
 	future walking using Helium.
 	
-13.This upload includes my nuclear force code using the method described by Chiesa and
+13.	This upload includes my nuclear force code using the method described by Chiesa and
 	Ceperley in Phys. Rev. Lett., vol 94, 036404. Simone graciously provided me with
 	his fortran code, and I have done my best to implement it in QMCNuclearForces,
 	but I have not completely validated my "port" yet. I'll write about this in the
@@ -94,25 +99,25 @@ before all these changes.
 	the details wrt EquilibrationArray yet (it calls assert(0) if both parameters
 	are used).
 
-14.Stopwatch will write out the times in hours as well as milliseconds. It also
+14.	Stopwatch will write out the times in hours as well as milliseconds. It also
 	uses long long to store its data.
 
-15.I added some functions to Array1D so that it looks a little more like std::vector.
+15.	I added some functions to Array1D so that it looks a little more like std::vector.
 	I also made some of its functions const. We should really make an effort to use
 	const wherever it is applicable...
 	
-16.I set some of Array2D's functions to const. I also fixed a bug in Array2D which
+16.	I set some of Array2D's functions to const. I also fixed a bug in Array2D which
 	confused transposed and non-transposed matrices during matrix multiplication.
 
-17.I've added some commentary to QMCFlags.h. I've pasted this commentary into the
+17.	I've added some commentary to QMCFlags.h. I've pasted this commentary into the
 	manual too.
 	
-18.I moved QMCWalkerData out of QMCFunctions and into its own file.
+18.	I moved QMCWalkerData out of QMCFunctions and into its own file.
 
-19.I have updated the make system to include making all the help files. This includes
+19.	I have updated the make system to include making all the help files. This includes
 	both the doxygen files as well as the beaver.tex manual.
 
-20.I've substantially changed the pbsqmcbeaverrun.py script.
+20.	I've substantially changed the pbsqmcbeaverrun.py script.
 
 
 Wed, 26 April 2006 Amos Anderson
