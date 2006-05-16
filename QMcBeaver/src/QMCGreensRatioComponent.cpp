@@ -12,7 +12,7 @@ QMCGreensRatioComponent::QMCGreensRatioComponent(double value)
 }
 
 QMCGreensRatioComponent::QMCGreensRatioComponent(double w, double x, double y,\
-						 double z)
+						 double z) 
 {
   initialize();
   k = w;

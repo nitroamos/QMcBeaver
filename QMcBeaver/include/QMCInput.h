@@ -91,7 +91,7 @@ public:
     This function will make sure that the config is open
     for writing.
  */
- void openConfigFile();  
+ void openConfigFile();
 
  /**
     Write this object's state out to a stream. The same format is 
@@ -99,6 +99,8 @@ public:
  */
  friend ostream& operator<<(ostream & strm, QMCInput & Input);
 };
+
+extern QMCInput globalInput;
 
 #endif
  

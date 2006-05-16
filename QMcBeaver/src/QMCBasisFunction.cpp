@@ -372,5 +372,66 @@ evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
     }
 }
 
+void QMCBasisFunction::
+evaluateBasisFunctions(Array2D<double>& X, Array2D<qmcfloat>& chi_value)
+{
+  //This line helps prevent some floating point errors
+  const double TOOSMALL = 1e-306;
+  int el = 0, bf;
+  int a, b, c, nGaussians;
+  int numBF;
+  double x, y, z, x2, y2, z2, r_sq, xyz;
+  double p0, p1, exp_term, temp;
+  double chi;
+  for (int index=0; index<X.dim1(); index++)
+    {
+      bf = 0;
+      for (int atom=0; atom<flags->Natoms; atom++)
+        {
+          for (int i=0; i<3; i++)
+            {
+              Xcalc(i) = X(index,i) - Molecule->Atom_Positions(atom,i);
+            }
+          x = Xcalc(0);
+          y = Xcalc(1);
+          z = Xcalc(2);
+
+          x2 = x*x;
+          y2 = y*y;
+          z2 = z*z;
+          r_sq = x2+y2+z2;
+          numBF = BFCoeffs(atom).getNumberBasisFunctions();
+          for (int j=0; j<numBF; j++)
+            {
+              a = BFCoeffs(atom).xyz_powers(j,0);
+              b = BFCoeffs(atom).xyz_powers(j,1);
+              c = BFCoeffs(atom).xyz_powers(j,2);
+
+              xyz = pow(x,a)*pow(y,b)*pow(z,c);
+
+              qmcfloat** coeffs = BFCoeffs(atom).Coeffs.array()[j];
+
+              nGaussians = BFCoeffs(atom).N_Gauss(j);
+              chi       = 0;
+              for (int i=0; i<nGaussians; i++)
+                {
+                  p0 = coeffs[i][0];
+                  p1 = coeffs[i][1];
+                  exp_term = p1*exp(-p0*r_sq)*xyz;
+                  temp = -2.0*p0;
+                  chi       += exp_term;
+                }
+
+              //This block could safely be commented out for most compilers
+              if(chi > 0 && chi < TOOSMALL) chi = TOOSMALL;
+              if(chi < 0 && chi > -1.0*TOOSMALL) chi = -1.0*TOOSMALL;
+              chi_value(el,bf)     = (qmcfloat)chi;
+              //printf("chi: %3i %3i %10.7f\n",el,bf,chi);
+              bf++;
+            }//sum over basis functions
+        }//sum over atoms
+      el++;
+    }//sum over index
+}
 
 

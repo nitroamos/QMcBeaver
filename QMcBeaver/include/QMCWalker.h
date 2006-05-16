@@ -19,6 +19,7 @@
 #include "QMCProperties.h"
 #include "MathFunctions.h"
 #include "QMCGreensRatioComponent.h"
+#include "QMCFutureWalkingProperties.h"
 
 using namespace std;
 
@@ -103,6 +104,14 @@ public:
   void calculateObservables( QMCProperties & props );
 
   /**
+    Calculates the observables for this walker and adds them to the input
+    QMCFutureWalkingProperties.
+    @param props properties to which this walkers current observable values are
+     added.
+  */
+  void calculateObservables( QMCFutureWalkingProperties & props );
+
+  /**
     Sets two QMCWalker objects equal.
     @param rhs object to set this object equal to.
   */
@@ -160,7 +169,7 @@ public:
     Gets the positions of the electrons.
   */
   Array2D<double> * getR();
-
+  
   /**
     Sets the positions of the electrons.
     @param temp_R the positions of the electrons
@@ -172,11 +181,14 @@ public:
     @return walkerData for this walker
   */
   QMCWalkerData* getWalkerData();
-
+  
+  void resetFutureWalking(int whichStage, int whichBlock);
+  void resetFutureWalking();
+    
 private:
   double weight;
   int age;
-
+  
   /**
     These energies are calculated by QMCWalker using the acceptance probability
     as opposed to those calculated by QMCFunction
@@ -184,10 +196,44 @@ private:
   double localEnergy;
   double kineticEnergy;
   double potentialEnergy;
+  double r12;
+  double r2;
 
   double neEnergy;
   double eeEnergy;
 
+  static const double maxFWAsymp;
+  
+  Array1D<int> numFWSteps;
+  
+  enum fwStage { ACCUM, ASYMP, DONE };
+  
+  Array2D<fwStage> isCollectingFWResults;  
+
+  /*
+    These have dimensions of (numFW, 2)
+  */
+#ifdef USE_QMCPROPERTY
+  Array2D<QMCProperty> fwNormalization;
+  Array2D<QMCProperty> fwR12;
+  Array2D<QMCProperty> fwR2;
+  Array2D<QMCProperty> fwKineticEnergy;
+  Array2D<QMCProperty> fwPotentialEnergy;
+  
+  // (nuc dim1, nuc dim2) (numFW, 2)
+  Array2D< Array2D<QMCProperty> > fwNuclearForces;
+#else
+  Array2D<double> fwNormalization;
+  Array2D<double> fwEnergy;
+  Array2D<double> fwKineticEnergy;
+  Array2D<double> fwPotentialEnergy;
+  Array2D<double> fwR12;
+  Array2D<double> fwR2;
+  
+  // (nuc dim1, nuc dim2) (numFW, 2)
+  Array2D< Array2D<double> > fwNuclearForces;
+#endif
+  
   double distanceMovedAccepted;
   double AcceptanceProbability;
 
@@ -279,7 +325,7 @@ private:
 
   int getAge();
   double getAcceptanceProbability();
-
+  
   /**
     Reweight the walker after a move
   */

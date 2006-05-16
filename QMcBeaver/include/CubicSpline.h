@@ -56,8 +56,8 @@ public:
      @param yPrimeLast derivative value at the last point.
   */
 
-  void initializeWithFunctionValues(Array1D<double> &xInput, 
-				    Array1D<double> &yInput, 
+  void initializeWithFunctionValues(const Array1D<double> &xInput, 
+				    const Array1D<double> &yInput, 
 				    double yPrimeFirst, double yPrimeLast);
 
 
@@ -70,8 +70,8 @@ public:
      @param yFirst function value at the first point.
   */
 
-  void initializeWithDerivativeValues(Array1D<double> &xInput, 
-				      Array1D<double> &yPrimeInput, 
+  void initializeWithDerivativeValues(const Array1D<double> &xInput, 
+				      const Array1D<double> &yPrimeInput, 
 				      double yFirst);
 
   void evaluate(double x);
@@ -79,6 +79,15 @@ public:
   double getFirstDerivativeValue();
   double getSecondDerivativeValue();
 
+  /**
+     This function will integrate the spline between two
+     indices.
+
+     @param indexStart
+     @param indexStop
+    */
+  
+  double integrate(int indexStart, int indexStop);
 
   /**
     Writes the state of this object to an XML stream.

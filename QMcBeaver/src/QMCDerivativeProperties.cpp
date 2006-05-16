@@ -14,10 +14,12 @@
 
 
 QMCDerivativeProperties::QMCDerivativeProperties(QMCProperties * properties, 
+						 QMCFutureWalkingProperties * fwProperties,
 						 double dt)
 {
-  this->properties = properties;
-  this->dt         = dt;
+  this->properties   = properties;
+  this->fwProperties = fwProperties;
+  this->dt           = dt;
 }
 
 double QMCDerivativeProperties::getEffectiveTimeStep()
@@ -53,21 +55,21 @@ double QMCDerivativeProperties::getEffectiveTimeStepStandardDeviation()
   return sqrt( getEffectiveTimeStepVariance() );
 }
 
-double QMCDerivativeProperties::getVirialRatio()
+double QMCDerivativeProperties::getVirialRatio(int whichFW)
 {
-  double value = -properties->potentialEnergy.getAverage() /
-    properties->kineticEnergy.getAverage();
+  double value = -fwProperties->fwPotentialEnergy[whichFW].getAverage() /
+    fwProperties->fwKineticEnergy[whichFW].getAverage();
 
   return value;
 }
 
-double QMCDerivativeProperties::getVirialRatioVariance()
+double QMCDerivativeProperties::getVirialRatioVariance(int whichFW)
 {
-  double vave = properties->potentialEnergy.getAverage();
-  double vvar = properties->potentialEnergy.getVariance();
+  double vave = fwProperties->fwPotentialEnergy[whichFW].getAverage();
+  double vvar = fwProperties->fwPotentialEnergy[whichFW].getVariance();
 
-  double tave = properties->kineticEnergy.getAverage();
-  double tvar = properties->kineticEnergy.getVariance();
+  double tave = fwProperties->fwKineticEnergy[whichFW].getAverage();
+  double tvar = fwProperties->fwKineticEnergy[whichFW].getVariance();
 
   double temp1 = 1.0/tave/tave;
   double temp2 = vave*temp1;
@@ -78,9 +80,9 @@ double QMCDerivativeProperties::getVirialRatioVariance()
   return result;
 }
 
-double QMCDerivativeProperties::getVirialRatioStandardDeviation()
+double QMCDerivativeProperties::getVirialRatioStandardDeviation(int whichFW)
 {
-  return sqrt( getVirialRatioVariance() );
+  return sqrt( getVirialRatioVariance(whichFW) );
 }
 
 ostream& operator <<(ostream& strm, QMCDerivativeProperties &rhs)
@@ -88,9 +90,23 @@ ostream& operator <<(ostream& strm, QMCDerivativeProperties &rhs)
   strm << "dt_effective: " << rhs.getEffectiveTimeStep() << " +/- " 
        << rhs.getEffectiveTimeStepStandardDeviation() << endl;
 
-  strm << "Virial Ratio (-<V>/<T>): " << rhs.getVirialRatio() << " +/- "
-       << rhs.getVirialRatioStandardDeviation() << endl;
+  strm << endl << "--------------- Virial Ratio (-<V>/<T>) ---------------" << endl;
+  for(int fw=0; fw<rhs.fwProperties->numFutureWalking; fw++)
+    {
+      strm.width(7);
+      strm << globalInput.flags.future_walking[fw] << ": " << rhs.getVirialRatio(fw) <<
+	" +/- " << rhs.getVirialRatioStandardDeviation(fw) << endl;
 
+      double vave = rhs.fwProperties->fwPotentialEnergy[fw].getAverage();
+      double vvar = rhs.fwProperties->fwPotentialEnergy[fw].getVariance();
+
+      double tave = rhs.fwProperties->fwKineticEnergy[fw].getAverage();
+      double tvar = rhs.fwProperties->fwKineticEnergy[fw].getVariance();
+
+      strm << "         Total Energy Estimator (KE/Virial): " << -tave << " +/- " << sqrt(tvar) << endl; 
+      strm << "         Total Energy Estimator (PE/Virial): " << vave/2.0 << " +/- " << sqrt(vvar)/2.0 << endl; 
+    }
+     
   return strm;
 }
 

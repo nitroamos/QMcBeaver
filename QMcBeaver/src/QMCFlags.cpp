@@ -31,11 +31,15 @@ void QMCFlags::read_flags(string InFileName)
 
   //***** Default Flag Values ********
   programmersLongs.clear();
+  future_walking.clear();
+  future_walking.push_back(0);
+  
   walker_initialization_method   = "mikes_jacked_initialization";
   walker_initialization_combinations = 3;
   temp_dir                       = "/temp1/";
   parallelization_method         = "manager_worker";
   iseed                          = -5135696;
+  nuclear_derivatives            = "none";
   sampling_method                = "importance_sampling";
   QF_modification_type           = "none";
   energy_modification_type       = "none";
@@ -166,6 +170,10 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> sampling_method;
         }
+      else if(temp_string == "nuclear_derivatives")
+        {
+          input_file >> nuclear_derivatives;
+        }
       else if(temp_string == "QF_modification_type")
         {
           input_file >> QF_modification_type;
@@ -242,6 +250,16 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
           max_time_steps = atol(temp_string.c_str());
+        }
+      else if(temp_string == "future_walking")
+        {
+          input_file >> ws;//this removes any leading whitespace
+          while(input_file.peek() >= '0' && input_file.peek() <= '9')
+            {
+              input_file >> temp_string;
+              future_walking.push_back(atoi(temp_string.c_str()));
+              input_file >> ws;
+            }
         }
       else if(temp_string == "walkers_per_pass")
         {
@@ -510,13 +528,20 @@ void QMCFlags::read_flags(string InFileName)
         }
       else
         {
-          cerr << "ERROR: Unknown input flag: " << temp_string << endl;
-          exit(1);
+          cerr << "Warning: Unknown input flag: " << temp_string << endl;
         }
       input_file >> temp_string;
     }
   input_file.close();
 
+  /*
+    This should make all the elements in the future walking vector unique
+    and sorted.
+  */
+  sort(future_walking.begin(), future_walking.end());
+  vector<int>::iterator last = unique(future_walking.begin(), future_walking.end());
+  future_walking.erase(last,future_walking.end());
+  
   if(run_type == "" )
     {
       cerr << "ERROR: run_type not set!" << endl;
@@ -525,8 +550,7 @@ void QMCFlags::read_flags(string InFileName)
 
   if(mpireduce_interval < output_interval)
     {
-      cerr << "ERROR: mpireduce_interval < output_interval!" << endl;
-      exit(1);
+      cerr << "Warning: mpireduce_interval < output_interval!" << endl;
     }
 
   if(optimize_Psi == 1 && run_type != "variational")
@@ -559,11 +583,12 @@ void QMCFlags::set_filenames(string runfile)
 
   input_file_name   = runfile;
   string file_name  = input_file_name.substr(0,input_file_name.size()-5);
+  base_file_name    = file_name;
   output_file_name  = file_name + ".qmc";
   results_file_name = file_name + ".rslts";
-  base_file_name    = file_name;
   density_file_name = file_name + ".density";
-
+  force_file_name   = file_name + ".force";
+    
   char my_rank_string[32];
 #ifdef _WIN32
   _snprintf( my_rank_string, 32, "%d", my_rank );
@@ -633,33 +658,34 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "temp_dir\n " << flags.temp_dir << endl;
   strm << "parallelization_method\n " << flags.parallelization_method << endl;
   strm << "walker_initialization_method\n "
-       << flags.walker_initialization_method << endl;
+  << flags.walker_initialization_method << endl;
   strm << "walker_initialization_combinations\n "
-       << flags.walker_initialization_combinations << endl;
+  << flags.walker_initialization_combinations << endl;
   if (flags.iseed > 0) strm << "iseed\n " << -1*flags.iseed << endl;
   else if (flags.iseed <= 0) strm << "iseed\n " << flags.iseed << endl;
+  strm << "nuclear_derivatives\n " << flags.nuclear_derivatives << endl;
   strm << "sampling_method\n " << flags.sampling_method << endl;
   strm << "QF_modification_type\n " << flags.QF_modification_type << endl;
   strm << "energy_modification_type\n " << flags.energy_modification_type
-       << endl;
+  << endl;
   strm << "umrigar93_equalelectrons_parameter\n "
-       << flags.umrigar93_equalelectrons_parameter << endl;
+  << flags.umrigar93_equalelectrons_parameter << endl;
   strm << "walker_reweighting_method\n " << flags.walker_reweighting_method
-       << endl;
+  << endl;
   strm << "branching_method\n " << flags.branching_method << endl;
   strm << "branching_threshold\n " << flags.branching_threshold << endl;
   strm << "synchronize_dmc_ensemble\n " << flags.synchronize_dmc_ensemble
-       << endl;
+  << endl;
   strm << "synchronize_dmc_ensemble_interval\n "
-       << flags.synchronize_dmc_ensemble_interval << endl;
+  << flags.synchronize_dmc_ensemble_interval << endl;
   strm << "old_walker_acceptance_parameter\n "
-       << flags.old_walker_acceptance_parameter << endl;
+  << flags.old_walker_acceptance_parameter << endl;
   strm << "use_basis_function_interpolation\n "
-       << flags.use_basis_function_interpolation << endl;
+  << flags.use_basis_function_interpolation << endl;
   strm << "number_basis_function_interpolation_grid_points\n "
-       << flags.number_basis_function_interpolation_grid_points << endl;
+  << flags.number_basis_function_interpolation_grid_points << endl;
   strm << "basis_function_interpolation_first_point\n "
-       << flags.basis_function_interpolation_first_point << endl;
+  << flags.basis_function_interpolation_first_point << endl;
   strm << "fusion_threshold\n " << flags.fusion_threshold << endl;
   strm << "dt\n " << flags.dt_run << endl;
   strm << "desired_convergence\n " << flags.desired_convergence << endl;
@@ -668,9 +694,15 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "equilibration_steps\n " << flags.equilibration_steps << endl;
   strm << "equilibration_function\n " << flags.equilibration_function << endl;
   strm << "CKAnnealingEquilibration1_parameter\n "
-       << flags.CKAnnealingEquilibration1_parameter << endl;
-  strm << "use_equilibration_array\n " << flags.use_equilibration_array 
-       << endl;
+  << flags.CKAnnealingEquilibration1_parameter << endl;
+  strm << "use_equilibration_array\n " << flags.use_equilibration_array << endl;
+  if(flags.future_walking.size() > 0)
+  {
+    strm << "future_walking\n";
+    for(unsigned int i=0; i<flags.future_walking.size(); i++)
+      strm << " " << flags.future_walking[i];
+    strm << endl;
+  }
   strm << "number_of_walkers\n " << flags.number_of_walkers << endl;
   strm << "walkers_per_pass\n " << flags.walkers_per_pass << endl;
   strm << "output_interval\n " << flags.output_interval << endl;
@@ -679,7 +711,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "checkpoint_interval\n " << flags.checkpoint_interval << endl;
   strm << "checkpoint\n " << flags.checkpoint << endl;
   strm << "use_available_checkpoints\n " << flags.use_available_checkpoints
-       << endl;
+  << endl;
   strm << "atoms\n " << flags.Natoms << endl;
   strm << "charge\n " << flags.charge << endl;
   strm << "norbitals\n " << flags.Norbitals << endl;
@@ -689,11 +721,11 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "calculate_bf_density\n " << flags.calculate_bf_density << endl;
   strm << "energy\n " << flags.energy_trial << endl;
   strm << "correct_population_size_bias\n "
-       << flags.correct_population_size_bias << endl;
+  << flags.correct_population_size_bias << endl;
   strm << "print_transient_properties\n " << flags.print_transient_properties
-       << endl;
+  << endl;
   strm << "print_transient_properties_interval\n "
-       << flags.print_transient_properties_interval << endl;
+  << flags.print_transient_properties_interval << endl;
   strm << "print_configs\n " << flags.print_configs << endl;
   strm << "print_config_frequency\n " << flags.print_config_frequency << endl;
   strm << "optimize_Psi\n " << flags.optimize_Psi << endl;
@@ -701,38 +733,38 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "optimize_Psi_criteria\n " << flags.optimize_Psi_criteria << endl;
   strm << "optimize_Psi_method\n " << flags.optimize_Psi_method << endl;
   strm << "singularity_penalty_function_parameter\n "
-       << flags.singularity_penalty_function_parameter << endl;
+  << flags.singularity_penalty_function_parameter << endl;
   strm << "optimize_Psi_barrier_parameter\n "
-       << flags.optimize_Psi_barrier_parameter << endl;
+  << flags.optimize_Psi_barrier_parameter << endl;
   strm << "numerical_derivative_surface\n "
-       << flags.numerical_derivative_surface << endl;
+  << flags.numerical_derivative_surface << endl;
   strm << "line_search_step_length\n " << flags.line_search_step_length 
        << endl;
   strm << "optimization_max_iterations\n "
-       << flags.optimization_max_iterations << endl;
+  << flags.optimization_max_iterations << endl;
   strm << "optimization_error_tolerance\n "
-       << flags.optimization_error_tolerance << endl;
+  << flags.optimization_error_tolerance << endl;
   strm << "ck_genetic_algorithm_1_population_size\n "
-       << flags.ck_genetic_algorithm_1_population_size << endl;
+  << flags.ck_genetic_algorithm_1_population_size << endl;
   strm << "ck_genetic_algorithm_1_mutation_rate\n "
-       << flags.ck_genetic_algorithm_1_mutation_rate << endl;
+  << flags.ck_genetic_algorithm_1_mutation_rate << endl;
   strm << "ck_genetic_algorithm_1_initial_distribution_deviation\n "
-       << flags.ck_genetic_algorithm_1_initial_distribution_deviation << endl;
+  << flags.ck_genetic_algorithm_1_initial_distribution_deviation << endl;
   strm << "link_Jastrow_parameters\n " << flags.link_Jastrow_parameters 
        << endl;
   strm << "replace_electron_nucleus_cusps\n " 
        << flags.replace_electron_nucleus_cusps << endl;
   strm << "equilibrate_first_opt_step\n " << flags.equilibrate_first_opt_step
-       << endl;
+  << endl;
   strm << "equilibrate_every_opt_step\n " << flags.equilibrate_every_opt_step
-       << endl;
+  << endl;
   strm << "population_control_parameter\n "
-       << flags.population_control_parameter << endl;
+  << flags.population_control_parameter << endl;
   strm << "write_electron_densities\n " << flags.write_electron_densities
-       << endl;
+  << endl;
   strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
   strm << "zero_out_checkpoint_statistics\n "
-       << flags.zero_out_checkpoint_statistics << endl;
+  << flags.zero_out_checkpoint_statistics << endl;
   strm << "use_hf_potential\n " << flags.use_hf_potential << endl;
   strm << "hf_num_average\n " << flags.hf_num_average << endl;
   strm << "lock_trial_energy\n " << flags.lock_trial_energy << endl;

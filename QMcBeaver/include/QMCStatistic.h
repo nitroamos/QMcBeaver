@@ -101,6 +101,12 @@ public:
 
   QMCStatistic operator + (const QMCStatistic &rhs);
 
+  /**
+		This will multiply sum and sum2 by factor w.
+		
+		@param w the reweighting factor
+    */
+  void reWeight(double w);
 
   /**
     Writes the state of this object to an XML stream.

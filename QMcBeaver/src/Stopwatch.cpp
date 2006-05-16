@@ -81,7 +81,7 @@ void Stopwatch::stop()
       gettimeofday(&tp,&tz);
       stime2 = tp.tv_sec;
       micro2 = tp.tv_usec;
-      result_us = ((stime2-stime1)*1e6 + micro2 - micro1);
+      result_us = (longType)((stime2-stime1)*1e6 + micro2 - micro1);
       total_us += result_us;
       running   = false;
     }
@@ -96,12 +96,12 @@ void Stopwatch::stop()
     }
 }
 
-long Stopwatch::timeMS()
+longType Stopwatch::timeMS()
 {
   return total_us/1000;
 }
 
-long Stopwatch::timeUS()
+longType Stopwatch::timeUS()
 {
   return total_us;
 }
@@ -114,7 +114,9 @@ bool Stopwatch::isRunning()
 string Stopwatch::toString()
 {
   ostringstream stream;
-  stream << timeMS() << " ms " << ends;
+  longType time = timeMS();
+  double hrs = time/(1000.0*60.0*60.0);
+  stream << time << " ms " << " (" << hrs << " hrs)";
   return stream.str();
 }
 
@@ -163,7 +165,8 @@ void Stopwatch::buildMpiType()
   MPI_Aint     addresses[2];
   MPI_Datatype typelist[1];
 
-  typelist[0] = MPI_LONG;    // total time
+  //typelist[0] = MPI_LONG_INT;    // total time
+  typelist[0] = MPI_LONG_LONG_INT;    // total time
   
   block_lengths[0] = 1;
   
@@ -171,7 +174,7 @@ void Stopwatch::buildMpiType()
   MPI_Address(&(indata.total_us), &addresses[1]);
 
   displacements[0] = addresses[1] - addresses[0];
-  
+
   MPI_Type_struct(1, block_lengths, displacements, typelist, 
                   &MPI_TYPE);
   MPI_Type_commit(&MPI_TYPE);

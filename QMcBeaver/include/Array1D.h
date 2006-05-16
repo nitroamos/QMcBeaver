@@ -16,6 +16,7 @@
 #include <iostream>
 #include <math.h>
 #include "cppblas.h"
+#include <assert.h>
 
 using namespace std;
 
@@ -50,14 +51,14 @@ public:
 	@return number of elements in the array's first dimension.
 	*/
 
-	int dim1() { return n_1; }
+	int dim1() const { return n_1; }
 
 	/**
 	Gets the total number of elements in the array.
 	@return total number of elements in the array.
 	*/
 
-	int size() { return n_1; }
+	int size() const { return n_1; }
 
 	/**
 	Gets a pointer to an array containing the array elements.  The ordering of
@@ -89,6 +90,18 @@ public:
 		}
 	}
 
+	/**
+		This is for compatability with std::vector. It just
+		calls allocate(int i).
+	*/
+  	void resize(int i) { allocate(i); }
+  
+	/**
+		This is for compatability with std::vector. It just
+		deallocates.
+	*/
+  	void clear() { deallocate(); }
+  
 	/**
 	Deallocates memory for the array.
 	*/
@@ -371,7 +384,24 @@ public:
 	*/
 
 	T& operator()(int i) { return pArray[i]; }
-
+  
+  	/**
+  		It's nice to have a const accessor
+  	*/
+  	T get(int i) const
+  		{
+    		assert(pArray != 0);
+    		return pArray[i];
+  		}
+    
+    /**
+    	This is for compatibility with std::vector.
+    */
+	T& operator[](int i) {
+	  assert(pArray != 0);
+	  return pArray[i];
+	}
+  
 	/**
 	Prints the array to a stream.
 	*/

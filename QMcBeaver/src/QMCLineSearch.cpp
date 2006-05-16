@@ -44,7 +44,7 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess)
     {
       // Calculate the function value, step length, and search direction.
       double f = OF->evaluate(x).getScore();
-      
+
       cout << "\tIteration: " << i << endl;
       cout << "\t\tFunction Value: " << f << endl;
       cout << "\t\tParameters:     " << x << endl;
@@ -60,7 +60,7 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess)
       Array1D<double> grad_k = getObjectiveFunction()->grad(x);
       Array1D<double> p_k   = searchDirection(x,grad_k);
       double alpha_k = stepLength(x,p_k,grad_k,f);
-	
+
       // Calculate the next step
       for(int j=0; j<x.dim1(); j++)
 	{

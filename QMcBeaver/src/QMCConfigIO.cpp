@@ -9,14 +9,18 @@
 
 /**
   If you want the configuration file to be in binary,
-  set this to true.
+  set this to true. Binary files are much smaller,
+  meaning that they take less time to write/read.
+
+  Perhaps eventually I'll add an HDF5 option.
 */
-static const bool inBinary = false;
+static const bool inBinary = true;
 
 QMCConfigIO::QMCConfigIO()
 {
   config_strm = 0;
   areWriting = true;
+  numWritten = 0;
   filename = "";
 }
 
@@ -29,17 +33,15 @@ QMCConfigIO::QMCConfigIO(int numE)
 {
   config_strm = 0;
   areWriting = true;
+  numWritten = 0;
   filename = "";
   numElectrons = numE;
 }
 
 void QMCConfigIO::open(string name, bool forWriting)
 {
-  if( name == filename && areWriting == forWriting && config_strm != 0 )                                                                               
-    {
-      config_strm->clear();
-      return;
-    }
+  if( name == filename && areWriting == forWriting && config_strm != 0 )
+    return;
 
   areWriting = forWriting;
   filename = name;
@@ -47,7 +49,7 @@ void QMCConfigIO::open(string name, bool forWriting)
     
   if(filename == "")
   {
-    cout << "Error: empty filename" << endl;
+    cerr << "Warning: empty filename" << endl;
     return;
   }
   
@@ -55,6 +57,7 @@ void QMCConfigIO::open(string name, bool forWriting)
   
   if(forWriting)
   {
+    numWritten = 0;
     mode = ios_base::trunc;
     mode |= ios_base::out;
   }
@@ -69,11 +72,17 @@ void QMCConfigIO::open(string name, bool forWriting)
   
   if( !(*config_strm) || config_strm->bad() )
   {
-    cout << "Error: Can't open " << filename << " (rdstate = " 
-         << config_strm->rdstate() << ")" << endl;
-    exit(0);
+    cerr << "Error: Can't open " << filename;
+    if(config_strm->rdstate() & ios::badbit)
+      cerr << " badbit ";
+    if(config_strm->rdstate() & ios::failbit)
+      cerr << " failbit ";
+    if(config_strm->rdstate() & ios::eofbit)
+      cerr << " eofbit ";
+    cerr << endl;
+    exit(1);
   }
-  
+
   //this is just to make sure that the EOF flag is cleared
   config_strm->clear();
 }
@@ -85,15 +94,16 @@ void QMCConfigIO::writeCorrelatedSamplingConfiguration(
                                                        double lnJastrow,
                                                        double PE)
 {
+
   if(config_strm == 0)
   {
-    cout << "Error: no file is open." << endl;
+    cerr << "Warning: config_strm is zero (write sample)." << endl;
     return;    
   }
   
   if(!areWriting)
   {
-    cout << "Error: the file is open for reading, not writing." << endl;
+    cerr << "Warning: the file is open for reading, not writing." << endl;
     return;
   }
   
@@ -145,6 +155,8 @@ void QMCConfigIO::writeCorrelatedSamplingConfiguration(
     strm << "PE\t" << endl;
     strm << "\t" << PE << endl;
   }
+
+  numWritten++;
 }
 
 void QMCConfigIO::readCorrelatedSamplingConfiguration(
@@ -156,13 +168,13 @@ void QMCConfigIO::readCorrelatedSamplingConfiguration(
 {
   if(config_strm == 0)
   {
-    cout << "Error: no file is open." << endl;
+    cerr << "Warning: config_strm is zero (read sample)." << endl;
     return;    
   }
   
   if(areWriting)
   {
-    cout << "Error: the file is open for writing, not reading." << endl;
+    cerr << "Warning: the file is open for writing, not reading." << endl;
     return;
   }
   
@@ -238,7 +250,7 @@ bool QMCConfigIO::eof()
 {
   if(config_strm == 0)
   {
-    cout << "Error: no file is open." << endl;
+    cerr << "Warning: config_strm is zero (eof)." << endl;
     return true;    
   }
     
@@ -249,14 +261,11 @@ void QMCConfigIO::setPrecision()
 {
   if(config_strm == 0)
   {
-    cout << "Error: no file is open." << endl;
+    cerr << "Warning: config_strm is zero (setPrecision)." << endl;
     return;    
   }
   
   config_strm->setf(ios::fixed,ios::floatfield);
   config_strm->precision(10);
 }
-
-
-
 

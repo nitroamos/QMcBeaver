@@ -29,6 +29,6 @@
   @param n exponent
   @return \f$x^n\f$
   */
-double fastPower(double x, int n);
+double fastPower(double x, int n); 
 
 #endif

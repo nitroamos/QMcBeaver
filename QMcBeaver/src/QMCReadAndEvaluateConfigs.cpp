@@ -179,7 +179,7 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
   Array1D < Array1D<double> > &Params, Array1D<QMCProperties> & Properties)
 {  
   Input->outputer.open(Input->flags.config_file_name,false);
-  
+
   //zero out the properties
   Properties.allocate(Params.dim1());
   for(int j=0;j<Properties.dim1();j++)
@@ -364,8 +364,8 @@ void QMCReadAndEvaluateConfigs::MPI_reduce(
 #ifdef PARALLEL
 
   MPI_Reduce(local_Properties.array(),global_Properties.array(),
-             local_Properties.dim1(),QMCProperties::MPI_TYPE,
-             QMCProperties::MPI_REDUCE,0,MPI_COMM_WORLD);
+	     local_Properties.dim1(),QMCProperties::MPI_TYPE,
+	     QMCProperties::MPI_REDUCE,0,MPI_COMM_WORLD);
 
 #else
 

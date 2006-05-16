@@ -13,7 +13,7 @@
 #include "QMCProperties.h"
 
 QMCProperties::QMCProperties()
-{
+{  
   calc_density = false;
   nBasisFunc   = 0;
   zeroOut();
@@ -28,15 +28,31 @@ QMCProperties::QMCProperties()
 #endif
 }
 
+QMCProperties::~QMCProperties()
+{
+  if(calc_density)
+    {
+      chiDensity.deallocate();
+    }
+}
+
 void QMCProperties::setCalcDensity(bool calcDensity, int nbasisfunctions)
 {
   calc_density = calcDensity;
-  nBasisFunc   = nbasisfunctions;
 
-  chiDensity.allocate(nBasisFunc);
+  if(calc_density == true)
+    {
+      nBasisFunc   = nbasisfunctions;
+      chiDensity.allocate(nBasisFunc);
 
-  for (int i=0; i<nBasisFunc; i++)
-    chiDensity(i).zeroOut();
+      for (int i=0; i<nBasisFunc; i++)
+	chiDensity(i).zeroOut();
+    }
+  else
+    {
+      nBasisFunc = 0;
+      chiDensity.deallocate();
+    }
 }
 
 void QMCProperties::zeroOut()
@@ -50,7 +66,7 @@ void QMCProperties::zeroOut()
   acceptanceProbability.zeroOut();
   distanceMovedAccepted.zeroOut();
   distanceMovedTrial.zeroOut();
-
+  
   if (calc_density)
     for (int i=0; i<nBasisFunc; i++)
       chiDensity(i).zeroOut();
@@ -72,15 +88,21 @@ void QMCProperties::newSample(QMCProperties* newProperties, double weight,
   distanceMovedTrial.newSample(newProperties->distanceMovedTrial.getAverage(),
 			       weight);
   logWeights.newSample(newProperties->logWeights.getAverage(), nwalkers);
-
+  
   if (calc_density)
     for (int i=0; i<nBasisFunc; i++)
-      chiDensity(i).newSample(newProperties->chiDensity(i).getAverage(), 
-			      weight);
+      chiDensity(i).newSample(newProperties->chiDensity(i).getAverage(),weight);
+}
+
+void QMCProperties::matchParametersTo( const QMCProperties &rhs )
+{
+  setCalcDensity(rhs.calc_density,rhs.nBasisFunc);
 }
 
 void QMCProperties::operator = ( const QMCProperties &rhs )
 {
+  matchParametersTo(rhs);
+
   energy                = rhs.energy;
   kineticEnergy         = rhs.kineticEnergy;
   potentialEnergy       = rhs.potentialEnergy;
@@ -95,7 +117,10 @@ void QMCProperties::operator = ( const QMCProperties &rhs )
 QMCProperties QMCProperties::operator + ( QMCProperties &rhs )
 {
   QMCProperties result;
-
+  
+  matchParametersTo(rhs);
+  result.matchParametersTo(rhs);
+  
   result.energy                = energy + rhs.energy;
   result.kineticEnergy         = kineticEnergy + rhs.kineticEnergy;
   result.potentialEnergy       = potentialEnergy + rhs.potentialEnergy;
@@ -234,7 +259,7 @@ void QMCProperties::readXML(istream& strm)
         chiDensity(i).readXML(strm);
       strm >> temp;
     }
-
+    
   // Close XML
   strm >> temp;
 }
@@ -265,7 +290,6 @@ ostream& operator <<(ostream& strm, QMCProperties &rhs)
   strm << endl << "------------- DistanceMovedTrial -------------" << endl;
   strm << rhs.distanceMovedTrial;
 
-
   strm << endl << "----------------- logWeights -----------------" << endl;
   strm << rhs.logWeights;
 
@@ -288,7 +312,7 @@ void QMCProperties::buildMpiType()
   // The number of properties 
   // ADJUST THIS WHEN ADDING NEW PROPERTIES
   const int NumberOfProperties = 9;
-
+  
   int          block_lengths[NumberOfProperties];
   MPI_Aint     displacements[NumberOfProperties];
   MPI_Aint     addresses[NumberOfProperties+1];
@@ -313,16 +337,27 @@ void QMCProperties::buildMpiType()
   MPI_Address(&(indata.potentialEnergy), &addresses[7]);  
   MPI_Address(&(indata.neEnergy), &addresses[8]);
   MPI_Address(&(indata.eeEnergy), &addresses[9]);
-
+  
   // Find the relative addresses of the data elements to the start of 
   // the struct
   for(int i=0; i<NumberOfProperties; i++)
     {  
       displacements[i] = addresses[i+1] - addresses[0];
     }
-  
+
+  /*
   MPI_Type_struct(NumberOfProperties, block_lengths, displacements, typelist, 
-                  &MPI_TYPE);
+		  &MPI_TYPE);
+  //Because we're including all kinds of junk in QMCProperties, the displacements
+  //are not going to find everything. This ensures that MPI knows the exact size
+  */
+  
+  MPI_Datatype temp;
+  MPI_Type_struct(NumberOfProperties, block_lengths, displacements, typelist, 
+                  &temp);
+  MPI_Type_create_resized(temp,0,sizeof(QMCProperties),&MPI_TYPE);
+
+
   MPI_Type_commit(&MPI_TYPE);
 }
 
@@ -333,7 +368,29 @@ MPI_Op QMCProperties::MPI_REDUCE;
 void QMCProperties::Reduce_Function(QMCProperties *in, QMCProperties *inout, 
                                    int *len, MPI_Datatype *dptr)
 {
-  *inout = *inout + *in;
+  /*
+    we only want to add some of the elements (only the ones who's size is known
+    at compile time). the others will be collected in other ways. we'll
+    leave the operator + for a more general purpose.
+  */
+  //cout << globalInput.flags.my_rank << ":" << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << " len " << *len << endl;
+ 
+  for(int i=0; i < *len; i++)
+    {
+      //inout[i] = inout[i] + in[i];
+      
+      inout[i].energy                = inout[i].energy + in[i].energy;
+      inout[i].kineticEnergy         = inout[i].kineticEnergy + in[i].kineticEnergy;
+      inout[i].potentialEnergy       = inout[i].potentialEnergy + in[i].potentialEnergy;
+      inout[i].neEnergy              = inout[i].neEnergy + in[i].neEnergy;
+      inout[i].eeEnergy              = inout[i].eeEnergy + in[i].eeEnergy;
+      inout[i].logWeights            = inout[i].logWeights + in[i].logWeights;
+      inout[i].acceptanceProbability = inout[i].acceptanceProbability + 
+	in[i].acceptanceProbability;
+      inout[i].distanceMovedAccepted = inout[i].distanceMovedAccepted + 
+	in[i].distanceMovedAccepted;
+      inout[i].distanceMovedTrial    = inout[i].distanceMovedTrial + in[i].distanceMovedTrial;
+    }
 }
 
 #endif

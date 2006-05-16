@@ -33,6 +33,20 @@ void QMCEquilibrationArray::setCalcDensity(bool calcDensity,
     }
 }
 
+void QMCEquilibrationArray::setCalcForces(bool calcForces,
+					  int dim1, int dim2)                                                                                           
+{
+  calc_forces = calcForces;
+  for (int i=0; i<EQ; i++)
+    {
+      assert(0);
+      /*
+      Eq_Array[i].getProperties()->setCalcForces
+	(calc_forces, dim1,dim2);
+      */
+    }
+}
+
 void QMCEquilibrationArray::newSample(QMCProperties * timeStepProps,
                                       double totalWeights, int nWalkers)
 { 

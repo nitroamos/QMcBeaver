@@ -20,9 +20,9 @@ void QMCObjectiveFunction::initialize(QMCInput *Ip, int configsToSkip)
 
 Array1D<QMCObjectiveFunctionResult> QMCObjectiveFunction::evaluate(
 		                          Array1D< Array1D<double> > & Params) 
-{ 
+{
   // calculate properties from the configuration file
-  Array1D<QMCProperties> Properties;
+  Array1D<QMCProperties> Properties; 
   RAEC.rootCalculateProperties(Params, Properties);
 
   // process the properties and put the results into RESULTS

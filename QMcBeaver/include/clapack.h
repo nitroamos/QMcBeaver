@@ -1,5 +1,5 @@
 /*
- *             Automatically Tuned Linear Algebra Software v3.6.0
+ *             Automatically Tuned Linear Algebra Software v3.7.11
  *                    (C) Copyright 1999 R. Clint Whaley
  *
  * Redistribution and use in source and binary forms, with or without

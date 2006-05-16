@@ -14,6 +14,7 @@
 #define QMCDerivativeProperties_H
 
 #include "QMCProperties.h"
+#include "QMCFutureWalkingProperties.h"
 
 /**
   All of the calculated quantities and properties that are derived 
@@ -27,9 +28,12 @@ public:
     Creates and initializes an instance of this class.
 
     @param properties calculated properties for the system.
+    @param fwProperties the properties calculated with future walking
     @param dt time step for the calculation.
     */
-  QMCDerivativeProperties(QMCProperties * properties, double dt);
+  QMCDerivativeProperties(QMCProperties * properties,
+			  QMCFutureWalkingProperties * fwProperties,
+			  double dt);
 
   /**
     Gets the effective time step for the calculation.
@@ -60,24 +64,27 @@ public:
     expectation value of the potential energy and \f$\left<T\right>\f$ is
     the expectation value of the kinetic energy.
 
+	 @param whichFW which future walking index we want to query
     @return virial ratio.
     */
-  double getVirialRatio();
+  double getVirialRatio(int whichFW);
 
   /**
     Gets the variance of the calculated virial ratio for the calculation.
 
+	 @param whichFW which future walking index we want to query
     @return variance of the virial ratio.
     */
-  double getVirialRatioVariance();
+  double getVirialRatioVariance(int whichFW);
 
   /**
     Gets the standard deviation of the calculated virial ratio for the 
     calculation.
 
+	 @param whichFW which future walking index we want to query
     @return standard deviation of the virial ratio.
     */
-  double getVirialRatioStandardDeviation();
+  double getVirialRatioStandardDeviation(int whichFW);
 
   /**
     Formats and prints the properties to a stream in human readable fromat.
@@ -86,6 +93,7 @@ public:
 
 private:
   QMCProperties * properties;
+  QMCFutureWalkingProperties * fwProperties;
   double dt;
 };
 

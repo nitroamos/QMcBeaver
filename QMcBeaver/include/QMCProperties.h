@@ -48,7 +48,7 @@ public:
     Potential energy of the system.
   */
   QMCProperty potentialEnergy;
-
+  
   /**
     Keeps track of the nuc-e and e-e energy separately.
   */
@@ -74,12 +74,12 @@ public:
     Average distance for a trial move.
   */
   QMCProperty distanceMovedTrial;
-
-  /**
+ 
+ /**
     Tells if basis function density is being calculated.
   */
   bool calc_density;
-
+  
   /**
     The number of basis functions.  Only has a value if calc_density is true.
   */
@@ -89,17 +89,24 @@ public:
      Densities for the basis functions.
   */
   Array1D<QMCProperty> chiDensity;
-
+   
   /**
     Creates an instance of the class.
   */
   QMCProperties();
-
+  ~QMCProperties();
+  
   /**
     Sets all of the data in the object to zero.
   */
   void zeroOut();
 
+	/**
+		This function will match array allocations to
+		rhs.
+		@param rhs the object who's allocations we want to match
+	*/
+  void matchParametersTo( const QMCProperties &rhs );
   /**
     Sets two objects equal.
   */

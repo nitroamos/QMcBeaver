@@ -13,7 +13,7 @@
 #include <math.h>
 
 #include "Array1D.h"
-#include "QMCProperties.h"
+#include "Array2D.h"
 #include <string>
 
 using namespace std;
@@ -88,12 +88,19 @@ public:
   bool eof();
     
   /**
-    Returns a string with the name of the file
-    this class is writing/reading.
-    
-    @return The name of the file.
-	*/
+     Returns a string with the name of the file
+     this class is writing/reading.
+     
+     @return The name of the file.
+  */
   string getFilename();
+  
+  /**
+     @return The number of configurations we wrote
+     into the file.
+  */
+  int getNumberConfigsWritten();
+
  
   /**
     This will set all the precision requirements we want
@@ -170,6 +177,12 @@ private:
     Number of electrons.
   */  
   int numElectrons;
+
+  /**
+     Number of configurations written
+  */
+  int numWritten;
+
 };
 
 #endif

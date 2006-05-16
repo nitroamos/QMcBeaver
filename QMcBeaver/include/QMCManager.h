@@ -14,15 +14,21 @@
 #define QMCManager_H
 
 //The old macros conflicted with some Windows macros
-#define QMC_WORK_STEP 0
-#define QMC_REDUCE 1
-#define QMC_TERMINATE 2
+#define QMC_WORK_STEP   0
+#define QMC_REDUCE      1
+#define QMC_TERMINATE   2
 #define QMC_SYNCHRONIZE 3
+#define QMC_REDUCE_ALL  4
+
+//These are all the signals that QMCManager has been programmed
+//to handle.
+enum signalType {SIG_REDUCE, SIG_INCREASE, SIG_QUIT, SIG_NOTHING};
 
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <iomanip>
+#include <signal.h>
 
 #include "QMCRun.h"
 #include "QMCDerivativeProperties.h"
@@ -30,6 +36,8 @@
 #include "QMCCopyright.h"
 #include "QMCProperties.h"
 #include "QMCProperty.h"
+#include "QMCFutureWalkingProperties.h"
+#include "QMCNuclearForces.h"
 
 #ifdef PARALLEL
 #include <mpi.h>
@@ -95,6 +103,11 @@ class QMCManager
   void writeBFDensity();
 
   /**
+     Writes the calculated forces for the calculation.
+  */
+  void writeForces();
+
+  /**
      Writes the timing data to a stream. This is only valid after
      <code>finalize</code> is called and only on the root node.
      @param strm stream to write timing information to.
@@ -119,7 +132,24 @@ class QMCManager
   */
   friend ostream & operator<<(ostream & strm, QMCManager & rhs);
 
+  /**
+		Call this function when you want QMCManager to change its
+		signal flags.
+  */
+  static void receiveSignal(signalType signal);
+
  private:
+ 
+  /**
+  		These are signal flags. Since system signaling can only
+  		call static functions, we translate any signal information
+  		into these flags, which QMCManager can look at during some
+  		decision.
+  */
+  static bool SIGNAL_SAYS_QUIT;
+  static bool REDUCE_ALL_NOW;
+  static bool INCREASE_TIME;
+
   /**
      Walkers plus the basic functionality needed to build a QMC calculation.
   */
@@ -165,6 +195,17 @@ class QMCManager
      and scratch space on other nodes.
   */
   QMCProperties Properties_total;
+  
+  /**
+     Same purpose as Properties_total, except that this one holds
+     the properties collected as future walking properties. It turned
+     out to be too annoying to include dynamic arrays in QMCProperties.
+     This permits the amount of data in QMCProperties to be known at
+     compile time while permitting fwProperties_total to depend on
+     information from the input file. This difference is important
+     for how MPI reduces the properties.
+  */
+  QMCFutureWalkingProperties fwProperties_total;
 
   /**
      Local statistical properties calculated during the equilibration phase
@@ -265,6 +306,12 @@ class QMCManager
      processors and saves the result in Properties_total.
   */
   void gatherDensities();
+
+  /**
+     Gathers the statistics for the forces from all the 
+     processors and saves the result in fwProperties_total.
+  */
+  void gatherForces();
 
   /**
      Gathers the electron density histograms from all the processors.

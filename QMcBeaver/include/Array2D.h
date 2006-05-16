@@ -99,7 +99,7 @@ template <class T> class Array2D
 
     @return number of elements in the array's first dimension.
     */
-    int dim1()
+    int dim1() const
     {
       return n_1;
     }
@@ -109,7 +109,7 @@ template <class T> class Array2D
 
     @return number of elements in the array's second dimension.
     */
-    int dim2()
+    int dim2() const
     {
       return n_2;
     }
@@ -119,7 +119,7 @@ template <class T> class Array2D
 
     @return total number of elements in the array.
     */
-    int size()
+    int size() const
     {
       return n_1*n_2;
     }
@@ -133,6 +133,12 @@ template <class T> class Array2D
 
     void allocate(int i, int j)
     {
+      if( i < 1 || j < 1)
+	{
+	  cerr << "Error: invalid dimensions to allocate\n";
+	  exit(1);
+	}
+
       if( n_1 != i || n_2 != j )
         {
           deallocate();
@@ -172,7 +178,7 @@ template <class T> class Array2D
     */
 
     void setupMatrixMultiply(const Array2D<T> & rhs, Array2D<T> & result,
-                             bool rhsIsTransposed)
+                             const bool rhsIsTransposed) const
     {
       if(rhsIsTransposed)
         {
@@ -201,26 +207,38 @@ template <class T> class Array2D
 #ifdef USEATLAS
 
     void gemm(const Array2D<double> & rhs, Array2D<double> & result,
-              bool rhsIsTransposed)
+              const bool rhsIsTransposed) const
     {
       setupMatrixMultiply(rhs,result,rhsIsTransposed);
+
+      //MxN = MxK * KxN 
+      int M = n_1;
+      int N = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
+      int K = n_2; 
       CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
+
       cblas_dgemm(CBLAS_ORDER(CblasRowMajor),
-                  CBLAS_TRANSPOSE(CblasNoTrans),myTrans,
-                  n_1, rhs.n_1, n_2,
+                  CBLAS_TRANSPOSE(CblasNoTrans), myTrans,
+                  M, N, K,
                   1.0, pArray, n_2,
                   rhs.pArray, rhs.n_2,
                   0.0, result.pArray, result.n_2);
     }
 
     void gemm(const Array2D<float> & rhs, Array2D<float> & result,
-              bool rhsIsTransposed)
+              const bool rhsIsTransposed) const
     {
       setupMatrixMultiply(rhs,result,rhsIsTransposed);
+
+      //MxN = MxK * KxN 
+      int M = n_1;
+      int N = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
+      int K = n_2; 
       CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
+
       cblas_sgemm(CBLAS_ORDER(CblasRowMajor),
                   CBLAS_TRANSPOSE(CblasNoTrans),myTrans,
-                  n_1, rhs.n_1, n_2,
+		  M, N, K,
                   1.0, pArray, n_2,
                   rhs.pArray, rhs.n_2,
                   0.0, result.pArray, result.n_2);
@@ -257,27 +275,26 @@ template <class T> class Array2D
 #else
 
     void gemm(const Array2D<T> & rhs, Array2D<T> & result,
-              bool rhsIsTransposed)
+              const bool rhsIsTransposed) const
     {
       setupMatrixMultiply(rhs,result,rhsIsTransposed);
 
+      //MxN = MxK * KxN
       int M = n_1;
-      int N = rhs.n_1;
+      int N = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
       int K = n_2;
       T * A = pArray;
       T * B = rhs.pArray;
       T * C = result.pArray;
-      int i, j, k;
 
       if(rhsIsTransposed)
         {
           if(USE_KAHAN)
             {
-              T Cee;
-              T Why;
-              T Tee;
-
-              for (i = 0; i < M; ++i)
+              T Cee, Why, Tee;
+	      int i, j, k;
+              
+	      for (i = 0; i < M; ++i)
                 {
                   const register T *Ai_ = A + i*K;
                   for (j = 0; j < N; ++j)
@@ -298,6 +315,8 @@ template <class T> class Array2D
             }
           else//no kahan summation formula
             {
+	      int i, j, k;
+
               for (i = 0; i < M; ++i)
                 {
                   const register T *Ai_ = A + i*K;
@@ -359,9 +378,9 @@ template <class T> class Array2D
     }
 #endif
 
-    Array2D<T> operator*(const Array2D<T> & rhs)
+    Array2D<T> operator*(const Array2D<T> & rhs) const
     {
-      Array2D<T> TEMP;
+      Array2D<T> TEMP(n_1,rhs.n_2);
       TEMP = 0;
       gemm(rhs,TEMP,false);
       return TEMP;
@@ -640,11 +659,18 @@ template <class T> class Array2D
     */
     void operator=(const T C)
     {
+      if(n_1 < 1 || n_2 < 1)
+	{
+	  cerr << "Error: can not set Array2D with dims " << n_1 << " and " << n_2 << endl;
+	  exit(1);
+	}
+
       if(C == 0)
         {
           memset(pArray,0,sizeof(T)*n_1*n_2);
           return;
         }
+
       for(int i=0; i<n_1*n_2; i++)
         pArray[i] = C;
     }

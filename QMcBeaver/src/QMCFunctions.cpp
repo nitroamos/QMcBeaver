@@ -77,6 +77,9 @@ void QMCFunctions::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
 
   PE.initialize(Input,HF);
   Jastrow.initialize(Input);
+  
+  if(Input->flags.nuclear_derivatives != "none")
+  	 nf.initialize(Input);
 
   SCF_Grad_PsiRatio.allocate(Input->WF.getNumberElectrons(),3);    
 }
@@ -126,6 +129,9 @@ void QMCFunctions::evaluate(Array1D<QMCWalkerData *> &walkerData,
 
   PE.evaluate(xData,num);
 
+  if(Input->flags.nuclear_derivatives != "none")
+    nf.evaluate(walkerData,xData,num);
+  
 #ifdef QMC_GPU
   if(true){
     Stopwatch finisher = Stopwatch();
@@ -209,6 +215,9 @@ void QMCFunctions::evaluate(Array2D<double> &X, QMCWalkerData & data)
 				   data.gradPsiRatio);
   calculate_E_Local(0);
 
+  if(Input->flags.nuclear_derivatives != "none")
+    nf.evaluate(data,X);
+    
   data.isSingular = isSingular(0);
   data.localEnergy = getLocalEnergy();
   data.kineticEnergy = getKineticEnergy();

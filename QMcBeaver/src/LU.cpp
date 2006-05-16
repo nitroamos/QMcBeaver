@@ -313,8 +313,8 @@ void determinant_and_inverse(Array2D<qmcfloat> &a, Array2D<qmcfloat> &inv,
 {
   int n=a.dim1();
   double d;
-  static int *INDX = new int[n];
-  static Array1D<qmcfloat> col(n);
+  int *INDX = new int[n];
+  Array1D<qmcfloat> col(n);
 
   if(n > col.dim1()) col.allocate(n);
 
@@ -339,7 +339,7 @@ void determinant_and_inverse(Array2D<qmcfloat> &a, Array2D<qmcfloat> &inv,
   for(int i=0; i<n; i++) d*= a(i,i);
   det = d;
 
-  //delete [] INDX;
+  delete [] INDX;
 }
 #endif
 

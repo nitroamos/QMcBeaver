@@ -55,6 +55,11 @@ class QMCEquilibrationArray
   */
   int nBasisFunc;
 
+  /** 
+    True if nuclear forces are being calculated.
+  */
+  bool calc_forces;
+  
  public:
 
   /**
@@ -72,6 +77,11 @@ class QMCEquilibrationArray
   */
   void setCalcDensity(bool calcDensity, int nbasisfunctions);
 
+  /**
+    Tells the object if basis function densities are being calculated.
+  */
+  void setCalcForces(bool calcForces, int dim1, int dim2);
+  
   /**
     Adds a new data sample to the live objects in the array and updates
     decorr_objects if necessary.

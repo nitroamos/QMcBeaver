@@ -53,7 +53,7 @@ void QMCRun::propagateWalkers(bool writeConfigs)
     different order.
    */
   for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
-    wp->processPropagation(QMF);
+      wp->processPropagation(QMF);
 }
 
 void QMCRun::branchWalkers()
@@ -87,14 +87,28 @@ void QMCRun::branchWalkers()
   else
     {
       cerr << "ERROR: Unknown branching method!" << endl;
-      exit(0);
+      exit(1);
     }
+    
+  if( wlist.size() == 0 || getWeights() <= 0)
+  {
+    cerr << "ERROR: all the walkers died!\n";
+    exit(1);
+  }
 }
 
 void QMCRun::zeroOut()
 {
-  if (Input->flags.use_equilibration_array == 1) EquilibrationArray.zeroOut();
-  else Properties.zeroOut();
+  for( list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp )
+    wp->resetFutureWalking();
+    
+  if (Input->flags.use_equilibration_array == 1)
+    {
+      EquilibrationArray.zeroOut();
+    } else {
+      Properties.zeroOut();
+      fwProperties.zeroOut();
+    }
 }
 
 void QMCRun::initialize(QMCInput *INPUT)
@@ -114,10 +128,37 @@ void QMCRun::initialize(QMCInput *INPUT)
         Properties.setCalcDensity(calcDensity,
                                   Input->WF.getNumberBasisFunctions());
     }
+ 
+  if(Input->flags.nuclear_derivatives != "none")
+    {
+      int dim1, dim2;
+      if(Input->flags.nuclear_derivatives != "bin_force_density")
+      {
+        dim1 = Input->Molecule.getNumberAtoms();
+        dim2 = 3;
+      } else {
+        dim1 = QMCNuclearForces::getNumBins();
+        dim2 = 1;
+      }
+      
+      bool calcForces = true;
+      fwTimeStepProperties.setCalcForces(calcForces,dim1,dim2);
+      if (Input->flags.use_equilibration_array == 1)
+	{
+	  EquilibrationArray.setCalcForces(calcForces,dim1,dim2);
+	} else {
+	  fwProperties.setCalcForces(calcForces,dim1,dim2);    
+	}
+    }
     
-  if (Input->flags.use_equilibration_array == 1) EquilibrationArray.zeroOut();
-  else Properties.zeroOut();
-  
+  if (Input->flags.use_equilibration_array == 1)
+    {
+      EquilibrationArray.zeroOut();
+    } else {
+      Properties.zeroOut();
+      fwProperties.zeroOut();
+    }
+
   if (Input->flags.write_electron_densities == 1)
     {
       // The pair density for each pair of particles is recorded in a 
@@ -227,21 +268,27 @@ void QMCRun::calculateObservables()
   // Pre block all of the statistics from one time step together
   
   timeStepProperties.zeroOut();
-  
+  fwTimeStepProperties.zeroOut();
+
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
+  {    
     wp->calculateObservables( timeStepProperties );
-    
+    wp->calculateObservables( fwTimeStepProperties );
+  }
   // Add the pre blocked data from this time step to the accumulated
   // statistics
   
   double totalWeights = getWeights() * populationSizeBiasCorrectionFactor;
   
   if (Input->flags.use_equilibration_array == 1)
-    EquilibrationArray.newSample(&timeStepProperties, totalWeights,
-                                 getNumberOfWalkers());
-  else
-    Properties.newSample(&timeStepProperties, totalWeights,
-                         getNumberOfWalkers());
+    {
+      EquilibrationArray.newSample(&timeStepProperties, totalWeights,
+				   getNumberOfWalkers());
+    } else {
+      Properties.newSample(&timeStepProperties, totalWeights,
+			   getNumberOfWalkers());
+      fwProperties.newSample(&fwTimeStepProperties,totalWeights,getNumberOfWalkers());
+    }
 }
 
 void QMCRun::writeEnergies(ostream& strm)
@@ -289,11 +336,11 @@ void QMCRun::unitWeightBranching()
   // Make a list of walkers to add and delete
   list<QMCWalker> WalkersToAdd;
   list<list<QMCWalker>::iterator> WalkersToDelete;
-  
+
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
     {
       int times_to_branch = int(wp->getWeight() + ran1(&Input->flags.iseed))-1;
-      
+              
       // Set the walkers weight back to unity
       wp->setWeight(1.0);
       
@@ -317,7 +364,7 @@ void QMCRun::unitWeightBranching()
             }
         }
     }
-    
+
   // Delete the unneeded walkers
 #ifdef DEBUG_BRANCHING
   if( WalkersToDelete.size() > 0 )
@@ -458,9 +505,11 @@ void QMCRun::toXML(ostream& strm)
   if (Input->flags.use_equilibration_array == 1)
     {
       EquilibrationArray.toXML(strm);
+    } else {
+      Properties.toXML(strm);
+      fwProperties.toXML(strm);
     }
-  else Properties.toXML(strm);
-  
+
   //prints all the walkers
   strm << "<walkers>" << endl;
   
@@ -485,8 +534,10 @@ void QMCRun::readXML(istream& strm)
   if (Input->flags.use_equilibration_array == 1)
     {
       EquilibrationArray.readXML(strm);
+    } else {
+      Properties.readXML(strm);
+      fwProperties.readXML(strm);
     }
-  else Properties.readXML(strm);
   
   // read the walkers
   
@@ -537,6 +588,25 @@ QMCProperties * QMCRun::getProperties()
     return EquilibrationArray.chooseDecorrObject();
   else
     return &Properties;
+}
+
+QMCFutureWalkingProperties * QMCRun::getFWTimeStepProperties()
+{
+  return &fwTimeStepProperties;
+}
+
+QMCFutureWalkingProperties * QMCRun::getFWProperties()
+{
+  /*
+    AGA: FIX THIS
+  if (Input->flags.use_equilibration_array == 1)
+    {
+      return EquilibrationArray.chooseDecorrObject();
+    } else {
+      return &fwProperties;
+    }
+  */
+  return &fwProperties;
 }
 
 int QMCRun::getNumberOfWalkers()

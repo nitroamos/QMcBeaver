@@ -39,6 +39,13 @@ for more details.
 
 using namespace std;
 
+/*
+  When using longs for microseconds (useful in GPU timings) then
+  the longest the datatype will work for is (assuming 32 bits) ~ 1.2 hrs
+*/
+typedef long long longType;
+//typedef long longType;
+
 typedef double microType;
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -99,7 +106,7 @@ static void gettimeofday(struct timeval* t,void* timezone){
 class Stopwatch
 {
  private:
-  long stime1, stime2, result_us, total_us;
+  longType stime1, stime2, result_us, total_us;
   microType micro1, micro2;
   bool running;
   struct timeval tp;
@@ -138,13 +145,13 @@ public:
     Gets the time in milliseconds.
     */
 
-  long timeMS();
+  longType timeMS();
 
   /**
     Gets the time in microseconds.
     */
 
-  long timeUS();
+  longType timeUS();
 
   /**
     Returns true if the stopwatch is running and false otherwise.

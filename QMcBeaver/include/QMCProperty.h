@@ -129,6 +129,11 @@ public:
   */
   void operator = ( const QMCProperty &rhs);
 
+	/**
+		This will add the data from rhs to our data
+	*/
+  void operator += ( QMCProperty &rhs);
+
   /**
     Returns the sum of two QMCproperties.
     @param rhs QMCProperty to add to this one.
@@ -136,6 +141,14 @@ public:
   */
   QMCProperty operator + ( QMCProperty &rhs);
 
+	/**
+		This will change the overall importance
+		of our data. This function basically just
+		calls reWeight on the QMCStatistic DeCorr
+		objects.
+	*/
+  void reWeight(double w);
+  
   /**
     Writes the state of this object to an XML stream.
     @param strm XML stream

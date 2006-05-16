@@ -12,10 +12,13 @@
 
 #include <iostream>
 #include <string>
+#include <signal.h>
 
 #include "QMCManager.h"
 
 static const bool showExtraHeaders = false;
+
+QMCInput globalInput;
 
 #ifdef QMC_GPU
 #include "GPUGlobals.h"
@@ -34,6 +37,13 @@ int argc;
 char ** argv;
 void qmcbeaver();
 void atExitCallback();
+void atSignalCallback(int sig);
+
+//If someone else is trapping signals (e.g. by default LAM traps USR2)
+//change these to a free signal number. This is not portable! But
+//this is just a feature anyway.
+//enum signalChannels { CHANNEL1 = SIGUSR1, CHANNEL2 = SIGUSR2 };
+enum signalChannels { CHANNEL1 = SIGUSR1, CHANNEL2 = 40 };
 
 using namespace std;
 
@@ -42,6 +52,14 @@ int main(int argcTemp, char *argvTemp[])
   argc = argcTemp;
   argv = argvTemp;
   atexit(atExitCallback);
+
+#ifdef SIGUSR1
+  signal(CHANNEL1,atSignalCallback);
+  signal(CHANNEL2,atSignalCallback);
+  signal(SIGTERM,atSignalCallback);
+  signal(SIGHUP,SIG_IGN);
+#endif
+
 #ifdef PARALLEL
 
   // MPI initilizations
@@ -99,6 +117,8 @@ void qmcbeaver()
       cerr << "ERROR: No input file given" << endl;
       exit(1);
     }
+    
+  globalInput.read( string(argv[ 1 ]) );
 
   QMCManager TheMan;
   TheMan.initialize( argc, argv);
@@ -112,9 +132,8 @@ void qmcbeaver()
     {
       cout << "***************  TheMan.run();" << endl;
       cout << setw(10) << "Iteration" << setw(width) << "Eavg" << setw(width) << "Estd" << setw(width)
-      << "Eavg-Estd" << setw(width) << "Eavg+Estd" << setw(width) << "Num. Walkers"
-      << setw(width) << "Trial Energy" << setw(width) << "dt_effective"
-      << setw(width) << "Weights" << setw(width) << "Total Samples" << endl;
+	   << "Num. Walkers" << setw(width) << "Trial Energy" << setw(width) << "dt_effective"
+	   << setw(width) << "Weights" << setw(width) << "Total Samples" << endl;
     }
 
   TheMan.run();
@@ -181,6 +200,12 @@ void qmcbeaver()
       TheMan.writeBFDensity();
     }
 
+  if( TheMan.getInputData()->flags.my_rank == 0 &&
+      TheMan.getInputData()->flags.nuclear_derivatives != "none")
+    {
+      TheMan.writeForces();
+    }
+    
   if( TheMan.getInputData()->flags.my_rank == 0 )
     {
       cout << "Run Time: " << timer << endl;
@@ -197,6 +222,30 @@ void atExitCallback()
   cout << "Press any key...\n";
   getchar();
 #endif
+}
+
+void atSignalCallback(int signal)
+{
+  signalType choice;
+
+  switch(signal){
+  case CHANNEL1:
+    choice = SIG_REDUCE;
+    break;
+  case CHANNEL2:
+    choice = SIG_INCREASE;
+    break;
+  case SIGTERM:
+    cout << "SIGTERM";
+    choice = SIG_QUIT;
+    break;
+  default:
+    cout << "No response available for trapped signal " << signal << "\n.";
+    return;
+    break;
+  }
+
+  QMCManager::receiveSignal(choice);
 }
 
 #ifdef QMC_GPU

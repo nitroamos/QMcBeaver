@@ -24,43 +24,10 @@
 #include "QMCHartreeFock.h"
 #include "QMCConfigIO.h"
 #include "IeeeMath.h"
+#include "QMCNuclearForces.h"
+#include "QMCWalkerData.h"
 
 using namespace std;
-
-/**
-   The QMCWalkerData data type is meant to hold all the information
-   calculated by QMCFunction that is useful to QMCWalker. This should
-   in effect decouple QMCFunction and QMCWalker from each other enabling
-   QMCFunction to be treated a little bit differently without significant
-   modifications to QMCWalker.
-*/
-struct QMCWalkerData {
-  double localEnergy, kineticEnergy, potentialEnergy;
-  double neEnergy, eeEnergy;
-
-  QMCGreensRatioComponent psi;
-  bool isSingular;
-  
-  /**
-    Gets the ratio of the wavefunction gradient to the wavefunction value at
-    the last evaluated electronic configuration.  This is also known as the
-    quantum force.
-  */
-  Array2D<double> gradPsiRatio;
-
-  /**
-    Gets a modified version of the ratio of the wavefunction gradient to the 
-    wavefunction value at the last evaluated electronic configuration.  
-    The modifications typically help deal with singularities near nodes,
-    and the particular type of modification can be selected.  
-    This is also known as the modified quantum force.
-  */
-  Array2D<double> modifiedGradPsiRatio;
-  
-  Array1D<double> chiDensity;
-
-  stringstream * configOutput;
-};
 
 /**
   This class calculates the value of the wavefunction, its first two 
@@ -167,6 +134,7 @@ public:
   QMCSlater Alpha, Beta; 
   QMCJastrow Jastrow;  
   QMCPotential_Energy PE;
+  QMCNuclearForces nf;
 
   QMCGreensRatioComponent Psi;
   double Laplacian_PsiRatio;
@@ -192,7 +160,7 @@ public:
   void calculate_Modified_Grad_PsiRatio(Array2D<double> & X, 
 					Array2D<double> & Modified_Grad_PsiRatio, 
 					Array2D<double> & Grad_PsiRatio);
-  
+          
   /**
     Calculate the local energy.
     @param which indicates which walker

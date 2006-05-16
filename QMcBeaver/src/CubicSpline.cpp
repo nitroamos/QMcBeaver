@@ -34,8 +34,9 @@ void CubicSpline::operator=( const CubicSpline & rhs )
 }
 
 
-void CubicSpline::initializeWithFunctionValues(Array1D<double> &x_input, 
-                Array1D<double> &y_input, double y_prime_0, double y_prime_end)
+void CubicSpline::initializeWithFunctionValues(const Array1D<double> &x_input, 
+					       const Array1D<double> &y_input,
+					       double y_prime_0, double y_prime_end)
 {
   //initialize the spline tables of values
 
@@ -49,20 +50,13 @@ void CubicSpline::initializeWithFunctionValues(Array1D<double> &x_input,
   a2_list.allocate(n-1);
   a3_list.allocate(n-1);
 
-  for(int i=0;i<n;i++)
-    {
-      x_list(i)=x_input(i);
-      y_list(i)=y_input(i);
-      yp_list(i)=0.0;
-    }
-
-  for(int i=0;i<n-1;i++)
-    {
-      a0_list(i)=0.0;
-      a1_list(i)=0.0;
-      a2_list(i)=0.0;
-      a3_list(i)=0.0;
-    }
+  x_list = x_input;
+  y_list = y_input;
+  yp_list = 0.0;
+  a0_list = 0.0;
+  a1_list = 0.0;
+  a2_list = 0.0;
+  a3_list = 0.0;
 
   //set BC's 
 
@@ -162,8 +156,9 @@ void CubicSpline::initializeWithFunctionValues(Array1D<double> &x_input,
 
 //given the dervs at each point and an initial value at y_0 we find the spline
 //with the last two function values equal
-void CubicSpline::initializeWithDerivativeValues(Array1D<double> &x_input, 
-				        Array1D<double> &yp_input, double y_0)
+void CubicSpline::initializeWithDerivativeValues(const Array1D<double> &x_input, 
+						 const Array1D<double> &yp_input,
+						 double y_0)
 {
   //initialize the spline tables of values
 
@@ -177,21 +172,14 @@ void CubicSpline::initializeWithDerivativeValues(Array1D<double> &x_input,
   a2_list.allocate(n-1);
   a3_list.allocate(n-1);
 
-  for(int i=0;i<n;i++)
-    {
-      x_list(i)=x_input(i);
-      yp_list(i)=yp_input(i);
-      y_list(i)=0.0;
-    }
-
-  for(int i=0;i<n-1;i++)
-    {
-      a0_list(i)=0.0;
-      a1_list(i)=0.0;
-      a2_list(i)=0.0;
-      a3_list(i)=0.0;
-    }
-
+  x_list  = x_input;
+  y_list  = 0.0;
+  yp_list = yp_input;
+  a0_list = 0.0;
+  a1_list = 0.0;
+  a2_list = 0.0;
+  a3_list = 0.0;
+  
   //set BC's 
 
   y0   = y_0;
@@ -399,6 +387,38 @@ void CubicSpline::evaluate(double x)
     }
 
   evaluate(x,klo);
+}
+
+double CubicSpline::integrate(int indexStart, int indexStop)
+{
+  if(indexStart<0 || indexStop>n || indexStart>indexStop)
+    {
+      cerr << "ERROR: bad indices to integrate spline\n";
+      exit(1);
+    }
+   
+  double value = 0;
+  double xr, xl, IL;
+  double a0, a1, a2, a3;
+
+  for(int i=indexStart; i<indexStop-1; i++)
+  {
+    //xr = x_list(i);
+    //xl = x_list(i+1);
+    xr = 0.0;
+    xl = x_list(i+1)-x_list(i);
+    a0=a0_list(i);
+    a1=a1_list(i);
+    a2=a2_list(i);
+    a3=a3_list(i);
+
+    //IR = a0*xr + a1*xr*xr/2.0 + a2*xr*xr*xr/3.0 + a3*xr*xr*xr*xr/4.0;
+    IL = a0*xl + a1*xl*xl/2.0 + a2*xl*xl*xl/3.0 + a3*xl*xl*xl*xl/4.0;
+    
+    //value += IL - IR;
+    value += IL;
+  }
+  return value;
 }
 
 void CubicSpline::evaluate(double x, int index)

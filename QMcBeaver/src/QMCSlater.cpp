@@ -460,9 +460,12 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
         {
           sw.reset(); sw.start();
         }
-      BF->evaluateBasisFunctions(*X(walker+start),Start,Stop,Chi,
-                Chi_gradient(0),Chi_gradient(1),Chi_gradient(2),Chi_laplacian);
-
+      BF->evaluateBasisFunctions(*X(walker+start),Start,Stop,
+                                 Chi,
+                                 Chi_gradient(0),
+                                 Chi_gradient(1),
+                                 Chi_gradient(2),
+                                 Chi_laplacian);
       if(showTimings)
         {
           sw.stop();
@@ -507,7 +510,6 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
       //if you don't check this, your averages might be off
       //when switching from equilibration calls to production calls
       if(num>1) numT++;
-
       if(numT > 0){
         aveB = (int)(averageB/(numT*bas_multiplier)+0.5);
         aveM = (int)(averageM/(numT*mat_multiplier)+0.5);

@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <vector>
 #include <climits>
+#include <algorithm>
 
 using namespace std;
 
@@ -83,6 +84,12 @@ class QMCFlags
   string density_file_name;
 
   /**
+     Storage for the calculated forces.  This is the base 
+     file name with the ".force" extension.
+  */
+  string force_file_name;
+
+  /**
      Method for initializing the walkers for the calculation.  
      @see QMCInitializeWalkerFactory
   */
@@ -115,6 +122,13 @@ class QMCFlags
   */
   long iseed;
 
+  /**
+     This selects the method used in calculating the forces in a molecule.
+     Choices are none, bare_hellmann_feynman, poly_hellmann_feynman,
+     and slaterpoly_hellmann_feynman.
+  */
+  string nuclear_derivatives;
+  
   /**
      Diffusion Green's function to be used for the calculation.  
      Only importance sampled Green's functions should be used with DMC.
@@ -191,6 +205,19 @@ class QMCFlags
 
   /**
      Time step being used for the calculation.
+
+     Notes: There is sort of a balance here. If dt
+     is large, then your error will be large. If dt
+     is small, it will take longer to explore all the
+     space.
+
+     Officially, you're supposed to estimate an extrapolation
+     to dt = 0. That is, run it for (for example) 1e-3, 
+     then 1e-4, then 5e-5, etc until you can guess what
+     the value at zero would be.
+
+     (AGA note, maybe allow this to be input as an array, and run
+     all the calculations simultaneously or in succession...)
   */
   double dt;
 
@@ -208,6 +235,11 @@ class QMCFlags
   /**
      Calculation terminates if the standard deviation of the energy
      falls below this threshold.
+
+     Notes: It's difficult to determine a priori how many time
+     steps it will take to reach a given convergence, so it's often
+     easier to control the length of the run by setting this to 0.0
+     and choosing an appropriate max_time_steps.
   */
   double desired_convergence;
 
@@ -227,6 +259,21 @@ class QMCFlags
      DON"T CHANGE THIS IN THE MIDDLE OF A CALCULATION!
   */
   long walkers_per_pass;
+
+  /*
+    This vector describes the block size over which we
+    collect samples. Analogous to the decorrelation
+    algorithm, it might be best to set this to something
+    exponential like
+    100 200 400 800 1600 3200 6400
+
+	 A 0 is always included in the set since 0 represents
+	 no future walking.
+	 
+    Of course, you probably need more data points for
+    larger blocks.
+  */
+  vector<int> future_walking;
 
   long gpu_walkers_per_pass;
 
@@ -276,6 +323,10 @@ class QMCFlags
 
   /**
      Initial time step used during the equilibration of the calculation.
+
+     Notes: You might want to set this higher than you would set your
+     regular dt since the point is to get the electrons in approximately
+     the right place, not to make measurements.
   */
   double dt_equilibration;
 
@@ -309,12 +360,26 @@ class QMCFlags
   /**
      Number of time steps taken on the root processor before the
      results are collected from all other processors.
+     
+     Notes: the longer this is, the longer it will take for the
+     calculation to converge. The short this is, the more time
+     the calculation will spend shuttling data back and forth.
+
+     This balance might be molecule specific since the communication
+     time depends on how much data to send.
   */
   int mpireduce_interval;
 
   /**
      Number of time steps taken on the worker processors before
      checking for commands from the root processor.
+
+     Notes: if this is too large, then the root processor might
+     end of spending a long time waiting. There isn't
+     a significant penalty to making this small. Perhaps this
+     is the sort of parameter we want to remain opaque to the user.
+
+     It should probably be pretty small relative to mpireduce_interval.
   */
   int mpipoll_interval;
 
@@ -408,6 +473,18 @@ class QMCFlags
   /**
      1 if walkers from the calculation are written out to file, and 0
      otherwise.
+
+     Notes: turning this on is required for wavefunction optimization.
+     However, it can *easily* take up all of your compute time since it
+     obviously requires harddrive access. If you select optimization,
+     this will automatically be set to 1.
+
+     Also, depending on print_config_frequency and molecule size, these
+     files can easily get up to be several gigabytes in size. The files
+     can be output in ASCII or binary -- that option is set in QMCConfigIO.
+     
+     Eventually, we'll probably add HDF5 functionality, but last I (AGA) checked
+     they were still working on their C++ API.
   */
   int print_configs;
 
@@ -419,12 +496,21 @@ class QMCFlags
   /**
      1 if the wavefunction is to be optimized during a VMC wavefunction,
      and 0 otherwise.
+
+     Currently, only the Jastro parameters are optimized.
+
+     Notes: This will rerun the entire VMC calculation each time it
+     optimizes. That is, your calculation time might go up by a factor
+     of max_optimize_Psi_steps, depending on convergence.
   */
   int optimize_Psi;
   
   /**
      Number of vmc-optimize iterations used when optimizing the 
      wavefunction.
+
+     Notes: Wavefunction convergence can take a long time, depending
+     on your Jastrow parameters.
   */
   int max_optimize_Psi_steps;
 
@@ -445,6 +531,11 @@ class QMCFlags
   /**
      Numerical optimization algorithm to use when optimizing a VMC
      wavefunction.
+
+     Notes: for QMC, if your wavefunction is an eigenfunction, your
+     variance will be exactly zero. That's why you might want to minimize
+     your variance. However, this isn't necessarily the best proceedure...
+
      @see QMCOptimizationFactory
   */
   string optimize_Psi_method;
@@ -458,6 +549,10 @@ class QMCFlags
   /**
      Maximum number of iterations to use when optimizing a VMC 
      wavefunction with one set of correlated-sampling configurations.
+
+     Notes: This is how many iterations the optimization might take to
+     converge a set of parameters over your wavefunction during a
+     given optimization cycle.
   */
   int optimization_max_iterations;
 
@@ -504,8 +599,8 @@ class QMCFlags
   double singularity_penalty_function_parameter;
 
   /**
-     1 if up and down electrons use the same Jastrow parameters,
-     and 0 otherwise.
+     1 if up and down electrons use the same Jastrow parameters for
+     their electron-nucleus terms, and 0 otherwise.
   */
   int link_Jastrow_parameters;
 

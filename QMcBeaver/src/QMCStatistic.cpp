@@ -83,6 +83,13 @@ QMCStatistic QMCStatistic::operator + (const QMCStatistic &rhs)
   return result;
 }
 
+void QMCStatistic::reWeight(double w)
+{
+  //weights *= w;
+  sum     *= w;
+  sum2    *= w;
+}
+
 void QMCStatistic::toXML(ostream& strm)
 {
   // Open XML

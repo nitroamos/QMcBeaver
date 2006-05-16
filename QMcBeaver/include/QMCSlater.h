@@ -118,7 +118,7 @@ public:
 
 #ifdef QMC_GPU
   /*
-    This function is pure GPU calculations.
+    This function is pure GPU calculations. 
 
     @param num how many configurations to process in the X array.
     @param X the array of electronic positions indexed by their walker

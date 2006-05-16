@@ -71,6 +71,12 @@ public:
   void initialize(QMCFlags * flags, QMCMolecule * molecule);
   
   /**
+     Calculates the value of a basis funcion.
+  */
+
+  void evaluateBasisFunctions(Array2D<double>& X, Array2D<qmcfloat>& chi_value);
+
+  /**
      Calculates the value, gradient, and Laplacian of a basis funcion.
   */
   void evaluateBasisFunctions(Array2D<double>& X, int start, int stop,

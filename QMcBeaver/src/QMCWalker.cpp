@@ -12,6 +12,8 @@
 
 #include "QMCWalker.h"
 
+const double QMCWalker::maxFWAsymp = 0.75;
+
 QMCWalker::QMCWalker()
 {
   TrialWalker    = 0;
@@ -41,6 +43,21 @@ QMCWalker::~QMCWalker()
   Input = 0;
   
   R.deallocate();
+  
+  numFWSteps.clear();
+
+  isCollectingFWResults.deallocate();  
+  fwNormalization.deallocate();
+  fwR12.deallocate();
+  fwR2.deallocate();
+  fwEnergy.deallocate();
+  fwKineticEnergy.deallocate();
+  fwPotentialEnergy.deallocate();
+
+  for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
+    for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
+      fwNuclearForces(d1,d2).deallocate();
+  fwNuclearForces.deallocate();  
 }
 
 void QMCWalker::operator=( const QMCWalker & rhs )
@@ -61,7 +78,30 @@ void QMCWalker::operator=( const QMCWalker & rhs )
   potentialEnergy       = rhs.potentialEnergy;
   neEnergy              = rhs.neEnergy;
   eeEnergy              = rhs.eeEnergy;
-
+  
+  fwNormalization       = rhs.fwNormalization;
+  fwR12                 = rhs.fwR12;
+  fwR2                  = rhs.fwR2;
+  fwEnergy              = rhs.fwEnergy;
+  fwKineticEnergy       = rhs.fwKineticEnergy;
+  fwPotentialEnergy     = rhs.fwPotentialEnergy;
+  isCollectingFWResults = rhs.isCollectingFWResults;
+  numFWSteps            = rhs.numFWSteps;
+  
+  if(Input->flags.nuclear_derivatives != "none"){
+    fwNuclearForces.allocate(rhs.fwNuclearForces.dim1(),
+                             rhs.fwNuclearForces.dim2());
+    
+    for (int d1=0; d1<fwNuclearForces.dim1(); d1++)
+    {
+      for (int d2=0; d2<fwNuclearForces.dim2(); d2++)
+      {
+        fwNuclearForces(d1,d2).allocate(rhs.fwNuclearForces.get(d1,d2).dim1(),2);
+        fwNuclearForces(d1,d2) = rhs.fwNuclearForces.get(d1,d2);
+      }
+    }
+  }
+       
   distanceMovedAccepted = rhs.distanceMovedAccepted;
   dR2                   = rhs.dR2;
   R                     = rhs.R;
@@ -87,7 +127,7 @@ void QMCWalker::processPropagation(QMCFunctions & QMF)
   if (IeeeMath::isNaN(GreensFunctionRatio))
     calculateMoveAcceptanceProbability(0.0);
   else
-    calculateMoveAcceptanceProbability(GreensFunctionRatio);
+  calculateMoveAcceptanceProbability(GreensFunctionRatio);
   
   acceptOrRejectMove();
   reweight_walker();
@@ -110,11 +150,11 @@ QMCGreensRatioComponent QMCWalker::moveElectrons()
     }
     
   if(Input->flags.sampling_method == "no_importance_sampling")
-    return moveElectronsNoImportanceSampling();
+      return moveElectronsNoImportanceSampling();
   else if(Input->flags.sampling_method == "importance_sampling" )
-    return moveElectronsImportanceSampling();
+      return moveElectronsImportanceSampling();
   else if(Input->flags.sampling_method == "umrigar93_importance_sampling")
-    return moveElectronsUmrigar93ImportanceSampling();
+      return moveElectronsUmrigar93ImportanceSampling();
   else
     {
       cerr << "ERROR: Improper value for sampling_method set ("
@@ -195,7 +235,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
       {
 	double temp = Displacement(i,j)-tau*Displacement(i,j);
 	greens += temp*temp;
-      }
+    }
     
   greens = greens/(2*tau);
   
@@ -210,7 +250,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
   for(int i=0; i<Displacement.dim1(); i++)
     for(int j=0; j<Displacement.dim2(); j++)
       R(i,j) += Displacement(i,j);
-
+    
   return GF;
 }
 
@@ -255,7 +295,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       double zComponentQF = 0.0;
       
       for(int i=0; i<3; i++)
-	zComponentQF += zUnitVector(i)*Displacement(electron,i);
+          zComponentQF += zUnitVector(i)*Displacement(electron,i);
         
       double radialComponentQF = 0.0;
       
@@ -301,7 +341,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	  cerr << probabilitySlaterTypeMove << endl;
 	  probabilitySlaterTypeMove = 0.0;
 	}
-
+                                                              
       double probabilityGaussianTypeMove = 1.0 - probabilitySlaterTypeMove;
       // Randomly decide which electron moving method to use
       
@@ -314,10 +354,10 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
           //   zCoordinate * zUnitVector +
           //   gaussian random number with standard deviation sqrt(tau)
           for(int i=0; i<3; i++)
-	    newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i)
+              newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i)
       + radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) +
-	                                 sqrt(tau)*gasdev(&Input->flags.iseed);
-        }
+                               sqrt(tau)*gasdev(&Input->flags.iseed);
+            }
       else
         {
           // Slater Type Move
@@ -384,7 +424,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
         {
           temp = newPosition(i) - R(electron,i);
           dR2 += temp*temp;
-	  R(electron,i) = newPosition(i);
+          R(electron,i) = newPosition(i);
         }
     }
   return GF;
@@ -400,11 +440,11 @@ QMCGreensRatioComponent QMCWalker::calculateReverseGreensFunction()
     }
     
   if(Input->flags.sampling_method == "no_importance_sampling")
-    return calculateReverseGreensFunctionNoImportanceSampling();
+      return calculateReverseGreensFunctionNoImportanceSampling();
   else if(Input->flags.sampling_method == "importance_sampling" )
-    return calculateReverseGreensFunctionImportanceSampling();
+      return calculateReverseGreensFunctionImportanceSampling();
   else if(Input->flags.sampling_method == "umrigar93_importance_sampling")
-    return calculateReverseGreensFunctionUmrigar93ImportanceSampling();
+      return calculateReverseGreensFunctionUmrigar93ImportanceSampling();
   else
     {
       cerr << "ERROR: Improper value for sampling_method set ("
@@ -433,13 +473,13 @@ QMCWalker::calculateReverseGreensFunctionImportanceSampling()
   double greens = 0.0;
   
   for(int i=0; i< R.dim1(); i++)
-    for(int j=0; j<3; j++)
-      {
-	double temp = OriginalWalker->R(i,j) - TrialWalker->R(i,j) -
-	  tau*TrialWalker->walkerData.modifiedGradPsiRatio(i,j);
+      for(int j=0; j<3; j++)
+        {
+          double temp = OriginalWalker->R(i,j) - TrialWalker->R(i,j) -
+                        tau*TrialWalker->walkerData.modifiedGradPsiRatio(i,j);
                         
-	greens += temp*temp;
-      }
+          greens += temp*temp;
+        }
     
   greens = greens/(2*tau);
   
@@ -491,8 +531,8 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
       double zComponentQF = 0.0;
       
       for(int i=0; i<3; i++)
-	zComponentQF += zUnitVector(i)*
-	  TrialWalker->walkerData.modifiedGradPsiRatio(electron,i);
+          zComponentQF += zUnitVector(i)*
+                          TrialWalker->walkerData.modifiedGradPsiRatio(electron,i);
         
       double radialComponentQF = 0.0;
       
@@ -597,8 +637,8 @@ void QMCWalker::reweight_walker()
   bool weightIsNaN = false;
 
   if( Input->flags.run_type == "variational" )
-    // Keep weights constant for VMC
-    dW = 1.0;
+      // Keep weights constant for VMC
+      dW = 1.0;
 
   else
     {
@@ -615,27 +655,27 @@ void QMCWalker::reweight_walker()
 	  weightIsNaN = true;
 	}
       else if( Input->flags.energy_modification_type == "none" )
-	{
-	  S_trial    = Input->flags.energy_trial - trialEnergy;
-	  S_original = Input->flags.energy_trial - originalEnergy;
-	}
+        {
+          S_trial    = Input->flags.energy_trial - trialEnergy;
+          S_original = Input->flags.energy_trial - originalEnergy;
+        }
       else
-	{
-	  Array2D<double> * tMGPR =
-	    & TrialWalker->walkerData.modifiedGradPsiRatio;
-	  Array2D<double> * tGPR = & TrialWalker->walkerData.gradPsiRatio;
-	  Array2D<double> * oMGPR =
-	    & OriginalWalker->walkerData.modifiedGradPsiRatio;
-	  Array2D<double> * oGPR = & OriginalWalker->walkerData.gradPsiRatio;
+        {
+          Array2D<double> * tMGPR =
+            & TrialWalker->walkerData.modifiedGradPsiRatio;
+          Array2D<double> * tGPR = & TrialWalker->walkerData.gradPsiRatio;
+          Array2D<double> * oMGPR =
+            & OriginalWalker->walkerData.modifiedGradPsiRatio;
+          Array2D<double> * oGPR = & OriginalWalker->walkerData.gradPsiRatio;
           
-	  double lengthGradTrialModified =
-	    sqrt((*tMGPR).dotAllElectrons(*tMGPR));
-	  double lengthGradTrialUnmodified =
-	    sqrt((*tGPR).dotAllElectrons(*tGPR));
-	  double lengthGradOriginalModified =
-	    sqrt((*oMGPR).dotAllElectrons(*oMGPR));
-	  double lengthGradOriginalUnmodified =
-	    sqrt((*oGPR).dotAllElectrons(*oGPR));
+          double lengthGradTrialModified =
+            sqrt((*tMGPR).dotAllElectrons(*tMGPR));
+          double lengthGradTrialUnmodified =
+            sqrt((*tGPR).dotAllElectrons(*tGPR));
+          double lengthGradOriginalModified =
+            sqrt((*oMGPR).dotAllElectrons(*oMGPR));
+          double lengthGradOriginalUnmodified =
+            sqrt((*oGPR).dotAllElectrons(*oGPR));
             
 	  if (IeeeMath::isNaN(lengthGradTrialModified) || IeeeMath::isNaN(lengthGradTrialUnmodified))
 	    {
@@ -650,39 +690,39 @@ void QMCWalker::reweight_walker()
 	      weightIsNaN = true;
 	    }
 	  else if(Input->flags.energy_modification_type=="modified_umrigar93")
-	    {
-	      S_trial = (Input->flags.energy_trial - trialEnergy)*
-		(lengthGradTrialModified/lengthGradTrialUnmodified);
-	      
-	      S_original = (Input->flags.energy_trial - originalEnergy) *
-		(lengthGradOriginalModified/lengthGradOriginalUnmodified);
-	    }
-	  else if( Input->flags.energy_modification_type == "umrigar93" )
-	    {
-	      S_trial =
+            {
+              S_trial = (Input->flags.energy_trial - trialEnergy)*
+                        (lengthGradTrialModified/lengthGradTrialUnmodified);
+                        
+              S_original = (Input->flags.energy_trial - originalEnergy) *
+                           (lengthGradOriginalModified/lengthGradOriginalUnmodified);
+            }
+          else if( Input->flags.energy_modification_type == "umrigar93" )
+            {
+              S_trial =
 		(Input->flags.energy_trial - Input->flags.energy_estimated)
 		+(Input->flags.energy_estimated - trialEnergy)*
-		(lengthGradTrialModified/lengthGradTrialUnmodified);
-	      
-	      S_original =
+                (lengthGradTrialModified/lengthGradTrialUnmodified);
+                
+              S_original =
 		(Input->flags.energy_trial - Input->flags.energy_estimated)
 		+(Input->flags.energy_estimated - originalEnergy) *
-		(lengthGradOriginalModified/lengthGradOriginalUnmodified);
-	    }
-	  else
-	    {
-	      cerr << "ERROR: unknown energy modification method!" << endl;
-	      exit(0);
-	    }
-	}
+                (lengthGradOriginalModified/lengthGradOriginalUnmodified);
+            }
+          else
+            {
+              cerr << "ERROR: unknown energy modification method!" << endl;
+              exit(0);
+            }
+        }
         
       if( Input->flags.walker_reweighting_method == "simple_symmetric" )
-	{
-	  // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 8
-	  // This is the "classical" reweighting factor most people use.
-	  // umrigar says this has larger timestep and statistical errors than
-	  // umrigar93_probability_weighted
-	  double temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
+        {
+          // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 8
+          // This is the "classical" reweighting factor most people use.
+          // umrigar says this has larger timestep and statistical errors than
+          // umrigar93_probability_weighted
+          double temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
 	  
 	  if (IeeeMath::isNaN(temp) || weightIsNaN == true)
 	    {
@@ -692,19 +732,19 @@ void QMCWalker::reweight_walker()
 	      dW = 0.0;
 	    }
 	  else
-	    dW = exp(temp);
-	}
+          dW = exp(temp);
+        }
       else if( Input->flags.walker_reweighting_method == "simple_asymmetric" )
-	{
-	  // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 23
-	  // supposedly between simple_symmetric and
-	  // umrigar93_probability_weighted in terms of its timestep error and
-	  // statistical performance
-	  double temp;
-	  if( move_accepted )
-	    temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
-	  else
-	    temp = S_original*Input->flags.dt_effective;
+        {
+          // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 23
+          // supposedly between simple_symmetric and
+          // umrigar93_probability_weighted in terms of its timestep error and
+          // statistical performance
+          double temp;
+          if( move_accepted )
+            temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
+          else
+            temp = S_original*Input->flags.dt_effective;
 
 	  if (IeeeMath::isNaN(temp) || weightIsNaN == true)
 	    {
@@ -714,21 +754,21 @@ void QMCWalker::reweight_walker()
 	      dW = 0.0;
 	    }
 	  else
-	    dW = exp(temp);	
-	}
+          dW = exp(temp);
+        }
       else if( Input->flags.walker_reweighting_method ==
-	       "umrigar93_probability_weighted" )
-	{
-	  // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993
-	  // Umrigar claims this has a small time step error and a small
-	  // statistical error compared to simple_asymmetric and
-	  // simple_symmetric
-	  double p = TrialWalker->getAcceptanceProbability();
-	  double q = OriginalWalker->getAcceptanceProbability();
-	      
+               "umrigar93_probability_weighted" )
+        {
+          // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993
+          // Umrigar claims this has a small time step error and a small
+          // statistical error compared to simple_asymmetric and
+          // simple_symmetric
+          double p = TrialWalker->getAcceptanceProbability();
+          double q = OriginalWalker->getAcceptanceProbability();
+          
 	  double temp = (p*0.5*(S_original+S_trial) + q*S_original) *
-	    Input->flags.dt_effective;
-
+                        Input->flags.dt_effective;
+                        
 	  if (IeeeMath::isNaN(temp) || weightIsNaN == true)
 	    {
 	      cerr << "WARNING: dW = exp(" << temp << ")" << endl;
@@ -742,8 +782,8 @@ void QMCWalker::reweight_walker()
       else
 	{
 	  cerr << "ERROR: unknown reweighting method!" << endl;
-	  exit(0);
-	}
+          exit(0);
+        }
     }
     
 #ifdef DELETE_LARGE_WEIGHT_WALKERS
@@ -773,7 +813,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
   // This tells us the probability of accepting or rejecting a proposed move
   
   double PsiRatio = TrialWalker->walkerData.psi/OriginalWalker->walkerData.psi;
-
+  
   // increase the probability of accepting a move if the walker has not
   // moved in a long time
   
@@ -785,7 +825,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
       
   // calculate the probability of accepting the trial move
   double p = PsiRatio * PsiRatio * GreensRatio * MoveOldWalkerFactor;
-
+  
   if( !(IeeeMath::isNaN(p)) && age > 2*Input->flags.old_walker_acceptance_parameter )
     p = 1;
     
@@ -914,12 +954,43 @@ void QMCWalker::initialize(QMCInput *INPUT)
   walkerData.eeEnergy        = 0.0;
   walkerData.psi             = 0.0;
   walkerData.configOutput    = new stringstream();
+  
+  int numFW = Input->flags.future_walking.size();
+  numFWSteps.resize(numFW);
+  
+  isCollectingFWResults.allocate(numFW,2);
+  fwNormalization.allocate(numFW,2);
+  fwR12.allocate(numFW,2);
+  fwR2.allocate(numFW,2);
+  fwEnergy.allocate(numFW,2);
+  fwKineticEnergy.allocate(numFW,2);
+  fwPotentialEnergy.allocate(numFW,2);
+  
+  if(Input->flags.nuclear_derivatives != "none")
+  {    
+    if(Input->flags.nuclear_derivatives != "bin_force_density")
+    {
+      walkerData.nuclearDerivatives.allocate(Input->Molecule.getNumberAtoms(), 3);
+    } else {
+      walkerData.nuclearDerivatives.allocate(QMCNuclearForces::getNumBins(), 1);      
+    }
+  
+    fwNuclearForces.allocate(walkerData.nuclearDerivatives.dim1(),
+                             walkerData.nuclearDerivatives.dim2());
+
+    for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
+      for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
+        fwNuclearForces(d1,d2).allocate(numFW,2);
+  }
+      
+  resetFutureWalking();
+    
   if (Input->flags.calculate_bf_density == 1)
     walkerData.chiDensity.allocate(Input->WF.getNumberBasisFunctions());
     
   //initialize acceptance probability
   AcceptanceProbability = 0.0;
-  
+    
   // Make current position in 3N space
   // N by 3 matrix, R[which electron][x,y, or z]
   R.allocate(Input->WF.getNumberElectrons(),3);
@@ -1179,7 +1250,7 @@ void QMCWalker::calculateObservables()
   // Calculate the potential energy
   potentialEnergy = p * TrialWalker->walkerData.potentialEnergy +
                     q * OriginalWalker->walkerData.potentialEnergy;
-                    
+  
   // Calculate the ne and ee potential energy
   neEnergy = p * TrialWalker->walkerData.neEnergy + 
              q * OriginalWalker->walkerData.neEnergy;
@@ -1200,6 +1271,88 @@ void QMCWalker::calculateObservables()
           p * TrialWalker->walkerData.chiDensity(i) +
           q * OriginalWalker->walkerData.chiDensity(i);
     }
+     
+    if(Input->flags.nuclear_derivatives != "none")
+    {
+      for (int d1=0; d1<walkerData.nuclearDerivatives.dim1(); d1++)
+        for (int d2=0; d2<walkerData.nuclearDerivatives.dim2(); d2++)
+          walkerData.nuclearDerivatives(d1,d2) =
+            p * TrialWalker->walkerData.nuclearDerivatives(d1,d2) +
+            q * OriginalWalker->walkerData.nuclearDerivatives(d1,d2);
+    }
+    
+  double calcR12_T=0, calcR12_O=0;
+  r2 = 0.0;
+  for(int i=0; i<3; i++)
+    {
+      r2 += p*TrialWalker->R(0,i)*TrialWalker->R(0,i)
+         +  p*TrialWalker->R(1,i)*TrialWalker->R(1,i)
+         +  q*OriginalWalker->R(0,i)*OriginalWalker->R(0,i)
+         +  q*OriginalWalker->R(1,i)*OriginalWalker->R(1,i);
+
+      double tempT, tempO;
+      tempT = TrialWalker->R(0,i)    - TrialWalker->R(1,i);
+      tempO = OriginalWalker->R(0,i) - OriginalWalker->R(1,i);
+      
+      calcR12_T += tempT*tempT;
+      calcR12_O += tempO*tempO;
+    }
+  r12 = p*sqrt(calcR12_T) + q*sqrt(calcR12_O);
+  r2 /= 2.0;
+  
+  //This is the forward walking portion of the calculation
+  double aWeight = getWeight();
+
+  //original version
+  //double pWeight = getWeight()/OriginalWalker->getWeight();
+
+  //simplest version
+  double pWeight = 1.0;
+
+  //this might create nan if run with diffusion
+  //Don't use for that reason!
+  //double pWeight = getWeight();
+
+  
+  //This happens in both Formula 15 and 16
+  for(int i=0; i<isCollectingFWResults.dim1(); i++)
+  {
+    for(int j=0; j<isCollectingFWResults.dim2(); j++)
+    {
+      
+      if(Input->flags.future_walking[i] == 0)
+        continue;
+      
+      if( isCollectingFWResults(i,j) != DONE)
+      {
+        fwNormalization(i,j)     *= pWeight;
+        fwR12(i,j)               *= pWeight;
+        fwR2(i,j)                *= pWeight;
+        fwEnergy(i,j)            *= pWeight;
+        fwKineticEnergy(i,j)     *= pWeight;
+        fwPotentialEnergy(i,j)   *= pWeight;
+        
+        for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
+          for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
+            (fwNuclearForces(d1,d2))(i,j) *= pWeight;
+      }
+      
+      if(isCollectingFWResults(i,j) == ACCUM )
+      {
+        //We are collecting results (Formula 15)
+        fwNormalization(i,j)   += aWeight;
+        fwR12(i,j)             += aWeight * r12;
+        fwR2(i,j)              += aWeight * r2;
+        fwEnergy(i,j)          += aWeight * localEnergy;
+        fwKineticEnergy(i,j)   += aWeight * kineticEnergy;
+        fwPotentialEnergy(i,j) += aWeight * potentialEnergy;
+        
+        for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
+          for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
+            (fwNuclearForces(d1,d2))(i,j) += aWeight * walkerData.nuclearDerivatives(d1,d2);
+      }
+    }
+  }
 }
 
 void QMCWalker::calculateObservables( QMCProperties & props )
@@ -1209,16 +1362,16 @@ void QMCWalker::calculateObservables( QMCProperties & props )
   // Calculate the Energy ...
   props.energy.newSample( localEnergy, getWeight() );
   
-  // Calculate the Kinetic Energy
+  // Calculate the Kinetic Energy  
   props.kineticEnergy.newSample( kineticEnergy, getWeight() );
   
-  // Calculate the Potential Energy
+  // Calculate the Potential Energy  
   props.potentialEnergy.newSample( potentialEnergy, getWeight() );
   
   // Calculate the ne and ee potential energy
   props.neEnergy.newSample( neEnergy, getWeight() );
   props.eeEnergy.newSample( eeEnergy, getWeight() );
-
+  
   // Calculate the Acceptance Probability ...
   props.acceptanceProbability.newSample( AcceptanceProbability, getWeight() );
   
@@ -1238,6 +1391,97 @@ void QMCWalker::calculateObservables( QMCProperties & props )
     for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
       props.chiDensity(i).newSample( walkerData.chiDensity(i), getWeight() );
 }
+
+void QMCWalker::calculateObservables( QMCFutureWalkingProperties & props )
+{
+  // Add the data from this walker to the accumulating properties  
+  for(int i=0; i<isCollectingFWResults.dim1(); i++)
+  {
+    numFWSteps[i]++;
+   
+    if(Input->flags.future_walking[i] == 0)
+    {
+      // Calculate the nuclear forces      
+      if(Input->flags.nuclear_derivatives != "none")
+        for (int d1=0; d1<walkerData.nuclearDerivatives.dim1(); d1++)
+          for (int d2=0; d2<walkerData.nuclearDerivatives.dim2(); d2++)
+            (props.nuclearForces(i))(d1,d2).newSample( walkerData.nuclearDerivatives(d1,d2), getWeight() );
+
+      props.r12(i).newSample(r12, getWeight());
+      props.r2(i).newSample(r2, getWeight());
+      props.fwEnergy(i).newSample(localEnergy, getWeight());
+      props.fwKineticEnergy(i).newSample(kineticEnergy, getWeight());
+      props.fwPotentialEnergy(i).newSample(potentialEnergy, getWeight());
+      continue;
+    }
+    
+    if(numFWSteps[i] >= Input->flags.future_walking[i])
+    {
+      int whichIsDone = isCollectingFWResults(i,0) == DONE ? 0 : 1;
+      int otherStage = (whichIsDone+1)%2;
+      isCollectingFWResults(i,whichIsDone) = ACCUM;
+      isCollectingFWResults(i,otherStage)  = ASYMP;
+      numFWSteps[i] = 0;  
+    } else if(numFWSteps[i] == int(maxFWAsymp*Input->flags.future_walking[i]+0.5))
+    {
+      //this if statement assumes that maxFWAsymp < 1
+      int whichIsDone = isCollectingFWResults(i,0) == ACCUM ? 1 : 0;
+      
+      if(isCollectingFWResults(i,whichIsDone) == DONE)
+        break;
+      isCollectingFWResults(i,whichIsDone) = DONE;
+      
+      double norm = 1.0/fwNormalization(i,whichIsDone);
+      props.r12(i).newSample(fwR12(i,whichIsDone)*norm,getWeight());
+      props.r2(i).newSample(fwR2(i,whichIsDone)*norm,getWeight());
+      props.fwEnergy(i).newSample(fwEnergy(i,whichIsDone)*norm,getWeight());
+      props.fwKineticEnergy(i).newSample(fwKineticEnergy(i,whichIsDone)*norm,getWeight());
+      props.fwPotentialEnergy(i).newSample(fwPotentialEnergy(i,whichIsDone)*norm,getWeight());
+
+      // Calculate the nuclear forces      
+      if(Input->flags.nuclear_derivatives != "none")
+	for (int d1=0; d1<walkerData.nuclearDerivatives.dim1(); d1++)
+	  for (int d2=0; d2<walkerData.nuclearDerivatives.dim2(); d2++)
+	    (props.nuclearForces(i))(d1,d2).newSample( (fwNuclearForces(d1,d2))(i,whichIsDone)*norm, 1.0 );
+       
+      resetFutureWalking(i,whichIsDone);
+    } 
+  }
+}
+
+void QMCWalker::resetFutureWalking(int whichBlock, int whichIsDone)
+{
+  if(whichIsDone > 1 || whichIsDone < 0)
+  {
+    cerr << "Error: There are only 2 stages!\n";
+    exit(1);
+  }
+  
+  fwNormalization(whichBlock,whichIsDone)     = 0;
+  fwR12(whichBlock,whichIsDone)               = 0;
+  fwR2(whichBlock,whichIsDone)                = 0;
+  fwEnergy(whichBlock,whichIsDone)            = 0;
+  fwKineticEnergy(whichBlock,whichIsDone)     = 0;
+  fwPotentialEnergy(whichBlock,whichIsDone)   = 0;
+      
+  if(Input->flags.nuclear_derivatives != "none")
+    for (int d1=0; d1<fwNuclearForces.dim1(); d1++)
+      for (int d2=0; d2<fwNuclearForces.dim2(); d2++)
+        (fwNuclearForces(d1,d2))(whichBlock,whichIsDone) = 0;
+}
+
+void QMCWalker::resetFutureWalking()
+{
+  for(int i=0; i<isCollectingFWResults.dim1(); i++)
+  {
+    isCollectingFWResults(i,0) = ACCUM;
+    isCollectingFWResults(i,1) = DONE;
+    numFWSteps[i] = 0;
+    for(int j=0; j<isCollectingFWResults.dim2(); j++)
+      resetFutureWalking(i,j);
+  }
+}
+
 
 bool QMCWalker::isSingular()
 {

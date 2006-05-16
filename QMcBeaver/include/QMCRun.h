@@ -70,6 +70,20 @@ class QMCRun
   QMCProperties * getTimeStepProperties();
 
   /**
+    Gets the statistics for the future walking properties that have been calculated.
+    @return statistics for the properties that have been calculated.
+  */
+  QMCFutureWalkingProperties * getFWProperties();
+  
+  /**
+    Gets the statistics for the future walking properties that have
+    been calculated at this time step.
+    @return statistics for the properties that have been calculated at this
+    time step.
+  */
+  QMCFutureWalkingProperties * getFWTimeStepProperties();
+
+  /**
     Starts the timers in the EquilibrationArray.
   */
   void startTimers();
@@ -196,11 +210,23 @@ private:
     used.
   */
   QMCProperties Properties;
+  
+  /**
+    The statistics for this group of walkers if QMCEquilibrationArray is not
+    used.
+  */
+  QMCFutureWalkingProperties fwProperties;
 
   /**
     The statistics for these walkers at this time step.
   */
   QMCProperties timeStepProperties;
+  
+  /**
+    The statistics for these walkers at this time step, using
+    future walking.
+  */
+  QMCFutureWalkingProperties fwTimeStepProperties;
 
   /**
     Input data to control the calculation.
