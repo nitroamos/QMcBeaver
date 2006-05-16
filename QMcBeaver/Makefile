@@ -61,6 +61,14 @@ updateall:
 test: all
 	-cd test; $(MAKE)
 
+.PHONY:help
+help:
+	@-cd docs; $(MAKE)
+
+.PHONY:website
+website:
+	@-cd docs; $(MAKE) website
+
 #this target will remove the object files and dependency files
 #associated with the current Makefile.config
 .PHONY:clean

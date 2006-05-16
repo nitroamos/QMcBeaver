@@ -212,7 +212,7 @@ class CompilerIntel(Compiler):
 class CompilerMPICC(Compiler):
     def __init__(self,optimize,debug,profile):
         self.CXX = 'mpiCC'
-        self.FLAGS = '-Wall'
+        self.FLAGS = '-Wall -Wno-long-double'
         self.INCLUDE = ''
         self.DEPENDENCY = '-MM'
 
@@ -231,7 +231,7 @@ class CompilerMPICC(Compiler):
         else:
             self.PROFILE = ''
             
-        self.LINK = '-lm'
+        self.LINK = '-lm -lstdc++'
         
 class CompilerPGI(Compiler):
     def __init__(self,optimize,debug,profile):
@@ -286,7 +286,7 @@ class CompilerSgiIrix(Compiler):
 class CompilerTru64(Compiler):
     def __init__(self,optimize,debug,profile):
         self.CXX = 'cxx'
-        self.FLAGS = '-ieee -D__USE_STD_IOSTREAM'
+        self.FLAGS = '-ieee -D__USE_STD_IOSTREAM -D__FUNCTION__'
         self.INCLUDE = ''
         self.DEPENDENCY = '-M'
 
@@ -506,8 +506,8 @@ class CommandLineArgs:
         extra = [self.COMPILER]
 
         #the order here should facilitate selecting the exe via tabs
-        if self.optimize:
-            extra.append("optimize")
+#        if self.optimize:
+#            extra.append("optimize")
         if self.atlas:
             extra.append("atlas")
         if self.parallel:
