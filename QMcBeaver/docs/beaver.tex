@@ -3,8 +3,15 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{calc}
-\usepackage{achemso}
-\usepackage[labelsep=period, aboveskip=0pt, belowskip=0pt]{caption}
+\usepackage{amssymb}
+\usepackage{amsbsy}
+\usepackage{verbatim}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+%\usepackage[labelsep=period, aboveskip=0pt, belowskip=0pt]{caption}
+\usepackage{caption}
+
 \oddsidemargin 0.0in
 \topmargin -0.5in
 \headheight 0.0in
@@ -17,14 +24,16 @@
 \author{Chip Kent, Mike Feldmann, Rick Muller, Amos Anderson, and Dan Fisher}
 \maketitle
 
+\newcommand{\NN}{\mbox{$\mathbb N$}}
+\newcommand{\RR}{\mbox{$\mathbb R$}}
+
 \section{Introduction: What is QMcBeaver?}
-% Do we need to make a general introduction paragraph to QMC here?
 QMcBeaver is a finite, all electron variational and diffusion quantum
 Monte Carlo program.  It was written by Chip Kent and Mike Feldmann at
 Bill Goddard's Materials and Process Simulation Center at the
 California Institute of Technology as part of their thesis work. The
 program is currently being developed by Amos Anderson and Dan Fisher
-at Caltech, with consultation by Mike and Chip. The code is currently
+at Caltech. The code is currently
 being distributed under the Gnu General Public License.
 
 Several features distinguish QMcBeaver from other QMC programs:
@@ -52,46 +61,257 @@ Functional Theory (DFT). Additionally, some familiarity with the
 techniques of variational and diffusion QMC will be required to
 appreciate this guide.
 
+\section{Introduction to Quantum Monte Carlo}
 There are a couple good introductions to the subject material if you are unfamiliar.
 \emph{Modern Quantum Chemistry} by Szabo and Ostlund\cite{Szabo82} is a good place to start
 reading about Hartree-Fock and the relevant linear algebra. As a bonus, this book is published by Dover, so it's cheap.
 The book \emph{Computational Physics} by Thijssen\cite{Thijssen99} has a good chapter on QMC. If you want to
-play with some toy code, covering both of these methods, look for the Sourceforge project PyQuante.
+play with some toy code, covering both of these methods, look for the Sourceforge project PyQuante. Chip Kent's thesis
+is also a good reference\cite{kent2003}, including a discussion of the algorithms he and Mike developed.
+In addition, pasted here is an introduction to the code from a computational aspect.
+
+\newcommand\colr{\bar{\bm r}}
+The most important information about a molecule is its ground state
+energy, calculated by means of the time independent Schr{\"o}dinger
+equation
+\begin{equation} \label{eq:schro}
+\left< E \right> = \frac{ \int \Psi(\colr) \hat{H} \Psi(\colr) d\colr }
+{  \int \Psi^2(\colr) d\colr }
+\end{equation}
+where $\Psi(\colr):\mathbb{R}^{3N} \rightarrow \mathbb{R}$ is the wave
+function, mapping the $3N$ Cartesian coordinates of $N$ electrons into
+a probability amplitude related to the probability density in
+Eq.~\eqref{eq:distribution}.  (Equation~\eqref{eq:schro} includes the
+common restriction that $\Psi(\colr)$ is a real valued function.) The
+Hamiltonian operator $\hat{H}$ is given by
+\begin{equation} \label{eq:hamiltonian}
+\hat{H} = \nabla^2 + V(\colr)
+\end{equation}
+where the Laplacian is over all $3N$ electronic coordinates and
+calculates the kinetic energy (in the unitless Hartree measure) of the
+electrons in the molecule.  The $V(\colr)$ term represents the
+potential energy due to Coulomb interactions between all pairs of
+electrons and nuclei. The energy $E$ is the eigen value of $\hat{H}$
+operating on the eigen function $\Psi(\colr)$. The ground state energy
+is the lowest such eigen value, and is of primary interest here.
+
+There are many methods to calculate
+Eq.~\eqref{eq:schro} with varying degrees of accuracy and
+computational complexity. The highly accurate QMC family of
+algorithms~\cite{ReynoldsCeperleyAlder1982} uses
+Metropolis~\cite{Metropolis} integration to fine tune the result
+provided by a cheaper method. It uses the \emph{local energy}
+\begin{equation} \label{eq:elocal}
+E_L (\colr) = \frac{\hat{H} \Psi(\colr)}{\Psi(\colr)} =
+\frac{\nabla^2 \Psi(\colr)}{\Psi(\colr)}
++ V(\colr)
+\end{equation}
+which represents an evaluation of the energy for a set of electronic
+coordinates. In terms of the stationary probability distribution of
+electrons
+\begin{equation} \label{eq:distribution}
+\rho(\colr) = \frac{\Psi^2(\colr)}{  \int \Psi^2(\colr) d\colr }
+\end{equation}
+we can transform Eq.~\eqref{eq:schro} into the Monte Carlo integration
+form
+\begin{equation} \label{eq:montecarlo}
+\left< E \right> = \int \rho(\colr) E_L(\colr) d\colr
+= \lim_{N_t \to \infty} \frac{1}{N_t} \sum_{t=1}^{N_t} E_L(\colr_t).
+\end{equation}
+Here $\colr_t$ are a series of electronic coordinates generated with
+respect to $\rho(\colr)$ by some importance sampling
+scheme~\cite{UmrigarNightingaleRunge1993}.
+%PS: not important for us
+%% , which incorporates the
+%% ability to asymptotically correct most deficiencies in the input
+%% wave function.
+Since error scales as $1/\sqrt{N_t}$ in Monte Carlo methods a rather
+large number of samples is required to achieve useful accuracies.
+Additionally, it is common to run several independent series, called
+\emph{walkers}, in order to minimize the error due to serial correlation
+between the $N_t$ data points.
+
+In terms of computational complexity, the difficulty for QMC lies in
+the evaluation of $\nabla^2 \Psi(\colr_t)$ for each $E_L(\colr_t)$ as
+well as the evaluation of $\Psi(\colr_t)$ and $\nabla \Psi(\colr_t)$
+which are used for importance sampling.  The most common functional
+form for $\Psi(\colr)$ has at least three nested stages of evaluation.
+At the first stage, we place a collection of $N_{bf}$ basis functions
+centered at the nuclei in the $3D$ coordinate space. Typically a given
+nucleus is associated with multiple basis functions. The basis function
+takes as argument the local coordinates of a given electron ($i$) relative
+to the nucleus ($j$), $\vec{r}_{ij} =\vec{r}_i - \vec{R}_j$. The best
+results are achieved with the following functional form
+\begin{equation} \label{eq:basisf}
+\chi_{j} (x_{ij},y_{ij},z_{ij}) = x^{k_j}_{ij} y^{l_j}_{ij} z^{m_j}_{ij}
+\sum_{n_j} a_{n_j} e^{-b_{n_j} r^2_{ij}}.
+\end{equation}
+For each basisfunction, $R_j$, $k_j$, $l_j$, $m_j$, $n_j$, $a_{n_j}$
+and $b_{n_j}$ are parameters given as input to the QMC program. The
+$k_j, l_j, m_j \in \NN$ parameters give the basisfunction the required
+symmetry, and $n_j \in \NN^{+}$ helps select the quality of fit. The
+other parameters are all real numbers.
+
+The second stage of evaluation takes linear combinations of
+basisfunctions to create \emph{molecular orbitals}. The
+$k^\textrm{th}$ orbital is given by $\phi_{k}( \vec{r}_i ) = \sum_j
+\chi_{j} (r_{ij}) c_{jk}$, where $c_{jk} \in \RR$ are coefficients
+input to QMC. These orbitals represent the spread of the electron
+across the entire molecule.
+
+Finally, the third stage of evaluation relevant to this study is the
+\emph{Slater determinant}, chosen for its antisymmetric properties.
+For the $N_s$ electrons of a given quantum spin $\alpha$ or $\beta$
+($N = N_\alpha + N_\beta \sim 2 N_\alpha$) the determinant is a
+function of the $\phi_k$ (which in turn are functions of the $\chi_{j} (r_{ij}) $)
+\begin{equation} \label{eq:slaterd}
+D_{s} (\colr_s)  = |M_s(\colr_s)| = \begin {vmatrix}
+\phi_1 \left( \vec{r}_1 \right) & \phi_2 \left( \vec{r}_1 \right)
+& \cdots & \phi_N \left( \vec{r}_1 \right) \\
+\phi_1 \left( \vec{r}_2 \right) & \phi_2 \left( \vec{r}_2 \right) & & \\
+\vdots & & \ddots & \\
+\phi_1 \left( \vec{r}_{N_s} \right) & & & \phi_{N_s} \left( \vec{r}_{N_s} \right)
+\end{vmatrix}
+\end{equation}
+(here we partition $\colr$ into $\colr_\alpha$ and $\colr_\beta$)
+and the wavefunction is
+\[
+\Psi(\colr) = D_\alpha(\colr_\alpha)D_\beta(\colr_\beta).
+\]
+To calculate the kinetic energy, we first obtain $\nabla^2_i \phi_{k}(
+\vec{r}_i ) = \sum_j \nabla^2_i \chi_{j} (\vec{r}_{ij}) c_{jk}$, and
+then sum the contributions from all the electrons in all the orbitals
+%PS: this looks fine; it's a big matrix multiply... (just imagine
+%PS: stuffing the Laplace terms appropriately into a matrix and you
+%PS: would have an exact matrix multiply. But writing it out is easier
+%PS: than to set things up correctly in terms of the Laplace matrix
+%PS: (from what I can tell) because of the \alpha/\beta business
+\begin{equation} \label{eq:matrixdot}
+\frac{\nabla^2 \Psi(\colr)}{\Psi(\colr)} =
+\sum_{s \in \{\alpha, \beta\}} \sum_{i,k \in N_s}
+%The point of introducing "M_s" before was to have a label to reference here
+\left[M_s^{-1}(\colr_s)\right]_{ki}
+%\left\{\phi_{k'} \left( \vec{r}_{i'} \right)\right\}^{-1}_{ki}
+%\left\{\phi_{k'} \left( \vec{r}_{i'} \right)\right\}^{-1}_{ki}
+\nabla^2_i \phi_{k}( \vec{r}_i ).
+\end{equation}
+A similar procedure is followed for calculating the gradient of the
+wavefunction for each electron with the exception that the final
+summation results in a vector of gradients.
+
+To summarize the algorithm, we are given a set of
+nuclear coordinates, basis function parameters (available in the
+literature), and the $c_{jk}$, which describe the wavefunction as fit
+by some other (more approximate and cheaper) method. Additionally, we
+choose some parameters including the number of steps $N_t$, the number
+of walkers $W$, an initial guess scheme for positions $\colr$ of all
+the electrons, as well as several parameters relating to the
+importance sampling. With these in hand, the algorithm can be stated as
+shown in Algorithm 1 (the $\otimes$ represents matrix multiplication).
+\begin{algorithm}
+%I am having problems referencing this label... the \ref{qmcalg} was not working
+%PS: yeah. I've had problems with labels in algorithm. I don't
+%PS: remember anymore whether I found a fix of just gave up though...
+\caption{The QMC algorithm} \label{qmcalg}
+\begin{algorithmic}
+\STATE $E_{sum} \leftarrow 0$
+\FOR{$w=1$ to $W$}
+\STATE $\vec{r}_{ij} \leftarrow $ initialize()
+\FOR{$t=1$ to $N_t$}
+\FOR{$s=\alpha$ and $s=\beta$}
+\STATE $M_s \leftarrow \chi_{j} (\vec{r}_{ij}) \otimes c_{jk}$
+\STATE $X_s \leftarrow \frac{\partial}{\partial x_{i}} \chi_{j} (\vec{r}_{ij}) \otimes c_{jk}$
+\STATE $Y_s \leftarrow \frac{\partial}{\partial y_{i}} \chi_{j} (\vec{r}_{ij}) \otimes c_{jk}$
+\STATE $Z_s \leftarrow \frac{\partial}{\partial z_{i}} \chi_{j} (\vec{r}_{ij}) \otimes c_{jk}$
+\STATE $L_s \leftarrow \nabla^2_i \chi_{j} (\vec{r}_{ij}) \otimes c_{jk}$
+\ENDFOR
+\STATE Jastrow $\leftarrow J(\colr)$
+\STATE $\Psi \leftarrow \det M_\alpha * \det M_\beta * $ Jastrow
+%\STATE $E_{sum} \leftarrow E_{sum} +
+%M^{-1}_\alpha \odot L_\alpha +
+%M^{-1}_\beta \odot L_\beta +
+%V(\colr) $
+%\STATE //\textit{All derivatives are needed due to the chain rule}
+\STATE $E_{sum} \leftarrow E_{sum} + E_L(M_s, \text{Jastrow},\{\textit{derivatives}\}...)$
+%\STATE $\vec{r}_{ij} \leftarrow $ sampling($\Psi, \vec{r}_{ij}, 
+%X_{\alpha,\beta}, Y_{\alpha,\beta}, Z_{\alpha,\beta}, L_{\alpha,\beta}$)
+\STATE $\vec{r}_{ij} \leftarrow $ sampling($\Psi, \vec{r}_{ij}, X_s, Y_s, Z_s, L_s$)
+\ENDFOR
+\ENDFOR
+%for some reason, my latex compiler is not accepting a \RETURN here
+\STATE $E_{avg} \leftarrow E_{sum}/(N_t * W)$
+\end{algorithmic}
+\end{algorithm}
+The high degree of parallelism is evident since each processor can
+calculate all the linear algebra for its walkers and only needs to
+produce a single value; the energy. While some QMC algorithms only
+update one electron per Monte Carlo step, our method updates
+all at once~\cite{UmrigarNightingaleRunge1993}.
+
+One big advantage of QMC relative to alternative methods is the
+freedom one has in choosing the functional form of $\Psi(\colr)$. We
+exploit this by multiplying the Slater determinant wave function with
+a set of pairwise interaction terms which explicitly model some of the
+underlying physics. The only condition is that these terms, called
+\emph{Jastrow} functions, preserve the antisymmetry of the wave
+function. To satisfy this condition, we use the functional form
+\begin{equation} \label{eq:jastrow}
+J(\colr) =  \prod_{q<p} e^{ u_{pq} (r_{pq})}
+\end{equation}
+which provides a term for each particle-particle interaction, where 
+\begin{equation} \label{eq:jastrowU}
+u_{pq} (r_{pq}) =
+\frac{ \sum_{\kappa=1}^{\Gamma} a_{pq\kappa} r_{pq}^\kappa}
+{1+\sum_{\kappa=1}^\Lambda b_{pq\kappa} r_{pq}^\kappa}
+\end{equation}
+and $p$ and $q$ index all electrons and nuclei, and $r_{pq}$ is the
+distance separating the two particles. The number of terms ($\Gamma$
+and $\Lambda$) is arbitrary, and depends on the quality of fit.  These
+parameters, along with $a_{pq\kappa}, b_{pq\kappa} \in \RR$, are input
+to the QMC algorithm. With this modification, our wave function is now
+$\Psi_{QMC}(\colr) = D_\alpha(\colr_\alpha) D_\beta(\colr_\beta)
+J(\colr)$, and there are chain rule effects for the gradient and
+Laplacian. The rationale for these additional terms is the improved
+convergence if the wave function is a better approximation of the
+eigen function of $\hat{H}$ to begin with.
 
 \section{Compiling QMcBeaver}
-There are 3 important files in the process of compiling QMcbeaver; two are given, one is created. The python script
-\emph{configure.py} will create the \emph{Makefile.config} file, which is then used in conjunction with the \emph{Makefile} script to compile the executable. There are a couple macros used in the code, and these will be discussed.
+If for some strange reason you choose to compile this using a program like Microsoft Visual Studio, then this section is irrelevant. The included Visual Studio project file in the {\texttt windows} directory should set up the program appropriately, although some effort may be required to change some of the options for debugging or ATLAS. Visual Studio by default uses the \texttt{cl.exe} compiler produced by Microsoft itself. We have not tried the \texttt{icc} compiler from Intel. A parallel version of QMcBeaver for Windows has not been explored as there are no free MPI (message passing interface) packages available to try this out on. Finally, with respect to the Windows platform, installing cygwin is a good option to try. Cygwin is free -- it installs a ''linux aware'' environment running within Windows.
 
-If you choose to compile this using a program like Microsoft Visual Studio, then this section is irrelevant. The included Visual Studio project file in the {\tt windows} directory should set up the program appropriately, although some effort may be required to change some of the options for debugging or ATLAS. Visual Studio by default uses a compiler produced by Microsoft itself, and is probably not a good option -- it produces really slow code. There is an alternative compiler for Windows available from Intel, but it costs money and has not been tried with QMcBeaver yet (a free version of this compiler for Linux is also available). A parallel version of QMcBeaver for Windows has not been explored as there are no free MPI (message passing interface) packages available to try this out on. Finally, with respect to the Windows platform, installing cygwin is a good option to try. Cygwin is free -- it installs a ''linux aware'' environment running within Windows.
+There are 3 important files in the process of compiling QMcbeaver; two are given, one is created. The python script
+\texttt{configure.py} will create the \texttt{Makefile.config} file, which is then used in conjunction with the \texttt{Makefile} script to compile the executable. There are a couple macros used in the code, and these will be discussed.
 
 \subsection{configure.py}
-There are a couple important options with this script. If you are in the QMcBeaver directory, typing {\tt./configure.py} will list the options to your screen.
+There are a couple important options with this script. If you are in the QMcBeaver directory, typing {\texttt./configure.py} will list the options to your screen.
 \begin{enumerate}
-\item You must specify a platform on which to compile QMcBeaver. For example, if you are compiling in OSX, Linux, cygwin, or any Unix type system with the GNU compiler collection installed, you could try this option. For your information, many IBM supercomputers run AIX and many SGI machines run IRIX. However, the manufacturer might have a better compiler available for their architecture. To determine which operating system your computer is running, look at the {\tt HOSTTYPE, OSTYPE,} or {\tt VENDOR} environment variables.
+\item You must specify a compiler to use. Most machines have \texttt{gcc} installed, but some have vendor provided compilers. Our \texttt{configure.py} knows about many of them, if you are attempting to compile on a machine that we have not tried, then by comparing with our other compiler configurations, you should be able to guess a good set.
 
-\item QMcBeaver requires parallel processing to fully take advantage of its algorithm. The parallel portions of QMcBeaver has been programmed using the MPI (as opposed to OpenMP) library. This library comes in two common flavors, {\tt LAMPI} and {\tt MPICH}, but some manufacturers release their own versions. HOW DO YOU KNOW WHICH TO CHOOSE? You do not need to specify 'None' to run a serial version.
+\item QMcBeaver requires parallel processing to fully take advantage of its algorithm. The parallel portions of QMcBeaver has been programmed using the MPI. This code is usually run and tested on LAM/MPI, but it should work on MPICH as well without any problem. You must select \texttt{MPICC} as your compiler. In addition, there might be some steps necessary to ensure that \texttt{mpicc} and relevant libraries are on your path.
 
 \item There are a couple variations that can change QMcBeaver's behavior. None of them are required.
 \begin{itemize}
-\item {\tt --atlas}: The ATLAS library is a freely available Basic Linear Algebra Subroutines (BLAS) package at Sourceforge. The advantage ATLAS provides over vender BLAS libraries is that it automatically tunes itself to each processor during compilation, and is thus cross-platform compatible. Essentially, this library can be used to handle the matrix-matrix multiplication used in QMcBeaver. This makes a substantial difference for larger molecules (larger basis sets or many orbitals). For smaller molecules and atoms, ATLAS will not provide much of an advantage and could possibly slow the execution time.  We have not successfully compiled this library everywhere. On the other hand, there are precompiled libraries for many systems available online. While ATLAS should work everywhere, sometimes it will conflict with a debugger. Instructions for installing ATLAS are included in the {\tt lib} directory. Using ATLAS with Visual Studio requires a few special instructions, like requiring the libraries to be named in a fashion Visual Studio understands. Google knows how to do this.
-\item {\tt --debug}: This option is probably only useful for developers. Including this option will place debug symbols in your code, useful when QMcBeaver is run with a program like {\tt gdb} or whatever has been installed on your system. Note, this option usually conflicts with optimization flags. Specifying both may produce unpredictable results. For example, the compiler may choose between the optimize and debug options.
-\item {\tt --optimize}: This option should select the best set of compiler settings for the given architecture and compiler type. However, as this is largely a black art, hand-tweaking the options in {\tt configure.py} may improve the executable.
-\item {\tt --profile}: This option is probably only useful for developers. It will produce an extra output file when the executable is run. This output is useful with a program like {\tt gprof} for analyzing QMcBeaver's calling tree for possible optimizations. 
-\item {\tt --single}: The key parts of the code can be switched to running with single precision variables as opposed to the typical double precision variables. Single precision will hurt the accuracy of the result, but the code will run faster on many systems.
+\item {\texttt --atlas}: The ATLAS\cite{WN147, atlas_siam} library is a freely available Basic Linear Algebra Subroutines (BLAS) package available at Sourceforge. The advantage ATLAS provides over vender BLAS libraries is that it automatically tunes itself to each processor during compilation, and is thus cross-platform compatible. Essentially, this library can be used to handle the matrix-matrix multiplication used in QMcBeaver. This makes a substantial difference for larger molecules (larger basis sets or many orbitals). For smaller molecules and atoms, ATLAS will not provide much of an advantage and could possibly slow the execution time since the cost of calling the library would come into effect.  We have not successfully compiled this library everywhere. On the other hand, there are precompiled libraries for many systems available online. While ATLAS should work everywhere, sometimes it will conflict with a debugger. Instructions for installing ATLAS are included in the {\texttt lib} directory. Using ATLAS with Visual Studio requires a few special instructions, like requiring changing the library names from \texttt{libatlas.a} to \texttt{atlas.lib} etc. Google has more information.
+\item {\texttt --debug}: This option is probably only useful for developers. Including this option will place debug symbols in your code, useful when QMcBeaver is run with a program like {\texttt gdb} or whatever has been installed on your system. Note, this option sometimes conflicts with optimization flags. Specifying both may produce unpredictable results. For example, the compiler may choose between the optimize and debug options.
+\item {\texttt --optimize}: This option should select the best set of compiler settings for the given architecture and compiler type. However, as this is largely a black art, hand-tweaking the options in {\texttt configure.py} may improve the executable. Since it is turned on by default for most compilers, you do not need to include this flag.
+\item {\texttt --profile}: This option is probably only useful for developers. It will produce an extra output file when the executable is run. This output is useful with a program like {\texttt gprof} for analyzing QMcBeaver's calling tree for possible optimizations. 
+\item {\texttt --float}: The key parts of the code can be switched to running with single precision variables as opposed to the typical double precision variables. Single precision will hurt the accuracy of the result, but the code will run faster on many systems.
+\item {\texttt --vtune}: To profile the code using Intel vTune, some special parameters must be used to obtain "position independent code".
+\item {\texttt --gpu}: This is used to turn on the graphics card portions of the code. It is similar to using ATLAS. 
+\item {\it tag}: You can tag your executables with the tag \textit{tag}. The purpose is that if you are playing with different options, you can recompile all code for a given \textit{tag} with the command \texttt{make updateall \textit{tag}}.
 \end{itemize}
 \end{enumerate}
 
 \subsection{Makefile.config}
-This file is generated by {\tt configure.py}, and for most non-developers, this file can be safely ignored. This is the easiest place to start when toying with different compiler options. This file is specific to the options used with {\tt configure.py} so it must be regenerated every time the operating system is changed.
+This file is generated by {\texttt configure.py}, and for most non-developers, this file can be safely ignored. This is the easiest place to start when toying with different compiler options.
 
 \subsection{Makefile}
-Once {\tt configure.py} has been run and the {\tt Makefile.config} file has been generated, simply enter the command {\tt make} on the command line in the QMcBeaver directory. The {\tt make} program will use the rules in the {\tt Makefile} with the options in {\tt Makefile.config} to create the executable, which will be placed in the {\tt bin} directory. However, there are a few options given to {\tt make} by the {\tt Makefile} we provide that should be listed. When making QMcBeaver, {\tt make} will create a separate directory for intermediate files for each type of {\tt Makefile.config} created. That is, if the ATLAS option is specified through {\tt configure.py}, a directory appropriately named will be created. If later {\tt configure.py} is run without the ATLAS option, or with a different compiler, or with the debug option, or any difference in options, a new directory will be created for the temporary files. This is useful when the same home directory is used for multiple computers with different operating systems, like in the Goddard group. This means the compiler does not have to recreate all the temp files every time an option is changed, if that option has been compiled before.
+Once {\texttt configure.py} has been run and the {\texttt Makefile.config} file has been generated, simply enter the command {\texttt make} on the command line in the QMcBeaver directory. The {\texttt make} program will use the rules in the {\texttt Makefile} with the options in {\texttt Makefile.config} to create the executable, which will be placed in the {\texttt bin} directory. However, there are a few options given to {\texttt make} by the {\texttt Makefile} we provide that should be listed. When making QMcBeaver, {\texttt make} will create a separate directory for intermediate files for each type of {\texttt Makefile.config} created. For example, if the ATLAS option is specified through {\texttt configure.py}, a directory appropriately named will be created. If later {\texttt configure.py} is run without the ATLAS option, or with a different compiler, or with the debug option, or any difference in options, a new directory will be created for the temporary files. This is useful when the same home directory is used for multiple computers with different operating systems, like in the Goddard group. This means the compiler does not have to recreate all the temp files every time an option is changed, if that option has been compiled before.
 
 \begin{itemize}
-\item {\tt bruteforce}: This option might help with some stubborn compilers. It ignores most of the options in {\tt Makefile.config}
-\item {\tt --clean}: This option will remove the executable and all intermediate compiler files associated with {\tt Makefile.config}. That is, it will only clean one option set.
-\item {\tt --cleanall}: This will remove the intermediate files for all the compiler options.
-\item {\tt --updateall}: In the process of modifying code, the developer may wish to test a set of different compiler options all at once. Instead of forcing that developer to systematically recreate each {\tt Makefile.config} and recompile, this option will recompile all the options that have been previously compiled. This is possible because all of the compiler options were stored in the intermediate files when that option set was originally compiled.
+\item {\texttt bruteforce}: This option might help with some stubborn compilers. It ignores most of the options in {\texttt Makefile.config}
+\item {\texttt --clean}: This option will remove the executable and all intermediate compiler files associated with {\texttt Makefile.config}. That is, it will only clean one option set.
+\item {\texttt --cleanall}: This will remove the intermediate files for all the compiler options.
+\item {\texttt --updateall \textit{tag}}: In the process of modifying code, the developer may wish to test a set of different compiler options all at once. Instead of forcing that developer to systematically recreate each {\texttt Makefile.config} and recompile, this option will recompile all the options that have been previously compiled with tag \textit{tag}. This is possible because all of the compiler options were stored in the intermediate files when that option set was originally compiled.
 \end{itemize}
 
 
@@ -450,7 +670,12 @@ This section lists the flags that can be specified in the .ckmf file.
   calculation~\cite{UmrigarNightingaleRunge1993}.
 
 \item [dt] This is the time step used for the propagation phase
-  of the calculation.  The default value is .001.
+  of the calculation.  The default value is .001. Notes: There is sort of a balance here. If dt                                                                                                                       
+     is large, then your error will be large. If dt is small, it will take longer to explore all the                                                                                                                    
+     space. Officially, you're supposed to estimate an extrapolation                                                                                                            
+     to dt = 0. That is, run it for (for example) 1e-3,                                                                                                                  
+     then 1e-4, then 5e-5, etc until you can guess what                                                                                                                  
+     the value at zero would be.  
 
 \item [population\_control\_parameter] Parameter used in
   controlling the number of walkers or total weight of all walkers
@@ -472,7 +697,10 @@ This section lists the flags that can be specified in the .ckmf file.
   that their configurations reflect the desired distribution.  
 
 \item [dt\_equilibration]  The time step used during the equilibration
-  phase of the calculation.  The default value is 0.02.  
+  phase of the calculation.  The default value is 0.02.
+  Notes: You might want to set this higher than you would set your                                                                                                    
+     regular dt since the point is to get the electrons in approximately                                                                                                 
+     the right place, not to make measurements. 
 
 \item [equilibration\_function]  The function used during the
   equilibration phase of the calculation.  The first option is 
@@ -524,7 +752,11 @@ This section lists the flags that can be specified in the .ckmf file.
   the total number of propagation steps on \emph{all} processors. 
 
 \item [desired\_convergence] If the standard deviation of the energy in
-  the global results falls below this level, sampling stops.  
+     the global results falls below this level, sampling stops.
+     Notes: It's difficult to determine a priori how many time                                                                                                           
+     steps it will take to reach a given convergence, so it's often                                                                                                      
+     easier to control the length of the run by setting this to 0.0                                                                                                      
+     and choosing an appropriate max\_time\_steps.  
 
 \item [number\_of\_walkers] The number of walkers on each processor.  At
   each time step, the statistics for the walkers on the processor are
@@ -540,11 +772,19 @@ This section lists the flags that can be specified in the .ckmf file.
   collected by the root node.  This interval must be less than or
   equal to the output\_interval.  The way in which the statistics from
   different processors are combined is equivalent to \emph{appending}
-  the time steps from each processor to form one long run.     
+  the time steps from each processor to form one long run. 
+  Notes: the longer this is, the longer it will take for the                                                                                                          
+     calculation to converge. The short this is, the more time                                                                                                           
+     the calculation will spend shuttling data back and forth.                                                                                      
+     This balance might be molecule specific since the communication                                                                                                     
+     time depends on how much data to send.  
 
 \item [mpipoll\_interval] The interval at which the worker nodes
   check to see if there are any commands from the root node.  The
-  default value is 1.
+  default value is 1. Notes: if this is too large, then the root processor might                                                                                                          
+     end of spending a long time waiting. There isn't                                                                                                                    
+     a significant penalty to making this small. Perhaps this                                                                                                            
+     is the sort of parameter we want to remain opaque to the user.
 
 \item [checkpoint] 1 if checkpoint files for restarting the calculation
   are to be written, 0 otherwise.  A checkpoint file contains the
@@ -580,7 +820,15 @@ This section lists the flags that can be specified in the .ckmf file.
 \item [print\_configs] 1 if the electronic configurations are to be
   written to a .cfgs file in the temp directory, 0 if not.
   Configurations are always written if the wavefunction is being
-  optimized.  
+  optimized. Notes: turning this on is required for wavefunction optimization.                                                                                                   
+     However, it can *easily* take up all of your compute time since it                                                                                                  
+     obviously requires extensive harddrive access. If you select optimization,                                                                                                    
+     this will automatically be set to 1.                                                                                                    
+     Also, depending on print\_config\_frequency and molecule size, these                                                                                                  
+     files can easily get up to be several gigabytes in size. The files                                                                                                  
+     can be output in ASCII or binary -- that option is set in code in QMCConfigIO.                                
+     Eventually, we'll probably add HDF5 functionality, but last I (AGA) checked                                                                                         
+     they were still working on their C++ API.  
 
 \item [print\_config\_frequency] The interval at which configurations are
   written to the .cfgs file in the temp directory.  This number should
@@ -597,14 +845,17 @@ This section lists the flags that can be specified in the .ckmf file.
 \item [optimize\_Psi] 1 if the parameters in the Jastrow function are to
   be optimized, 0 if not.  Optimization of the SCF part of the
   wavefunction (CI coefficients, orbitals, basis functions) is not
-  implemented at this time.  
+  implemented at this time. Notes: This will rerun the entire VMC calculation each time it                                                                                                      
+     optimizes. That is, your calculation time might go up by a factor                                                                                                   
+     of max\_optimize\_Psi\_steps, depending on convergence.
 
 \item [max\_optimize\_Psi\_steps] One step is defined as follows- A series
   of configurations is generated with respect to the most accurate
   trial function available and correlated sampling configurations are
   written.  Then, using the configurations, several sets of parameters
   are evaluated and a new trial wavefunction is generated.  Default
-  value is 10.  
+  value is 10. Notes: Wavefunction convergence can take a long time, depending                                                                                                     
+     on your Jastrow parameters.
 
 \item [optimize\_Psi\_criteria] Objective function to use in
   comparing sets of parameters when optimizing a VMC wavefunction.
@@ -613,7 +864,9 @@ This section lists the flags that can be specified in the .ckmf file.
   \verb-monkey_spank-, which is a combination of the variance of the
   local energy and a penalty function when the parameters become
   majorly different from the ones used in generating the correlated
-  sampling configurations.  
+  sampling configurations. Notes: for QMC, if your wavefunction is an eigenfunction, your                                                                                                      
+     variance will be exactly zero. That's why you might want to minimize                                                                                                
+     your variance. However, this isn't necessarily the best proceedure...  
 
 \item [numerical\_derivative\_surface] Objective function to use
   when calculating derivatives with respect to the parameters for
@@ -685,7 +938,7 @@ This section lists the flags that can be specified in the .ckmf file.
 
 \item [calc\_three\_body\_Jastrow] 1 if three body correlations are to be
   calculated.  The three body Jastrow is of the form used by
-  Umrigar~\cite{ThreeBodyJastrow}.
+  Umrigar~\cite{ThreeBodyJastrow}. Not finished yet!
 
 \end{description}
 
@@ -771,7 +1024,8 @@ contants are not.
 \section{Optimization Methods}
 
 \renewcommand{\baselinestretch}{1.0} \small
-\bibliography{amosQMC,amosGPU,danQMC,chipQMC,reference}
+\bibliographystyle{plain}
+\bibliography{beaver}
 
 \end{document}
 
