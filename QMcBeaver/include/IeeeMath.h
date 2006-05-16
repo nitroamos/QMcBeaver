@@ -34,6 +34,8 @@ for more details.
 #ifndef IeeeMath_H
 #define IeeeMath_H
 
+#include <limits>
+
 /**
   Functions for IEEE 754 floating point operations.
 */
@@ -43,15 +45,16 @@ class IeeeMath
 {
  public:
   /**
-     Determines if a number is a NaN. It is now improved
-     to check for the possibility that
-     x+1 == x
-     for which it will return true.
+     Determines if a number is a NaN. 
+
+     It checks for both signaling NaNs and
+     quiet NaNs.
 
      @param x determines if this number is NaN
      @return true if x is NaN and false otherwise.
   */
-  static bool isNaN(double x);
+  template <class T>
+  static bool isNaN(T x);
 };
 
 #endif

@@ -31,9 +31,15 @@ for more details.
 
 #include "IeeeMath.h"
 
-bool IeeeMath::isNaN(double x)
+template <class T>
+bool IeeeMath::isNaN(T x)
 {
-  if( x != x || x+1 == x)
+  
+  if( x != x ||
+      (numeric_limits<T>::has_quiet_NaN() &&
+      x == numeric_limits<T>::quiet_NaN()) ||
+      (numeric_limits<T>::has_signaling_NaN() &&
+      x == numeric_limits<T>::signaling_NaN()) )
     {
       return true;
     }
@@ -42,3 +48,6 @@ bool IeeeMath::isNaN(double x)
       return false;
     }
 }
+
+
+
