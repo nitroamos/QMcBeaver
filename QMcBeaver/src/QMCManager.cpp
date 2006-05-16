@@ -1076,7 +1076,7 @@ void QMCManager::writeEnergyResultsSummary( ostream & strm )
   
   strm << setw(width) << QMCnode.getWeights();
   
-  strm << setw(width) << bestAvailable.energy.getNumberSamples();
+  strm << setw(width) << Properties_total.energy.getNumberSamples();
   
   strm << endl << setprecision( 15 );
 }

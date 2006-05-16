@@ -1,11 +1,44 @@
+            QMcBeaver
 
-These are the current QMcBeaver instructions.
+         Constructed by 
 
-To run QMcBeaver on one processor:
+     Michael Todd Feldmann 
+   David Randall "Chip" Kent IV
+       Daniel R. Fisher
+     Amos Gerald Anderson
 
-./bin/QMcBeaver.xxx file.ckmf >& file.output &
+ Copyright 2006.  All rights reserved.
 
-To run QMcBeaver on many processors:
+drkent@users.sourceforge.net
+mtfeldmann@users.sourceforge.net
+madmartigan81@user.sourceforge.net
+frozenflip@user.sourceforge.net
+---------------------------------------------
 
-mpirun -np numberprocessors ./bin/pQMcBeaver.xxx file.ckmf >& file.output &
+This is a quick and dirty description for how to run QMcBeaver. This code
+has been recently tested on Linux (Red Hat), OSX (10.4.5), Windows XP (cygwin),
+Dec Alpha Tru64, AIX, and IRIX, among others.  The MPI implementation has recently
+been tested with both LAM/MPI and MPICH. Our configure.py script has
+settings for quite a few systems. See docs/beaver.pdf for a more complete
+description on how to run QMcBeaver.
 
+1) Read the file 'lib/README' for library options
+
+2) Run './configure.py' to configure your system
+
+3) Type 'gmake'
+
+4)
+for serial:
+./bin/QMcBeaver.<params>.<version>.x input.ckmf >& input.out &
+
+for parallel:
+mpirun -np <num procs> ./bin/QMcBeaver.<params>.<version>.x input.ckmf >& input.out & 
+
+To generate API documentations:
+
+1) download and install doxygen from the web
+
+2) Type 'gmake help'
+
+3) look in ./docs/ for the documentation
