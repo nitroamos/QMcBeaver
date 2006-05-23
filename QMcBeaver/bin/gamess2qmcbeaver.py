@@ -160,7 +160,7 @@ for i in range(len(geometry)):
 ANGtoBOHRconversion = 1.0/0.529177249
 
 for line in geom_data:
-    if string.find(line,'ANGS') != -1:
+    if string.find(line,'(ANGS)') != -1:
         for i in range(len(geometry)):
             for j in range(2,5):
                 geometry[i][j] = geometry[i][j] * ANGtoBOHRconversion
