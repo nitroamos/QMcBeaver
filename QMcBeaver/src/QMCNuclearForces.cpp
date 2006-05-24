@@ -1,3 +1,10 @@
+/*
+  Copyright (c) Amos G. Anderson 2006
+  Distributed under GNU general public license (GPL)
+  No guarantee or warantee regarding usability or stability is expressed or implied.
+  nitroamos@gmail.com
+*/
+
 #include "QMCNuclearForces.h"
 
 QMCNuclearForces::QMCNuclearForces()
@@ -5,22 +12,25 @@ QMCNuclearForces::QMCNuclearForces()
 
 QMCNuclearForces::~QMCNuclearForces()
 {
-  basisCoeffs.deallocate();
-  rMaxNuc.deallocate();
-  waveValuesHF.deallocate();
   waveValuesHFSpline.deallocate();
-  radialPoints.deallocate();
   numPolyBasisF.deallocate();
   nucleusContributions.deallocate();
   alphaOrbitals.deallocate();
   betaOrbitals.deallocate();
   
+  for(int i=0; i<radialPoints.dim1(); i++)
+    radialPoints(i).deallocate();
+  radialPoints.deallocate();
+
   for(int i=0; i<waveValuesHF.dim1(); i++)
   for(int j=0; j<waveValuesHF.dim2(); j++)
     waveValuesHF(i,j).deallocate();
+  waveValuesHF.deallocate();
+
   for(int i=0; i<basisCoeffs.dim1(); i++)
   for(int j=0; j<basisCoeffs.dim2(); j++)
     basisCoeffs(i,j).deallocate();
+  basisCoeffs.deallocate();
 }
 
 void QMCNuclearForces::initialize(QMCInput *Ip)
@@ -35,12 +45,11 @@ void QMCNuclearForces::initialize(QMCInput *Ip)
   int constNumBF = 5;
   fittingWeightM = 0.0;
   int numNuc = Input->Molecule.getNumberAtoms();
-  numKnots = 100;
   numSamplesPerArea = 1e2;
   
   numPolyBasisF.allocate(numNuc);
   basisCoeffs.allocate(numNuc,3);
-  rMaxNuc.allocate(numNuc);  
+  radialPoints.allocate(numNuc);
   waveValuesHF.allocate(numNuc,4);//1 s + 3 p
   waveValuesHFSpline.allocate(numNuc,3);
 
@@ -49,12 +58,9 @@ void QMCNuclearForces::initialize(QMCInput *Ip)
     numPolyBasisF(i) = constNumBF;
     for(int q=0; q<3; q++)
       basisCoeffs(i,q).allocate(numPolyBasisF(i));
-    rMaxNuc(i) = 1.0;
+    radialPoints(i).allocate(1);
+    (radialPoints(i))(0) = 1.0;
   }
-
-  maxBin = rMaxNuc(0);
-     
-  assert(numKnots > 1);
 
   calculateNuclearContributions();
 
@@ -69,11 +75,11 @@ void QMCNuclearForces::initialize(QMCInput *Ip)
       
       cout << endl;
       printf("%15s   %15s %15s\n","rAi","functionValue","temperTerm");
-      for(int rIndex = 0; rIndex<radialPoints.dim1(); rIndex++)
+      for(int rIndex = 0; rIndex<radialPoints(nuc).dim1(); rIndex++)
       {
         int numBF = numPolyBasisF(nuc);
         int q = 0;
-        double rAi = radialPoints(rIndex);
+        double rAi = (radialPoints(nuc))(rIndex);
         double temperTerm = (basisCoeffs(nuc,0))(numBF-1);
         for(int i=numBF-2; i >= 0; i--)
         {
@@ -82,7 +88,7 @@ void QMCNuclearForces::initialize(QMCInput *Ip)
         
         if(Input->flags.nuclear_derivatives == "slaterpoly_hellmann_feynman")
         {
-          spliner.initializeWithFunctionValues(radialPoints,
+          spliner.initializeWithFunctionValues(radialPoints(nuc),
                                                waveValuesHF(nuc,q+1), 0.0, 0.0);
           spliner.evaluate(rAi);
           temperTerm *= spliner.getFunctionValue()*pow(rAi,fittingWeightM);                
@@ -99,9 +105,9 @@ void QMCNuclearForces::initialize(QMCInput *Ip)
   for(int nuc=0; nuc<1; nuc++){
     if(false){
       printf("%15s %15s %15s %15s %15s\n","rad","s","px","py","pz");
-      for(int j=0; j<numKnots; j++)
+      for(int j=0; j<radialPoints(nuc).dim1(); j++)
         printf("%15.7f %15.7e %15.7e %15.7e %15.7e\n",
-          radialPoints(j),
+          (radialPoints(nuc))(j),
           (waveValuesHF(nuc,0))(j),
           (waveValuesHF(nuc,1))(j),
           (waveValuesHF(nuc,2))(j),
@@ -137,7 +143,7 @@ void QMCNuclearForces::evaluate(Array1D<QMCWalkerData *> &walkerData,
     If we are doing a binning procedure, then we don't
     need the nucleus-nucleus contributions to the force.
     
-    The same data structure is used for both output.
+    The same data structure is used for both force and bin output.
   */
   for(int walker=0; walker<num; walker++)
     if(Input->flags.nuclear_derivatives == "bin_force_density"){
@@ -181,7 +187,9 @@ void QMCNuclearForces::evaluate(Array1D<QMCWalkerData *> &walkerData,
             which needs to go to zero as r goes to zero.
           */
           int numBF = basisCoeffs(nucA,q).dim1();
-          if(rAi < rMaxNuc(nucA))
+
+	  double radialCutoff = (radialPoints(nucA))(radialPoints(nucA).dim1()-1);
+          if(rAi < radialCutoff)
           {
             if(Input->flags.nuclear_derivatives == "bare_hellmann_feynman")
             {
@@ -191,6 +199,9 @@ void QMCNuclearForces::evaluate(Array1D<QMCWalkerData *> &walkerData,
             if(Input->flags.nuclear_derivatives == "poly_hellmann_feynman" ||
                Input->flags.nuclear_derivatives == "slaterpoly_hellmann_feynman")
             {
+
+	      //This evaluates the polynomial (Eq. 7 from CCZ05)
+	      //where the m contributions have been factored out
               double temperTerm = (basisCoeffs(nucA,q))(numBF-1);
               for(int i=numBF-2; i >= 0; i--)
               {
@@ -199,25 +210,29 @@ void QMCNuclearForces::evaluate(Array1D<QMCWalkerData *> &walkerData,
               
               if(Input->flags.nuclear_derivatives == "slaterpoly_hellmann_feynman")
               {
+		//This adds in the Slater term (Eq. 8 from CCZ05)
                 waveValuesHFSpline(nucA,q).evaluate(rAi);
                 temperTerm *= waveValuesHFSpline(nucA,q).getFunctionValue()
 		  *pow(rAi,fittingWeightM);                
               } else {
+		//Now we add the m contribution to Eq. 7
                 temperTerm *= pow(rAi,1.0 + fittingWeightM);
               }
 
+	      //This completes Eq. 6
               nuclearForce *= temperTerm;
             }
 
           }//end if
           
-          //if(q == 2 && nucA == 0 && collectForceDensity)
           if(Input->flags.nuclear_derivatives == "bin_force_density")
           {
             //let's only bin the 1st nucleus' z-axis
-            int binIndex = (int)( min(rAi/maxBin,1.0)*( getNumBins() - 1) );
-            walkerData(walker)->nuclearDerivatives(binIndex/3,binIndex%3) = 1;
-            //walkerData(walker)->nuclearDerivatives(binIndex/3,binIndex%3) =  min(rAi/maxBin,1.0);
+	    if(q == 2 && nucA == 0)
+	      {
+		int binIndex = (int)( min(rAi/radialCutoff,1.0)*( getNumBins() - 1) );
+		walkerData(walker)->nuclearDerivatives(binIndex,1) += 1;
+	      }
           } else {
             walkerData(walker)->nuclearDerivatives(nucA,q) += nuclearForce;
           }
@@ -226,20 +241,20 @@ void QMCNuclearForces::evaluate(Array1D<QMCWalkerData *> &walkerData,
     }//end nucA
   }//end walker
   
-  if(false){
+  if(false)
+    {
       cout << "\ncalculated force:\n";
       for(int w=0; w<num; w++){
-      for(int i=0; i<4; i++)
-        printf("%s: %17.7f %17.7f %17.7f\n",
-          Input->Molecule.Atom_Labels(i).c_str(),
-          walkerData(w)->nuclearDerivatives(i,0),
-          walkerData(w)->nuclearDerivatives(i,1),
-          walkerData(w)->nuclearDerivatives(i,2));
-      cout << endl;
+	for(int i=0; i<4; i++)
+	  printf("%s: %17.7f %17.7f %17.7f\n",
+		 Input->Molecule.Atom_Labels(i).c_str(),
+		 walkerData(w)->nuclearDerivatives(i,0),
+		 walkerData(w)->nuclearDerivatives(i,1),
+		 walkerData(w)->nuclearDerivatives(i,2));
+	cout << endl;
       }
-  }
+    }
   //exit(0);
-
 }
 
 void QMCNuclearForces::calcCoefficients(int whichNucleus)
@@ -252,16 +267,14 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
     return;
   }
 
+  double radialCutoff = (radialPoints(whichNucleus))(radialPoints(whichNucleus).dim1()-1);
   int numBF = numPolyBasisF(whichNucleus);
-  int numPT = numKnots;
-
   Array2D<double> hilbertMatrix  = Array2D<double> (numBF,numBF);
   Array2D<double> inverseMatrix  = Array2D<double> (numBF,numBF);
   Array2D<double> residualVector = Array2D<double> (numBF, 1);
   Array2D<double> coeffs         = Array2D<double> (numBF, 1);
   double det=0; bool isOK=true;
-
-
+  
   if(Input->flags.nuclear_derivatives == "poly_hellmann_feynman")
   {
     /*
@@ -283,7 +296,7 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
         Integral is Rj = \int_0^R dr \phi_j(r)
           = \frac{ R^{j + 1} }{j + 1}
       */
-      residualVector(j-1,0) = pow(rMaxNuc(whichNucleus), j + 1.0) / ( j + 1.0 );
+      residualVector(j-1,0) = pow(radialCutoff, j + 1.0) / ( j + 1.0 );
       for(int k=1; k<=numBF; k++)
       {
         /*
@@ -291,7 +304,7 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
           Integral is Sij = \int_0^R dr r^m \phi_i(r) \phi_j(r)
             = \frac{ R^{ m + k + j + 1} }{ m + k + j + 1 }
         */
-        hilbertMatrix(j-1,k-1) = pow(rMaxNuc(whichNucleus), fittingWeightM + k + j + 1.0) /
+        hilbertMatrix(j-1,k-1) = pow(radialCutoff, fittingWeightM + k + j + 1.0) /
                                  ( fittingWeightM + k + j + 1.0 );
       }
     }
@@ -327,8 +340,8 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
        
       Note: I went ahead with C like indices here
     */
-
-    waveMemorization(whichNucleus);
+    int numPT = 100;
+    waveMemorization(whichNucleus, numPT, radialCutoff);
 
     Array1D<double> radialValues = Array1D<double>(numPT);
 
@@ -344,11 +357,11 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
         radialValues = waveValuesHF(whichNucleus,coord+1);
         for(int rIndex=0; rIndex<numPT; rIndex++)
         {
-          radialValues(rIndex) *= fastPower(radialPoints(rIndex),powerI);
+          radialValues(rIndex) *= fastPower((radialPoints(whichNucleus))(rIndex),powerI);
         }
 
         //it seems reasonable to choose 0.0 for both end point derivatives
-        spliner.initializeWithFunctionValues(radialPoints, radialValues, 0.0, 0.0);
+        spliner.initializeWithFunctionValues(radialPoints(whichNucleus), radialValues, 0.0, 0.0);
         residualVector(powerI,0) = spliner.integrate(0, numPT);
       }
       
@@ -364,11 +377,11 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
           for(int rIndex=0; rIndex<numPT; rIndex++)
           {
             radialValues(rIndex) *= radialValues(rIndex) *
-                                    pow(radialPoints(rIndex),
+                                    pow((radialPoints(whichNucleus))(rIndex),
                                     powerI + powerJ + fittingWeightM);
           }
          
-          spliner.initializeWithFunctionValues(radialPoints, radialValues, 0.0, 0.0);
+          spliner.initializeWithFunctionValues(radialPoints(whichNucleus), radialValues, 0.0, 0.0);
           hilbertMatrix(powerI,powerJ) = spliner.integrate(0,numPT);
           /*
           //This code will calculate the fit to f_z(r)
@@ -395,9 +408,6 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
       for(int i=0; i<numBF; i++)
         (basisCoeffs(whichNucleus,coord))(i) = coeffs(i,0);
 
-      waveValuesHFSpline(whichNucleus,coord).initializeWithFunctionValues(radialPoints,
-									  waveValuesHF(whichNucleus,coord+1),0.0,0.0);
-
     }// end for coord
   }
   else
@@ -419,69 +429,80 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
   residualVector.deallocate();
 }
 
-void QMCNuclearForces::waveMemorization(int whichNucleus)
+void QMCNuclearForces::waveMemorization(int whichNucleus, int numKnots, double radialCutoff)
 {
+  if(numKnots <= 1)
+    {
+      cout << "Error: we need more than 1 shell to memorize the wavefunction!\n";
+      exit(1);
+    }
   double pi = acos(-1.0);
-  double dr = rMaxNuc(whichNucleus)/(numKnots-1);
+  double dr = radialCutoff/(numKnots-1);
   
-  radialPoints.allocate(numKnots);
+  //we will reallocate radialPoints and the original value will now be the last value
+  radialPoints(whichNucleus).allocate(numKnots);
   for(int i=0; i<4; i++)
-  {
-    waveValuesHF(whichNucleus,i).allocate(numKnots);
-    waveValuesHF(whichNucleus,i) = 0;
-  }
+    {
+      waveValuesHF(whichNucleus,i).allocate(numKnots);
+      waveValuesHF(whichNucleus,i) = 0;
+    }
   
   Array1D<double> center = Array1D<double>(3);
   for(int i=0; i<3; i++)
     center(i) = Input->Molecule.Atom_Positions(whichNucleus,i);
-    
+  
   Array2D<double> cube = Array2D<double>(8,3);
   Array1D<double> densities = Array1D<double>(8);
   for(int irad=0; irad<numKnots; irad++)
-  {
-    double rad = irad*dr;
-    radialPoints(irad) = rad;
-    int numSamples = (int)(rad*rad*numSamplesPerArea + 1.0);
-    //printf("%5i ",numSamples);
-    double aveSurfacePerPoint = 8.0*numSamples/(4.0*pi);
-
-    for(int sample = 0; sample < numSamples; sample++)
     {
-      generateCube(cube,rad);
-      randomlyRotate(cube,1.0);
-
-      for(int i=0; i<cube.dim1(); i++)
-        for(int coord=0; coord<3; coord++)
-          cube(i,coord) += center(coord);
-
-      getDensities(cube,densities);
-
-      /*
-        For spherical wavefunctions, we will get 8 times the contribution.
-        For p-waves, the 8 pieces will cancel each other out to the degree
-        that the wave is 3-fold symmetric.
-      */
-      for(int i=0; i<densities.dim1(); i++)
-      { 
-        (waveValuesHF(whichNucleus,0))(irad) += densities(i);          
-        for(int j=0; j<3; j++)
-          (waveValuesHF(whichNucleus,j+1))(irad) += densities(i)*(cube(i,j)-center(j))/rad;
-      }
+      double rad = irad*dr;
+      (radialPoints(whichNucleus))(irad) = rad;
+      int numSamples = (int)(rad*rad*numSamplesPerArea + 1.0);
+      //printf("%5i ",numSamples);
+      double aveSurfacePerPoint = 8.0*numSamples/(4.0*pi);
       
-      if(irad == 0)
-        for(int j=0; j<3; j++)
-          (waveValuesHF(whichNucleus,j+1))(irad) = 0;
-    }//samples
-    
-    for(int i=0; i<4; i++)
-      (waveValuesHF(whichNucleus,i))(irad) /= aveSurfacePerPoint;
+      for(int sample = 0; sample < numSamples; sample++)
+	{
+	  generateCube(cube,rad);
+	  randomlyRotate(cube,1.0);
+	  
+	  for(int i=0; i<cube.dim1(); i++)
+	    for(int coord=0; coord<3; coord++)
+	      cube(i,coord) += center(coord);
+	  
+	  getDensities(cube,densities);
+	  
+	  /*
+	    For spherical wavefunctions, we will get 8 times the contribution.
+	    For p-waves, the 8 pieces will cancel each other out to the degree
+	    that the wave is 3-fold symmetric.
+	  */
+	  for(int i=0; i<densities.dim1(); i++)
+	    { 
+	      (waveValuesHF(whichNucleus,0))(irad) += densities(i);          
+	      for(int j=0; j<3; j++)
+		(waveValuesHF(whichNucleus,j+1))(irad) += densities(i)*(cube(i,j)-center(j))/rad;
+	    }
+	  
+	  if(irad == 0)
+	    for(int j=0; j<3; j++)
+	      (waveValuesHF(whichNucleus,j+1))(irad) = 0;
+	}//samples
       
-  }//distances
+      for(int i=0; i<4; i++)
+	(waveValuesHF(whichNucleus,i))(irad) /= aveSurfacePerPoint;
+      
+    }//distances
+
+  //This is the spline we'll use to preserve our measurements.
+  for(int q=0; q<3; q++)
+    waveValuesHFSpline(whichNucleus,q).initializeWithFunctionValues(radialPoints(whichNucleus),
+								    waveValuesHF(whichNucleus,q+1),0.0,0.0);
+  
   center.deallocate();
   cube.deallocate();
   densities.deallocate();
 }
-
 
 void QMCNuclearForces::getDensities(Array2D<double> & X, Array1D<double> & densities)
 {
@@ -620,39 +641,36 @@ void QMCNuclearForces::calculateNuclearContributions()
   nucleusContributions = 0;
 
   for(int nucA=0; nucA<numNuc; nucA++)
-  {
-    for(int nucB=0; nucB<numNuc; nucB++)
     {
-      if(nucA == nucB) continue;
-      
-      double rAB = 0;
-      for(int q=0; q<3; q++)
-      {
-        rAB +=
-          (Input->Molecule.Atom_Positions(nucA,q) -
-          Input->Molecule.Atom_Positions(nucB,q) ) *
-          (Input->Molecule.Atom_Positions(nucA,q) -
-          Input->Molecule.Atom_Positions(nucB,q) );
-      }
-      rAB = sqrt(rAB);
-      
-      double nuclearForce = 0;
-      for(int q=0; q<3; q++)
-      {
-        nuclearForce =
-          Input->Molecule.Atom_Positions(nucA,q) -
-          Input->Molecule.Atom_Positions(nucB,q);
-        nuclearForce *= 
-          Input->Molecule.Z(nucA) *
-          Input->Molecule.Z(nucB);
-        nuclearForce *=
-          1.0 / (rAB * rAB * rAB);
-          
-        nucleusContributions(nucA,q) += nuclearForce;
-      }//end q
-      
-    }//end nucB
-  }//end nucA
+      for(int nucB=0; nucB<nucA; nucB++)
+	{ 
+	  double rAB = 0;
+	  for(int q=0; q<3; q++)
+	    {
+	      rAB +=
+		(Input->Molecule.Atom_Positions(nucA,q) -
+		 Input->Molecule.Atom_Positions(nucB,q) ) *
+		(Input->Molecule.Atom_Positions(nucA,q) -
+		 Input->Molecule.Atom_Positions(nucB,q) );
+	    }
+	  rAB = sqrt(rAB);
+	  
+	  double nuclearForce = 0;
+	  for(int q=0; q<3; q++)
+	    {
+	      nuclearForce =
+		Input->Molecule.Atom_Positions(nucA,q) -
+		Input->Molecule.Atom_Positions(nucB,q);
+	      nuclearForce *= 
+		Input->Molecule.Z(nucA) *
+		Input->Molecule.Z(nucB);
+	      nuclearForce *=
+		1.0 / (rAB * rAB * rAB);
+	      
+	      nucleusContributions(nucA,q) += nuclearForce;
+	    }//end q  
+	}//end nucB
+    }//end nucA
 }
   
 

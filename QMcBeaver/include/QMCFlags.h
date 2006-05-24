@@ -124,7 +124,7 @@ class QMCFlags
 
   /**
      Implemented here is the method described in:
-     S. Chiesa and D.M. Ceperley, Phys. Rev. Lett. 94, 036404 (2005)
+     S. Chiesa, D.M. Ceperley, and S. Zhang, Phys. Rev. Lett. 94, 036404 (2005)
      This selects the method used in calculating the forces in a molecule.
      Choices are none, bare_hellmann_feynman, poly_hellmann_feynman,
      and slaterpoly_hellmann_feynman.
