@@ -27,69 +27,72 @@
 using namespace std;
 
 /**
-  The potential energy of the system.
+   This class will measure the nuclear forces for the system. This is essentially
+   a port from the fortran code graciously provided by Simone Chiesa as used in
+   S. Chiesa and D.M. Ceperley, Phys. Rev. Lett. 94, 036404 (2005)
   */
 
 class QMCNuclearForces
 {
-public:
+ public:
   /**
-    Creates an instance of the class.
-    */
+     Creates an instance of the class.
+  */
   QMCNuclearForces();
   ~QMCNuclearForces(); 
+  
   /**
-    Initialize the object.
-
-    @param input data input to control the calculation
-    */
+     Initialize the object.
+     
+     @param input data input to control the calculation
+  */
   void initialize(QMCInput *input);
-
+  
   /**
-
-
-    @param X \f$3N\f$ dimensional configuration of electrons represented by 
-    a \f$N \times 3\f$ matrix
-    */
+     
+     
+     @param X \f$3N\f$ dimensional configuration of electrons represented by 
+     a \f$N \times 3\f$ matrix
+  */
   void evaluate(Array1D< QMCWalkerData *> &walkerData, 
 		Array1D<Array2D<double> * > &xData, int num);
-
+  
   /**
-
-
-    @param X \f$3N\f$ dimensional configuration of electrons represented by 
-    a \f$N \times 3\f$ matrix
-    */
+     
+     
+     @param X \f$3N\f$ dimensional configuration of electrons represented by 
+     a \f$N \times 3\f$ matrix
+  */
   void evaluate(QMCWalkerData &walkerData, Array2D<double> &xData);
-        
+  
   void calcCoefficients(int whichNucleus);
-
+  
   void waveMemorization(int whichNucleus);
-
+  
   void calculateNuclearContributions();
   
   void getDensities(Array2D<double> & X, Array1D<double> & densities);
-
+  
   void printCubeLengths(Array2D<double> & points);
-
+  
   void printPoints(Array2D<double> & points);
-
+  
   void generateCube(Array2D<double> & cube, double length);
-
+  
   void randomlyRotate(Array2D<double> & points, double scale);
   
   static int getNumBins()
-  {
-    return 2;
-  }
+    {
+      return 2;
+    }
   
   /**
-    Sets two QMCPotential_Energy objects equal.
-
-    @param rhs object to set this object equal to
+     Sets two QMCPotential_Energy objects equal.
+     
+     @param rhs object to set this object equal to
   */
   void operator=( const QMCNuclearForces & rhs );
-
+  
  private:
   QMCInput *Input;
   QMCBasisFunction *BF;

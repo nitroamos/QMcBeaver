@@ -123,6 +123,8 @@ class QMCFlags
   long iseed;
 
   /**
+     Implemented here is the method described in:
+     S. Chiesa and D.M. Ceperley, Phys. Rev. Lett. 94, 036404 (2005)
      This selects the method used in calculating the forces in a molecule.
      Choices are none, bare_hellmann_feynman, poly_hellmann_feynman,
      and slaterpoly_hellmann_feynman.
@@ -261,6 +263,9 @@ class QMCFlags
   long walkers_per_pass;
 
   /*
+    Implemented here is the future walking method described in:
+    J. Casulleras and J. Boronat, Phys. Rev. B 52, 3654 (1995)
+
     This vector describes the block size over which we
     collect samples. Analogous to the decorrelation
     algorithm, it might be best to set this to something
