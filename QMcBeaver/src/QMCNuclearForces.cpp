@@ -62,9 +62,6 @@ void QMCNuclearForces::initialize(QMCInput *Ip)
   {
     calcCoefficients(nuc);
     
-    for(int q=0; q<3; q++)
-      waveValuesHFSpline(nuc,q).initializeWithFunctionValues(radialPoints,
-							     waveValuesHF(nuc,q+1),0.0,0.0);
     if(false){
       cout << "\n Coeff. " << Input->Molecule.Atom_Labels(nuc) << ": ";
       for(int j=0; j<basisCoeffs(nuc,0).dim1(); j++)
@@ -397,6 +394,9 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
 
       for(int i=0; i<numBF; i++)
         (basisCoeffs(whichNucleus,coord))(i) = coeffs(i,0);
+
+      waveValuesHFSpline(whichNucleus,coord).initializeWithFunctionValues(radialPoints,
+									  waveValuesHF(whichNucleus,coord+1),0.0,0.0);
 
     }// end for coord
   }

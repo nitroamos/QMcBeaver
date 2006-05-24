@@ -12,7 +12,7 @@
 
 #include "QMCWalker.h"
 
-const double QMCWalker::maxFWAsymp = 0.75;
+const double QMCWalker::maxFWAsymp = 1.0;
 
 QMCWalker::QMCWalker()
 {
@@ -1235,18 +1235,18 @@ void QMCWalker::calculateObservables()
   if( fabs(p + q - 1.0) > 1e-10 )
     {
       cerr << "ERROR: In QMCWalker::calculateObservables probabilities "
-      << "do not sum correctly!" << endl;
+	   << "do not sum correctly!" << endl;
       exit(0);
     }
-    
+  
   // Calculate the Energy ...
   localEnergy = p * TrialWalker->walkerData.localEnergy +
                 q * OriginalWalker->walkerData.localEnergy;
-                
+  
   // Calculate the kinetic energy...
   kineticEnergy = p * TrialWalker->walkerData.kineticEnergy +
                   q * OriginalWalker->walkerData.kineticEnergy;
-                  
+  
   // Calculate the potential energy
   potentialEnergy = p * TrialWalker->walkerData.potentialEnergy +
                     q * OriginalWalker->walkerData.potentialEnergy;
@@ -1271,8 +1271,8 @@ void QMCWalker::calculateObservables()
           p * TrialWalker->walkerData.chiDensity(i) +
           q * OriginalWalker->walkerData.chiDensity(i);
     }
-     
-    if(Input->flags.nuclear_derivatives != "none")
+  
+  if(Input->flags.nuclear_derivatives != "none")
     {
       for (int d1=0; d1<walkerData.nuclearDerivatives.dim1(); d1++)
         for (int d2=0; d2<walkerData.nuclearDerivatives.dim2(); d2++)
@@ -1280,16 +1280,18 @@ void QMCWalker::calculateObservables()
             p * TrialWalker->walkerData.nuclearDerivatives(d1,d2) +
             q * OriginalWalker->walkerData.nuclearDerivatives(d1,d2);
     }
-    
+  
+  //eventually, i'll remove the r2 and r12 measurement. but for Helium, it's
+  //nice to use when verifying FW
   double calcR12_T=0, calcR12_O=0;
   r2 = 0.0;
   for(int i=0; i<3; i++)
     {
       r2 += p*TrialWalker->R(0,i)*TrialWalker->R(0,i)
-         +  p*TrialWalker->R(1,i)*TrialWalker->R(1,i)
-         +  q*OriginalWalker->R(0,i)*OriginalWalker->R(0,i)
-         +  q*OriginalWalker->R(1,i)*OriginalWalker->R(1,i);
-
+	+  p*TrialWalker->R(1,i)*TrialWalker->R(1,i)
+	+  q*OriginalWalker->R(0,i)*OriginalWalker->R(0,i)
+	+  q*OriginalWalker->R(1,i)*OriginalWalker->R(1,i);
+      
       double tempT, tempO;
       tempT = TrialWalker->R(0,i)    - TrialWalker->R(1,i);
       tempO = OriginalWalker->R(0,i) - OriginalWalker->R(1,i);
@@ -1300,59 +1302,63 @@ void QMCWalker::calculateObservables()
   r12 = p*sqrt(calcR12_T) + q*sqrt(calcR12_O);
   r2 /= 2.0;
   
-  //This is the forward walking portion of the calculation
-  double aWeight = getWeight();
-
-  //original version
+  //This is the forward walking portion of the calculation as described in:
+  //J. Casulleras and J. Boronat, Phys. Rev. B 52, 3654 (1995) aka "CB95"
+  //this is what CB95 suggest
+  //double aWeight = getWeight();
+  
+  //but this is what seems to be working
+  double aWeight = 1.0;
+  
+  //this is what CB95 suggest
   //double pWeight = getWeight()/OriginalWalker->getWeight();
-
-  //simplest version
+  
+  //although it doesn't make much difference, this seems to work better
   double pWeight = 1.0;
-
+  
   //this might create nan if run with diffusion
   //Don't use for that reason!
   //double pWeight = getWeight();
-
   
-  //This happens in both Formula 15 and 16
+  //This happens in both Formula 15 and 16 from CB95
   for(int i=0; i<isCollectingFWResults.dim1(); i++)
-  {
-    for(int j=0; j<isCollectingFWResults.dim2(); j++)
     {
-      
-      if(Input->flags.future_walking[i] == 0)
-        continue;
-      
-      if( isCollectingFWResults(i,j) != DONE)
-      {
-        fwNormalization(i,j)     *= pWeight;
-        fwR12(i,j)               *= pWeight;
-        fwR2(i,j)                *= pWeight;
-        fwEnergy(i,j)            *= pWeight;
-        fwKineticEnergy(i,j)     *= pWeight;
-        fwPotentialEnergy(i,j)   *= pWeight;
-        
-        for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
-          for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
-            (fwNuclearForces(d1,d2))(i,j) *= pWeight;
-      }
-      
-      if(isCollectingFWResults(i,j) == ACCUM )
-      {
-        //We are collecting results (Formula 15)
-        fwNormalization(i,j)   += aWeight;
-        fwR12(i,j)             += aWeight * r12;
-        fwR2(i,j)              += aWeight * r2;
-        fwEnergy(i,j)          += aWeight * localEnergy;
-        fwKineticEnergy(i,j)   += aWeight * kineticEnergy;
-        fwPotentialEnergy(i,j) += aWeight * potentialEnergy;
-        
-        for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
-          for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
-            (fwNuclearForces(d1,d2))(i,j) += aWeight * walkerData.nuclearDerivatives(d1,d2);
-      }
+      for(int j=0; j<isCollectingFWResults.dim2(); j++)
+	{
+	  
+	  if(Input->flags.future_walking[i] == 0)
+	    continue;
+	  
+	  if( isCollectingFWResults(i,j) != DONE)
+	    {
+	      fwNormalization(i,j)     *= pWeight;
+	      fwR12(i,j)               *= pWeight;
+	      fwR2(i,j)                *= pWeight;
+	      fwEnergy(i,j)            *= pWeight;
+	      fwKineticEnergy(i,j)     *= pWeight;
+	      fwPotentialEnergy(i,j)   *= pWeight;
+	      
+	      for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
+		for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
+		  (fwNuclearForces(d1,d2))(i,j) *= pWeight;
+	    }
+	  
+	  if(isCollectingFWResults(i,j) == ACCUM )
+	    {
+	      //We are collecting results (Formula 15)
+	      fwNormalization(i,j)   += aWeight;
+	      fwR12(i,j)             += aWeight * r12;
+	      fwR2(i,j)              += aWeight * r2;
+	      fwEnergy(i,j)          += aWeight * localEnergy;
+	      fwKineticEnergy(i,j)   += aWeight * kineticEnergy;
+	      fwPotentialEnergy(i,j) += aWeight * potentialEnergy;
+	      
+	      for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
+		for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
+		  (fwNuclearForces(d1,d2))(i,j) += aWeight * walkerData.nuclearDerivatives(d1,d2);
+	    }
+	}
     }
-  }
 }
 
 void QMCWalker::calculateObservables( QMCProperties & props )
@@ -1396,64 +1402,71 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & props )
 {
   // Add the data from this walker to the accumulating properties  
   for(int i=0; i<isCollectingFWResults.dim1(); i++)
-  {
-    numFWSteps[i]++;
-   
-    if(Input->flags.future_walking[i] == 0)
     {
-      // Calculate the nuclear forces      
-      if(Input->flags.nuclear_derivatives != "none")
-        for (int d1=0; d1<walkerData.nuclearDerivatives.dim1(); d1++)
-          for (int d2=0; d2<walkerData.nuclearDerivatives.dim2(); d2++)
-            (props.nuclearForces(i))(d1,d2).newSample( walkerData.nuclearDerivatives(d1,d2), getWeight() );
+      numFWSteps[i]++;
+      
+      //This collects the non-forward walking results
+      if(Input->flags.future_walking[i] == 0)
+	{
+	  // Calculate the nuclear forces      
+	  if(Input->flags.nuclear_derivatives != "none")
+	    for (int d1=0; d1<walkerData.nuclearDerivatives.dim1(); d1++)
+	      for (int d2=0; d2<walkerData.nuclearDerivatives.dim2(); d2++)
+		(props.nuclearForces(i))(d1,d2).newSample( walkerData.nuclearDerivatives(d1,d2), getWeight() );
+	  
+	  props.r12(i).newSample(r12, getWeight());
+	  props.r2(i).newSample(r2, getWeight());
+	  props.fwEnergy(i).newSample(localEnergy, getWeight());
+	  props.fwKineticEnergy(i).newSample(kineticEnergy, getWeight());
+	  props.fwPotentialEnergy(i).newSample(potentialEnergy, getWeight());
+	  continue;
+	}
+      
+      //this should be >=, but with > we can allow 1.0 for maxFWAsymp
+      //so we actually do 1 more step than was input
+      if(numFWSteps[i] > Input->flags.future_walking[i])
+	{
+	  int whichIsDone = isCollectingFWResults(i,0) == DONE ? 0 : 1;
+	  int otherStage = (whichIsDone+1)%2;
+	  isCollectingFWResults(i,whichIsDone) = ACCUM;
+	  isCollectingFWResults(i,otherStage)  = ASYMP;
+	  numFWSteps[i] = 0;  
+	}
+      else if(numFWSteps[i] == int(maxFWAsymp*Input->flags.future_walking[i]+0.5))
+	{
+	  //CB95 do not suggest how long to propagate the FW steps into the next
+	  //block, so maxFWAsymp is the percentage of the next block to use.
+	  //I've found that a value of maxFWAsymp=1 works best.
 
-      props.r12(i).newSample(r12, getWeight());
-      props.r2(i).newSample(r2, getWeight());
-      props.fwEnergy(i).newSample(localEnergy, getWeight());
-      props.fwKineticEnergy(i).newSample(kineticEnergy, getWeight());
-      props.fwPotentialEnergy(i).newSample(potentialEnergy, getWeight());
-      continue;
+	  int whichIsDone = isCollectingFWResults(i,0) == ACCUM ? 1 : 0;
+	  
+	  if(isCollectingFWResults(i,whichIsDone) == DONE)
+	    break;
+	  isCollectingFWResults(i,whichIsDone) = DONE;
+	  
+	  double norm = 1.0/fwNormalization(i,whichIsDone);
+	  props.r12(i).newSample(fwR12(i,whichIsDone)*norm,getWeight());
+	  props.r2(i).newSample(fwR2(i,whichIsDone)*norm,getWeight());
+	  props.fwEnergy(i).newSample(fwEnergy(i,whichIsDone)*norm,getWeight());
+	  props.fwKineticEnergy(i).newSample(fwKineticEnergy(i,whichIsDone)*norm,getWeight());
+	  props.fwPotentialEnergy(i).newSample(fwPotentialEnergy(i,whichIsDone)*norm,getWeight());
+	  
+	  // Calculate the nuclear forces      
+	  if(Input->flags.nuclear_derivatives != "none")
+	    for (int d1=0; d1<walkerData.nuclearDerivatives.dim1(); d1++)
+	      for (int d2=0; d2<walkerData.nuclearDerivatives.dim2(); d2++)
+		(props.nuclearForces(i))(d1,d2).newSample( (fwNuclearForces(d1,d2))(i,whichIsDone)*norm, 1.0 );
+	  
+	  resetFutureWalking(i,whichIsDone);
+	} 
     }
-    
-    if(numFWSteps[i] >= Input->flags.future_walking[i])
-    {
-      int whichIsDone = isCollectingFWResults(i,0) == DONE ? 0 : 1;
-      int otherStage = (whichIsDone+1)%2;
-      isCollectingFWResults(i,whichIsDone) = ACCUM;
-      isCollectingFWResults(i,otherStage)  = ASYMP;
-      numFWSteps[i] = 0;  
-    } else if(numFWSteps[i] == int(maxFWAsymp*Input->flags.future_walking[i]+0.5))
-    {
-      //this if statement assumes that maxFWAsymp < 1
-      int whichIsDone = isCollectingFWResults(i,0) == ACCUM ? 1 : 0;
-      
-      if(isCollectingFWResults(i,whichIsDone) == DONE)
-        break;
-      isCollectingFWResults(i,whichIsDone) = DONE;
-      
-      double norm = 1.0/fwNormalization(i,whichIsDone);
-      props.r12(i).newSample(fwR12(i,whichIsDone)*norm,getWeight());
-      props.r2(i).newSample(fwR2(i,whichIsDone)*norm,getWeight());
-      props.fwEnergy(i).newSample(fwEnergy(i,whichIsDone)*norm,getWeight());
-      props.fwKineticEnergy(i).newSample(fwKineticEnergy(i,whichIsDone)*norm,getWeight());
-      props.fwPotentialEnergy(i).newSample(fwPotentialEnergy(i,whichIsDone)*norm,getWeight());
-
-      // Calculate the nuclear forces      
-      if(Input->flags.nuclear_derivatives != "none")
-	for (int d1=0; d1<walkerData.nuclearDerivatives.dim1(); d1++)
-	  for (int d2=0; d2<walkerData.nuclearDerivatives.dim2(); d2++)
-	    (props.nuclearForces(i))(d1,d2).newSample( (fwNuclearForces(d1,d2))(i,whichIsDone)*norm, 1.0 );
-       
-      resetFutureWalking(i,whichIsDone);
-    } 
-  }
 }
 
 void QMCWalker::resetFutureWalking(int whichBlock, int whichIsDone)
 {
   if(whichIsDone > 1 || whichIsDone < 0)
   {
-    cerr << "Error: There are only 2 stages!\n";
+    cerr << "Error: There are only 2 FW stages!\n";
     exit(1);
   }
   
