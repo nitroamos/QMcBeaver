@@ -659,8 +659,8 @@ void QMCNuclearForces::calculateNuclearContributions()
 	  for(int q=0; q<3; q++)
 	    {
 	      nuclearForce =
-		Input->Molecule.Atom_Positions(nucA,q) -
-		Input->Molecule.Atom_Positions(nucB,q);
+		Input->Molecule.Atom_Positions(nucB,q) -
+		Input->Molecule.Atom_Positions(nucA,q);
 	      nuclearForce *= 
 		Input->Molecule.Z(nucA) *
 		Input->Molecule.Z(nucB);
