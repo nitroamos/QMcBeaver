@@ -61,7 +61,9 @@ class QMCNuclearForces
      a \f$N \times 3\f$ matrix
   */
   void evaluate(QMCWalkerData &walkerData, Array2D<double> &xData);
-  
+
+  double getTemperTerm(int nuc, int q, double r);
+
   /**
      As described in CCZ05, we will be using a polynomial as a part of the tempering
      term used to calculate the force in Eq. 6. This function is called as a part

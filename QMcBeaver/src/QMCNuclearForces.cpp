@@ -43,9 +43,11 @@ void QMCNuclearForces::initialize(QMCInput *Ip)
   WF = & Input->WF;
   
   int constNumBF = 5;
-  fittingWeightM = 0.0;
+
+  //according to the paper, m > -1/2 and m = 2 gives lowest variance
+  fittingWeightM = 2.0;
   int numNuc = Input->Molecule.getNumberAtoms();
-  numSamplesPerArea = 1e2;
+  numSamplesPerArea = 1e3;
   
   numPolyBasisF.allocate(numNuc);
   basisCoeffs.allocate(numNuc,3);
@@ -59,59 +61,107 @@ void QMCNuclearForces::initialize(QMCInput *Ip)
     for(int q=0; q<3; q++)
       basisCoeffs(i,q).allocate(numPolyBasisF(i));
     radialPoints(i).allocate(1);
-    (radialPoints(i))(0) = 1.0;
+    (radialPoints(i))(0) = 0.6;
   }
 
   calculateNuclearContributions();
 
   for(int nuc=0; nuc<numNuc; nuc++)
-  {
-    calcCoefficients(nuc);
-    
-    if(false){
-      cout << "\n Coeff. " << Input->Molecule.Atom_Labels(nuc) << ": ";
-      for(int j=0; j<basisCoeffs(nuc,0).dim1(); j++)
-        printf(" %15.7e",(basisCoeffs(nuc,0))(j));
-      
-      cout << endl;
-      printf("%15s   %15s %15s\n","rAi","functionValue","temperTerm");
-      for(int rIndex = 0; rIndex<radialPoints(nuc).dim1(); rIndex++)
-      {
-        int numBF = numPolyBasisF(nuc);
-        int q = 0;
-        double rAi = (radialPoints(nuc))(rIndex);
-        double temperTerm = (basisCoeffs(nuc,0))(numBF-1);
-        for(int i=numBF-2; i >= 0; i--)
-        {
-          temperTerm = temperTerm*rAi + (basisCoeffs(nuc,q))(i);
-        }
-        
+    {
+      calcCoefficients(nuc);
+      double weight = fittingWeightM;
+      if(Input->flags.nuclear_derivatives == "poly_hellmann_feynman")
+	weight++;
+
+      //this section is to print out some of the properties we are going to use
+      if(!false && nuc == 0){
+	cout << "Basis set coefficient terms for " << Input->Molecule.Atom_Labels(nuc) << ":\n";
+	for(int q=0; q<3; q++)
+	  {
+	    cout << "  q=" << q << " ";
+	    for(int j=basisCoeffs(nuc,q).dim1()-1; j>=0; j--)
+	      printf(" %15.7e * r^%.2g ",(basisCoeffs(nuc,q))(j),j+weight);
+	    cout << endl;
+	  }
+	cout << endl;
+
         if(Input->flags.nuclear_derivatives == "slaterpoly_hellmann_feynman")
-        {
-          spliner.initializeWithFunctionValues(radialPoints(nuc),
-                                               waveValuesHF(nuc,q+1), 0.0, 0.0);
-          spliner.evaluate(rAi);
-          temperTerm *= spliner.getFunctionValue()*pow(rAi,fittingWeightM);                
-        } else {
-          temperTerm *= pow(rAi,1.0 + fittingWeightM);
-        }
-        
-        printf("%15.7e   %15.7e %15.7e\n",rAi,spliner.getFunctionValue(),temperTerm);
+	  {
+	    printf("%15s   %15s %15s %15s %15s %15s %15s %15s\n",
+		   "rAi",
+		   "Slater_s","Slater_px","Slater_py","Slater_pz",
+		   "Temper_x","Temper_y","Temper_z");
+	  } else {
+	    printf("%15s   %15s %15s %15s\n",
+		   "rAi",
+		   "Temper_x","Temper_y","Temper_z");
+	  }
+	
+	spliner.initializeWithFunctionValues(radialPoints(nuc),
+					     waveValuesHF(nuc,0),0.0,0.0);
+	int numSamples = 58;
+	double dr = (radialPoints(nuc))(radialPoints(nuc).dim1()-1)/(numSamples-1);
+
+	Array1D<double> temperPoints(numSamples);
+	Array1D< Array1D<double> > temperData(3);
+	for(int i=0; i<3; i++)
+	  temperData(i).allocate(numSamples);
+
+	for(int rIndex = 0; rIndex<numSamples; rIndex++)
+	  {
+	    double rad = rIndex*dr;
+	    temperPoints(rIndex) = rad;
+	    (temperData(0))(rIndex) = getTemperTerm(nuc,0,rad);
+	    (temperData(1))(rIndex) = getTemperTerm(nuc,1,rad);
+	    (temperData(2))(rIndex) = getTemperTerm(nuc,2,rad);
+
+	    if(Input->flags.nuclear_derivatives == "slaterpoly_hellmann_feynman")
+	      {
+		spliner.evaluate(rad);
+		waveValuesHFSpline(nuc,0).evaluate(rad);
+		waveValuesHFSpline(nuc,1).evaluate(rad);
+		waveValuesHFSpline(nuc,2).evaluate(rad);
+		printf("%15.7e   %15.7e %15.7e %15.7e %15.7e %15.7e %15.7e %15.7e\n",
+		       rad,
+		       spliner.getFunctionValue(),
+		       waveValuesHFSpline(nuc,0).getFunctionValue(),
+		       waveValuesHFSpline(nuc,1).getFunctionValue(),
+		       waveValuesHFSpline(nuc,2).getFunctionValue(),
+		       getTemperTerm(nuc,0,rad),
+		       getTemperTerm(nuc,1,rad),
+		       getTemperTerm(nuc,2,rad));
+	      } else {
+		printf("%15.7e   %15.7e %15.7e %15.7e\n",
+		       rad,
+		       getTemperTerm(nuc,0,rad),
+		       getTemperTerm(nuc,1,rad),
+		       getTemperTerm(nuc,2,rad));
+	      }    
+	  }
+
+	CubicSpline temper;
+	printf("\n%s\n %15s %15s %15s\n ",
+	       "Temper Integrated",
+	       "Temper_x","Temper_y","Temper_z");
+	for(int i=0; i<3; i++)
+	  {
+	    temper.initializeWithFunctionValues(temperPoints, temperData(i), 0.0, 0.0);
+	    printf("%15.7e ",temper.integrate(0,numSamples)); 
+	  }
       }
+      cout << endl << endl;
     }
-    //exit(0);
-  }
   
   for(int nuc=0; nuc<1; nuc++){
-    if(false){
+    if(!false){
       printf("%15s %15s %15s %15s %15s\n","rad","s","px","py","pz");
       for(int j=0; j<radialPoints(nuc).dim1(); j++)
         printf("%15.7f %15.7e %15.7e %15.7e %15.7e\n",
-          (radialPoints(nuc))(j),
-          (waveValuesHF(nuc,0))(j),
-          (waveValuesHF(nuc,1))(j),
-          (waveValuesHF(nuc,2))(j),
-          (waveValuesHF(nuc,3))(j));
+	       (radialPoints(nuc))(j),
+	       (waveValuesHF(nuc,0))(j),
+	       (waveValuesHF(nuc,1))(j),
+	       (waveValuesHF(nuc,2))(j),
+	       (waveValuesHF(nuc,3))(j));
     }
   }
   //double x = ran1(&Input->flags.iseed);
@@ -129,117 +179,117 @@ void QMCNuclearForces::evaluate(QMCWalkerData &walkerData, Array2D<double> &xDat
   oneX.deallocate();
 }
 
+double QMCNuclearForces::getTemperTerm(int nuc, int q, double r)
+{
+  /*
+    If we are below some cutoff, then we probably want
+    to multiply the nuclear force by some tempering term
+    which is designed to cut the s-wave contributions out,
+    leaving only the p-wave.
+    This tempering term is \frac{ \rho_z(r) * z }{ \rho(r) * r }
+    which needs to go to zero as r goes to zero.
+  */
+  
+  double radialCutoff = (radialPoints(nuc))(radialPoints(nuc).dim1()-1);
+  if(r > radialCutoff ||
+     (Input->flags.nuclear_derivatives != "slaterpoly_hellmann_feynman" &&
+      Input->flags.nuclear_derivatives != "poly_hellmann_feynman"))
+    {
+      return 1.0;
+    }
+
+  //This evaluates the polynomial (Eq. 7 from CCZ05)
+  //where the m contributions have been factored out
+  int numBF = basisCoeffs(nuc,q).dim1();
+  double temperTerm = (basisCoeffs(nuc,q))(numBF-1);
+  for(int i=numBF-2; i >= 0; i--)
+    {
+      temperTerm = temperTerm*r + (basisCoeffs(nuc,q))(i);
+    }
+
+  if(Input->flags.nuclear_derivatives == "poly_hellmann_feynman")
+    {
+      //Now we add the m contribution to Eq. 7
+      temperTerm *= pow(r,fittingWeightM + 1.0);
+    } else {
+      //This adds in the Slater term (Eq. 8 from CCZ05)
+      waveValuesHFSpline(nuc,q).evaluate(r);
+      temperTerm *= waveValuesHFSpline(nuc,q).getFunctionValue() *
+	            pow(r,fittingWeightM);
+    }
+  
+  return temperTerm;
+}
+
 /*
   This is the function that would be repeatedly called each QMC
   iteration
 */
 void QMCNuclearForces::evaluate(Array1D<QMCWalkerData *> &walkerData, 
 		Array1D<Array2D<double> * > &xData, int num)
-{
-  int numNuc = Input->Molecule.getNumberAtoms();
-  int numEle = xData(0)->dim1();
-  
-  /*
-    If we are doing a binning procedure, then we don't
-    need the nucleus-nucleus contributions to the force.
-    
-    The same data structure is used for both force and bin output.
-  */
-  for(int walker=0; walker<num; walker++)
-    if(Input->flags.nuclear_derivatives == "bin_force_density"){
-      walkerData(walker)->nuclearDerivatives = 0;
-    } else {
-      walkerData(walker)->nuclearDerivatives = nucleusContributions;    
-    }
-    
-  for(int walker=0; walker<num; walker++)
-  {
-    for(int nucA=0; nucA<numNuc; nucA++)
+{  
+  if(Input->flags.nuclear_derivatives == "bin_force_density")
     {
-      for(int eleI=0; eleI<numEle; eleI++)
-      {
-        
-        double rAi = 0;
-        for(int q=0; q<3; q++)
-        {
-          rAi +=
-          ( (*xData(walker))(eleI,q) -
-            Input->Molecule.Atom_Positions(nucA,q) ) *
-          ( (*xData(walker))(eleI,q) -
-            Input->Molecule.Atom_Positions(nucA,q) );
-        }
-        rAi = sqrt(rAi);
-        
-        double nuclearForce = 0;
-        for(int q=0; q<3; q++)
-        {
-          nuclearForce = (*xData(walker))(eleI,q) -
-                         Input->Molecule.Atom_Positions(nucA,q);
-          nuclearForce *= Input->Molecule.Z(nucA);
-          nuclearForce *= -1.0 / (rAi * rAi * rAi);
-          
-          /*
-            If we are below some cutoff, then we probably want
-            to multiply the nuclear force by some tempering term
-            which is designed to cut the s-wave contributions out,
-            leaving only the p-wave.
-            This tempering term is \frac{ \rho_z(r) * z }{ \rho(r) * r }
-            which needs to go to zero as r goes to zero.
-          */
-          int numBF = basisCoeffs(nucA,q).dim1();
-
+      for(int walker=0; walker<num; walker++)
+	{
+	  walkerData(walker)->nuclearDerivatives = 0;
+	  //let's only bin the 1st nucleus
+	  int nucA = 0;
 	  double radialCutoff = (radialPoints(nucA))(radialPoints(nucA).dim1()-1);
-          if(rAi < radialCutoff)
-          {
-            if(Input->flags.nuclear_derivatives == "bare_hellmann_feynman")
-            {
-              //do nothing
-            }
-            
-            if(Input->flags.nuclear_derivatives == "poly_hellmann_feynman" ||
-               Input->flags.nuclear_derivatives == "slaterpoly_hellmann_feynman")
-            {
+	  
+	  for(int eleI=0; eleI<xData(0)->dim1(); eleI++)
+	    {
+	      double rAi = 0;
+	      for(int q=0; q<3; q++)
+		{
+		  rAi +=
+		    ( (*xData(walker))(eleI,q) -
+		      Input->Molecule.Atom_Positions(nucA,q) ) *
+		    ( (*xData(walker))(eleI,q) -
+		      Input->Molecule.Atom_Positions(nucA,q) );
+		}
+	      rAi = sqrt(rAi);
+	      
+	      int binIndex = (int)( min(rAi/radialCutoff,1.0)*( getNumBins() - 1) );
+	      walkerData(walker)->nuclearDerivatives(binIndex,1) += 1;
+	    }
+	}
+      return;
+    }
 
-	      //This evaluates the polynomial (Eq. 7 from CCZ05)
-	      //where the m contributions have been factored out
-              double temperTerm = (basisCoeffs(nucA,q))(numBF-1);
-              for(int i=numBF-2; i >= 0; i--)
-              {
-                temperTerm = temperTerm*rAi + (basisCoeffs(nucA,q))(i);
-              }
-              
-              if(Input->flags.nuclear_derivatives == "slaterpoly_hellmann_feynman")
-              {
-		//This adds in the Slater term (Eq. 8 from CCZ05)
-                waveValuesHFSpline(nucA,q).evaluate(rAi);
-                temperTerm *= waveValuesHFSpline(nucA,q).getFunctionValue()
-		  *pow(rAi,fittingWeightM);                
-              } else {
-		//Now we add the m contribution to Eq. 7
-                temperTerm *= pow(rAi,1.0 + fittingWeightM);
-              }
-
-	      //This completes Eq. 6
-              nuclearForce *= temperTerm;
-            }
-
-          }//end if
-          
-          if(Input->flags.nuclear_derivatives == "bin_force_density")
-          {
-            //let's only bin the 1st nucleus' z-axis
-	    if(q == 2 && nucA == 0)
-	      {
-		int binIndex = (int)( min(rAi/radialCutoff,1.0)*( getNumBins() - 1) );
-		walkerData(walker)->nuclearDerivatives(binIndex,1) += 1;
-	      }
-          } else {
-            walkerData(walker)->nuclearDerivatives(nucA,q) += nuclearForce;
-          }
-        }//end q
-      }//end eleI
-    }//end nucA
-  }//end walker
+  for(int walker=0; walker<num; walker++)
+    {
+      walkerData(walker)->nuclearDerivatives = nucleusContributions;
+      for(int nucA=0; nucA<Input->Molecule.getNumberAtoms(); nucA++)
+	{
+	  for(int eleI=0; eleI<xData(0)->dim1(); eleI++)
+	    {
+	      double rAi = 0;
+	      for(int q=0; q<3; q++)
+		{
+		  rAi +=
+		    ( (*xData(walker))(eleI,q) -
+		      Input->Molecule.Atom_Positions(nucA,q) ) *
+		    ( (*xData(walker))(eleI,q) -
+		      Input->Molecule.Atom_Positions(nucA,q) );
+		}
+	      rAi = sqrt(rAi);
+	      
+	      double nuclearForce = 0;
+	      for(int q=0; q<3; q++)
+		{
+		  //ri = rtestpoint - rq
+		  nuclearForce =
+		    Input->Molecule.Atom_Positions(nucA,q) - 
+		    (*xData(walker))(eleI,q);
+		  nuclearForce *= Input->Molecule.Z(nucA);
+		  nuclearForce *= -1.0 / (rAi * rAi * rAi);
+		  nuclearForce *= getTemperTerm(nucA,q,rAi);
+		  walkerData(walker)->nuclearDerivatives(nucA,q) += nuclearForce;
+		}//end q
+	    }//end eleI
+	}//end nucA
+    }//end walker
   
   if(false)
     {
@@ -309,7 +359,6 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
       }
     }
     
-    //determinant_and_inverse(hilbertMatrix,inverseMatrix,det,&isOK);
     hilbertMatrix.determinant_and_inverse(inverseMatrix,det,&isOK);
 
     if(!isOK)
@@ -319,8 +368,6 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
     }
     
     // \bm{c} = \bm{ S^{-1} } \bm{ R }
-    //coeffs = inverseMatrix.multiply(residualVector);
-
     inverseMatrix.gemm(residualVector,coeffs,false);
 
     for(int i=0; i<numBF; i++)
@@ -642,8 +689,10 @@ void QMCNuclearForces::calculateNuclearContributions()
 
   for(int nucA=0; nucA<numNuc; nucA++)
     {
-      for(int nucB=0; nucB<nucA; nucB++)
+      for(int nucB=0; nucB<numNuc; nucB++)
 	{ 
+	  if( nucA == nucB ) continue;
+
 	  double rAB = 0;
 	  for(int q=0; q<3; q++)
 	    {
@@ -658,9 +707,10 @@ void QMCNuclearForces::calculateNuclearContributions()
 	  double nuclearForce = 0;
 	  for(int q=0; q<3; q++)
 	    {
+	      //ri = rtestpoint - rq
 	      nuclearForce =
-		Input->Molecule.Atom_Positions(nucB,q) -
-		Input->Molecule.Atom_Positions(nucA,q);
+		Input->Molecule.Atom_Positions(nucA,q) -
+		Input->Molecule.Atom_Positions(nucB,q);
 	      nuclearForce *= 
 		Input->Molecule.Z(nucA) *
 		Input->Molecule.Z(nucB);
