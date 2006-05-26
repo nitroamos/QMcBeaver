@@ -399,6 +399,9 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
 {
   // Call this after calculate_Grad_PsiRatio() is called
 
+  double a = 0.0;
+  double factor = 0.0;
+
   if( Input->flags.QF_modification_type == "none" )
     // do not modify the quantum force
     Modified_Grad_PsiRatio = Grad_PsiRatio;
@@ -408,7 +411,7 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
       // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 34.
       // The QF for each electron is changed by the same factor
 
-      double a = Input->flags.umrigar93_equalelectrons_parameter;
+      a = Input->flags.umrigar93_equalelectrons_parameter;
 
       if( a>1 || a<=0 )
         {
@@ -425,7 +428,7 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
 	for(int j=0; j<Grad_PsiRatio.dim2(); j++)
 	  magsqQF += Grad_PsiRatio(i,j) * Grad_PsiRatio(i,j);
 
-      double factor = ( -1.0 + sqrt( 1.0 + 2*a*magsqQF*Input->flags.dt )) /
+      factor = ( -1.0 + sqrt( 1.0 + 2*a*magsqQF*Input->flags.dt )) /
                       ( a*magsqQF*Input->flags.dt);
 
       Modified_Grad_PsiRatio = Grad_PsiRatio;
@@ -471,20 +474,27 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
 
           double electron_velocity_norm_squared =
             electron_velocity_norm_vector * electron_velocity_norm_vector;
-          electron_velocity_norm_vector *= 1.0/sqrt(
-                                             electron_velocity_norm_squared );
+
+          if (fabs(electron_velocity_norm_squared) < 1e-10)
+            electron_velocity_norm_vector *= 0.0;
+          else
+            electron_velocity_norm_vector *= 1.0/sqrt(
+					      electron_velocity_norm_squared );
 
           // Now calculate the a(r) for the equation
           temp = closest_nucleus_Z * closest_nucleus_Z *
 	    closest_nucleus_distance_squared;
 
-          double a = 0.5*(1.0 + closest_nucleus_to_electron_norm_vector *
-                       electron_velocity_norm_vector) + temp/(10.0*(4.0+temp));
+          a = 0.5*(1.0 + closest_nucleus_to_electron_norm_vector *
+		   electron_velocity_norm_vector) + temp/(10.0*(4.0+temp));
 
           // Now calculate the factor the QF of this electron is modified by
-          double factor = (-1.0 + sqrt(1.0+
-                        2.0*a*electron_velocity_norm_squared*Input->flags.dt))/
-                          (a*electron_velocity_norm_squared*Input->flags.dt);
+          if (fabs(electron_velocity_norm_squared) < 1e-10)
+            factor = 1.0;
+          else
+            factor = (-1.0 + sqrt(1.0+2.0*a*electron_velocity_norm_squared*
+                                  Input->flags.dt))/
+              (a*electron_velocity_norm_squared*Input->flags.dt);
 
           // Now adjust the QF of electron I
           for(int xyz=0; xyz<3; xyz++)

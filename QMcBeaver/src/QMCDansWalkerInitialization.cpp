@@ -226,28 +226,28 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  int extra_alphas = ab_count(i,1)-1;
 	  for (int p=0; p<extra_alphas; p++)
 	    for (int q=0; q<natoms; q++)
-	      if ( Input->Molecule.Z(q) > 2 && ab_count(q,1) < 5)
-		{
-		  ab_count(i,0) -= 1;
-		  ab_count(i,1) -= 1;
-		  ab_count(q,0) += 1;
-		  ab_count(q,1) += 1;
-		  break;
-		}
+              if ( ab_count(q,1) < ab_count(q,2) )
+                {
+                  ab_count(i,1) -= 1;
+                  ab_count(q,1) += 1;
+                  ab_count(i,2) += 1;
+                  ab_count(q,2) -= 1;
+                  break;
+                }
 	}
       if (Input->Molecule.Z(i) <= 2 && ab_count(i,2) > 1)
 	{
 	  int extra_betas = ab_count(i,2)-1;
 	  for (int r=0; r<extra_betas; r++)
 	    for (int s=0; s<natoms; s++)
-	      if (Input->Molecule.Z(s) > 2 && ab_count(s,2) < 5)
-		{
-		  ab_count(i,0) -= 1;
-		  ab_count(i,2) -= 1;
-		  ab_count(s,0) += 1;
-		  ab_count(s,2) += 1;
-		  break;
-		}
+              if ( ab_count(s,1) > ab_count(s,2) )
+                {
+                  ab_count(i,2) -= 1;
+                  ab_count(i,1) += 1;
+                  ab_count(s,2) += 1;
+                  ab_count(s,1) -= 1;
+                  break;
+                }
 	}
     }
 
