@@ -29,9 +29,9 @@ QMCStatistic::QMCStatistic()
 
 void QMCStatistic::zeroOut()
 {
-  sum      = 0.0;
-  sum2     = 0.0;
-  weights  = 0.0;
+  //sum      = 0.0;
+  //sum2     = 0.0;
+  //weights  = 0.0;
   nsamples = 0;
 }
 
@@ -59,9 +59,16 @@ double QMCStatistic::getStandardDeviation()
 
 void QMCStatistic::newSample(double s, double weight)
 {
-  weights += weight;
-  sum     += s*weight;
-  sum2    += s*s*weight;
+  if(nsamples == 0)
+    {
+      weights = weight;
+      sum     = s*weight;
+      sum2    = s*s*weight;
+    } else {
+      weights += weight;
+      sum     += s*weight;
+      sum2    += s*s*weight;
+    }
   nsamples++;
 }
 
@@ -76,10 +83,15 @@ void QMCStatistic::operator = ( const QMCStatistic & rhs )
 QMCStatistic QMCStatistic::operator + (const QMCStatistic &rhs)
 {
   QMCStatistic result;
-  result.weights  = weights+rhs.weights;
-  result.sum      = sum+rhs.sum;
-  result.sum2     = sum2+rhs.sum2;
-  result.nsamples = nsamples+rhs.nsamples;
+  if(nsamples == 0)
+    {
+      result = rhs;
+    } else {
+      result.weights  = weights+rhs.weights;
+      result.sum      = sum+rhs.sum;
+      result.sum2     = sum2+rhs.sum2;
+      result.nsamples = nsamples+rhs.nsamples;
+    }
   return result;
 }
 
@@ -94,16 +106,24 @@ void QMCStatistic::toXML(ostream& strm)
 {
   // Open XML
   strm << "<QMCStatistic>" << endl;
-  
-  // sum
-  strm << "<Sum>\n" << double(sum) << "\n</Sum>" << endl;
-  
-  // sum sq
-  strm << "<SumSquared>\n" << double(sum2) << "\n</SumSquared>" << endl;
 
-  // weights
-  strm << "<SumWeights>\n" << double(weights) << "\n</SumWeights>" << endl;
-
+  if(nsamples == 0)
+    {
+      // sum
+      strm << "<Sum>\n" << 0.0 << "\n</Sum>" << endl;
+      // sum sq
+      strm << "<SumSquared>\n" << 0.0 << "\n</SumSquared>" << endl; 
+      // weights
+      strm << "<SumWeights>\n" << 0.0 << "\n</SumWeights>" << endl;
+    } else {
+      // sum
+      strm << "<Sum>\n" << double(sum) << "\n</Sum>" << endl;
+      // sum sq
+      strm << "<SumSquared>\n" << double(sum2) << "\n</SumSquared>" << endl; 
+      // weights
+      strm << "<SumWeights>\n" << double(weights) << "\n</SumWeights>" << endl;
+    }
+  
   // nsamples
   strm << "<NumberOfSamples>\n" << nsamples << "\n</NumberOfSamples>" << endl;
 

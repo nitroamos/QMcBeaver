@@ -41,10 +41,13 @@ void QMCProperty::zeroOut()
   for(int i=0;i<DCL;i++)
   {
     DeCorr[i].zeroOut();
-    DeCorr_flags[i]  = 0;
-    DeCorr_sample[i] = 0.0;
-    DeCorr_weight[i] = 0.0;
+    //DeCorr_flags[i]  = 0;
+    //DeCorr_sample[i] = 0.0;
+    //DeCorr_weight[i] = 0.0;
   }
+  memset(&DeCorr_flags,0,sizeof(int)*DCL);
+  memset(&DeCorr_sample,0,sizeof(double)*DCL);
+  memset(&DeCorr_weight,0,sizeof(double)*DCL);
 }
 
 unsigned long QMCProperty::getNumberSamples()
@@ -614,6 +617,8 @@ ostream& operator <<(ostream& strm, QMCProperty &rhs)
   } else {
     printf("%20.12e +/- %20.12e (%li samples)\n",rhs.getAverage(),rhs.getStandardDeviation(),rhs.getNumberSamples());
   }
+
+  return strm;
 
   /*
    double a = rhs.stdevFittingParameters[0] * rhs.stdevFittingParameters[0];

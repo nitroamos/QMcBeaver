@@ -206,6 +206,11 @@ class QMCNuclearForces
   Array2D<double> betaOrbitals;
 
   /**
+     Temp variable used by getDensities
+  */
+  Array2D<double> Chi;
+
+  /**
      Eventually, we probably want to remove this guy
   */
   CubicSpline spliner;

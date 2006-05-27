@@ -34,6 +34,15 @@ for more details.
 
 #include <iostream>
 #include "cppblas.h"
+
+#if defined USEAPPLE
+#include <vecLib/vBLAS.h>
+#define USEATLAS
+//the result needs to be transposed, it doesn't seem worth it
+//#include <vecLib/clapack.h>
+//#define USECLPK
+#endif
+
 #include <assert.h>
 #include "Array1D.h"
 
@@ -83,6 +92,14 @@ template <class T> class Array2D
     Array containing the data.
     */
     T * pArray;
+
+    /**
+       These three arrays are used in the determinant/inverse
+       calculations.
+    */
+    Array1D<T> diCol;
+    Array1D<int> diINDX;
+    Array1D<T> diVV;
 
   public:
     /**
@@ -168,6 +185,10 @@ template <class T> class Array2D
 
       n_1 = 0;
       n_2 = 0;
+
+      diCol.deallocate();
+      diINDX.deallocate();
+      diVV.deallocate();
     }
 
     /**
@@ -397,18 +418,19 @@ template <class T> class Array2D
     @param d used to give det(a) the correct sign
     @param calcOK returns false if the calculation is singular and true otherwise
     */
-    void ludcmp(int *indx, double *d, bool *calcOK)
+    void ludcmp(double *d, bool *calcOK)
     {
       int i,j,k;
       int imax = -1;
       T big,dum,temp;
       register T sum;
-      T *vv = new T[n_1];
       T one = (T)(1.0);
       T zero = (T)(0.0);
 
       *calcOK = true;
       *d=1.0;
+
+      diVV.allocate(n_1);
 
       //this section finds the largest value from each column
       //and puts its inverse in the vv vector.
@@ -427,7 +449,7 @@ template <class T> class Array2D
               return;
             }
 
-          vv[i]=one/big;
+          diVV(i)=one/big;
         }
 
       //loop over columns
@@ -453,7 +475,7 @@ template <class T> class Array2D
               pArray[map(i,j)]=sum;
 
               //find the best row to pivot
-              if ( (dum=vv[i]*(T)(fabs((double)sum))) >= big)
+              if ( (dum=diVV(i)*(T)(fabs((double)sum))) >= big)
                 {
                   big=dum;
                   imax=i;
@@ -478,9 +500,9 @@ template <class T> class Array2D
               *d = -(*d);
 
               //update vv
-              vv[imax]=vv[j];
+              diVV(imax)=diVV(j);
             }
-          indx[j]=imax;
+          diINDX(j)=imax;
 
           //make sure we don't divide by zero
           if (get(j,j) == zero)
@@ -495,7 +517,6 @@ template <class T> class Array2D
             }
 
         }
-      delete [] vv;
     }
 
     /**
@@ -509,14 +530,14 @@ template <class T> class Array2D
     equations to solve
     */
 
-    void lubksb(int *indx, Array1D<T> &b)
+    void lubksb(Array1D<T> &b)
     {
       int ii=-1, ip;
       T sum;
 
       for (int i=0;i<n_1;i++)
         {
-          ip=indx[i];
+          ip=diINDX(i);
           sum=b(ip);
           b(ip)=b(i);
 
@@ -548,10 +569,11 @@ template <class T> class Array2D
     @param det determinant of a is returned here
     @param calcOK returns false if the calculation is singular and true otherwise
     */
-#if defined USELAPACK
+#if defined USELAPACK || defined USECLPK
     void determinant_and_inverse(Array2D<double> &inv, double& det, bool *calcOK)
     {
-      Array1D<int> pivots = Array1D<int>(n_1);
+      diINDX.allocate(n_1);
+
       inv = 0;
       for(int i=0; i<n_1; i++)
         inv(i,i) = 1.0;
@@ -559,22 +581,33 @@ template <class T> class Array2D
       /* int clapack_dgesv(const enum CBLAS_ORDER Order, const int N, const int NRHS,
                         double *A, const int lda, int *ipiv,
                         double *B, const int ldb);*/
+#if defined USECLPK
+      __CLPK_integer info = 0;
+      __CLPK_integer N    = n_1;
+      __CLPK_integer NRHS = n_1;
+      __CLPK_integer LDA  = n_1;
+      __CLPK_integer LDB  = n_1;
+      static Array1D<__CLPK_integer> pivots;
+      pivots.allocate(n_1);
+      dgesv_(&N, &NRHS, pArray, &LDA, pivots.array(), inv.array(), &LDB, &info);
+      //need to transpose output to make it like the other lapack
+      assert(0);
+#else
       int info = clapack_dgesv(CBLAS_ORDER(CblasRowMajor),n_1,n_1,
-                               pArray,n_1,pivots.array(),inv.array(),n_1);
-
+                               pArray,n_1,diINDX.array(),inv.array(),n_1);
+#endif
       if(info == 0) *calcOK = true;
       else *calcOK = false;
 
       det = 1.0;
       for(int i=0; i<n_1; i++)
         det *= get(i,i);
-
-      pivots.deallocate();
     }
 
     void determinant_and_inverse(Array2D<float> &inv, double& det, bool *calcOK)
     {
-      Array1D<int> pivots = Array1D<int>(n_1);
+      diINDX.allocate(n_1);
+
       inv = 0;
       for(int i=0; i<n_1; i++)
         inv(i,i) = 1.0;
@@ -582,8 +615,22 @@ template <class T> class Array2D
       /* int clapack_dgesv(const enum CBLAS_ORDER Order, const int N, const int NRHS,
                         double *A, const int lda, int *ipiv,
                         double *B, const int ldb);*/
+
+#if defined USECLPK
+      __CLPK_integer info = 0;
+      __CLPK_integer N    = n_1;
+      __CLPK_integer NRHS = n_1;
+      __CLPK_integer LDA  = n_1;
+      __CLPK_integer LDB  = n_1;
+      static Array1D<__CLPK_integer> pivots;
+      pivots.allocate(n_1);
+      sgesv_(&N, &NRHS, pArray, &LDA, pivots.array(), inv.array(), &LDB, &info);
+      //need to transpose output to make it like the other lapack
+      assert(0);
+#else
       int info = clapack_sgesv(CBLAS_ORDER(CblasRowMajor),n_1,n_1,
-                               pArray,n_1,pivots.array(),inv.array(),n_1);
+                               pArray,n_1,diINDX.array(),inv.array(),n_1);
+#endif
 
       if(info == 0) *calcOK = true;
       else *calcOK = false;
@@ -591,8 +638,6 @@ template <class T> class Array2D
       det = 1.0;
       for(int i=0; i<n_1; i++)
         det *= get(i,i);
-
-      pivots.deallocate();
     }
 #else
     /**
@@ -607,38 +652,33 @@ template <class T> class Array2D
     */
     void determinant_and_inverse(Array2D<T> &inv, double& det, bool *calcOK)
     {
-      int n=dim1();
       double d;
-      int *INDX = new int[n];
-      Array1D<T> col(n);
       T one = (T)1.0;
       T zero = (T)0.0;
 
-      if(n > col.dim1()) col.allocate(n);
+      diINDX.allocate(n_1);
+      diCol.allocate(n_1);
+      inv.allocate(n_1,n_1);
 
-      ludcmp(INDX,&d,calcOK);
-
-      inv.allocate(n,n);
+      ludcmp(&d,calcOK);
 
       if( *calcOK )
         {
-          for(int j=0;j<n;j++)
+          for(int j=0; j<n_1; j++)
             {
-              for(int i=0;i<n;i++) col(i) = zero;
-              col(j) = one;
-              lubksb(INDX,col);
-              //lubksbForInverse(a,INDX,col,j);
-              //for(int i=0;i<n;i++) inv(i,j) = col(i);
-              inv.setRow(j,col);
-              //for(int i=0;i<n;i++) inv(j,i) = col(i);
+              diCol = zero;
+              diCol(j) = one;
+              lubksb(diCol);
+              //lubksbForInverse(a,diINDX,diCol,j);
+              //for(int i=0;i<n;i++) inv(i,j) = diCol(i);
+              inv.setRow(j,diCol);
+              //for(int i=0;i<n;i++) inv(j,i) = diCol(i);
             }
         }
 
-      for(int i=0; i<n; i++) d*= get(i,i);
+      for(int i=0; i<n_1; i++)
+	d *= get(i,i);
       det = d;
-
-      delete [] INDX;
-      col.deallocate();
     }
 #endif
 

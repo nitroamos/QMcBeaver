@@ -69,12 +69,13 @@ void QMCNuclearForces::initialize(QMCInput *Ip)
   for(int nuc=0; nuc<numNuc; nuc++)
     {
       calcCoefficients(nuc);
-      double weight = fittingWeightM;
-      if(Input->flags.nuclear_derivatives == "poly_hellmann_feynman")
-	weight++;
 
       //this section is to print out some of the properties we are going to use
-      if(!false && nuc == 0){
+      if(!false){
+	double weight = fittingWeightM;
+	if(Input->flags.nuclear_derivatives == "poly_hellmann_feynman")
+	  weight++;
+
 	cout << "Basis set coefficient terms for " << Input->Molecule.Atom_Labels(nuc) << ":\n";
 	for(int q=0; q<3; q++)
 	  {
@@ -148,24 +149,21 @@ void QMCNuclearForces::initialize(QMCInput *Ip)
 	    temper.initializeWithFunctionValues(temperPoints, temperData(i), 0.0, 0.0);
 	    printf("%15.7e ",temper.integrate(0,numSamples)); 
 	  }
-      }
+	
+	if(Input->flags.nuclear_derivatives == "slaterpoly_hellmann_feynman")                                                                   
+	  {  
+	    printf("\nValues at knot points:\n%15s %15s %15s %15s %15s\n","rad","s","px","py","pz");
+	    for(int j=0; j<radialPoints(nuc).dim1(); j++)
+	      printf("%15.7f %15.7e %15.7e %15.7e %15.7e\n",
+		     (radialPoints(nuc))(j),
+		     (waveValuesHF(nuc,0))(j),
+		     (waveValuesHF(nuc,1))(j),
+		     (waveValuesHF(nuc,2))(j),
+		     (waveValuesHF(nuc,3))(j));
+	  }
+      }//end testing section
       cout << endl << endl;
-    }
-  
-  for(int nuc=0; nuc<1; nuc++){
-    if(!false){
-      printf("%15s %15s %15s %15s %15s\n","rad","s","px","py","pz");
-      for(int j=0; j<radialPoints(nuc).dim1(); j++)
-        printf("%15.7f %15.7e %15.7e %15.7e %15.7e\n",
-	       (radialPoints(nuc))(j),
-	       (waveValuesHF(nuc,0))(j),
-	       (waveValuesHF(nuc,1))(j),
-	       (waveValuesHF(nuc,2))(j),
-	       (waveValuesHF(nuc,3))(j));
-    }
-  }
-  //double x = ran1(&Input->flags.iseed);
-  //exit(0);
+    }//end loop over nuclei
 }
 
 void QMCNuclearForces::evaluate(QMCWalkerData &walkerData, Array2D<double> &xData)
@@ -441,8 +439,9 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
         }
       }
 
+      //because the Hilbert matrix is symmetric, it doesn't matter whether
+      //this calculates the transpose or not
       hilbertMatrix.determinant_and_inverse(inverseMatrix,det,&isOK);
-      //determinant_and_inverse(hilbertMatrix,inverseMatrix,det,&isOK);
       
       if(!isOK)
       {
@@ -549,28 +548,27 @@ void QMCNuclearForces::waveMemorization(int whichNucleus, int numKnots, double r
   center.deallocate();
   cube.deallocate();
   densities.deallocate();
+  alphaOrbitals.deallocate();
+  betaOrbitals.deallocate();
+  Chi.deallocate();
 }
 
 void QMCNuclearForces::getDensities(Array2D<double> & X, Array1D<double> & densities)
 {
   int nBasisFun = WF->getNumberBasisFunctions();
   int nOrbitals = WF->getNumberOrbitals();
-  Array2D<double> Chi = Array2D<double>(X.dim1(),nBasisFun);
+
+  //Make sure that we still have the right amount of memory allocated
+  densities.allocate(X.dim1());
+  Chi.allocate(X.dim1(),nBasisFun);
   alphaOrbitals.allocate(X.dim1(),nOrbitals);
   betaOrbitals.allocate(X.dim1(),nOrbitals);  
   
   BF->evaluateBasisFunctions(X,Chi);
-  //alphaOrbitals = Chi * Input->WF.AlphaCoeffs;
+
+  //This is not really N^3 since X is only a few electronic positions
   Chi.gemm(Input->WF.AlphaCoeffs,alphaOrbitals,true);
-  if (Input->flags.trial_function_type == "restricted")
-  {
-    betaOrbitals = alphaOrbitals;
-  }
-  else if (Input->flags.trial_function_type == "unrestricted")
-  {
-    //betaOrbitals = Chi * Input->WF.BetaCoeffs;
-    Chi.gemm(Input->WF.AlphaCoeffs,betaOrbitals,true);
-  }
+  Chi.gemm(Input->WF.BetaCoeffs,betaOrbitals,true);
 
   densities = 0;
   for(int i=0; i<X.dim1(); i++)
@@ -588,7 +586,6 @@ void QMCNuclearForces::getDensities(Array2D<double> & X, Array1D<double> & densi
       densities(i) += detSum*WF->CI_coeffs(j);
     }
   }
-  Chi.deallocate();
 }
 
 void QMCNuclearForces::printPoints(Array2D<double> & points)
