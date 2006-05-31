@@ -30,9 +30,10 @@ void QMCFlags::read_flags(string InFileName)
     }
 
   //***** Default Flag Values ********
+  vector<double> fwInvHartrees;
   programmersLongs.clear();
-  future_walking.clear();
-  future_walking.push_back(0);
+  fwInvHartrees.clear();
+  fwInvHartrees.push_back(0);
   
   walker_initialization_method   = "mikes_jacked_initialization";
   walker_initialization_combinations = 3;
@@ -257,7 +258,7 @@ void QMCFlags::read_flags(string InFileName)
           while(input_file.peek() >= '0' && input_file.peek() <= '9')
             {
               input_file >> temp_string;
-              future_walking.push_back(atoi(temp_string.c_str()));
+              fwInvHartrees.push_back(atof(temp_string.c_str()));
               input_file >> ws;
             }
         }
@@ -538,10 +539,17 @@ void QMCFlags::read_flags(string InFileName)
     This should make all the elements in the future walking vector unique
     and sorted.
   */
-  sort(future_walking.begin(), future_walking.end());
-  vector<int>::iterator last = unique(future_walking.begin(), future_walking.end());
-  future_walking.erase(last,future_walking.end());
-  
+  sort(fwInvHartrees.begin(), fwInvHartrees.end());
+  vector<double>::iterator last = unique(fwInvHartrees.begin(), fwInvHartrees.end());
+  fwInvHartrees.erase(last,fwInvHartrees.end());
+
+  //since it's better to input future walking lengths in terms of
+  // Hatrees^{-1} rather than block length, we need to convert it
+  for(unsigned int i=0; i<fwInvHartrees.size(); i++)
+    {
+      future_walking.push_back( (int)(fwInvHartrees[i]/dt) );
+    }
+
   if(run_type == "" )
     {
       cerr << "ERROR: run_type not set!" << endl;
@@ -653,6 +661,7 @@ void QMCFlags::set_filenames(string runfile)
 
 ostream& operator <<(ostream& strm, QMCFlags& flags)
 {
+  strm.setf( ios::fixed );
   strm << "&flags" << endl;
   strm << "run_type\n " << flags.run_type << endl;
   strm << "temp_dir\n " << flags.temp_dir << endl;
@@ -700,7 +709,9 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   {
     strm << "future_walking\n";
     for(unsigned int i=0; i<flags.future_walking.size(); i++)
-      strm << " " << flags.future_walking[i];
+      {
+	strm << " " << (double)(flags.future_walking[i]*flags.dt);
+      }
     strm << endl;
   }
   strm << "number_of_walkers\n " << flags.number_of_walkers << endl;
@@ -770,6 +781,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "lock_trial_energy\n " << flags.lock_trial_energy << endl;
   strm << "chip_and_mike_are_cool\n " << flags.chip_and_mike_are_cool << endl;
   strm << "& " << endl;
+  strm.unsetf( ios::fixed );
   return strm;
 }
 

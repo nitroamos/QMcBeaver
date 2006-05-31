@@ -286,53 +286,62 @@ void QMCFutureWalkingProperties::readXML(istream& strm)
 
 ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs)
 { 
+  int w1 = 10;
+  int w2 = 10;
+  int p1 = 2;
+
   strm << endl << "-------------- FW Total Energy ---------------" << endl;
   for(int fw=0; fw<rhs.numFutureWalking; fw++)
     {
-      strm.width(7);
-      strm << globalInput.flags.future_walking[fw] << " ( ";
-      strm.precision(2);
-      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " )"
+      strm.width(w1);
+      strm.precision(p1);
+      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
+      strm.width(w2);
+      strm << globalInput.flags.future_walking[fw]
 	   << ": " << rhs.fwEnergy(fw);
     }
 
   strm << endl << "------------ FW Kinetic Energy ---------------" << endl;
   for(int fw=0; fw<rhs.numFutureWalking; fw++)
     {
-      strm.width(7);
-      strm << globalInput.flags.future_walking[fw] << " ( ";
-      strm.precision(2);
-      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " )"
+      strm.width(w1);
+      strm.precision(p1);
+      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
+      strm.width(w2);
+      strm << globalInput.flags.future_walking[fw]
 	   << ": " << rhs.fwKineticEnergy(fw);
     }
   
   strm << endl << "----------- FW Potential Energy --------------" << endl;
   for(int fw=0; fw<rhs.numFutureWalking; fw++)
     {
-      strm.width(7);
-      strm << globalInput.flags.future_walking[fw] << " ( ";
-      strm.precision(2);
-      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " )"
+      strm.width(w1);
+      strm.precision(p1);
+      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
+      strm.width(w2);
+      strm << globalInput.flags.future_walking[fw]
 	   << ": " << rhs.fwPotentialEnergy(fw);
     }
   
   strm << endl << "----------------- FW R12 ---------------------" << endl;
   for(int fw=0; fw<rhs.numFutureWalking; fw++)
     {
-      strm.width(7);
-      strm << globalInput.flags.future_walking[fw] << " ( ";
-      strm.precision(2);
-      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " )"
+      strm.width(w1);
+      strm.precision(p1);
+      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
+      strm.width(w2);
+      strm << globalInput.flags.future_walking[fw]
 	   << ": " << rhs.r12(fw);
     }
   
   strm << endl << "------------------ FW R2 ---------------------" << endl;
   for(int fw=0; fw<rhs.numFutureWalking; fw++)
     {
-      strm.width(7);
-      strm << globalInput.flags.future_walking[fw] << " ( ";
-      strm.precision(2);
-      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " )"
+      strm.width(w1);
+      strm.precision(p1);
+      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
+      strm.width(w2);
+      strm << globalInput.flags.future_walking[fw]
 	   << ": " << rhs.r2(fw);
     }
   
@@ -361,10 +370,11 @@ ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs)
 			}
 		    }
 		  
-		  strm.width(7);
-		  strm << globalInput.flags.future_walking[fw] << " ( ";
-		  strm.precision(2);
-		  strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " )"
+		  strm.width(w1);
+		  strm.precision(p1);
+		  strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
+		  strm.width(w2);
+		  strm << globalInput.flags.future_walking[fw] 
 		       << ": " << (rhs.nuclearForces(fw))(i,j);
 		}
 	    }
