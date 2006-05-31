@@ -266,17 +266,21 @@ class QMCFlags
     Implemented here is the future walking method described in:
     J. Casulleras and J. Boronat, Phys. Rev. B 52, 3654 (1995)
 
-    This vector describes the block size over which we
-    collect samples. Analogous to the decorrelation
-    algorithm, it might be best to set this to something
-    exponential like
-    100 200 400 800 1600 3200 6400
+    This vector represents future walking projection time.
+    Inspired by the decorrelation algorithm,
+    it might be best to set this to something exponential like
+    1.0 2.0 4.0 8.0 16.0 32.0
 
-	 A 0 is always included in the set since 0 represents
-	 no future walking.
-	 
-    Of course, you probably need more data points for
-    larger blocks.
+    A 0 is automatically included in the set since 0 represents
+    no future walking. Preliminary results seem to indicate
+    that future walking converges somewhere between
+    1 and 10 Hartrees^-1. For smaller dt, this requires more
+    iterations.
+
+    In memory, we actually store it as block iteration length,
+    since this is what QMCWalker uses.
+
+    Block Length = Time / dt    
   */
   vector<int> future_walking;
 
