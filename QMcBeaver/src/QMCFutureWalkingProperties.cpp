@@ -44,12 +44,23 @@ QMCFutureWalkingProperties::QMCFutureWalkingProperties()
   
   //the extra one is to ensure we have at least one
   numFutureWalking = globalInput.flags.future_walking.size();
-  
-  fwEnergy.allocate(numFutureWalking);
-  fwKineticEnergy.allocate(numFutureWalking);
-  fwPotentialEnergy.allocate(numFutureWalking);
-  r12.allocate(numFutureWalking);
-  r2.allocate(numFutureWalking);
+
+  names.allocate(NUM_PROPS);
+  names[FW_TE]  = "Total Energy";
+  names[FW_KE]  = "Kinetic Energy";
+  names[FW_PE]  = "Potential Energy";
+  names[FW_R12] = "R12";
+  names[FW_R2]  = "R2";
+
+  names[FW_TE_2]  = "Total Energy^2";
+  names[FW_KE_2]  = "Kinetic Energy^2";
+  names[FW_PE_2]  = "Potential Energy^2";
+  names[FW_R12_2] = "R12^2";
+  names[FW_R2_2]  = "R2^2";
+
+  props.allocate(NUM_PROPS);
+  for(int i=0; i<props.size(); i++) 
+    props(i).allocate(numFutureWalking);
   
   calc_forces = false;
   zeroOut();
@@ -64,11 +75,9 @@ QMCFutureWalkingProperties::~QMCFutureWalkingProperties()
     nuclearForces.deallocate();    
   }
 
-  fwEnergy.deallocate();
-  fwKineticEnergy.deallocate();
-  fwPotentialEnergy.deallocate();
-  r12.deallocate();
-  r2.deallocate();
+  for(int i=0; i<props.size(); i++)
+    props(i).deallocate();
+  props.deallocate();
 }
 
 void QMCFutureWalkingProperties::setCalcForces(bool calcForces, int dim1, int dim2)
@@ -98,11 +107,8 @@ void QMCFutureWalkingProperties::zeroOut()
 {
   for(int fw=0; fw<numFutureWalking; fw++)
   {
-    fwEnergy(fw).zeroOut();
-    fwKineticEnergy(fw).zeroOut();
-    fwPotentialEnergy(fw).zeroOut();
-    r12(fw).zeroOut();
-    r2(fw).zeroOut();
+    for(int i=0; i<props.size(); i++)
+      (props(i))(fw).zeroOut();
     
     if (calc_forces)
       for (int i=0; i<nuclearForces(fw).dim1(); i++)
@@ -115,24 +121,18 @@ void QMCFutureWalkingProperties::newSample(QMCFutureWalkingProperties* newProper
 			      int nwalkers)
 {  
   for(int fw=0; fw<numFutureWalking; fw++)
-  {
-    if(newProperties->fwKineticEnergy(fw).getNumberSamples() <= 0)
-      continue;
-      
-    if (calc_forces)
-    {
-      for (int i=0; i<nuclearForces(fw).dim1(); i++)
-        for (int j=0; j<nuclearForces(fw).dim2(); j++)
-          (nuclearForces(fw))(i,j).newSample((newProperties->nuclearForces(fw))(i,j).getAverage(), 
-              weight);
-    }
+  {   
+    if (calc_forces && (newProperties->nuclearForces(fw))(0,0).getNumberSamples() > 0)
+      {
+	for (int i=0; i<nuclearForces(fw).dim1(); i++)
+	  for (int j=0; j<nuclearForces(fw).dim2(); j++)
+	    (nuclearForces(fw))(i,j).newSample((newProperties->nuclearForces(fw))(i,j).getAverage(), 
+					       weight);
+      }
     
-    fwEnergy(fw).newSample(newProperties->fwEnergy(fw).getAverage(), weight);
-    fwKineticEnergy(fw).newSample(newProperties->fwKineticEnergy(fw).getAverage(), weight);
-    fwPotentialEnergy(fw).newSample(newProperties->fwPotentialEnergy(fw).getAverage(), weight);
-    r12(fw).newSample(newProperties->r12(fw).getAverage(), weight);
-    r2(fw).newSample(newProperties->r2(fw).getAverage(), weight);
-    
+    for(int i=0; i<props.size(); i++)
+      if((newProperties->props(i))(fw).getNumberSamples() > 0)
+	(props(i))(fw).newSample( (newProperties->props(i))(fw).getAverage(), weight);
   }
 }
 
@@ -147,11 +147,7 @@ void QMCFutureWalkingProperties::operator = ( const QMCFutureWalkingProperties &
   matchParametersTo(rhs);
   
   //Future walking collectors
-  fwEnergy              = rhs.fwEnergy;
-  fwKineticEnergy       = rhs.fwKineticEnergy;
-  fwPotentialEnergy     = rhs.fwPotentialEnergy;
-  r12                   = rhs.r12;
-  r2                    = rhs.r2;
+  props = rhs.props;
 
   if (calc_forces)
   {
@@ -162,7 +158,7 @@ void QMCFutureWalkingProperties::operator = ( const QMCFutureWalkingProperties &
 QMCFutureWalkingProperties QMCFutureWalkingProperties::operator + ( QMCFutureWalkingProperties &rhs )
 {
   QMCFutureWalkingProperties result;
-  
+
   matchParametersTo(rhs);
   result.matchParametersTo(rhs);
     
@@ -176,12 +172,9 @@ QMCFutureWalkingProperties QMCFutureWalkingProperties::operator + ( QMCFutureWal
           (result.nuclearForces(fw))(i,j) = (nuclearForces(fw))(i,j)
                                           + (rhs.nuclearForces(fw))(i,j);
     }
-    
-    result.fwEnergy(fw)          = fwEnergy(fw) + rhs.fwEnergy(fw);
-    result.fwKineticEnergy(fw)   = fwKineticEnergy(fw) + rhs.fwKineticEnergy(fw);
-    result.fwPotentialEnergy(fw) = fwPotentialEnergy(fw) + rhs.fwPotentialEnergy(fw);
-    result.r12(fw)               = r12(fw) + rhs.r12(fw);
-    result.r2(fw)                = r2(fw) + rhs.r2(fw);
+
+    for(int i=0; i<props.size(); i++)
+      (result.props(i))(fw) = (props(i))(fw) + (rhs.props(i))(fw);
   }
 
   return result;
@@ -212,25 +205,12 @@ void QMCFutureWalkingProperties::toXML(ostream& strm)
     stringstream temp;
     temp << globalInput.flags.future_walking[fw];
 
-    strm << "<FWEnergy" << temp.str() << ">" << endl;
-    fwEnergy(fw).toXML(strm);
-    strm << "</FWEnergy" << temp.str() << ">" << endl;
-    
-    strm << "<FWKineticEnergy" << temp.str() << ">" << endl;
-    fwKineticEnergy(fw).toXML(strm);
-    strm << "</FWKineticEnergy" << temp.str() << ">" << endl;
-    
-    strm << "<FWPotentialEnergy" << temp.str() << ">" << endl;
-    fwPotentialEnergy(fw).toXML(strm);
-    strm << "</FWPotentialEnergy" << temp.str() << ">" << endl;
-    
-    strm << "<R12" << temp.str() << ">" << endl;
-    r12(fw).toXML(strm);
-    strm << "</R12" << temp.str() << ">" << endl;
-    
-    strm << "<R2" << temp.str() << ">" << endl;
-    r2(fw).toXML(strm);
-    strm << "</R2" << temp.str() << ">" << endl;
+    for(int i=0; i<props.size(); i++)
+      {
+	strm <<  "<FW " << names[i] << " " << temp.str() << ">" << endl;
+	(props(i))(fw).toXML(strm);
+	strm << "</FW " << names[i] << " " << temp.str() << ">" << endl;
+      }
   }
 
   // Close XML
@@ -259,25 +239,12 @@ void QMCFutureWalkingProperties::readXML(istream& strm)
     
   for(int fw=0; fw<numFutureWalking; fw++)
   {
-    strm >> temp;
-    fwEnergy(fw).readXML(strm);
-    strm >> temp;
-
-    strm >> temp;
-    fwKineticEnergy(fw).readXML(strm);
-    strm >> temp;
-    
-    strm >> temp;
-    fwPotentialEnergy(fw).readXML(strm);
-    strm >> temp;
-    
-    strm >> temp;
-    r12(fw).readXML(strm);
-    strm >> temp;
-    
-    strm >> temp;
-    r2(fw).readXML(strm);
-    strm >> temp;
+    for(int i=0; i<props.size(); i++)
+      {
+	strm >> temp;
+	(props(i))(fw).readXML(strm);
+	strm >> temp;
+      }
   }
     
   // Close XML
@@ -290,59 +257,18 @@ ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs)
   int w2 = 10;
   int p1 = 2;
 
-  strm << endl << "-------------- FW Total Energy ---------------" << endl;
-  for(int fw=0; fw<rhs.numFutureWalking; fw++)
+  for(int i=0; i<rhs.props.size(); i++)
     {
-      strm.width(w1);
-      strm.precision(p1);
-      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
-      strm.width(w2);
-      strm << globalInput.flags.future_walking[fw]
-	   << ": " << rhs.fwEnergy(fw);
-    }
-
-  strm << endl << "------------ FW Kinetic Energy ---------------" << endl;
-  for(int fw=0; fw<rhs.numFutureWalking; fw++)
-    {
-      strm.width(w1);
-      strm.precision(p1);
-      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
-      strm.width(w2);
-      strm << globalInput.flags.future_walking[fw]
-	   << ": " << rhs.fwKineticEnergy(fw);
-    }
-  
-  strm << endl << "----------- FW Potential Energy --------------" << endl;
-  for(int fw=0; fw<rhs.numFutureWalking; fw++)
-    {
-      strm.width(w1);
-      strm.precision(p1);
-      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
-      strm.width(w2);
-      strm << globalInput.flags.future_walking[fw]
-	   << ": " << rhs.fwPotentialEnergy(fw);
-    }
-  
-  strm << endl << "----------------- FW R12 ---------------------" << endl;
-  for(int fw=0; fw<rhs.numFutureWalking; fw++)
-    {
-      strm.width(w1);
-      strm.precision(p1);
-      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
-      strm.width(w2);
-      strm << globalInput.flags.future_walking[fw]
-	   << ": " << rhs.r12(fw);
-    }
-  
-  strm << endl << "------------------ FW R2 ---------------------" << endl;
-  for(int fw=0; fw<rhs.numFutureWalking; fw++)
-    {
-      strm.width(w1);
-      strm.precision(p1);
-      strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
-      strm.width(w2);
-      strm << globalInput.flags.future_walking[fw]
-	   << ": " << rhs.r2(fw);
+      strm << endl << "-------------------------- FW " << rhs.names[i] << endl;
+      for(int fw=0; fw<rhs.numFutureWalking; fw++)
+	{
+	  strm.width(w1);
+	  strm.precision(p1);
+	  strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
+	  strm.width(w2);
+	  strm << globalInput.flags.future_walking[fw]
+	       << ": " << (rhs.props(i))(fw);
+	}
     }
   
   // Nuclear forces

@@ -498,7 +498,7 @@ void QMCNuclearForces::waveMemorization(int whichNucleus, int numKnots, double r
     center(i) = Input->Molecule.Atom_Positions(whichNucleus,i);
   
   Array2D<double> cube = Array2D<double>(8,3);
-  Array1D<double> densities = Array1D<double>(8);
+  Array1D<qmcfloat> densities = Array1D<qmcfloat>(8);
   for(int irad=0; irad<numKnots; irad++)
     {
       double rad = irad*dr;
@@ -553,7 +553,7 @@ void QMCNuclearForces::waveMemorization(int whichNucleus, int numKnots, double r
   Chi.deallocate();
 }
 
-void QMCNuclearForces::getDensities(Array2D<double> & X, Array1D<double> & densities)
+void QMCNuclearForces::getDensities(Array2D<double> & X, Array1D<qmcfloat> & densities)
 {
   int nBasisFun = WF->getNumberBasisFunctions();
   int nOrbitals = WF->getNumberOrbitals();

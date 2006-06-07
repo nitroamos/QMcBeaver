@@ -681,8 +681,6 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   << flags.umrigar93_equalelectrons_parameter << endl;
   strm << "walker_reweighting_method\n " << flags.walker_reweighting_method
   << endl;
-  strm << "branching_method\n " << flags.branching_method << endl;
-  strm << "branching_threshold\n " << flags.branching_threshold << endl;
   strm << "synchronize_dmc_ensemble\n " << flags.synchronize_dmc_ensemble
   << endl;
   strm << "synchronize_dmc_ensemble_interval\n "
@@ -695,6 +693,8 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   << flags.number_basis_function_interpolation_grid_points << endl;
   strm << "basis_function_interpolation_first_point\n "
   << flags.basis_function_interpolation_first_point << endl;
+  strm << "branching_method\n " << flags.branching_method << endl;
+  strm << "branching_threshold\n " << flags.branching_threshold << endl;
   strm << "fusion_threshold\n " << flags.fusion_threshold << endl;
   strm << "dt\n " << flags.dt_run << endl;
   strm << "desired_convergence\n " << flags.desired_convergence << endl;

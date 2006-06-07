@@ -57,19 +57,19 @@ double QMCDerivativeProperties::getEffectiveTimeStepStandardDeviation()
 
 double QMCDerivativeProperties::getVirialRatio(int whichFW)
 {
-  double value = -fwProperties->fwPotentialEnergy[whichFW].getAverage() /
-    fwProperties->fwKineticEnergy[whichFW].getAverage();
+  double value = -(fwProperties->props[FW_PE])[whichFW].getAverage() /
+    (fwProperties->props[FW_KE])[whichFW].getAverage();
 
   return value;
 }
 
 double QMCDerivativeProperties::getVirialRatioVariance(int whichFW)
 {
-  double vave = fwProperties->fwPotentialEnergy[whichFW].getAverage();
-  double vvar = fwProperties->fwPotentialEnergy[whichFW].getVariance();
+  double vave = (fwProperties->props[FW_PE])[whichFW].getAverage();
+  double vvar = (fwProperties->props[FW_PE])[whichFW].getVariance();
 
-  double tave = fwProperties->fwKineticEnergy[whichFW].getAverage();
-  double tvar = fwProperties->fwKineticEnergy[whichFW].getVariance();
+  double tave = (fwProperties->props[FW_KE])[whichFW].getAverage();
+  double tvar = (fwProperties->props[FW_KE])[whichFW].getVariance();
 
   double temp1 = 1.0/tave/tave;
   double temp2 = vave*temp1;
@@ -97,11 +97,11 @@ ostream& operator <<(ostream& strm, QMCDerivativeProperties &rhs)
       strm << globalInput.flags.future_walking[fw] << ": " << rhs.getVirialRatio(fw) <<
 	" +/- " << rhs.getVirialRatioStandardDeviation(fw) << endl;
 
-      double vave = rhs.fwProperties->fwPotentialEnergy[fw].getAverage();
-      double vvar = rhs.fwProperties->fwPotentialEnergy[fw].getVariance();
+      double vave = (rhs.fwProperties->props[FW_PE])[fw].getAverage();
+      double vvar = (rhs.fwProperties->props[FW_PE])[fw].getVariance();
 
-      double tave = rhs.fwProperties->fwKineticEnergy[fw].getAverage();
-      double tvar = rhs.fwProperties->fwKineticEnergy[fw].getVariance();
+      double tave = (rhs.fwProperties->props[FW_KE])[fw].getAverage();
+      double tvar = (rhs.fwProperties->props[FW_KE])[fw].getVariance();
 
       strm << "         Total Energy Estimator (KE/Virial): " << -tave << " +/- " << sqrt(tvar) << endl; 
       strm << "         Total Energy Estimator (PE/Virial): " << vave/2.0 << " +/- " << sqrt(vvar)/2.0 << endl; 

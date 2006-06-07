@@ -161,7 +161,7 @@ void QMCManager::initializeOutputs()
     
     cout.precision( 10 );
     
-      if( true )
+      if( !true )
       cout << copyright;
   }
   else
@@ -254,26 +254,13 @@ void QMCManager::gatherProperties()
 
   //reduce over QMCFutureWalkingProperties
   //maybe this doesn't have to happen so often...
-  MPI_Reduce( QMCnode.getFWProperties()->fwEnergy.array(),
-	      fwProperties_total.fwEnergy.array(),
-	      fwProperties_total.fwEnergy.dim1(),
-	      QMCProperty::MPI_TYPE, QMCProperty::MPI_REDUCE, 0, MPI_COMM_WORLD );
-  MPI_Reduce( QMCnode.getFWProperties()->fwKineticEnergy.array(),
-	      fwProperties_total.fwKineticEnergy.array(),
-	      fwProperties_total.fwKineticEnergy.dim1(),
-	      QMCProperty::MPI_TYPE, QMCProperty::MPI_REDUCE, 0, MPI_COMM_WORLD );
-  MPI_Reduce( QMCnode.getFWProperties()->fwPotentialEnergy.array(),
-	      fwProperties_total.fwPotentialEnergy.array(),
-	      fwProperties_total.fwPotentialEnergy.dim1(),
-	      QMCProperty::MPI_TYPE, QMCProperty::MPI_REDUCE, 0, MPI_COMM_WORLD );
-  MPI_Reduce( QMCnode.getFWProperties()->r12.array(),
-	      fwProperties_total.r12.array(),
-	      fwProperties_total.r12.dim1(),
-	      QMCProperty::MPI_TYPE, QMCProperty::MPI_REDUCE, 0, MPI_COMM_WORLD );
-  MPI_Reduce( QMCnode.getFWProperties()->r2.array(),
-	      fwProperties_total.r2.array(),
-	      fwProperties_total.r2.dim1(),
-	      QMCProperty::MPI_TYPE, QMCProperty::MPI_REDUCE, 0, MPI_COMM_WORLD );
+  for(int i=0; i<fwProperties_total.props.dim1(); i++)
+    {
+      MPI_Reduce( QMCnode.getFWProperties()->props[i].array(),
+		  fwProperties_total.props[i].array(),
+		  fwProperties_total.props[i].dim1(),
+		  QMCProperty::MPI_TYPE, QMCProperty::MPI_REDUCE, 0, MPI_COMM_WORLD );
+    }
 
   localTimers.getGatherPropertiesStopwatch()->stop();
 #else
@@ -1325,6 +1312,8 @@ void QMCManager::updateTrialEnergy( double weights, int nwalkers_init )
      estimator was derived by David R. "Chip" Kent IV and is listed
      in his notebook and possibly thesis.
      */
+
+    //See formula 11 from UNR93
     Input.flags.energy_trial = Input.flags.energy_estimated -
     1.0 / Input.flags.dt_effective * log(  weights / nwalkers_init );
   }

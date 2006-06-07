@@ -389,16 +389,17 @@ public:
   		It's nice to have a const accessor
   	*/
   	T get(int i) const
-  		{
-    		assert(pArray != 0);
-    		return pArray[i];
-  		}
-    
+	  {
+	    assert(pArray != 0);
+	    return pArray[i];
+	  }
+	
     /**
     	This is for compatibility with std::vector.
     */
 	T& operator[](int i) {
 	  assert(pArray != 0);
+	  assert(i < n_1);
 	  return pArray[i];
 	}
   

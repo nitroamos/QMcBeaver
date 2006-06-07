@@ -103,7 +103,7 @@ class QMCNuclearForces
      a \f$N \times 3\f$ matrix
      @param densities the array of densities calculated for each point
   */
-  void getDensities(Array2D<double> & X, Array1D<double> & densities);
+  void getDensities(Array2D<double> & X, Array1D<qmcfloat> & densities);
   
   /**
      A debugging function...
@@ -198,17 +198,17 @@ class QMCNuclearForces
   /**
      Temp variable used by getDensities
   */
-  Array2D<double> alphaOrbitals;
+  Array2D<qmcfloat> alphaOrbitals;
 
   /**
      Temp variable used by getDensities
   */
-  Array2D<double> betaOrbitals;
+  Array2D<qmcfloat> betaOrbitals;
 
   /**
      Temp variable used by getDensities
   */
-  Array2D<double> Chi;
+  Array2D<qmcfloat> Chi;
 
   /**
      Eventually, we probably want to remove this guy

@@ -23,6 +23,19 @@
 
 using namespace std;
 
+
+enum labels { FW_TE  = 0,
+	      FW_KE  = 2,
+	      FW_PE  = 4,
+	      FW_R12 = 6,
+	      FW_R2  = 8,
+              FW_TE_2= 1,
+	      FW_KE_2= 3,
+	      FW_PE_2= 5,
+	      FW_R12_2=7,
+	      FW_R2_2= 9};
+static const int NUM_PROPS = 10;
+
 /**
   All of the quantities and properties evaluated during a calculation.
 */
@@ -37,11 +50,8 @@ public:
   */
   static int numFutureWalking;
 
-  Array1D< QMCProperty > fwEnergy;
-  Array1D< QMCProperty > fwKineticEnergy;
-  Array1D< QMCProperty > fwPotentialEnergy;  
-  Array1D< QMCProperty > r12;  
-  Array1D< QMCProperty > r2;  
+  Array1D< Array1D<QMCProperty> > props;
+  Array1D<string> names;
 
   /**
     Tells if nuclear forces are being calculated.
