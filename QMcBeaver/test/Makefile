@@ -12,14 +12,13 @@
 
 include ../Makefile.config
 
-CKMF_FILES  :=  $(patsubst %.ckmf,%.qmc,$(wildcard *.ckmf))
+CKMF_FILES  :=  $(wildcard *.ckmf)
 
-all: clean $(CKMF_FILES)
+all: clean runall_results.txt
 
-%.qmc: %.ckmf
-	@echo $*
-	../bin/$(EXE) $<
+runall_results.txt :
+	../bin/runqmcbeavers.pl $(CKMF_FILES)
 
 clean:
-	rm -f *.01.* *.02.* *.qmc *.rslts *.gnp *~ *.run *.o*
+	rm -f *.01.* *.02.* *.energy.* *.qmc *.rslts *.force *.gnp *~ *.run *.o* runall_results.txt
 

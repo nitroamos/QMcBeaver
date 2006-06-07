@@ -40,11 +40,11 @@ dt
 desired_convergence
  0.000000000000000e+00
 max_time_steps
- 100
+ 10
 dt_equilibration
  1.000000000000000e-03
 equilibration_steps
- 50
+ 5
 equilibration_function
  step
 CKAnnealingEquilibration1_parameter
@@ -58,11 +58,11 @@ walkers_per_pass
 gpu_walkers_per_pass
  1
 number_of_walkers
- 10
+ 2
 output_interval
- 10
+ 1
 mpireduce_interval
- 10
+ 1
 mpipoll_interval
  1
 checkpoint_interval

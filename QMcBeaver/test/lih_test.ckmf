@@ -46,11 +46,11 @@ dt
 desired_convergence
  0.000000000000000e+00
 max_time_steps
- 3000
+ 300
 dt_equilibration
  2.000000000000000e-03
 equilibration_steps
- 200
+ 20
 equilibration_function
  ramp
 CKAnnealingEquilibration1_parameter
@@ -60,15 +60,15 @@ use_equilibration_array
 future_walking
  0 12 25 50 100 200 400 800 1600 3200 6400
 number_of_walkers
- 100
+ 10
 walkers_per_pass
  1
 output_interval
- 200
+ 20
 mpireduce_interval
- 200
+ 20
 mpipoll_interval
- 100
+ 1
 checkpoint_interval
  1000
 checkpoint
