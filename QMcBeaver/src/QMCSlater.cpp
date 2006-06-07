@@ -342,7 +342,6 @@ void QMCSlater::processInverse(int start,
     {
       for (int j=0; j<WF->getNumberDeterminants(); j++)
         {
-  	      //determinant_and_inverse(psi(i,j),inv(i,j),(Psi(i+start))(j),&calcOK);
           psi(i,j).determinant_and_inverse(inv(i,j),(Psi(i+start))(j),&calcOK);
           (Singular(i+start))(j) = !calcOK;
         }
