@@ -64,102 +64,135 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 
   // Redistribute electrons if there are charged centers.
 
-  int extra_e, temp_na, temp_nb;
+  int icharge_init, icharge, kcharge, partner, partnercharge, give, get;
 
   for (int i=0; i<natoms; i++)
-    if (Input->Molecule.Z(i) < ab_count(i,0))  // If the center is negative.
+    if (Input->Molecule.Z(i) != ab_count(i,0)) // If this atom is charged
       {
-	extra_e = ab_count(i,0) - Input->Molecule.Z(i);
-	temp_na = ab_count(i,1);
-	temp_nb = ab_count(i,2);
-        for (int j=0; j<extra_e; j++)
-	  for (int k=0; k<natoms; k++)  // Find a center that is positive.
-	    if (Input->Molecule.Z(k) > ab_count(k,0))
-      	      {
-                if (temp_na == temp_nb)  // if na=nb on -
+	icharge_init = Input->Molecule.Z(i) - ab_count(i,0);
+        for (int j=0; j<abs(icharge_init); j++)
+	  {
+	    icharge = Input->Molecule.Z(i) - ab_count(i,0);
+	    partner = -1;
+	    give = -1;
+	    get = -1;
+	    partnercharge = 0;
+	    for (int k=0; k<natoms; k++)  // Find an atom to exchange with
+	      {
+		kcharge = Input->Molecule.Z(k) - ab_count(k,0);
+		if (icharge < 0 && kcharge >= icharge+2)
 		  {
-		    if (ab_count(k,1) <= ab_count(k,2)) // and na <= nb on +
-		      {  // transfer an alpha
-			ab_count(i,0) -= 1;
-			ab_count(i,1) -= 1;
-			ab_count(k,0) += 1;
-			ab_count(k,1) += 1;
-			temp_na--;
-		        break;
+		    if (partner == -1)
+		      {
+			partner = k;
+			partnercharge = kcharge;
 		      }
-		    else if (ab_count(k,1) > ab_count(k,2))  // if na>nb on +
-		      {  // transfer a beta
-			ab_count(i,0) -= 1;
-			ab_count(i,2) -= 1;
-			ab_count(k,0) += 1;
-			ab_count(k,2) += 1;
-			temp_nb--;
-			break;
+		    else if (kcharge > partnercharge)
+		      {
+			partner = k;
+			partnercharge = kcharge;
 		      }
 		  }
-		else if (temp_na > temp_nb) // if na>nb on -
+		else if (icharge > 0 && kcharge <= icharge-2)
 		  {
-		    if (ab_count(k,1) <= ab_count(k,2)) // and na<=nb on +
-		      {  // transfer an alpha
-			ab_count(i,0) -= 1;
-			ab_count(i,1) -= 1;
-			ab_count(k,0) += 1;
-			ab_count(k,1) += 1;
-			temp_na--;
-			break;
-		      }
-		    else if (ab_count(k,1) > ab_count(k,2)) // if na>nb on +
-		      // find a center where nb>na, and trade an alpha from - 
-                      // for a beta for +.
+		    if (partner == -1)
 		      {
-		        for (int l=0; l<natoms; l++) 
+			partner = k;
+			partnercharge = kcharge;
+		      }
+		    else if (kcharge < partnercharge)
+		      {
+			partner = k;
+			partnercharge = kcharge;
+		      }
+		  }
+	      }  // Now we know which atom we are trading electrons with
+	    if (partner != -1)
+	      {
+		if (icharge < partnercharge)
+		  // We are giving an electron to the partner
+		  {
+		    give = i;
+		    get = partner;
+		  }
+		else if (icharge > partnercharge)
+		  // We are getting an electron from the partner
+		  {
+		    get = i;
+		    give = partner;
+		  }
+		if (ab_count(give,1) == ab_count(give,2))  // if na=nb on -
+		  {
+		    if (ab_count(get,1) <= ab_count(get,2))
+		      {  // transfer an alpha
+			ab_count(give,0) -= 1;
+			ab_count(give,1) -= 1;
+			ab_count(get,0) += 1;
+			ab_count(get,1) += 1;
+		      }
+		    else if (ab_count(get,1) > ab_count(get,2))
+		      {  // transfer a beta
+			ab_count(give,0) -= 1;
+			ab_count(give,2) -= 1;
+			ab_count(get,0) += 1;
+			ab_count(get,2) += 1;
+		      }
+		  }
+		else if (ab_count(give,1) > ab_count(give,2)) // if na>nb on -
+		  {
+		    if (ab_count(get,1) <= ab_count(get,2))
+		      {  // transfer an alpha
+			ab_count(give,0) -= 1;
+			ab_count(give,1) -= 1;
+			ab_count(get,0) += 1;
+			ab_count(get,1) += 1;
+		      }
+		    else if (ab_count(get,1) > ab_count(get,2))
+		      // find a center where nb>na, and trade an alpha from - 
+		      // for a beta for +.
+		      {
+			for (int l=0; l<natoms; l++) 
 			  if (ab_count(l,1) < ab_count(l,2))
 			    { 
- 			      ab_count(i,0) -= 1;
-			      ab_count(i,1) -= 1;
+			      ab_count(give,0) -= 1;
+			      ab_count(give,1) -= 1;
 			      ab_count(l,1) += 1;
 			      ab_count(l,2) -= 1;
-			      ab_count(k,0) += 1;
-			      ab_count(k,2) += 1;
-			      temp_na--;
+			      ab_count(get,0) += 1;
+			      ab_count(get,2) += 1;
 			      break;
 			    }
-		        break;
 		      }
-		  }
-		else if (temp_na < temp_nb) // if nb>na on -
-		  {
-		    if (ab_count(k,1) >= ab_count(k,2)) // and na>=nb on +
-		      {  // transfer a beta
-			ab_count(i,0) -= 1;
-			ab_count(i,2) -= 1;
-			ab_count(k,0) += 1;
-			ab_count(k,2) += 1;
-			temp_nb--;
-			break;
-		      }
-		    else if (ab_count(k,1) < ab_count(k,2)) // if nb>na on +
-		      // find a center where na>nb, and trade a beta from - 
-		      // for an alpha for +
+		    else if (ab_count(give,1) < ab_count(give,2))
 		      {
-			for (int m=0; m<natoms; m++)
-			  if ( ab_count(m,1) > ab_count(m,2) )
-			    {
-			      ab_count(i,0) -= 1;
-			      ab_count(i,2) -= 1;
-			      ab_count(m,2) += 1;
-			      ab_count(m,1) -= 1;
-			      ab_count(k,0) += 1;
-			      ab_count(k,1) += 1;
-			      temp_nb--;
-			      break;
-			    }
-			break;
+			if (ab_count(get,1) >= ab_count(get,2))
+			  { // transfer a beta
+			    ab_count(give,0) -= 1;
+			    ab_count(give,2) -= 1;
+			    ab_count(get,0) += 1;
+			    ab_count(get,2) += 1;
+			  }
+			else if (ab_count(get,1) < ab_count(get,2))
+			  // find a center where na>nb, and trade a beta from -
+			  // for an alpha for +
+			  {
+			    for (int m=0; m<natoms; m++)
+			      if ( ab_count(m,1) > ab_count(m,2) )
+				{
+				  ab_count(give,0) -= 1;
+				  ab_count(give,2) -= 1;
+				  ab_count(m,2) += 1;
+				  ab_count(m,1) -= 1;
+				  ab_count(get,0) += 1;
+				  ab_count(get,1) += 1;
+				  break;
+				}
+			  }
 		      }
 		  }
 	      }
+	  }
       }
-
   // Now we check to make sure no center has too many electrons of the same 
   // type.
 
