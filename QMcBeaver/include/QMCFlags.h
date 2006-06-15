@@ -653,6 +653,12 @@ class QMCFlags
   int write_electron_densities;
 
   /**
+     The maximum distance, in atomic units, of the histograms for the electron
+     densities.
+  */
+  double max_pair_distance;
+
+  /**
      Are Chip and Mike cool?  Answer: Yea Baby!
   */
   string chip_and_mike_are_cool;

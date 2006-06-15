@@ -1,3 +1,8 @@
+Thurs, 15 June 2006 Daniel R. Fisher
+1.  Made a new flag, max_pair_distance, which sets the maximum length
+    of the histograms (in au) if intrapair distances are being
+    recorded.
+
 Wed, 14 June 2006 Daniel R. Fisher
 1.  In QMCDansWalkerInitialization, improved the way electrons are
     redistributed if any nuclei are charged after the electrons are

@@ -169,11 +169,17 @@ void QMCRun::initialize(QMCInput *INPUT)
       
       int max_Z = 0;
       
-      for (int i=0; i<Input->Molecule.getNumberAtoms(); i++)
-        if ( Input->Molecule.Z(i) > max_Z )
-          max_Z = Input->Molecule.Z(i);
+      if (Input->flags.max_pair_distance < 0)
+	{
+	  for (int i=0; i<Input->Molecule.getNumberAtoms(); i++)
+	    if ( Input->Molecule.Z(i) > max_Z )
+	      max_Z = Input->Molecule.Z(i);
           
-      max_pair_distance = 20.0/max_Z;
+	  max_pair_distance = 20.0/max_Z;
+	}
+      else
+	max_pair_distance = Input->flags.max_pair_distance;
+
       dr = max_pair_distance/5000;
       
       // Histograms for parallel and opposite spin electron densities.

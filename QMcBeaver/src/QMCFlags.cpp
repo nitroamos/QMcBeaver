@@ -111,7 +111,8 @@ void QMCFlags::read_flags(string InFileName)
   equilibrate_every_opt_step     = 0;
   equilibrate_first_opt_step     = 1;
   write_all_energies_out         = 0;
-  write_electron_densities           = 0;
+  write_electron_densities       = 0;
+  max_pair_distance              = -1;
   chip_and_mike_are_cool         = "false";
 
   use_hf_potential               = 0;
@@ -488,6 +489,11 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           write_electron_densities = atoi(temp_string.c_str());
         }
+      else if(temp_string == "max_pair_distance")
+	{
+	  input_file >> temp_string;
+	  max_pair_distance = atof(temp_string.c_str());
+	}
       else if(temp_string == "write_all_energies_out")
         {
           input_file >> temp_string;
