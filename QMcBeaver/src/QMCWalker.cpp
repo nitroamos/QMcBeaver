@@ -982,7 +982,6 @@ void QMCWalker::initialize(QMCInput *INPUT)
       for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
         fwNuclearForces(d1,d2).allocate(numFW,2);
   }
-      
   resetFutureWalking();
     
   if (Input->flags.calculate_bf_density == 1)

@@ -221,7 +221,6 @@ void QMCRun::initialize(QMCInput *INPUT)
 		}
 	    }
     }
-
   if (Input->flags.use_hf_potential == 1)
     HartreeFock.Initialize(Input);
 }
@@ -239,7 +238,6 @@ void QMCRun::randomlyInitializeWalkers()
     {
       QMCWalker w;
       w.initialize(Input);
-
       temp_R = IW->initializeWalkerPosition();
 
       w.setR(temp_R);

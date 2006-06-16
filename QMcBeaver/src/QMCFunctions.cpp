@@ -79,7 +79,7 @@ void QMCFunctions::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
   Jastrow.initialize(Input);
   
   if(Input->flags.nuclear_derivatives != "none")
-  	 nf.initialize(Input);
+    nf.initialize(Input);
 
   SCF_Grad_PsiRatio.allocate(Input->WF.getNumberElectrons(),3);    
 }

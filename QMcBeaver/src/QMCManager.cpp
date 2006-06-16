@@ -74,9 +74,9 @@ void QMCManager::initialize( int argc, char **argv )
 	fwProperties_total.setCalcForces( true, QMCNuclearForces::getNumBins(), 1 );
       }
   }
-  
+
   QMCnode.initialize( &Input );
-  
+
   // Set equilibrating = true so that the run equilibrates before taking
   // data
   
@@ -1213,18 +1213,14 @@ void QMCManager::initializeCalculationState()
   // open the input stream
   ifstream qmcCheckpoint( filename.c_str() );
   
-  localTimers.getInitializationStopwatch() ->start();
+  localTimers.getInitializationStopwatch()->start();
   
-  if(  qmcCheckpoint && Input.flags.use_available_checkpoints == 1 )
-  {
+  if( qmcCheckpoint && Input.flags.use_available_checkpoints == 1 )
     // There is a checkpoint file
     readXML( qmcCheckpoint );
-  }
   else
-  {
     // There is not a checkpoint file
     QMCnode.randomlyInitializeWalkers();
-  }
   
   localTimers.getInitializationStopwatch() ->stop();
   

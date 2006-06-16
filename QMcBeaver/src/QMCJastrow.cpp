@@ -17,9 +17,8 @@
 static const bool showTimings  = false;
 
 //This will print out the ln JEE result
-//as well as it's laplacian
+//as well as its laplacian
 static const bool printJastrow = false;
-
 
 void QMCJastrow::initialize(QMCInput * input)
 {
