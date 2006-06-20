@@ -33,8 +33,9 @@ enum labels { FW_TE  = 0,
 	      FW_KE_2= 3,
 	      FW_PE_2= 5,
 	      FW_R12_2=7,
-	      FW_R2_2= 9};
-static const int NUM_PROPS = 10;
+	      FW_R2_2 =9,
+              FW_It   =10};
+static const int NUM_PROPS = 11;
 
 /**
   All of the quantities and properties evaluated during a calculation.

@@ -46,6 +46,7 @@ QMCFutureWalkingProperties::QMCFutureWalkingProperties()
   numFutureWalking = globalInput.flags.future_walking.size();
 
   names.allocate(NUM_PROPS);
+  names[FW_It]  = "Normalization I(t)";
   names[FW_TE]  = "Total Energy";
   names[FW_KE]  = "Kinetic Energy";
   names[FW_PE]  = "Potential Energy";
