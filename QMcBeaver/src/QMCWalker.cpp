@@ -1305,20 +1305,12 @@ void QMCWalker::calculateObservables()
   //J. Casulleras and J. Boronat, Phys. Rev. B 52, 3654 (1995) aka "CB95"
   //this is what CB95 suggest
   //double aWeight = getWeight();
-  
-  //but this is what seems to be working
-  double aWeight = 1.0;
-  
-  //this is what CB95 suggest
   //double pWeight = getWeight()/OriginalWalker->getWeight();
   
-  //although it doesn't make much difference, this seems to work better
+  //this produces the same results as CB95; the difference cancels off in the end
+  double aWeight = 1.0;
   double pWeight = 1.0;
-  
-  //this might create nan if run with diffusion
-  //Don't use for that reason!
-  //double pWeight = getWeight();
-  
+    
   //This happens in both Formula 15 and 16 from CB95
   for(int i=0; i<isCollectingFWResults.dim1(); i++)
     {
@@ -1463,10 +1455,10 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 	  (fwProps.props[FW_PE_2])(i).newSample(fwPotentialEnergy(i,whichIsDone)*norm*potentialEnergy,getWeight());
 	  
 	  // Calculate the nuclear forces      
-	  if(Input->flags.nuclear_derivatives != "none")
+	  if(Input->flags.nuclear_derivatives != "none")//what about binning?
 	    for (int d1=0; d1<walkerData.nuclearDerivatives.dim1(); d1++)
 	      for (int d2=0; d2<walkerData.nuclearDerivatives.dim2(); d2++)
-		(fwProps.nuclearForces(i))(d1,d2).newSample( (fwNuclearForces(d1,d2))(i,whichIsDone)*norm, 1.0 );
+		(fwProps.nuclearForces(i))(d1,d2).newSample( (fwNuclearForces(d1,d2))(i,whichIsDone)*norm, getWeight() );
 	  
 	  resetFutureWalking(i,whichIsDone);
 	} 
