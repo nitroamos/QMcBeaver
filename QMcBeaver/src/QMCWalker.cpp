@@ -1329,7 +1329,8 @@ void QMCWalker::calculateObservables()
       kineticEnergy_grad_T += TrialWalker->walkerData.gradPsiRatio(i,j)
 	* TrialWalker->walkerData.gradPsiRatio(i,j);
     }
-  kineticEnergy_grad = p*kineticEnergy_grad_T + q*kineticEnergy_grad_O;
+  kineticEnergy_grad = p*kineticEnergy_grad_T*TrialWalker->walkerData.psi
+                     + q*kineticEnergy_grad_O*OriginalWalker->walkerData.psi;
 
   //This is the forward walking portion of the calculation as described in:
   //J. Casulleras and J. Boronat, Phys. Rev. B 52, 3654 (1995) aka "CB95"
@@ -1427,6 +1428,8 @@ void QMCWalker::calculateObservables( QMCProperties & props )
 
 void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 {
+  double fWeight = getWeight();
+
   // Add the data from this walker to the accumulating properties  
   for(int i=0; i<isCollectingFWResults.dim1(); i++)
     {
@@ -1439,25 +1442,26 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 	  if(Input->flags.nuclear_derivatives != "none")
 	    for (int d1=0; d1<walkerData.nuclearDerivatives.dim1(); d1++)
 	      for (int d2=0; d2<walkerData.nuclearDerivatives.dim2(); d2++)
-		(fwProps.nuclearForces(i))(d1,d2).newSample( walkerData.nuclearDerivatives(d1,d2), getWeight() );
+		(fwProps.nuclearForces(i))(d1,d2).newSample( walkerData.nuclearDerivatives(d1,d2), fWeight );
 	  
-	  (fwProps.props[FW_R12])(i).newSample(r12, getWeight());
-	  (fwProps.props[FW_R2])(i).newSample(r2, getWeight());
-	  (fwProps.props[FW_iR12])(i).newSample(ir12, getWeight());
-	  (fwProps.props[FW_iR])(i).newSample(ir, getWeight());
-	  (fwProps.props[FW_TE])(i).newSample(localEnergy, getWeight());
-	  (fwProps.props[FW_KE])(i).newSample(kineticEnergy, getWeight());
-	  (fwProps.props[FW_KEg])(i).newSample(kineticEnergy_grad, getWeight());
-	  (fwProps.props[FW_PE])(i).newSample(potentialEnergy, getWeight());
+	  (fwProps.props[FW_It])(i).newSample(1.0, fWeight);
+	  (fwProps.props[FW_R12])(i).newSample(r12, fWeight);
+	  (fwProps.props[FW_R2])(i).newSample(r2, fWeight);
+	  (fwProps.props[FW_iR12])(i).newSample(ir12, fWeight);
+	  (fwProps.props[FW_iR])(i).newSample(ir, fWeight);
+	  (fwProps.props[FW_TE])(i).newSample(localEnergy, fWeight);
+	  (fwProps.props[FW_KE])(i).newSample(kineticEnergy, fWeight);
+	  (fwProps.props[FW_KEg])(i).newSample(kineticEnergy_grad, fWeight);
+	  (fwProps.props[FW_PE])(i).newSample(potentialEnergy, fWeight);
 
-	  (fwProps.props[FW_R12_2])(i).newSample(r12*r12, getWeight());
-	  (fwProps.props[FW_R2_2])(i).newSample(r2*r2, getWeight());
-	  (fwProps.props[FW_iR12_2])(i).newSample(ir12*ir12, getWeight());
-	  (fwProps.props[FW_iR_2])(i).newSample(ir*ir, getWeight());
-	  (fwProps.props[FW_TE_2])(i).newSample(localEnergy*localEnergy, getWeight());
-	  (fwProps.props[FW_KE_2])(i).newSample(kineticEnergy*kineticEnergy, getWeight());
-	  (fwProps.props[FW_KEg_2])(i).newSample(kineticEnergy_grad*kineticEnergy_grad, getWeight());
-	  (fwProps.props[FW_PE_2])(i).newSample(potentialEnergy*potentialEnergy, getWeight());
+	  (fwProps.props[FW_R12_2])(i).newSample(r12*r12, fWeight);
+	  (fwProps.props[FW_R2_2])(i).newSample(r2*r2, fWeight);
+	  (fwProps.props[FW_iR12_2])(i).newSample(ir12*ir12, fWeight);
+	  (fwProps.props[FW_iR_2])(i).newSample(ir*ir, fWeight);
+	  (fwProps.props[FW_TE_2])(i).newSample(localEnergy*localEnergy, fWeight);
+	  (fwProps.props[FW_KE_2])(i).newSample(kineticEnergy*kineticEnergy, fWeight);
+	  (fwProps.props[FW_KEg_2])(i).newSample(kineticEnergy_grad*kineticEnergy_grad, fWeight);
+	  (fwProps.props[FW_PE_2])(i).newSample(potentialEnergy*potentialEnergy, fWeight);
 	  continue;
 	}
       
@@ -1484,29 +1488,30 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 	  isCollectingFWResults(i,whichIsDone) = DONE;
 	  
 	  double norm = 1.0/fwNormalization(i,whichIsDone);
-	  (fwProps.props[FW_R12])(i).newSample(fwR12(i,whichIsDone)*norm,getWeight());
-	  (fwProps.props[FW_R2])(i).newSample(fwR2(i,whichIsDone)*norm,getWeight());
-	  (fwProps.props[FW_iR12])(i).newSample(fwiR12(i,whichIsDone)*norm,getWeight());
-	  (fwProps.props[FW_iR])(i).newSample(fwiR(i,whichIsDone)*norm,getWeight());
-	  (fwProps.props[FW_TE])(i).newSample(fwEnergy(i,whichIsDone)*norm,getWeight());
-	  (fwProps.props[FW_KE])(i).newSample(fwKineticEnergy(i,whichIsDone)*norm,getWeight());
-	  (fwProps.props[FW_KEg])(i).newSample(fwKineticEnergy_grad(i,whichIsDone)*norm,getWeight());
-	  (fwProps.props[FW_PE])(i).newSample(fwPotentialEnergy(i,whichIsDone)*norm,getWeight());
+	  (fwProps.props[FW_It])(i).newSample(fwNormalization(i,whichIsDone)/numFWSteps[i],fWeight);
+	  (fwProps.props[FW_R12])(i).newSample(fwR12(i,whichIsDone)*norm,fWeight);
+	  (fwProps.props[FW_R2])(i).newSample(fwR2(i,whichIsDone)*norm,fWeight);
+	  (fwProps.props[FW_iR12])(i).newSample(fwiR12(i,whichIsDone)*norm,fWeight);
+	  (fwProps.props[FW_iR])(i).newSample(fwiR(i,whichIsDone)*norm,fWeight);
+	  (fwProps.props[FW_TE])(i).newSample(fwEnergy(i,whichIsDone)*norm,fWeight);
+	  (fwProps.props[FW_KE])(i).newSample(fwKineticEnergy(i,whichIsDone)*norm,fWeight);
+	  (fwProps.props[FW_KEg])(i).newSample(fwKineticEnergy_grad(i,whichIsDone)*norm,fWeight);
+	  (fwProps.props[FW_PE])(i).newSample(fwPotentialEnergy(i,whichIsDone)*norm,fWeight);
 
-	  (fwProps.props[FW_R12_2])(i).newSample(fwR12(i,whichIsDone)*norm*r12,getWeight());
-	  (fwProps.props[FW_R2_2])(i).newSample(fwR2(i,whichIsDone)*norm*r2,getWeight());
-	  (fwProps.props[FW_iR12_2])(i).newSample(fwiR12(i,whichIsDone)*norm*ir12,getWeight());
-	  (fwProps.props[FW_iR_2])(i).newSample(fwiR(i,whichIsDone)*norm*ir,getWeight());
-	  (fwProps.props[FW_TE_2])(i).newSample(fwEnergy(i,whichIsDone)*norm*localEnergy,getWeight());
-	  (fwProps.props[FW_KE_2])(i).newSample(fwKineticEnergy(i,whichIsDone)*norm*kineticEnergy,getWeight());
-	  (fwProps.props[FW_KEg_2])(i).newSample(fwKineticEnergy_grad(i,whichIsDone)*norm*kineticEnergy,getWeight());
-	  (fwProps.props[FW_PE_2])(i).newSample(fwPotentialEnergy(i,whichIsDone)*norm*potentialEnergy,getWeight());
+	  (fwProps.props[FW_R12_2])(i).newSample(fwR12(i,whichIsDone)*norm*r12,fWeight);
+	  (fwProps.props[FW_R2_2])(i).newSample(fwR2(i,whichIsDone)*norm*r2,fWeight);
+	  (fwProps.props[FW_iR12_2])(i).newSample(fwiR12(i,whichIsDone)*norm*ir12,fWeight);
+	  (fwProps.props[FW_iR_2])(i).newSample(fwiR(i,whichIsDone)*norm*ir,fWeight);
+	  (fwProps.props[FW_TE_2])(i).newSample(fwEnergy(i,whichIsDone)*norm*localEnergy,fWeight);
+	  (fwProps.props[FW_KE_2])(i).newSample(fwKineticEnergy(i,whichIsDone)*norm*kineticEnergy,fWeight);
+	  (fwProps.props[FW_KEg_2])(i).newSample(fwKineticEnergy_grad(i,whichIsDone)*norm*kineticEnergy,fWeight);
+	  (fwProps.props[FW_PE_2])(i).newSample(fwPotentialEnergy(i,whichIsDone)*norm*potentialEnergy,fWeight);
 	  
 	  // Calculate the nuclear forces      
 	  if(Input->flags.nuclear_derivatives != "none")//what about binning?
 	    for (int d1=0; d1<walkerData.nuclearDerivatives.dim1(); d1++)
 	      for (int d2=0; d2<walkerData.nuclearDerivatives.dim2(); d2++)
-		(fwProps.nuclearForces(i))(d1,d2).newSample( (fwNuclearForces(d1,d2))(i,whichIsDone)*norm, getWeight() );
+		(fwProps.nuclearForces(i))(d1,d2).newSample( (fwNuclearForces(d1,d2))(i,whichIsDone)*norm, fWeight );
 	  
 	  resetFutureWalking(i,whichIsDone);
 	} 
