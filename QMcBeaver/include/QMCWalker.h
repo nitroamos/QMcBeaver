@@ -195,9 +195,12 @@ private:
   */
   double localEnergy;
   double kineticEnergy;
+  double kineticEnergy_grad;
   double potentialEnergy;
   double r12;
   double r2;
+  double ir12;
+  double ir;
 
   double neEnergy;
   double eeEnergy;
@@ -226,9 +229,12 @@ private:
   Array2D<double> fwNormalization;
   Array2D<double> fwEnergy;
   Array2D<double> fwKineticEnergy;
+  Array2D<double> fwKineticEnergy_grad;
   Array2D<double> fwPotentialEnergy;
   Array2D<double> fwR12;
   Array2D<double> fwR2;
+  Array2D<double> fwiR12;
+  Array2D<double> fwiR;
   
   // (nuc dim1, nuc dim2) (numFW, 2)
   Array2D< Array2D<double> > fwNuclearForces;

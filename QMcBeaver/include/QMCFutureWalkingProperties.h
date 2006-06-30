@@ -24,18 +24,25 @@
 using namespace std;
 
 
-enum labels { FW_TE  = 0,
-	      FW_KE  = 2,
-	      FW_PE  = 4,
-	      FW_R12 = 6,
-	      FW_R2  = 8,
-              FW_TE_2= 1,
-	      FW_KE_2= 3,
-	      FW_PE_2= 5,
-	      FW_R12_2=7,
-	      FW_R2_2 =9,
-              FW_It   =10};
-static const int NUM_PROPS = 11;
+enum labels { FW_TE     = 0,
+	      FW_KE     = 2,
+	      FW_KEg    = 4,
+	      FW_PE     = 6,
+	      FW_R12    = 8,
+	      FW_R2     = 10,
+	      FW_iR     = 12,
+	      FW_iR12   = 14,
+              FW_TE_2   = 1,
+	      FW_KE_2   = 3,
+	      FW_KEg_2  = 5,
+	      FW_PE_2   = 7,
+	      FW_R12_2  = 9,
+	      FW_R2_2   = 11,
+	      FW_iR_2   = 13,
+	      FW_iR12_2 = 15,
+              FW_It     = 16};
+
+static const int NUM_PROPS = FW_It+1;
 
 /**
   All of the quantities and properties evaluated during a calculation.

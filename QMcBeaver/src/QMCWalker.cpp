@@ -50,8 +50,11 @@ QMCWalker::~QMCWalker()
   fwNormalization.deallocate();
   fwR12.deallocate();
   fwR2.deallocate();
+  fwiR12.deallocate();
+  fwiR.deallocate();
   fwEnergy.deallocate();
   fwKineticEnergy.deallocate();
+  fwKineticEnergy_grad.deallocate();
   fwPotentialEnergy.deallocate();
 
   for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
@@ -82,8 +85,11 @@ void QMCWalker::operator=( const QMCWalker & rhs )
   fwNormalization       = rhs.fwNormalization;
   fwR12                 = rhs.fwR12;
   fwR2                  = rhs.fwR2;
+  fwiR12                = rhs.fwiR12;
+  fwiR                  = rhs.fwiR;
   fwEnergy              = rhs.fwEnergy;
   fwKineticEnergy       = rhs.fwKineticEnergy;
+  fwKineticEnergy_grad  = rhs.fwKineticEnergy_grad;
   fwPotentialEnergy     = rhs.fwPotentialEnergy;
   isCollectingFWResults = rhs.isCollectingFWResults;
   numFWSteps            = rhs.numFWSteps;
@@ -962,8 +968,11 @@ void QMCWalker::initialize(QMCInput *INPUT)
   fwNormalization.allocate(numFW,2);
   fwR12.allocate(numFW,2);
   fwR2.allocate(numFW,2);
+  fwiR12.allocate(numFW,2);
+  fwiR.allocate(numFW,2);
   fwEnergy.allocate(numFW,2);
   fwKineticEnergy.allocate(numFW,2);
+  fwKineticEnergy_grad.allocate(numFW,2);
   fwPotentialEnergy.allocate(numFW,2);
   
   if(Input->flags.nuclear_derivatives != "none")
@@ -1283,13 +1292,18 @@ void QMCWalker::calculateObservables()
   //eventually, i'll remove the r2 and r12 measurement. but for Helium, it's
   //nice to use when verifying FW
   double calcR12_T=0, calcR12_O=0;
+  double calcR1_T=0, calcR1_O=0;
+  double calcR2_T=0, calcR2_O=0;
   r2 = 0.0;
   for(int i=0; i<3; i++)
     {
-      r2 += p*TrialWalker->R(0,i)*TrialWalker->R(0,i)
-	+  p*TrialWalker->R(1,i)*TrialWalker->R(1,i)
-	+  q*OriginalWalker->R(0,i)*OriginalWalker->R(0,i)
-	+  q*OriginalWalker->R(1,i)*OriginalWalker->R(1,i);
+      //assuming the nucleus is at the origin
+      //also, we're measuring the same thing for both electrons
+      //and averaging
+      calcR1_T += TrialWalker->R(0,i)*TrialWalker->R(0,i);
+      calcR2_T += TrialWalker->R(1,i)*TrialWalker->R(1,i);
+      calcR1_O += OriginalWalker->R(0,i)*OriginalWalker->R(0,i);
+      calcR2_O += OriginalWalker->R(1,i)*OriginalWalker->R(1,i);
       
       double tempT, tempO;
       tempT = TrialWalker->R(0,i)    - TrialWalker->R(1,i);
@@ -1298,9 +1312,25 @@ void QMCWalker::calculateObservables()
       calcR12_T += tempT*tempT;
       calcR12_O += tempO*tempO;
     }
-  r12 = p*sqrt(calcR12_T) + q*sqrt(calcR12_O);
-  r2 /= 2.0;
-  
+  r12  = p*sqrt(calcR12_T) + q*sqrt(calcR12_O);
+  ir12 = p/sqrt(calcR12_T) + q/sqrt(calcR12_O);
+  ir = (p*(1.0/sqrt(calcR1_T) + 1.0/sqrt(calcR2_T))
+     +  q*(1.0/sqrt(calcR1_O) + 1.0/sqrt(calcR2_O)))/2.0;
+  r2 = (p*(calcR1_T + calcR2_T)
+     +  q*(calcR1_O + calcR2_O))/2.0;
+
+  double kineticEnergy_grad_O = 0.0;
+  double kineticEnergy_grad_T = 0.0;
+  for(int i=0; i<TrialWalker->walkerData.gradPsiRatio.dim1(); i++)
+    for(int j=0; j<TrialWalker->walkerData.gradPsiRatio.dim2(); j++)
+    {
+      kineticEnergy_grad_O += OriginalWalker->walkerData.gradPsiRatio(i,j)
+	* OriginalWalker->walkerData.gradPsiRatio(i,j);
+      kineticEnergy_grad_T += TrialWalker->walkerData.gradPsiRatio(i,j)
+	* TrialWalker->walkerData.gradPsiRatio(i,j);
+    }
+  kineticEnergy_grad = p*kineticEnergy_grad_T + q*kineticEnergy_grad_O;
+
   //This is the forward walking portion of the calculation as described in:
   //J. Casulleras and J. Boronat, Phys. Rev. B 52, 3654 (1995) aka "CB95"
   //this is what CB95 suggest
@@ -1325,8 +1355,11 @@ void QMCWalker::calculateObservables()
 	      fwNormalization(i,j)     *= pWeight;
 	      fwR12(i,j)               *= pWeight;
 	      fwR2(i,j)                *= pWeight;
+	      fwiR12(i,j)              *= pWeight;
+	      fwiR(i,j)                *= pWeight;
 	      fwEnergy(i,j)            *= pWeight;
 	      fwKineticEnergy(i,j)     *= pWeight;
+	      fwKineticEnergy_grad(i,j)*= pWeight;
 	      fwPotentialEnergy(i,j)   *= pWeight;
 	      
 	      for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
@@ -1340,10 +1373,13 @@ void QMCWalker::calculateObservables()
 	      fwNormalization(i,j)   += aWeight;
 	      fwR12(i,j)             += aWeight * r12;
 	      fwR2(i,j)              += aWeight * r2;
+	      fwiR12(i,j)            += aWeight * ir12;
+	      fwiR(i,j)              += aWeight * ir;
 	      fwEnergy(i,j)          += aWeight * localEnergy;
 	      fwKineticEnergy(i,j)   += aWeight * kineticEnergy;
+	      fwKineticEnergy_grad(i,j) += aWeight * kineticEnergy_grad;
 	      fwPotentialEnergy(i,j) += aWeight * potentialEnergy;
-	      
+
 	      for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
 		for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
 		  (fwNuclearForces(d1,d2))(i,j) += aWeight * walkerData.nuclearDerivatives(d1,d2);
@@ -1407,14 +1443,20 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 	  
 	  (fwProps.props[FW_R12])(i).newSample(r12, getWeight());
 	  (fwProps.props[FW_R2])(i).newSample(r2, getWeight());
+	  (fwProps.props[FW_iR12])(i).newSample(ir12, getWeight());
+	  (fwProps.props[FW_iR])(i).newSample(ir, getWeight());
 	  (fwProps.props[FW_TE])(i).newSample(localEnergy, getWeight());
 	  (fwProps.props[FW_KE])(i).newSample(kineticEnergy, getWeight());
+	  (fwProps.props[FW_KEg])(i).newSample(kineticEnergy_grad, getWeight());
 	  (fwProps.props[FW_PE])(i).newSample(potentialEnergy, getWeight());
 
 	  (fwProps.props[FW_R12_2])(i).newSample(r12*r12, getWeight());
 	  (fwProps.props[FW_R2_2])(i).newSample(r2*r2, getWeight());
+	  (fwProps.props[FW_iR12_2])(i).newSample(ir12*ir12, getWeight());
+	  (fwProps.props[FW_iR_2])(i).newSample(ir*ir, getWeight());
 	  (fwProps.props[FW_TE_2])(i).newSample(localEnergy*localEnergy, getWeight());
 	  (fwProps.props[FW_KE_2])(i).newSample(kineticEnergy*kineticEnergy, getWeight());
+	  (fwProps.props[FW_KEg_2])(i).newSample(kineticEnergy_grad*kineticEnergy_grad, getWeight());
 	  (fwProps.props[FW_PE_2])(i).newSample(potentialEnergy*potentialEnergy, getWeight());
 	  continue;
 	}
@@ -1444,14 +1486,20 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 	  double norm = 1.0/fwNormalization(i,whichIsDone);
 	  (fwProps.props[FW_R12])(i).newSample(fwR12(i,whichIsDone)*norm,getWeight());
 	  (fwProps.props[FW_R2])(i).newSample(fwR2(i,whichIsDone)*norm,getWeight());
+	  (fwProps.props[FW_iR12])(i).newSample(fwiR12(i,whichIsDone)*norm,getWeight());
+	  (fwProps.props[FW_iR])(i).newSample(fwiR(i,whichIsDone)*norm,getWeight());
 	  (fwProps.props[FW_TE])(i).newSample(fwEnergy(i,whichIsDone)*norm,getWeight());
 	  (fwProps.props[FW_KE])(i).newSample(fwKineticEnergy(i,whichIsDone)*norm,getWeight());
+	  (fwProps.props[FW_KEg])(i).newSample(fwKineticEnergy_grad(i,whichIsDone)*norm,getWeight());
 	  (fwProps.props[FW_PE])(i).newSample(fwPotentialEnergy(i,whichIsDone)*norm,getWeight());
 
 	  (fwProps.props[FW_R12_2])(i).newSample(fwR12(i,whichIsDone)*norm*r12,getWeight());
 	  (fwProps.props[FW_R2_2])(i).newSample(fwR2(i,whichIsDone)*norm*r2,getWeight());
+	  (fwProps.props[FW_iR12_2])(i).newSample(fwiR12(i,whichIsDone)*norm*ir12,getWeight());
+	  (fwProps.props[FW_iR_2])(i).newSample(fwiR(i,whichIsDone)*norm*ir,getWeight());
 	  (fwProps.props[FW_TE_2])(i).newSample(fwEnergy(i,whichIsDone)*norm*localEnergy,getWeight());
 	  (fwProps.props[FW_KE_2])(i).newSample(fwKineticEnergy(i,whichIsDone)*norm*kineticEnergy,getWeight());
+	  (fwProps.props[FW_KEg_2])(i).newSample(fwKineticEnergy_grad(i,whichIsDone)*norm*kineticEnergy,getWeight());
 	  (fwProps.props[FW_PE_2])(i).newSample(fwPotentialEnergy(i,whichIsDone)*norm*potentialEnergy,getWeight());
 	  
 	  // Calculate the nuclear forces      
@@ -1476,8 +1524,11 @@ void QMCWalker::resetFutureWalking(int whichBlock, int whichIsDone)
   fwNormalization(whichBlock,whichIsDone)     = 0;
   fwR12(whichBlock,whichIsDone)               = 0;
   fwR2(whichBlock,whichIsDone)                = 0;
+  fwiR12(whichBlock,whichIsDone)              = 0;
+  fwiR(whichBlock,whichIsDone)                = 0;
   fwEnergy(whichBlock,whichIsDone)            = 0;
   fwKineticEnergy(whichBlock,whichIsDone)     = 0;
+  fwKineticEnergy_grad(whichBlock,whichIsDone)     = 0;
   fwPotentialEnergy(whichBlock,whichIsDone)   = 0;
       
   if(Input->flags.nuclear_derivatives != "none")

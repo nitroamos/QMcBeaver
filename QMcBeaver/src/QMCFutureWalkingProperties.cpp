@@ -49,15 +49,21 @@ QMCFutureWalkingProperties::QMCFutureWalkingProperties()
   names[FW_It]  = "Normalization I(t)";
   names[FW_TE]  = "Total Energy";
   names[FW_KE]  = "Kinetic Energy";
+  names[FW_KEg] = "Kinetic Energy_g";
   names[FW_PE]  = "Potential Energy";
   names[FW_R12] = "R12";
   names[FW_R2]  = "R2";
+  names[FW_iR]  = "Inverse R";
+  names[FW_iR12]= "Inverse R12";
 
   names[FW_TE_2]  = "Total Energy^2";
   names[FW_KE_2]  = "Kinetic Energy^2";
+  names[FW_KEg_2] = "Kinetic Energy_g^2";
   names[FW_PE_2]  = "Potential Energy^2";
   names[FW_R12_2] = "R12^2";
   names[FW_R2_2]  = "R2^2";
+  names[FW_iR_2]  = "Inverse R^2";
+  names[FW_iR12_2]= "Inverse R12^2";
 
   props.allocate(NUM_PROPS);
   for(int i=0; i<props.size(); i++) 
