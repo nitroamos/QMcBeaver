@@ -15,6 +15,7 @@
 
 #include <fstream>
 #include <list>
+#include <queue>
 
 #include "QMCWalker.h"
 #include "QMCEquilibrationArray.h"
@@ -241,6 +242,13 @@ private:
   double populationSizeBiasCorrectionFactor;
 
   /**
+     This queue is only used by calculatePopulationSizeBiasCorrectionFactor used
+     to store the history of populationSizeBiasCorrectionFactor factors. See UNR93
+     for more details.
+   */
+  queue<double> correctionDivisor;
+
+  /**
     During a DMC calculation branch the walkers while keeping the weights
     equal to one.  This was developed by Lester.  It is of Chip Kent's (my)
     experience that this method often has an exponentially growing or 
@@ -280,9 +288,11 @@ private:
     Calculates a factor that is used in removing the bias introduced into 
     a calculation by using a finite number of walkers.  The bias is only
     present in calculations that use branching.  
+
+    This factor is described in Umrigar, Nightingale, Runge 1993 paper (UNR93).
   */
   void calculatePopulationSizeBiasCorrectionFactor();
-
+  
   /**
     The maximum distance between a pair of particles that will be recorded in
     the histograms.

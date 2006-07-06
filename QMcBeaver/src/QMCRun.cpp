@@ -631,21 +631,52 @@ void QMCRun::calculatePopulationSizeBiasCorrectionFactor()
   if( Input->flags.correct_population_size_bias &&
       Input->flags.run_type != "variational" )
     {
-      double temp = Input->flags.energy_trial -
-                    Input->flags.energy_estimated_original;
-                    
-      temp *= -Input->flags.dt;
+      /*
+	Discussion on Tp:
+	Tp needs to decrease with higher population size
+	Tp needs to increase with with increasing rms fluctuation of E_local
+	Tp needs to be proportional to the autocorrelation time
+	UNR93 give no further recommendation except to say that while
+	the distribution is unbiased only for infinite Tp, the variance
+	goes up with increasing Tp.
+
+	Preliminary tests seem to indicate that 1/dt is best
+	(as compared to 0.25/dt, 0.5/dt, 2/dt, 4/dt, and 8/dt)
+      */
+      const unsigned int Tp = (int)(1.0/Input->flags.dt);
+
+      /*
+	if we're going to "absorb the constant part into the definition of G"
+	then don't we have to add Input->flags.energy_estimated_original back in somewhere?
+	then again, perhaps if walkers at all times are uniformly weighted by this factor, then
+	after equilibration, it doesn't really matter... Et - Eo seems to work better.
+      */
+      double temp = Input->flags.energy_trial - Input->flags.energy_estimated_original;
+      //double temp = Input->flags.energy_trial;
+
+      //this used to be just dt, but UNR93 says dt_effective
+      temp *= -Input->flags.dt_effective;
       
-      if (IeeeMath::isNaN(temp))
+      temp = exp(temp);
+      populationSizeBiasCorrectionFactor *= temp;
+
+      //this is not supposed to be cleared when transitioning from equilibration to
+      //production steps.
+      correctionDivisor.push(temp);
+      if(correctionDivisor.size() > Tp)
 	{
-	  cerr << "Error in QMCRun::calculatePopulationSizeBiasCorrectionFactor()" << endl;
-	  cerr << "energy_trial = " << Input->flags.energy_trial << endl;
-	  exit(1);
+	  populationSizeBiasCorrectionFactor /= correctionDivisor.front();
+	  correctionDivisor.pop();
 	}
 
-      temp = exp(temp);
-      
-      populationSizeBiasCorrectionFactor *= temp;
+      if (IeeeMath::isNaN(populationSizeBiasCorrectionFactor))
+	{
+	  cerr << "Error in QMCRun::calculatePopulationSizeBiasCorrectionFactor()" << endl;
+	  cerr << "  energy_trial = " << Input->flags.energy_trial << endl;
+	  cerr << "  dt_effective = " << Input->flags.dt_effective << endl;
+	  cerr << "  multiplier   = " << temp << endl;
+	  exit(1);
+	}
     }
 }
 
