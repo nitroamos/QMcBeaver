@@ -1,3 +1,9 @@
+Wed, 6 July 2006 Amos Anderson
+1.	Fixed a bug in how populationSizeBiasCorrectionFactor was calculated.
+	Previous calculations using the correct_population_size_bias = 1 flag
+	had significantly higher statistical fluctuation than with the flag
+	turned off.
+
 Thurs, 15 June 2006 Daniel R. Fisher
 1.  Made a new flag, max_pair_distance, which sets the maximum length
     of the histograms (in au) if intrapair distances are being
