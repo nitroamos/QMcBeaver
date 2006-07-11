@@ -3,6 +3,8 @@ Tue, 11 July 2006 Daniel R Fisher
     not have to initialize its own QMCFunctions object to evaluate
     itself.  Instead, the QMCFunctions in QMCRun evaluates all the
     walkers.
+2.  Fixed a small bug in QMCDansWalkerInitialization that dealt with
+    redistributing electrons when nuclei are charged.
 
 Wed, 5 July 2006 Amos Anderson
 1.	Fixed a bug in how populationSizeBiasCorrectionFactor was calculated.
