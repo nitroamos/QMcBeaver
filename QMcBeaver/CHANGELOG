@@ -1,4 +1,10 @@
-Wed, 6 July 2006 Amos Anderson
+Tue, 11 July 2006 Daniel R Fisher
+1.  Changed the way checkpoint files are read so that each walker does
+    not have to initialize its own QMCFunctions object to evaluate
+    itself.  Instead, the QMCFunctions in QMCRun evaluates all the
+    walkers.
+
+Wed, 5 July 2006 Amos Anderson
 1.	Fixed a bug in how populationSizeBiasCorrectionFactor was calculated.
 	Previous calculations using the correct_population_size_bias = 1 flag
 	had significantly higher statistical fluctuation than with the flag

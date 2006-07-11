@@ -158,7 +158,7 @@ public:
     it is not intelligent.
     @param strm XML stream
   */
-  void readXML(istream& strm);
+  void readXML(istream& strm, QMCFunctions & QMF);
 
   /**
     Gets the value of the local energy estimator for this walker.

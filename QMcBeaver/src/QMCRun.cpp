@@ -553,7 +553,7 @@ void QMCRun::readXML(istream& strm)
       w.initialize(Input);
       
       // read a walker
-      w.readXML(strm);
+      w.readXML(strm,QMF);
       
       wlist.push_back(w);
     }

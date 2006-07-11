@@ -1130,7 +1130,7 @@ void QMCWalker::toXML(ostream& strm)
   strm << "</QMCWalker>\n" << endl;
 }
 
-void QMCWalker::readXML(istream& strm)
+void QMCWalker::readXML(istream& strm, QMCFunctions & QMF)
 {
   string temp;
   strm >> temp;
@@ -1161,7 +1161,6 @@ void QMCWalker::readXML(istream& strm)
   // Read the energy and don't save it
   strm >> temp >> temp >> temp >> temp >> temp;
   
-  QMCFunctions QMF(Input);
   QMF.evaluate(R,walkerData);
 }
 
