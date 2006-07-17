@@ -1,3 +1,7 @@
+Fri, 14 July 2006 Daniel R Fisher
+1.  Took out a bunch of cout's that I accidentally left in
+    QMCDansWalkerInitialization when I was working on it.
+
 Tue, 11 July 2006 Daniel R Fisher
 1.  Changed the way checkpoint files are read so that each walker does
     not have to initialize its own QMCFunctions object to evaluate

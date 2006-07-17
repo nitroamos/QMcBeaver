@@ -62,14 +62,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
   Array2D<int> ab_count(natoms,3);
   ab_count = assign_electrons_to_nuclei();
 
-  cout << "ab_count before redistribution:" << endl;
-  for (int i=0; i<ab_count.dim1(); i++)
-    {
-      for (int j=0; j<3; j++)
-	cout << "\t" << ab_count(i,j);
-      cout << endl;
-    }
-
   // Redistribute electrons if there are charged centers.
 
   int icharge_init, icharge, kcharge, partner, partnercharge, give, get;
@@ -78,11 +70,9 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
     if (Input->Molecule.Z(i) != ab_count(i,0)) // If this atom is charged
       {
 	icharge_init = Input->Molecule.Z(i) - ab_count(i,0);
-	cout << "init charge on atom " << i << " = " << icharge_init << endl;
         for (int j=0; j<abs(icharge_init); j++)
 	  {
 	    icharge = Input->Molecule.Z(i) - ab_count(i,0);
-	    cout << "charge on atom " << i << " = " << icharge << endl;
 	    partner = -1;
 	    give = -1;
 	    get = -1;
@@ -92,20 +82,17 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 		if (k != i)
 		  {
 		    kcharge = Input->Molecule.Z(k) - ab_count(k,0);
-		    cout << "charge on atom " << k << " = " << kcharge << endl;
 		    if (icharge < 0 && kcharge >= icharge+2)
 		      {
 			if (partner == -1)
 			  {
 			    partner = k;
 			    partnercharge = kcharge;
-			    cout << "partner = " << k << endl;
 			  }
 			else if (kcharge > partnercharge)
 			  {
 			    partner = k;
 			    partnercharge = kcharge;
-			    cout << "partner = " << k << endl;
 			  }
 		      }
 		    else if (icharge > 0 && kcharge <= icharge-2)
@@ -114,13 +101,11 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 			  {
 			    partner = k;
 			    partnercharge = kcharge;
-			    cout << "partner = " << k << endl;
 			  }
 			else if (kcharge < partnercharge)
 			  {
 			    partner = k;
 			    partnercharge = kcharge;
-			    cout << "partner = " << k << endl;
 			  }
 		      }
 		  }
@@ -132,14 +117,12 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 		  {
 		    give = i;
 		    get = partner;
-		    cout << "give = " << i << ", get = " << partner << endl;
 		  }
 		else if (icharge > partnercharge)
 		  // We are getting an electron from the partner
 		  {
 		    get = i;
 		    give = partner;
-		    cout << "give = " << partner << ", get = " << i << endl;
 		  }
 		if (ab_count(give,1) == ab_count(give,2))  // if na=nb on -
 		  {
@@ -149,7 +132,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 			ab_count(give,1) -= 1;
 			ab_count(get,0) += 1;
 			ab_count(get,1) += 1;
-			cout << "transfering an alpha" << endl;
 		      }
 		    else if (ab_count(get,1) > ab_count(get,2))
 		      {  // transfer a beta
@@ -157,7 +139,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 			ab_count(give,2) -= 1;
 			ab_count(get,0) += 1;
 			ab_count(get,2) += 1;
-			cout << "transfering a beta" << endl;
 		      }
 		  }
 		else if (ab_count(give,1) > ab_count(give,2)) // if na>nb on -
@@ -168,7 +149,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 			ab_count(give,1) -= 1;
 			ab_count(get,0) += 1;
 			ab_count(get,1) += 1;
-			cout << "transfering an alpha" << endl;
 		      }
 		    else if (ab_count(get,1) > ab_count(get,2))
 		      // find a center where nb>na, and trade an alpha from - 
@@ -178,8 +158,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 			  if ( (l != give && l != get) && 
 			       (ab_count(l,1) < ab_count(l,2)) )
 			    { 
-			      cout << "transfering an alpha to " << l << ", ";
-			      cout << "and a beta to " << get << endl;
 			      ab_count(give,0) -= 1;
 			      ab_count(give,1) -= 1;
 			      ab_count(l,1) += 1;
@@ -198,7 +176,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 			ab_count(give,2) -= 1;
 			ab_count(get,0) += 1;
 			ab_count(get,2) += 1;
-			cout << "transfering a beta" << endl;
 		      }
 		    else if (ab_count(get,1) < ab_count(get,2))
 		      // find a center where na>nb, and trade a beta from -
@@ -208,8 +185,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 			  if ( (m != give && m != get) &&  
 			       (ab_count(m,1) > ab_count(m,2)) )
 			    {
-			      cout << "transfering a beta to " << m;
-			      cout << ", and an alpha to " << get << endl;
 			      ab_count(give,0) -= 1;
 			      ab_count(give,2) -= 1;
 			      ab_count(m,2) += 1;
@@ -224,18 +199,8 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  }
       }
 
-  cout << "ab_count after redistribution:" << endl;
-  for (int i=0; i<ab_count.dim1(); i++)
-    {
-      for (int j=0; j<3; j++)
-	cout << "\t" << ab_count(i,j);
-      cout << endl;
-    }
-
   // Now we check to make sure no center has too many electrons of the same 
   // type.
-
-  cout << "Making sure no center has too many electrons" << endl;
 
   for (int i=0; i<natoms; i++)
     {
@@ -323,14 +288,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
                   break;
                 }
 	}
-    }
-
-  cout << "ab_count after checking levels:" << endl;
-  for (int i=0; i<ab_count.dim1(); i++)
-    {
-      for (int j=0; j<3; j++)
-	cout << "\t" << ab_count(i,j);
-      cout << endl;
     }
 
   // Check to see that all electrons have been assigned.
