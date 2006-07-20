@@ -33,6 +33,7 @@ for more details.
 bool QMCManager::SIGNAL_SAYS_QUIT         = false;  
 bool QMCManager::REDUCE_ALL_NOW           = false;
 bool QMCManager::INCREASE_TIME            = false;
+bool QMCManager::PRINT_SIG_INFO           = false;
 
 QMCManager::QMCManager()
 {
@@ -610,18 +611,23 @@ void QMCManager::run()
 	static bool written = false;
 	if(!written)
 	  {
-	    cout << "Rank " << Input.flags.my_rank << " received SIGNAL_SAYS_QUIT."<< endl;
+	    if(QMCManager::PRINT_SIG_INFO)
+	      cout << "Rank " << Input.flags.my_rank << " received SIGNAL_SAYS_QUIT."<< endl;
 	    written = true;
 	  }
       }
     
       if(QMCManager::INCREASE_TIME)
 	{
-	  cout << "Rank " << Input.flags.my_rank << " received INCREASE_TIME."<< endl;
-	  QMCManager::INCREASE_TIME = false;
-	  cout << "Max time changed from " << Input.flags.max_time_steps << " to ";
+	  QMCManager::INCREASE_TIME = false; 
+	  if(QMCManager::PRINT_SIG_INFO)
+	    {
+	      cout << "Rank " << Input.flags.my_rank << " received INCREASE_TIME."<< endl;
+	      cout << "Max time changed from " << Input.flags.max_time_steps << " to ";
+	    }
 	  Input.flags.max_time_steps = (long)(Input.flags.max_time_steps*1.1);
-	  cout << Input.flags.max_time_steps << endl;
+	  if(QMCManager::PRINT_SIG_INFO)
+	    cout << Input.flags.max_time_steps << endl;
 	}
     
     if( Input.flags.my_rank == 0 )
@@ -629,13 +635,16 @@ void QMCManager::run()
       
       if( QMCManager::REDUCE_ALL_NOW )
 	{
-	  cout << "Root received REDUCE_ALL_NOW."<< endl;
-	  sendAllProcessorsACommand( QMC_REDUCE_ALL );
+	  if(QMCManager::PRINT_SIG_INFO)
+	    cout << "Root received REDUCE_ALL_NOW."<< endl;
 	  QMCManager::REDUCE_ALL_NOW = false;
+
+	  sendAllProcessorsACommand( QMC_REDUCE_ALL );
 
 	  writeEnergyResultsSummary( cout );
 	  writeEnergyResultsSummary( *qmcOut );
 
+	  synchronizationBarrier();
 	  gatherProperties();
 	      
 	  if (Input.flags.write_electron_densities == 1)
@@ -755,10 +764,11 @@ void QMCManager::run()
 	      processors are falling through the MPI_Reduce
 	      if the root node is not at MPI_Reduce...
 	    */
-	    if(QMCManager::REDUCE_ALL_NOW)
+	    if(QMCManager::REDUCE_ALL_NOW && QMCManager::PRINT_SIG_INFO)
 	      cout << "Rank " << Input.flags.my_rank << " received REDUCE_ALL_NOW."<< endl;
 	    QMCManager::REDUCE_ALL_NOW = false;
 	    
+	    synchronizationBarrier();
 	    gatherProperties();
 	    
 	    if (Input.flags.write_electron_densities == 1)
@@ -1236,15 +1246,18 @@ void QMCManager::receiveSignal(signalType signal)
    */
   switch(signal){
   case SIG_REDUCE:
-    cout << "QMCManager procedure for SIG_REDUCE: reduce all properties and dump results, then resume normally." << endl;
+    if(QMCManager::PRINT_SIG_INFO)
+      cout << "QMCManager procedure for SIG_REDUCE: reduce all properties and dump results, then resume normally." << endl;
     QMCManager::REDUCE_ALL_NOW = true;
     break;
   case SIG_INCREASE:
-    cout << "QMCManager procedure for SIG_INCREASE: increase Input.flags.max_time_steps by 10%." << endl;
+    if(QMCManager::PRINT_SIG_INFO)
+      cout << "QMCManager procedure for SIG_INCREASE: increase Input.flags.max_time_steps by 10%." << endl;
     QMCManager::INCREASE_TIME = true;
     break;
   case SIG_QUIT:
-    cout << "QMCManager procedure for SIG_QUIT: reduce and gracefully end." << endl;
+    if(QMCManager::PRINT_SIG_INFO)
+      cout << "QMCManager procedure for SIG_QUIT: reduce and gracefully end." << endl;
     QMCManager::SIGNAL_SAYS_QUIT = true;
     break;
   case SIG_NOTHING:
@@ -1283,7 +1296,7 @@ void QMCManager::checkConvergenceBasedTerminationCriteria()
 void QMCManager::updateEstimatedEnergy( QMCProperties* Properties )
 {
   // Update the estimated energy
-  
+
   if(  !equilibrating && Properties->energy.getNumberSamples()  > 1 )
   {
     Input.flags.energy_estimated = Properties->energy.getAverage();
@@ -1311,13 +1324,13 @@ void QMCManager::updateTrialEnergy( double weights, int nwalkers_init )
 
     //See formula 11 from UNR93
     Input.flags.energy_trial = Input.flags.energy_estimated -
-    1.0 / Input.flags.dt_effective * log(  weights / nwalkers_init );
+      1.0 / Input.flags.dt_effective * log(  weights / nwalkers_init );
   }
   else
   {
     if ( Input.flags.lock_trial_energy == 0 )
-      Input.flags.energy_trial = Input.flags.energy_estimated -
-        Input.flags.population_control_parameter * log(  weights / nwalkers_init );
+    Input.flags.energy_trial = Input.flags.energy_estimated -
+      Input.flags.population_control_parameter * log(  weights / nwalkers_init );
   }
 }
 

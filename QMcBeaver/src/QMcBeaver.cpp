@@ -43,7 +43,9 @@ void atSignalCallback(int sig);
 //change these to a free signal number. This is not portable! But
 //this is just a feature anyway.
 //enum signalChannels { CHANNEL1 = SIGUSR1, CHANNEL2 = SIGUSR2 };
-enum signalChannels { CHANNEL1 = SIGUSR1, CHANNEL2 = 40 };
+//enum signalChannels { CHANNEL1 = SIGUSR1, CHANNEL2 = 40 };
+//this is for use on QSC. LSF on QSC does not force the program to die using SIGURG
+enum signalChannels { CHANNEL1 = SIGURG, CHANNEL2 = 40 };
 
 using namespace std;
 
@@ -53,13 +55,11 @@ int main(int argcTemp, char *argvTemp[])
   argv = argvTemp;
   atexit(atExitCallback);
 
-#ifdef SIGUSR1
   signal(CHANNEL1,atSignalCallback);
   signal(CHANNEL2,atSignalCallback);
   signal(SIGTERM,atSignalCallback);
   signal(SIGHUP,SIG_IGN);
-#endif
-
+ 
 #ifdef PARALLEL
 
   // MPI initilizations

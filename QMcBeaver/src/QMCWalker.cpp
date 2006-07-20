@@ -923,14 +923,13 @@ void QMCWalker::acceptOrRejectMove()
       move_accepted = false;
     }
     
-  //if( age > Input->flags.old_walker_acceptance_parameter )
-  // {
-  //commented this out to time more accurately
-  //CHIP we will want this back in
-  //cerr << "WARNING: Walker older than "
-  //<< Input->flags.old_walker_acceptance_parameter << " steps!"
-  //    << " age = " << age << endl;
-  //}
+  if( age > Input->flags.old_walker_acceptance_parameter )
+    {
+      cerr << "WARNING: Walker older than old_walker_acceptance_parameter = "
+	   << Input->flags.old_walker_acceptance_parameter << " steps!" << endl;
+      cerr << " age    = " << age << endl;
+      cerr << " weight = " << getWeight() << endl;
+    }
 }
 
 void QMCWalker::createChildWalkers()

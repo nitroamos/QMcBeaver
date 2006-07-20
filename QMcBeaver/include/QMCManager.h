@@ -149,6 +149,7 @@ class QMCManager
   static bool SIGNAL_SAYS_QUIT;
   static bool REDUCE_ALL_NOW;
   static bool INCREASE_TIME;
+  static bool PRINT_SIG_INFO;
 
   /**
      Walkers plus the basic functionality needed to build a QMC calculation.
