@@ -1,3 +1,38 @@
+Thur, 20 July 2006 Amos Anderson
+NOTE: I discovered that I coded IeeeMath.cpp wrong: apparently this doesn't work the way
+I thought it would "x == std::numeric_limits<T>::quiet_NaN()", at least not on all systems.
+I still haven't figured out how to do this without resorting to c-style functions like "isfinite()".
+
+1.	I've substantially modified QMCFlags.cpp. I tried to organize
+	the flags according to purpose -- arbitrary to be sure, but hopefully
+	the flags would make a little more sense to a newcomer now. The original
+	point was that I wanted the restart input file to be organized.
+
+2.	I changed QMCFlags.cpp so that input files can now have comments. A line
+	that begins with a '#' will be ignored -- as long as it doesn't appear
+	between a flag name and flag parameter. There might be some issues with
+	the system, so be vigilant!
+
+3.	I changed QMCWavefunction.cpp so that it is neater when writing out the
+	wavefunction. I also added some comments just to make the code a little
+	more readable.
+
+4.	I added a static flag to QMCManager so that it is easy to turn on/off
+	the printing signaling information.
+
+5.	After consulting with the QSC people for why signaling wasn't working,
+	I was told that LSF doesn't treat signals properly. Basically, the problem
+	was that it would catch the SIGUSR1 signal that I told bsub to send QMcBeaver
+	near the wallclock limit time, and although it would properly send SIGUSR1 to
+	the program, it would also kill the application. A caught signal is not supposed
+	to result in the program dying. Anyway, they told me that SIGURG was
+	handled properly so the code will now look for it instead. (signal choices are
+	designated in QMcBeaver.cpp)
+
+6.	I finally uncommented the block that used to say "CHIP we will want this back in"
+	in QMCWalker. All it does is spit out a warning, so it shouldn't hurt anything
+	anyway.
+
 Fri, 14 July 2006 Daniel R Fisher
 1.  Took out a bunch of cout's that I accidentally left in
     QMCDansWalkerInitialization when I was working on it.
