@@ -24,13 +24,14 @@ void QMCFlags::read_flags(string InFileName)
     Set parameter defaults
   *************************************************************************/
   //QMC Parameters
-  dt                             = 0.001;
+  dt                             = 0.01;
   desired_convergence            = 0.0;
   max_time_steps                 = 1000000;
+  max_time                       = -1.0;
   number_of_walkers              = 1;
 
   //Initialization parameters
-  walker_initialization_method   = "mikes_jacked_initialization";
+  walker_initialization_method   = "dans_walker_initialization";
   walker_initialization_combinations = 3;
   dt_equilibration               = 0.02;
   equilibration_steps            = 10000;
@@ -43,14 +44,14 @@ void QMCFlags::read_flags(string InFileName)
   walker_reweighting_method      = "umrigar93_probability_weighted";
   branching_threshold            = 2.0;
   fusion_threshold               = 0.5;
-  correct_population_size_bias   = 0;
+  correct_population_size_bias   = 1;
   population_control_parameter   = 1.0;
   old_walker_acceptance_parameter = 50;
 
   //Green's function parameters
-  sampling_method                = "importance_sampling";
-  QF_modification_type           = "none";
-  energy_modification_type       = "none";
+  sampling_method                = "umrigar93_importance_sampling";
+  QF_modification_type           = "umrigar93_unequalelectrons";
+  energy_modification_type       = "umrigar93";
   umrigar93_equalelectrons_parameter = 0.5;  // in (0,1]
   synchronize_dmc_ensemble       = 0;
   synchronize_dmc_ensemble_interval = 1000;
@@ -61,7 +62,7 @@ void QMCFlags::read_flags(string InFileName)
   link_Jastrow_parameters        = 0;
 
   //Other QMcBeaver improvements or added functionality
-  replace_electron_nucleus_cusps = 0;
+  replace_electron_nucleus_cusps = 1;
   calculate_bf_density           = 0;
   use_hf_potential               = 0;
   hf_num_average                 = 100;
@@ -84,10 +85,10 @@ void QMCFlags::read_flags(string InFileName)
   //Output parameters
   output_interval                = 1000;
   checkpoint_interval            = 1000;
-  checkpoint                     = 1;
+  checkpoint                     = 0;
   use_available_checkpoints      = 0;
   zero_out_checkpoint_statistics = 0;
-  print_transient_properties     = 1;
+  print_transient_properties     = 0;
   print_transient_properties_interval = 10000;
   print_configs                  = 0;
   print_config_frequency         = 50;
@@ -256,6 +257,11 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
           max_time_steps = atol(temp_string.c_str());
+        }
+      else if(temp_string == "max_time")
+        {
+          input_file >> temp_string;
+          max_time = atof(temp_string.c_str());
         }
       else if(temp_string == "future_walking")
         {
@@ -713,6 +719,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "dt\n " << flags.dt_run << endl;
   strm << "number_of_walkers\n " << flags.number_of_walkers << endl;
   strm << "max_time_steps\n " << flags.max_time_steps << endl;
+  strm << "max_time\n " << flags.max_time << endl;
   strm << "desired_convergence\n " << flags.desired_convergence << endl;
 
   strm << "\n# Parameters specific to the Green's function\n";

@@ -1,4 +1,12 @@
 Thur, 20 July 2006 Amos Anderson
+1.	Changed some of the default parameters.
+
+2.	Added a new convergence criteria called "max_time". Basically,
+	this will limit the number of samples to "max_time/dt_run". The
+	purpose is so that a consistent number of steps can be applied
+	across several dt values.
+
+Thur, 20 July 2006 Amos Anderson
 NOTE: I discovered that I coded IeeeMath.cpp wrong: apparently this doesn't work the way
 I thought it would "x == std::numeric_limits<T>::quiet_NaN()", at least not on all systems.
 I still haven't figured out how to do this without resorting to c-style functions like "isfinite()".

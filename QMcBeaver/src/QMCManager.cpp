@@ -1271,13 +1271,30 @@ void QMCManager::receiveSignal(signalType signal)
 void QMCManager::checkTerminationCriteria()
 {
   checkMaxStepsTerminationCriteria();
+  checkMaxTimeTerminationCriteria();
   checkConvergenceBasedTerminationCriteria();
 }
 
 void QMCManager::checkMaxStepsTerminationCriteria()
 {
+  if(  Input.flags.max_time_steps < 0 )
+    return;
   if(  Properties_total.energy.getNumberSamples()  >=
        Input.flags.max_time_steps )
+  {
+    done = true;
+  }
+}
+
+void QMCManager::checkMaxTimeTerminationCriteria()
+{
+  if(  Input.flags.max_time < 0 )
+    return;
+  static unsigned long total_time =
+    (unsigned long)(Input.flags.max_time / Input.flags.dt_run);
+  cout << "total time " << total_time << endl;
+  if(  Properties_total.energy.getNumberSamples()  >=
+       total_time )
   {
     done = true;
   }

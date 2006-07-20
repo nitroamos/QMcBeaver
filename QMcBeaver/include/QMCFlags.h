@@ -247,8 +247,28 @@ class QMCFlags
 
   /**
      Maximum number of time steps the calculation will run for.
+     Set max_time_steps < 0 if you do not want it to be used as termination
+     criteria.
   */
   unsigned long max_time_steps;
+
+  /**
+     Maximum amount of time the calculation will run for. The number
+     of steps that this will limit to will be max_time / dt. The main
+     point of this parameter is to have one that will change automatically
+     depending on dt. This makes it easier to use the same input files
+     for different dt.
+
+     Set max_time < 0 if you do not want it to be used as termination
+     criteria.
+
+     There is an ambiguitiy as far as what this parameter means when doing
+     a parallel calculation. Should this limit the amount of time that
+     each processor individually covers or the "collective" time that all
+     processors cover? I've chosen the later since the former would involve
+     a loss of parallelization efficiency.
+  */
+  double max_time;
 
   /**
      This parameter is used in QMCRun to process several walkers 

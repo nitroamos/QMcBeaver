@@ -360,6 +360,12 @@ class QMCManager
   void checkMaxStepsTerminationCriteria();
 
   /**
+     Checks if we have run the calculation for a long enough
+     period of time, as specified by max_time in the input.
+  */
+  void checkMaxTimeTerminationCriteria();
+
+  /**
      Checks to see if the energy standard deviation has converged sufficiently
      to terminate.  The desired convergence is specified in the input.
   */
