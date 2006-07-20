@@ -86,66 +86,71 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
   string temp_string;
   
   if (rhs.trialFunctionType == "restricted")
-  {
-    for(int i=0; i<rhs.Norbitals; i++)
-      for(int j=0; j<rhs.Nbasisfunc; j++)
-        strm >> rhs.AlphaCoeffs(i,j);
-    
-    rhs.BetaCoeffs = rhs.AlphaCoeffs;
-  }
+    {
+      for(int i=0; i<rhs.Norbitals; i++)
+	for(int j=0; j<rhs.Nbasisfunc; j++)
+	  strm >> rhs.AlphaCoeffs(i,j);
+      
+      rhs.BetaCoeffs = rhs.AlphaCoeffs;
+    }
   
   else if (rhs.trialFunctionType == "unrestricted")
-  {
-    strm >> temp_string;
-    strm >> temp_string;
-    strm >> temp_string;
-    
-    for(int i=0; i<rhs.Norbitals; i++)
-      for(int j=0; j<rhs.Nbasisfunc; j++)
-        strm >> rhs.AlphaCoeffs(i,j);
-    
-    strm >> temp_string;
-    strm >> temp_string;
-    strm >> temp_string;
-    
-    for(int i=0; i<rhs.Norbitals; i++)
-      for(int j=0; j<rhs.Nbasisfunc; j++)
-        strm >> rhs.BetaCoeffs(i,j);
-  }
-  
+    { 
+      //skipping the words "Alpha Molecular Orbitals"
+      strm >> temp_string;
+      strm >> temp_string;
+      strm >> temp_string;
+      
+      for(int i=0; i<rhs.Norbitals; i++)
+	for(int j=0; j<rhs.Nbasisfunc; j++)
+	  strm >> rhs.AlphaCoeffs(i,j);
+
+      //skipping the words "Beta Molecular Orbitals"      
+      strm >> temp_string;
+      strm >> temp_string;
+      strm >> temp_string;
+      
+      for(int i=0; i<rhs.Norbitals; i++)
+	for(int j=0; j<rhs.Nbasisfunc; j++)
+	  strm >> rhs.BetaCoeffs(i,j);
+    }
+
+  //skipping the words "Alpha Occupation"
   strm >> temp_string; 
   strm >> temp_string;
   
   for (int i=0; i<rhs.Ndeterminants; i++)
     for (int j=0; j<rhs.Norbitals; j++)
-    {
-      strm >> rhs.AlphaOccupation(i,j);
-    }
-      
-      strm >> temp_string;
+      {
+	strm >> rhs.AlphaOccupation(i,j);
+      }
+  
+  //skipping the words "Beta Occupation"
+  strm >> temp_string;
   strm >> temp_string;
   
   for (int i=0; i<rhs.Ndeterminants; i++)
     for (int j=0; j<rhs.Norbitals; j++)
-    {
-      strm >> rhs.BetaOccupation(i,j);
-    }  
-      
-      strm >> temp_string;
+      {
+	strm >> rhs.BetaOccupation(i,j);
+      }  
+  
+  //skipping the words "CI Coeffs"
+  strm >> temp_string;
   strm >> temp_string;
   
   for (int i=0; i<rhs.Ndeterminants; i++)
-  {
-    strm >> rhs.CI_coeffs(i);
-  }
+    {
+      strm >> rhs.CI_coeffs(i);
+    }
   
   rhs.Nalpha = 0;
   rhs.Nbeta = 0;
   for(int i=0; i<rhs.Norbitals; i++)
-  {
-    rhs.Nalpha += rhs.AlphaOccupation(0,i);
-    rhs.Nbeta += rhs.BetaOccupation(0,i);
-  } 
+    {
+      rhs.Nalpha += rhs.AlphaOccupation(0,i);
+      rhs.Nbeta += rhs.BetaOccupation(0,i);
+    } 
   
   rhs.Nelectrons = rhs.Nalpha + rhs.Nbeta;
   return strm;
@@ -179,66 +184,93 @@ void QMCWavefunction::read(int numberOrbitals, int numberBasisFunctions,
 ostream& operator <<(ostream& strm, QMCWavefunction& rhs)
 {
   strm << "&wavefunction" << endl;
-  
+
+  int wf_width = 25;
+  int wf_precision = 12;
+  strm.setf(ios::scientific);
+
   if (rhs.trialFunctionType == "restricted")
-  {
-    for(int i=0; i<rhs.Norbitals; i++)
-      for(int j=0; j<rhs.Nbasisfunc; j++)
+    {
+      for(int i=0; i<rhs.Norbitals; i++)
+	{
+	  for(int j=0; j<rhs.Nbasisfunc; j++)
 	    {
 	      if( j%3 == 0 && j > 0 )
-          strm << endl;
-	      strm << "\t" << rhs.AlphaCoeffs(i,j);
+		strm << endl;
+	      strm.precision(wf_precision);
+	      strm.width(wf_width);
+	      strm << rhs.AlphaCoeffs(i,j);
 	    }
-        strm << endl << endl;
-  }
-  
+	  strm << endl << endl;
+	}
+    }
   else if (rhs.trialFunctionType == "unrestricted")
-  {
-    strm << "Alpha Molecular Orbitals" << endl << endl;
-    
-    for(int i=0; i<rhs.Norbitals; i++)
-      for(int j=0; j<rhs.Nbasisfunc; j++)
+    {
+      strm << "Alpha Molecular Orbitals" << endl << endl;
+      
+      for(int i=0; i<rhs.Norbitals; i++)
+	{
+	  for(int j=0; j<rhs.Nbasisfunc; j++)
 	    {
 	      if( j%3 == 0 && j>0 )
-          strm << endl;
-	      strm << "\t" << rhs.AlphaCoeffs(i,j);
+		strm << endl;
+	      strm.precision(wf_precision);
+	      strm.width(wf_width);
+	      strm << rhs.AlphaCoeffs(i,j);
 	    }
-        strm << endl << endl;
-    
-    strm << "Beta Molecular Orbitals" << endl << endl;
-    
-    for(int i=0; i<rhs.Norbitals; i++)
-      for(int j=0; j<rhs.Nbasisfunc; j++)
+	  strm << endl << endl;
+	}
+      
+      strm << "Beta Molecular Orbitals" << endl << endl;
+      
+      for(int i=0; i<rhs.Norbitals; i++)
+	{
+	  for(int j=0; j<rhs.Nbasisfunc; j++)
 	    {
 	      if( j%3 == 0 && j>0 )
-          strm << endl;
-	      strm << "\t" << rhs.BetaCoeffs(i,j);
+		strm << endl;
+	      strm.precision(wf_precision);
+	      strm.width(wf_width);
+	      strm << rhs.BetaCoeffs(i,j);
 	    }
-        strm << endl << endl;
-  }
+	  strm << endl << endl;
+	}
+    }
   
   strm << "Alpha Occupation" << endl;
   for (int i=0; i<rhs.Ndeterminants; i++)
-  {
-    for (int j=0; j<rhs.Norbitals; j++)
-      strm << rhs.AlphaOccupation(i,j) << "\t";
-    strm << endl << endl;
-  }
+    {
+      for (int j=0; j<rhs.Norbitals; j++)
+	{
+	  //since the output will only be 1 or 0
+	  //a width of 2 should be plenty
+	  strm.width(2);
+	  strm << rhs.AlphaOccupation(i,j);
+	}
+      strm << endl;
+    }
   
-  strm << "Beta Occupation" << endl;
+  strm << endl << "Beta Occupation" << endl;
   for (int i=0; i<rhs.Ndeterminants; i++)
-  {
-    for (int j=0; j<rhs.Norbitals; j++)
-      strm << rhs.BetaOccupation(i,j) << "\t";
-    strm << endl << endl;
-  }
+    {
+      for (int j=0; j<rhs.Norbitals; j++)
+	{
+	  strm.width(2);
+	  strm << rhs.BetaOccupation(i,j);
+	}
+      strm << endl;
+    }
   
-  strm << "CI Coeffs" << endl;
+  strm << endl << "CI Coeffs" << endl;
   for (int i=0; i<rhs.Ndeterminants; i++)
-    strm << rhs.CI_coeffs(i) << endl;
-  strm << endl << endl;
+    {
+      strm.precision(wf_precision);
+      strm.width(wf_width);
+      strm << rhs.CI_coeffs(i) << endl;
+    }
+  strm << endl;
   
-  strm << "&" << endl;
+  strm << "&" << endl << endl;
   return strm;
 }
 

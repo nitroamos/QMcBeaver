@@ -19,7 +19,107 @@ QMCFlags::QMCFlags()
 }
 
 void QMCFlags::read_flags(string InFileName)
-{
+{ 
+  /*************************************************************************
+    Set parameter defaults
+  *************************************************************************/
+  //QMC Parameters
+  dt                             = 0.001;
+  desired_convergence            = 0.0;
+  max_time_steps                 = 1000000;
+  number_of_walkers              = 1;
+
+  //Initialization parameters
+  walker_initialization_method   = "mikes_jacked_initialization";
+  walker_initialization_combinations = 3;
+  dt_equilibration               = 0.02;
+  equilibration_steps            = 10000;
+  equilibration_function         = "ramp";
+  CKAnnealingEquilibration1_parameter = 500;
+  use_equilibration_array        = 0;
+
+  //Weights, branching, fusion
+  branching_method               = "nonunit_weight_branching";
+  walker_reweighting_method      = "umrigar93_probability_weighted";
+  branching_threshold            = 2.0;
+  fusion_threshold               = 0.5;
+  correct_population_size_bias   = 0;
+  population_control_parameter   = 1.0;
+  old_walker_acceptance_parameter = 50;
+
+  //Green's function parameters
+  sampling_method                = "importance_sampling";
+  QF_modification_type           = "none";
+  energy_modification_type       = "none";
+  umrigar93_equalelectrons_parameter = 0.5;  // in (0,1]
+  synchronize_dmc_ensemble       = 0;
+  synchronize_dmc_ensemble_interval = 1000;
+
+  //Wavefunction parameters
+  trial_function_type            = "restricted";
+  Ndeterminants                  = 1;
+  link_Jastrow_parameters        = 0;
+
+  //Other QMcBeaver improvements or added functionality
+  replace_electron_nucleus_cusps = 0;
+  calculate_bf_density           = 0;
+  use_hf_potential               = 0;
+  hf_num_average                 = 100;
+  lock_trial_energy              = 0;
+  nuclear_derivatives            = "none";
+  vector<double> fwInvHartrees;
+  fwInvHartrees.clear();
+  fwInvHartrees.push_back(0);
+
+  //Computation parameters
+  parallelization_method         = "manager_worker";
+  iseed                          = -5135696;
+  use_basis_function_interpolation = 0;
+  number_basis_function_interpolation_grid_points = 1000;
+  basis_function_interpolation_first_point = 1e-10;
+  walkers_per_pass               = 1;
+  mpireduce_interval             = 1000;
+  mpipoll_interval               = 1;
+
+  //Output parameters
+  output_interval                = 1000;
+  checkpoint_interval            = 1000;
+  checkpoint                     = 1;
+  use_available_checkpoints      = 0;
+  zero_out_checkpoint_statistics = 0;
+  print_transient_properties     = 1;
+  print_transient_properties_interval = 10000;
+  print_configs                  = 0;
+  print_config_frequency         = 50;
+  temp_dir                       = "/temp1/";
+  write_all_energies_out         = 0;
+  write_electron_densities       = 0;
+  max_pair_distance              = -1;
+
+  //Wavefunction optmization parameters
+  optimize_Psi                   = 0;
+  max_optimize_Psi_steps         = 10;
+  optimize_Psi_barrier_parameter = 1.0;
+  optimize_Psi_criteria          = "umrigar88";
+  optimize_Psi_method            = "BFGSQuasiNewton";
+  equilibrate_every_opt_step     = 0;
+  equilibrate_first_opt_step     = 1;
+  numerical_derivative_surface   = "umrigar88";
+  line_search_step_length        = "Wolfe";
+  optimization_max_iterations    = 100;
+  optimization_error_tolerance   = 0.001;
+  ck_genetic_algorithm_1_population_size = 30;
+  ck_genetic_algorithm_1_mutation_rate = 0.2;
+  ck_genetic_algorithm_1_initial_distribution_deviation = 1.0;
+  singularity_penalty_function_parameter = 1.0e-6;
+
+  //Difficult to categorize
+  programmersLongs.clear();
+  chip_and_mike_are_cool         = "false";
+
+  /*************************************************************************
+    Read in all the user specified parameters
+  *************************************************************************/
   ifstream input_file(InFileName.c_str());
   string temp_string;
 
@@ -29,104 +129,13 @@ void QMCFlags::read_flags(string InFileName)
       exit(1);
     }
 
-  //***** Default Flag Values ********
-  vector<double> fwInvHartrees;
-  programmersLongs.clear();
-  fwInvHartrees.clear();
-  fwInvHartrees.push_back(0);
-  
-  walker_initialization_method   = "mikes_jacked_initialization";
-  walker_initialization_combinations = 3;
-  temp_dir                       = "/temp1/";
-  parallelization_method         = "manager_worker";
-  iseed                          = -5135696;
-  nuclear_derivatives            = "none";
-  sampling_method                = "importance_sampling";
-  QF_modification_type           = "none";
-  energy_modification_type       = "none";
-  umrigar93_equalelectrons_parameter = 0.5;  // in (0,1]
-  walker_reweighting_method      = "umrigar93_probability_weighted";
-  branching_method               = "nonunit_weight_branching";
-  branching_threshold            = 2.0;
-  fusion_threshold               = 0.5;
-  synchronize_dmc_ensemble       = 0;
-  synchronize_dmc_ensemble_interval = 1000;
-  old_walker_acceptance_parameter = 50;
-  zero_out_checkpoint_statistics = 0;
-  Ndeterminants                  = 1;
-  trial_function_type            = "restricted";
-
-  dt                             = 0.001;
-  dt_equilibration               = 0.02;
-
-  use_basis_function_interpolation = 0;
-  number_basis_function_interpolation_grid_points = 1000;
-  basis_function_interpolation_first_point = 1e-10;
-
-  equilibration_steps            = 10000;
-  equilibration_function         = "ramp";
-  CKAnnealingEquilibration1_parameter = 500;
-  use_equilibration_array        = 0;
-  calculate_bf_density           = 0;
-
-  correct_population_size_bias   = 0;
-
-  desired_convergence            = 0.0;
-  max_time_steps                 = 1000000;
-  number_of_walkers              = 1;
-  walkers_per_pass               = 1;
-  population_control_parameter   = 1.0;
-
-  output_interval                = 1000;
-  mpireduce_interval             = 1000;
-  mpipoll_interval               = 1;
-  checkpoint_interval            = 1000;
-  checkpoint                     = 1;
-  use_available_checkpoints      = 0;
-
-  print_transient_properties     = 1;
-  print_transient_properties_interval = 10000;
-  print_configs                  = 0;
-  print_config_frequency         = 50;
-
-  optimize_Psi                   = 0;
-  max_optimize_Psi_steps         = 10;
-  optimize_Psi_barrier_parameter = 1.0;
-  optimize_Psi_criteria          = "umrigar88";
-  optimize_Psi_method            = "BFGSQuasiNewton";
-  numerical_derivative_surface   = "umrigar88";
-  line_search_step_length        = "Wolfe";
-
-  optimization_max_iterations    = 100;
-  optimization_error_tolerance   = 0.001;
-
-  ck_genetic_algorithm_1_population_size = 30;
-  ck_genetic_algorithm_1_mutation_rate = 0.2;
-  ck_genetic_algorithm_1_initial_distribution_deviation = 1.0;
-
-  singularity_penalty_function_parameter = 1.0e-6;
-
-  link_Jastrow_parameters        = 0;
-  replace_electron_nucleus_cusps = 0;
-  equilibrate_every_opt_step     = 0;
-  equilibrate_first_opt_step     = 1;
-  write_all_energies_out         = 0;
-  write_electron_densities       = 0;
-  max_pair_distance              = -1;
-  chip_and_mike_are_cool         = "false";
-
-  use_hf_potential               = 0;
-  hf_num_average                 = 100;
-  lock_trial_energy              = 0;
-
-  //**********************************
-
   input_file >> temp_string;
   while(temp_string != "&flags")
     {
       input_file >> temp_string;
     }
 
+  //skipping the line that says "&flags"
   input_file >> temp_string;
 
   while((temp_string != "&") && (input_file.eof() != 1))
@@ -134,11 +143,6 @@ void QMCFlags::read_flags(string InFileName)
       if(temp_string == "run_type")
         {
           input_file >> run_type;
-          if(run_type != "variational" && run_type != "diffusion")
-            {
-              cerr << "ERROR: Unknown run_type: " << run_type << endl;
-              exit(1);
-            }
         }
       else if(temp_string == "temp_dir")
         {
@@ -533,6 +537,18 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           lock_trial_energy = atoi(temp_string.c_str());
         }
+      else if(temp_string.find("#",0) != string::npos)
+        {
+	  //it's a comment if one of the first 3 characters is a '#'
+	  //IMPORTANT NOTE: this only checks for comments where parameter
+	  //names are expected, not where parameter values are read in!
+          while(input_file.peek() != '\n')
+            {
+	      //just peal one character off at a time so that we
+	      //don't have to worry about whitespace being skipped
+	      input_file.get();
+            }
+        }
       else
         {
           cerr << "Warning: Unknown input flag: " << temp_string << endl;
@@ -541,21 +557,16 @@ void QMCFlags::read_flags(string InFileName)
     }
   input_file.close();
 
-  /*
-    This should make all the elements in the future walking vector unique
-    and sorted.
-  */
-  sort(fwInvHartrees.begin(), fwInvHartrees.end());
-  vector<double>::iterator last = unique(fwInvHartrees.begin(), fwInvHartrees.end());
-  fwInvHartrees.erase(last,fwInvHartrees.end());
 
-  //since it's better to input future walking lengths in terms of
-  // Hatrees^{-1} rather than block length, we need to convert it
-  for(unsigned int i=0; i<fwInvHartrees.size(); i++)
+  /*************************************************************************
+    Make sure that all the input parameters are compatible with each other
+  *************************************************************************/
+  if(run_type != "variational" && run_type != "diffusion")
     {
-      future_walking.push_back( (int)(fwInvHartrees[i]/dt) );
+      cerr << "ERROR: Unknown run_type: " << run_type << endl;
+      exit(1);
     }
-
+  
   if(run_type == "" )
     {
       cerr << "ERROR: run_type not set!" << endl;
@@ -564,7 +575,7 @@ void QMCFlags::read_flags(string InFileName)
 
   if(mpireduce_interval < output_interval)
     {
-      cerr << "Warning: mpireduce_interval < output_interval!" << endl;
+      //cerr << "Warning: mpireduce_interval < output_interval!" << endl;
     }
 
   if(optimize_Psi == 1 && run_type != "variational")
@@ -573,20 +584,38 @@ void QMCFlags::read_flags(string InFileName)
       << " run_type = " << run_type << "!" << endl;
     }
 
+  if(chip_and_mike_are_cool != "Yea_Baby!")
+    {
+      cerr << "ERROR: Incorrect value for chip_and_mike_are_cool set" << endl;
+      exit(1);
+    }
+
+  /*************************************************************************
+    Finally, fill in the parameters to get us ready for the calculation.
+  *************************************************************************/
+  /*
+    This should make all the elements in the future walking vector unique
+    and sorted.
+  */
+  sort(fwInvHartrees.begin(), fwInvHartrees.end());
+  vector<double>::iterator last = unique(fwInvHartrees.begin(), fwInvHartrees.end());
+  fwInvHartrees.erase(last,fwInvHartrees.end());
+  
+  //since it's better to input future walking lengths in terms of
+  // Hatrees^{-1} rather than block length, we need to convert it
+  for(unsigned int i=0; i<fwInvHartrees.size(); i++)
+    {
+      future_walking.push_back( (int)(fwInvHartrees[i]/dt) );
+    }
+
   set_filenames(InFileName);
 
   dt_effective = dt;
   dt_run = dt;
   dt = dt_equilibration;
   number_of_walkers_initial = number_of_walkers;
-  energy_estimated = energy_trial;
+  energy_estimated          = energy_trial;
   energy_estimated_original = energy_estimated;
-
-  if(chip_and_mike_are_cool != "Yea_Baby!")
-    {
-      cerr << "ERROR: Incorrect value for chip_and_mike_are_cool set" << endl;
-      exit(1);
-    }
 }
 
 void QMCFlags::set_filenames(string runfile)
@@ -669,123 +698,154 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
 {
   strm.setf( ios::fixed );
   strm << "&flags" << endl;
+
+  /*
+    I tried to categorize all the parameters so that similar parameters are
+    close to each other when output. This categorization is somewhat arbitrary...
+
+    After categorization, I attempted to order the categories according to how
+    likely someone is to want to change something in that category. Obviously,
+    there is no perfect way of doing this.
+   */
+  
+  strm << "# Parameters for QMC\n";
   strm << "run_type\n " << flags.run_type << endl;
-  strm << "temp_dir\n " << flags.temp_dir << endl;
-  strm << "parallelization_method\n " << flags.parallelization_method << endl;
-  strm << "walker_initialization_method\n "
-  << flags.walker_initialization_method << endl;
-  strm << "walker_initialization_combinations\n "
-  << flags.walker_initialization_combinations << endl;
-  if (flags.iseed > 0) strm << "iseed\n " << -1*flags.iseed << endl;
-  else if (flags.iseed <= 0) strm << "iseed\n " << flags.iseed << endl;
-  strm << "nuclear_derivatives\n " << flags.nuclear_derivatives << endl;
+  strm << "dt\n " << flags.dt_run << endl;
+  strm << "number_of_walkers\n " << flags.number_of_walkers << endl;
+  strm << "max_time_steps\n " << flags.max_time_steps << endl;
+  strm << "desired_convergence\n " << flags.desired_convergence << endl;
+
+  strm << "\n# Parameters specific to the Green's function\n";
   strm << "sampling_method\n " << flags.sampling_method << endl;
   strm << "QF_modification_type\n " << flags.QF_modification_type << endl;
-  strm << "energy_modification_type\n " << flags.energy_modification_type
-  << endl;
   strm << "umrigar93_equalelectrons_parameter\n "
-  << flags.umrigar93_equalelectrons_parameter << endl;
-  strm << "walker_reweighting_method\n " << flags.walker_reweighting_method
-  << endl;
-  strm << "synchronize_dmc_ensemble\n " << flags.synchronize_dmc_ensemble
-  << endl;
+       << flags.umrigar93_equalelectrons_parameter << endl;
+  strm << "energy_modification_type\n "
+       << flags.energy_modification_type << endl;
+  strm << "lock_trial_energy\n " << flags.lock_trial_energy << endl;
+  strm << "synchronize_dmc_ensemble\n "
+       << flags.synchronize_dmc_ensemble << endl;
   strm << "synchronize_dmc_ensemble_interval\n "
-  << flags.synchronize_dmc_ensemble_interval << endl;
-  strm << "old_walker_acceptance_parameter\n "
-  << flags.old_walker_acceptance_parameter << endl;
-  strm << "use_basis_function_interpolation\n "
-  << flags.use_basis_function_interpolation << endl;
-  strm << "number_basis_function_interpolation_grid_points\n "
-  << flags.number_basis_function_interpolation_grid_points << endl;
-  strm << "basis_function_interpolation_first_point\n "
-  << flags.basis_function_interpolation_first_point << endl;
+       << flags.synchronize_dmc_ensemble_interval << endl;
+  
+  strm << "\n# Parameters specific to weights, branching, and fusion\n";
+  strm << "walker_reweighting_method\n "
+       << flags.walker_reweighting_method << endl;
   strm << "branching_method\n " << flags.branching_method << endl;
   strm << "branching_threshold\n " << flags.branching_threshold << endl;
   strm << "fusion_threshold\n " << flags.fusion_threshold << endl;
-  strm << "dt\n " << flags.dt_run << endl;
-  strm << "desired_convergence\n " << flags.desired_convergence << endl;
-  strm << "max_time_steps\n " << flags.max_time_steps << endl;
+  strm << "population_control_parameter\n "
+       << flags.population_control_parameter << endl;
+  strm << "correct_population_size_bias\n "
+       << flags.correct_population_size_bias << endl;
+  strm << "old_walker_acceptance_parameter\n "
+       << flags.old_walker_acceptance_parameter << endl;
+
+  strm << "\n# Parameters for initialization\n";
   strm << "dt_equilibration\n " << flags.dt_equilibration << endl;
+  strm << "use_equilibration_array\n " << flags.use_equilibration_array << endl;
   strm << "equilibration_steps\n " << flags.equilibration_steps << endl;
   strm << "equilibration_function\n " << flags.equilibration_function << endl;
   strm << "CKAnnealingEquilibration1_parameter\n "
-  << flags.CKAnnealingEquilibration1_parameter << endl;
-  strm << "use_equilibration_array\n " << flags.use_equilibration_array << endl;
+       << flags.CKAnnealingEquilibration1_parameter << endl;
+  strm << "walker_initialization_method\n "
+       << flags.walker_initialization_method << endl;
+  strm << "walker_initialization_combinations\n "
+       << flags.walker_initialization_combinations << endl;
+    
+  strm << "\n# Parameters for added functionality/improvements\n";
+  strm << "calculate_bf_density\n " << flags.calculate_bf_density << endl;
+  strm << "use_hf_potential\n " << flags.use_hf_potential << endl;
+  strm << "hf_num_average\n " << flags.hf_num_average << endl;
+  strm << "replace_electron_nucleus_cusps\n " 
+       << flags.replace_electron_nucleus_cusps << endl;
+  strm << "nuclear_derivatives\n " << flags.nuclear_derivatives << endl;
   if(flags.future_walking.size() > 0)
-  {
-    strm << "future_walking\n";
-    for(unsigned int i=0; i<flags.future_walking.size(); i++)
-      {
-	strm << " " << (double)(flags.future_walking[i]*flags.dt);
-      }
-    strm << endl;
-  }
-  strm << "number_of_walkers\n " << flags.number_of_walkers << endl;
-  strm << "walkers_per_pass\n " << flags.walkers_per_pass << endl;
+    {
+      strm << "future_walking\n";
+      for(unsigned int i=0; i<flags.future_walking.size(); i++)
+	{
+	  strm << " " << (double)(flags.future_walking[i]*flags.dt);
+	}
+      strm << endl;
+    }
+
+  strm << "\n# Parameters relating to output\n";
   strm << "output_interval\n " << flags.output_interval << endl;
+  strm << "checkpoint\n " << flags.checkpoint << endl;
+  strm << "checkpoint_interval\n " << flags.checkpoint_interval << endl;
+  strm << "use_available_checkpoints\n "
+       << flags.use_available_checkpoints << endl;
+  strm << "zero_out_checkpoint_statistics\n "
+       << flags.zero_out_checkpoint_statistics << endl;
+  strm << "print_configs\n " << flags.print_configs << endl;
+  strm << "print_config_frequency\n " << flags.print_config_frequency << endl;
+  strm << "temp_dir\n " << flags.temp_dir << endl;
+  strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
+  strm << "write_electron_densities\n "
+       << flags.write_electron_densities << endl;
+  strm << "print_transient_properties\n "
+       << flags.print_transient_properties << endl;
+  strm << "print_transient_properties_interval\n "
+       << flags.print_transient_properties_interval << endl;
+  
+  strm << "\n# Parameters for wavefunction optimization\n";
+  strm << "optimize_Psi\n " << flags.optimize_Psi << endl;
+  strm << "optimize_Psi_method\n " << flags.optimize_Psi_method << endl;
+  strm << "optimize_Psi_criteria\n " << flags.optimize_Psi_criteria << endl;
+  strm << "max_optimize_Psi_steps\n " << flags.max_optimize_Psi_steps << endl;
+  strm << "equilibrate_first_opt_step\n "
+       << flags.equilibrate_first_opt_step << endl;
+  strm << "equilibrate_every_opt_step\n "
+       << flags.equilibrate_every_opt_step << endl;
+  strm << "optimization_max_iterations\n "
+       << flags.optimization_max_iterations << endl;
+  strm << "optimization_error_tolerance\n "
+       << flags.optimization_error_tolerance << endl;
+  strm << "singularity_penalty_function_parameter\n "
+       << flags.singularity_penalty_function_parameter << endl;
+  strm << "optimize_Psi_barrier_parameter\n "
+       << flags.optimize_Psi_barrier_parameter << endl;
+  strm << "numerical_derivative_surface\n "
+       << flags.numerical_derivative_surface << endl;
+  strm << "line_search_step_length\n "
+       << flags.line_search_step_length << endl;
+  strm << "ck_genetic_algorithm_1_population_size\n "
+       << flags.ck_genetic_algorithm_1_population_size << endl;
+  strm << "ck_genetic_algorithm_1_mutation_rate\n "
+       << flags.ck_genetic_algorithm_1_mutation_rate << endl;
+  strm << "ck_genetic_algorithm_1_initial_distribution_deviation\n "
+       << flags.ck_genetic_algorithm_1_initial_distribution_deviation << endl;
+  
+  strm << "\n# Parameters for computation/MPI\n";
+  if (flags.iseed > 0) strm << "iseed\n " << -1*flags.iseed << endl;
+  else if (flags.iseed <= 0) strm << "iseed\n " << flags.iseed << endl;
+  strm << "parallelization_method\n " << flags.parallelization_method << endl;
   strm << "mpireduce_interval\n " << flags.mpireduce_interval << endl;
   strm << "mpipoll_interval\n " << flags.mpipoll_interval << endl;
-  strm << "checkpoint_interval\n " << flags.checkpoint_interval << endl;
-  strm << "checkpoint\n " << flags.checkpoint << endl;
-  strm << "use_available_checkpoints\n " << flags.use_available_checkpoints
-  << endl;
+  strm << "walkers_per_pass\n " << flags.walkers_per_pass << endl;
+  //strm << "gpu_walkers_per_pass\n " << flags.gpu_walkers_per_pass << endl;
+  strm << "use_basis_function_interpolation\n "
+       << flags.use_basis_function_interpolation << endl;
+  strm << "number_basis_function_interpolation_grid_points\n "
+       << flags.number_basis_function_interpolation_grid_points << endl;
+  strm << "basis_function_interpolation_first_point\n "
+       << flags.basis_function_interpolation_first_point << endl;
+
+  strm << "\n# Parameters for the molecule and wavefunction\n";
   strm << "atoms\n " << flags.Natoms << endl;
   strm << "charge\n " << flags.charge << endl;
+  strm << "energy\n " << flags.energy_trial << endl;
+  strm << "trial_function_type\n " << flags.trial_function_type << endl;
   strm << "norbitals\n " << flags.Norbitals << endl;
   strm << "nbasisfunc\n " << flags.Nbasisfunc << endl;
   strm << "ndeterminants\n " << flags.Ndeterminants << endl;
-  strm << "trial_function_type\n " << flags.trial_function_type << endl;
-  strm << "calculate_bf_density\n " << flags.calculate_bf_density << endl;
-  strm << "energy\n " << flags.energy_trial << endl;
-  strm << "correct_population_size_bias\n "
-  << flags.correct_population_size_bias << endl;
-  strm << "print_transient_properties\n " << flags.print_transient_properties
-  << endl;
-  strm << "print_transient_properties_interval\n "
-  << flags.print_transient_properties_interval << endl;
-  strm << "print_configs\n " << flags.print_configs << endl;
-  strm << "print_config_frequency\n " << flags.print_config_frequency << endl;
-  strm << "optimize_Psi\n " << flags.optimize_Psi << endl;
-  strm << "max_optimize_Psi_steps\n " << flags.max_optimize_Psi_steps << endl;
-  strm << "optimize_Psi_criteria\n " << flags.optimize_Psi_criteria << endl;
-  strm << "optimize_Psi_method\n " << flags.optimize_Psi_method << endl;
-  strm << "singularity_penalty_function_parameter\n "
-  << flags.singularity_penalty_function_parameter << endl;
-  strm << "optimize_Psi_barrier_parameter\n "
-  << flags.optimize_Psi_barrier_parameter << endl;
-  strm << "numerical_derivative_surface\n "
-  << flags.numerical_derivative_surface << endl;
-  strm << "line_search_step_length\n " << flags.line_search_step_length 
-       << endl;
-  strm << "optimization_max_iterations\n "
-  << flags.optimization_max_iterations << endl;
-  strm << "optimization_error_tolerance\n "
-  << flags.optimization_error_tolerance << endl;
-  strm << "ck_genetic_algorithm_1_population_size\n "
-  << flags.ck_genetic_algorithm_1_population_size << endl;
-  strm << "ck_genetic_algorithm_1_mutation_rate\n "
-  << flags.ck_genetic_algorithm_1_mutation_rate << endl;
-  strm << "ck_genetic_algorithm_1_initial_distribution_deviation\n "
-  << flags.ck_genetic_algorithm_1_initial_distribution_deviation << endl;
-  strm << "link_Jastrow_parameters\n " << flags.link_Jastrow_parameters 
-       << endl;
-  strm << "replace_electron_nucleus_cusps\n " 
-       << flags.replace_electron_nucleus_cusps << endl;
-  strm << "equilibrate_first_opt_step\n " << flags.equilibrate_first_opt_step
-  << endl;
-  strm << "equilibrate_every_opt_step\n " << flags.equilibrate_every_opt_step
-  << endl;
-  strm << "population_control_parameter\n "
-  << flags.population_control_parameter << endl;
-  strm << "write_electron_densities\n " << flags.write_electron_densities
-  << endl;
-  strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
-  strm << "zero_out_checkpoint_statistics\n "
-  << flags.zero_out_checkpoint_statistics << endl;
-  strm << "use_hf_potential\n " << flags.use_hf_potential << endl;
-  strm << "hf_num_average\n " << flags.hf_num_average << endl;
-  strm << "lock_trial_energy\n " << flags.lock_trial_energy << endl;
+  strm << "link_Jastrow_parameters\n "
+       << flags.link_Jastrow_parameters << endl;
+  
+  strm << "\n# Other parameters\n";
   strm << "chip_and_mike_are_cool\n " << flags.chip_and_mike_are_cool << endl;
+  
   strm << "& " << endl;
   strm.unsetf( ios::fixed );
   return strm;
