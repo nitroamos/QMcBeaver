@@ -72,7 +72,7 @@ else:
 	file.write("#BSUB -B                         \n")
 	file.write("#BSUB -W 8:00                    \n")
 file.write("#BSUB -q " + queue + "           \n")
-file.write("#BSUB -wa 'USR1' -wt '10'        \n")
+file.write("#BSUB -wa 'URG' -wt '10'        \n")
 file.write("\n")
 file.write("cd " + os.getcwd() + "\n")
 if debug == 1:
