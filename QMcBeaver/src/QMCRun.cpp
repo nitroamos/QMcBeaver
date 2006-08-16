@@ -159,6 +159,9 @@ void QMCRun::initialize(QMCInput *INPUT)
       fwProperties.zeroOut();
     }
 
+  int nalpha = Input->WF.getNumberAlphaElectrons();
+  int nbeta = Input->WF.getNumberBetaElectrons();
+
   if (Input->flags.write_electron_densities == 1)
     {
       // The pair density for each pair of particles is recorded in a 
@@ -183,44 +186,159 @@ void QMCRun::initialize(QMCInput *INPUT)
       dr = max_pair_distance/5000;
       
       // Histograms for parallel and opposite spin electron densities.
-	  int nalpha = Input->WF.getNumberAlphaElectrons();
-	  int nbeta = Input->WF.getNumberBetaElectrons();
 
-	  if (nalpha > 1 || nbeta > 1)
-	    {
-	      pllSpinHistogram.allocate(5000);
-	      pllSpinHistogram = 0.0;
-	    }
+      if (nalpha > 1 || nbeta > 1)
+	{
+	  pllSpinHistogram.allocate(5000);
+	  pllSpinHistogram = 0.0;
+	}
 	  
-	  if (nalpha > 0 && nbeta > 0)
-	    {
-	      oppSpinHistogram.allocate(5000);
-	      oppSpinHistogram = 0.0;
-	    }
+      if (nalpha > 0 && nbeta > 0)
+	{
+	  oppSpinHistogram.allocate(5000);
+	  oppSpinHistogram = 0.0;
+	}
 
       // Histograms for the one electron densities.
       int nucleiTypes = Input->Molecule.NucleiTypes.dim1();
 
-	  if (nalpha > 0)
+      if (nalpha > 0)
+	{
+	  alphaHistograms.allocate(nucleiTypes);
+	  for (int k=0; k<nucleiTypes; k++)
 	    {
-	      alphaHistograms.allocate(nucleiTypes);
-	      for (int k=0; k<nucleiTypes; k++)
-		{
-		  alphaHistograms(k).allocate(5000);
-		  alphaHistograms(k) = 0.0;
-		}
+	      alphaHistograms(k).allocate(5000);
+	      alphaHistograms(k) = 0.0;
 	    }
+	}
 
-	  if (nbeta > 0)
+      if (nbeta > 0)
+	{
+	  betaHistograms.allocate(nucleiTypes);
+	  for (int k=0; k<nucleiTypes; k++)
 	    {
-	      betaHistograms.allocate(nucleiTypes);
-	      for (int k=0; k<nucleiTypes; k++)
-		{
-		  betaHistograms(k).allocate(5000);
-		  betaHistograms(k) = 0.0;
-		}
+	      betaHistograms(k).allocate(5000);
+	      betaHistograms(k) = 0.0;
 	    }
+	}
     }
+
+  if (nalpha > 1 || nbeta > 1)
+    {
+      if (Input->flags.writePllxCorrelationDiagram == 1)
+	{
+	  if (Input->flags.pllxCorrelationDiagramMin >= 
+	      Input->flags.pllxCorrelationDiagramMax)
+	    {
+	      cerr << "ERROR: pllxCorrelationDiagramMin = "
+		   << Input->flags.pllxCorrelationDiagramMin << ", "
+		   << "pllxCorrelationDiagramMax = "
+		   << Input->flags.pllxCorrelationDiagramMax << endl;
+	      exit(1);
+	    }
+	  pllxCorrelationDiagram.allocate(1000);
+	  for (int i=0; i<pllxCorrelationDiagram.dim1(); i++)
+	    {
+	      pllxCorrelationDiagram(i).allocate(1000);
+	      pllxCorrelationDiagram(i) = 0.0;
+	    }
+	}
+      if (Input->flags.writePllyCorrelationDiagram == 1)
+	{
+	  if (Input->flags.pllyCorrelationDiagramMin >= 
+	      Input->flags.pllyCorrelationDiagramMax)
+	    {
+	      cerr << "ERROR: pllyCorrelationDiagramMin = "
+		   << Input->flags.pllyCorrelationDiagramMin << ", "
+		   << "pllyCorrelationDiagramMax = "
+		   << Input->flags.pllyCorrelationDiagramMax << endl;
+	      exit(1);
+	    }
+	  pllyCorrelationDiagram.allocate(1000);
+	  for (int i=0; i<pllyCorrelationDiagram.dim1(); i++)
+	    {
+	      pllyCorrelationDiagram(i).allocate(1000);
+	      pllyCorrelationDiagram(i) = 0.0;
+	    }
+	}
+      if (Input->flags.writePllzCorrelationDiagram == 1)
+	{
+	  if (Input->flags.pllzCorrelationDiagramMin >= 
+	      Input->flags.pllzCorrelationDiagramMax)
+	    {
+	      cerr << "ERROR: pllzCorrelationDiagramMin = "
+		   << Input->flags.pllzCorrelationDiagramMin << ", "
+		   << "pllzCorrelationDiagramMax = "
+		   << Input->flags.pllzCorrelationDiagramMax << endl;
+	      exit(1);
+	    }
+	  pllzCorrelationDiagram.allocate(1000);
+	  for (int i=0; i<pllzCorrelationDiagram.dim1(); i++)
+	    {
+	      pllzCorrelationDiagram(i).allocate(1000);
+	      pllzCorrelationDiagram(i) = 0.0;
+	    }
+	}
+    }
+
+  if (nalpha > 0 && nbeta > 0)
+    {
+      if (Input->flags.writeOppxCorrelationDiagram == 1)
+	{
+	  if (Input->flags.oppxCorrelationDiagramMin >= 
+	      Input->flags.oppxCorrelationDiagramMax)
+	    {
+	      cerr << "ERROR: oppxCorrelationDiagramMin = "
+		   << Input->flags.oppxCorrelationDiagramMin << ", "
+		   << "oppxCorrelationDiagramMax = "
+		   << Input->flags.oppxCorrelationDiagramMax << endl;
+	      exit(1);
+	    }
+	  oppxCorrelationDiagram.allocate(1000);
+	  for (int i=0; i<oppxCorrelationDiagram.dim1(); i++)
+	    {
+	      oppxCorrelationDiagram(i).allocate(1000);
+	      oppxCorrelationDiagram(i) = 0.0;
+	    }
+	}
+      if (Input->flags.writeOppyCorrelationDiagram == 1)
+	{
+	  if (Input->flags.oppyCorrelationDiagramMin >= 
+	      Input->flags.oppyCorrelationDiagramMax)
+	    {
+	      cerr << "ERROR: oppyCorrelationDiagramMin = "
+		   << Input->flags.oppyCorrelationDiagramMin << ", "
+		   << "oppyCorrelationDiagramMax = "
+		   << Input->flags.oppyCorrelationDiagramMax << endl;
+	      exit(1);
+	    }
+	  oppyCorrelationDiagram.allocate(1000);
+	  for (int i=0; i<oppyCorrelationDiagram.dim1(); i++)
+	    {
+	      oppyCorrelationDiagram(i).allocate(1000);
+	      oppyCorrelationDiagram(i) = 0.0;
+	    }
+	}
+      if (Input->flags.writeOppzCorrelationDiagram == 1)
+	{
+	  if (Input->flags.oppzCorrelationDiagramMin >= 
+	      Input->flags.oppzCorrelationDiagramMax)
+	    {
+	      cerr << "ERROR: oppzCorrelationDiagramMin = "
+		   << Input->flags.oppzCorrelationDiagramMin << ", "
+		   << "oppzCorrelationDiagramMax = "
+		   << Input->flags.oppzCorrelationDiagramMax << endl;
+	      exit(1);
+	    }
+	  oppzCorrelationDiagram.allocate(1000);
+	  for (int i=0; i<oppzCorrelationDiagram.dim1(); i++)
+	    {
+	      oppzCorrelationDiagram(i).allocate(1000);
+	      oppzCorrelationDiagram(i) = 0.0;
+	    }
+	}
+    }
+
   if (Input->flags.use_hf_potential == 1)
     HartreeFock.Initialize(Input);
 }
@@ -306,8 +424,53 @@ void QMCRun::writeEnergies(ostream& strm)
 void QMCRun::calculateElectronDensities()
 {
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
-        wp->calculateElectronDensities(max_pair_distance, dr, pllSpinHistogram,
-		            oppSpinHistogram, alphaHistograms, betaHistograms);
+    wp->calculateElectronDensities(max_pair_distance, dr, pllSpinHistogram,
+			    oppSpinHistogram, alphaHistograms, betaHistograms);
+
+  int nalpha = Input->WF.getNumberAlphaElectrons();
+  int nbeta = Input->WF.getNumberBetaElectrons();
+
+  if (nalpha > 1 || nbeta > 1)
+    {
+      if (Input->flags.writePllxCorrelationDiagram == 1)
+	for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
+	  wp->calculatePllCorrelationDiagram(0, 
+Input->flags.pllxCorrelationDiagramMin, Input->flags.pllxCorrelationDiagramMax,
+					               pllxCorrelationDiagram);
+
+      if (Input->flags.writePllyCorrelationDiagram == 1)
+	for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
+	  wp->calculatePllCorrelationDiagram(1, 
+Input->flags.pllyCorrelationDiagramMin, Input->flags.pllyCorrelationDiagramMax,
+					               pllyCorrelationDiagram);
+
+      if (Input->flags.writePllzCorrelationDiagram == 1)
+	for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
+	  wp->calculatePllCorrelationDiagram(2, 
+Input->flags.pllzCorrelationDiagramMin, Input->flags.pllzCorrelationDiagramMax,
+					               pllzCorrelationDiagram);
+    }
+
+  if (nalpha > 0 && nbeta > 0)
+    {
+      if (Input->flags.writeOppxCorrelationDiagram == 1)
+	for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
+	  wp->calculateOppCorrelationDiagram(0, 
+Input->flags.oppxCorrelationDiagramMin, Input->flags.oppxCorrelationDiagramMax,
+					               oppxCorrelationDiagram);
+
+      if (Input->flags.writeOppyCorrelationDiagram == 1)
+	for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
+	  wp->calculateOppCorrelationDiagram(1, 
+Input->flags.oppyCorrelationDiagramMin, Input->flags.oppyCorrelationDiagramMax,
+					               oppyCorrelationDiagram);
+
+      if (Input->flags.writeOppzCorrelationDiagram == 1)
+	for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp)
+	  wp->calculateOppCorrelationDiagram(2, 
+Input->flags.oppzCorrelationDiagramMin, Input->flags.oppzCorrelationDiagramMax,
+					               oppzCorrelationDiagram);
+    }
 }
 
 Array1D<double>* QMCRun::getPllSpinHistogram()
@@ -328,6 +491,36 @@ Array1D< Array1D<double> >* QMCRun::getAlphaHistograms()
 Array1D< Array1D<double> >* QMCRun::getBetaHistograms()
 {
   return &betaHistograms;
+}
+
+Array1D< Array1D<double> >* QMCRun::getPllxCorrelationDiagram()
+{
+  return &pllxCorrelationDiagram;
+}
+
+Array1D< Array1D<double> >* QMCRun::getPllyCorrelationDiagram()
+{
+  return &pllyCorrelationDiagram;
+}
+
+Array1D< Array1D<double> >* QMCRun::getPllzCorrelationDiagram()
+{
+  return &pllzCorrelationDiagram;
+}
+
+Array1D< Array1D<double> >* QMCRun::getOppxCorrelationDiagram()
+{
+  return &oppxCorrelationDiagram;
+}
+
+Array1D< Array1D<double> >* QMCRun::getOppyCorrelationDiagram()
+{
+  return &oppyCorrelationDiagram;
+}
+
+Array1D< Array1D<double> >* QMCRun::getOppzCorrelationDiagram()
+{
+  return &oppzCorrelationDiagram;
 }
 
 double QMCRun::getdr()

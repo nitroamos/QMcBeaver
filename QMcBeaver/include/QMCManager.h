@@ -249,6 +249,42 @@ class QMCManager
   Array1D< Array1D<double> > betaHistograms_total;
 
   /**
+     Storage location for the global parallel pair x coordinate correlation
+     diagram on the root node and scratch space on the other nodes.
+  */
+  Array1D< Array1D<double> > pllxCorrelationDiagram_total;
+
+  /**
+     Storage location for the global parallel pair y coordinate correlation
+     diagram on the root node and scratch space on the other nodes.
+  */
+  Array1D< Array1D<double> > pllyCorrelationDiagram_total;
+
+  /**
+     Storage location for the global parallel pair z coordinate correlation
+     diagram on the root node and scratch space on the other nodes.
+  */
+  Array1D< Array1D<double> > pllzCorrelationDiagram_total;
+
+  /**
+     Storage location for the global opposite pair x coordinate correlation
+     diagram on the root node and scratch space on the other nodes.
+  */
+  Array1D< Array1D<double> > oppxCorrelationDiagram_total;
+
+  /**
+     Storage location for the global opposite pair y coordinate correlation
+     diagram on the root node and scratch space on the other nodes.
+  */
+  Array1D< Array1D<double> > oppyCorrelationDiagram_total;
+
+  /**
+     Storage location for the global opposite pair z coordinate correlation
+     diagram on the root node and scratch space on the other nodes.
+  */
+  Array1D< Array1D<double> > oppzCorrelationDiagram_total;
+
+  /**
      Initializes MPI on this processor for a parallel calculation.
   */ 
   void initializeMPI();

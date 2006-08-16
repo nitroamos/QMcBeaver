@@ -342,61 +342,165 @@ void QMCManager::gatherHistograms()
   localTimers.getGatherPropertiesStopwatch()->start();
   
   if (nalpha > 1 || nbeta > 1)
-  {
-    pllSpinHistogram_total.allocate(5000);
-    pllSpinHistogram_total = 0.0;
+    {
+      pllSpinHistogram_total.allocate(5000);
+      pllSpinHistogram_total = 0.0;
     
-    MPI_Reduce( QMCnode.getPllSpinHistogram()->array(),
-                pllSpinHistogram_total.array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD );
+      MPI_Reduce( QMCnode.getPllSpinHistogram()->array(),
+     pllSpinHistogram_total.array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD );
     
-    if (Input.flags.my_rank != 0)
-      pllSpinHistogram_total.deallocate();
-  }
+      if (Input.flags.my_rank != 0)
+	pllSpinHistogram_total.deallocate();
+    }
   
   if (nalpha > 0 && nbeta > 0)
-  {
-    oppSpinHistogram_total.allocate(5000);
-    oppSpinHistogram_total = 0.0;
+    {
+      oppSpinHistogram_total.allocate(5000);
+      oppSpinHistogram_total = 0.0;
     
-    MPI_Reduce( QMCnode.getOppSpinHistogram()->array(),
-                oppSpinHistogram_total.array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD );
+      MPI_Reduce( QMCnode.getOppSpinHistogram()->array(),
+     oppSpinHistogram_total.array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD );
     
-    if (Input.flags.my_rank != 0)
-      oppSpinHistogram_total.deallocate();
-  }
+      if (Input.flags.my_rank != 0)
+	oppSpinHistogram_total.deallocate();
+    }
   
   if (nalpha > 0)
-  {
-    alphaHistograms_total.allocate(nucleiTypes);
-    for (int k=0; k<nucleiTypes; k++)
     {
-      alphaHistograms_total(k).allocate(5000);
-      alphaHistograms_total(k) = 0.0;
-      MPI_Reduce( (*QMCnode.getAlphaHistograms())(k).array(),
-                  alphaHistograms_total(k).array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      alphaHistograms_total.allocate(nucleiTypes);
+      for (int k=0; k<nucleiTypes; k++)
+	{
+	  alphaHistograms_total(k).allocate(5000);
+	  alphaHistograms_total(k) = 0.0;
+	  MPI_Reduce( (*QMCnode.getAlphaHistograms())(k).array(),
+    alphaHistograms_total(k).array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+	  if (Input.flags.my_rank != 0)
+	    alphaHistograms_total(k).deallocate();
+	}
       if (Input.flags.my_rank != 0)
-        alphaHistograms_total(k).deallocate();
+	alphaHistograms_total.deallocate();
     }
-    if (Input.flags.my_rank != 0)
-      alphaHistograms_total.deallocate();
-  }
   
   if (nbeta > 0)
-  {
-    betaHistograms_total.allocate(nucleiTypes);
-    for (int k=0; k<nucleiTypes; k++)
     {
-      betaHistograms_total(k).allocate(5000);
-      betaHistograms_total(k) = 0.0;
-      MPI_Reduce( (*QMCnode.getBetaHistograms())(k).array(),
-                  betaHistograms_total(k).array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+      betaHistograms_total.allocate(nucleiTypes);
+      for (int k=0; k<nucleiTypes; k++)
+	{
+	  betaHistograms_total(k).allocate(5000);
+	  betaHistograms_total(k) = 0.0;
+	  MPI_Reduce( (*QMCnode.getBetaHistograms())(k).array(),
+     betaHistograms_total(k).array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+	  if (Input.flags.my_rank != 0)
+	    betaHistograms_total(k).deallocate();
+	}
       if (Input.flags.my_rank != 0)
-        betaHistograms_total(k).deallocate();
+	betaHistograms_total.deallocate();
     }
-    if (Input.flags.my_rank != 0)
-      betaHistograms_total.deallocate();
-  }
   
+  if (nalpha > 1 || nbeta > 1)
+    {
+      if (Input.flags.writePllxCorrelationDiagram == 1)
+	{
+	  pllxCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    {
+	      pllxCorrelationDiagram_total(i).allocate(1000);
+	      pllxCorrelationDiagram_total(i) = 0.0;
+	      MPI_Reduce( (*QMCnode.getPllxCorrelationDiagram())(i).array(),
+             pllxCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
+                                                               MPI_COMM_WORLD);
+	      if (Input.flags.my_rank != 0)
+		pllxCorrelationDiagram_total(i).deallocate();
+	    }
+	  if (Input.flags.my_rank != 0)
+	    pllxCorrelationDiagram_total.deallocate();
+	}
+      if (Input.flags.writePllyCorrelationDiagram == 1)
+	{
+	  pllyCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    {
+	      pllyCorrelationDiagram_total(i).allocate(1000);
+	      pllyCorrelationDiagram_total(i) = 0.0;
+	      MPI_Reduce( (*QMCnode.getPllyCorrelationDiagram())(i).array(),
+             pllyCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
+                                                               MPI_COMM_WORLD);
+	      if (Input.flags.my_rank != 0)
+		pllyCorrelationDiagram_total(i).deallocate();
+	    }
+	  if (Input.flags.my_rank != 0)
+	    pllyCorrelationDiagram_total.deallocate();
+	}
+      if (Input.flags.writePllzCorrelationDiagram == 1)
+	{
+	  pllzCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    {
+	      pllzCorrelationDiagram_total(i).allocate(1000);
+	      pllzCorrelationDiagram_total(i) = 0.0;
+	      MPI_Reduce( (*QMCnode.getPllzCorrelationDiagram())(i).array(),
+             pllzCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
+                                                               MPI_COMM_WORLD);
+	      if (Input.flags.my_rank != 0)
+		pllzCorrelationDiagram_total(i).deallocate();
+	    }
+	  if (Input.flags.my_rank != 0)
+	    pllzCorrelationDiagram_total.deallocate();
+	}
+    }
+
+  if (nalpha > 0 && nbeta > 0)
+    {
+      if (Input.flags.writeOppxCorrelationDiagram == 1)
+	{
+	  oppxCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    {
+	      oppxCorrelationDiagram_total(i).allocate(1000);
+	      oppxCorrelationDiagram_total(i) = 0.0;
+	      MPI_Reduce( (*QMCnode.getOppxCorrelationDiagram())(i).array(),
+             oppxCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
+                                                               MPI_COMM_WORLD);
+	      if (Input.flags.my_rank != 0)
+		oppxCorrelationDiagram_total(i).deallocate();
+	    }
+	  if (Input.flags.my_rank != 0)
+	    oppxCorrelationDiagram_total.deallocate();
+	}
+      if (Input.flags.writeOppyCorrelationDiagram == 1)
+	{
+	  oppyCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    {
+	      oppyCorrelationDiagram_total(i).allocate(1000);
+	      oppyCorrelationDiagram_total(i) = 0.0;
+	      MPI_Reduce( (*QMCnode.getOppyCorrelationDiagram())(i).array(),
+             oppyCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
+                                                               MPI_COMM_WORLD);
+	      if (Input.flags.my_rank != 0)
+		oppyCorrelationDiagram_total(i).deallocate();
+	    }
+	  if (Input.flags.my_rank != 0)
+	    oppyCorrelationDiagram_total.deallocate();
+	}
+      if (Input.flags.writeOppzCorrelationDiagram == 1)
+	{
+	  oppzCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    {
+	      oppzCorrelationDiagram_total(i).allocate(1000);
+	      oppzCorrelationDiagram_total(i) = 0.0;
+	      MPI_Reduce( (*QMCnode.getOppzCorrelationDiagram())(i).array(),
+             oppzCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
+                                                               MPI_COMM_WORLD);
+	      if (Input.flags.my_rank != 0)
+		oppzCorrelationDiagram_total(i).deallocate();
+	    }
+	  if (Input.flags.my_rank != 0)
+	    oppzCorrelationDiagram_total.deallocate();
+	}
+    }
+
   localTimers.getGatherPropertiesStopwatch()->stop();
 #else
   
@@ -407,19 +511,68 @@ void QMCManager::gatherHistograms()
     oppSpinHistogram_total = *QMCnode.getOppSpinHistogram();
   
   if (nalpha > 0)
-  {
-    alphaHistograms_total.allocate(nucleiTypes);
-    for (int k=0; k<nucleiTypes; k++)
-      alphaHistograms_total(k) = (*QMCnode.getAlphaHistograms())(k);
-  }
+    {
+      alphaHistograms_total.allocate(nucleiTypes);
+      for (int k=0; k<nucleiTypes; k++)
+	alphaHistograms_total(k) = (*QMCnode.getAlphaHistograms())(k);
+    }
   
   if (nbeta > 0)
-  {
-    betaHistograms_total.allocate(nucleiTypes);
-    for (int k=0; k<nucleiTypes; k++)
-      betaHistograms_total(k) = (*QMCnode.getBetaHistograms())(k);
-  }
+    {
+      betaHistograms_total.allocate(nucleiTypes);
+      for (int k=0; k<nucleiTypes; k++)
+	betaHistograms_total(k) = (*QMCnode.getBetaHistograms())(k);
+    }
   
+  if (nalpha > 1 || nbeta > 1)
+    {
+      if (Input.flags.writePllxCorrelationDiagram == 1)
+	{
+	  pllxCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    pllxCorrelationDiagram_total(i) = 
+	      (*QMCnode.getPllxCorrelationDiagram())(i);
+	}
+      if (Input.flags.writePllyCorrelationDiagram == 1)
+	{
+	  pllyCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    pllyCorrelationDiagram_total(i) = 
+	      (*QMCnode.getPllyCorrelationDiagram())(i);
+	}
+      if (Input.flags.writePllzCorrelationDiagram == 1)
+	{
+	  pllzCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    pllzCorrelationDiagram_total(i) = 
+	      (*QMCnode.getPllzCorrelationDiagram())(i);
+	}
+    }
+
+  if (nalpha > 0 && nbeta > 0)
+    {
+      if (Input.flags.writeOppxCorrelationDiagram == 1)
+	{
+	  oppxCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    oppxCorrelationDiagram_total(i) = 
+	      (*QMCnode.getOppxCorrelationDiagram())(i);
+	}
+      if (Input.flags.writeOppyCorrelationDiagram == 1)
+	{
+	  oppyCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    oppyCorrelationDiagram_total(i) = 
+	      (*QMCnode.getOppyCorrelationDiagram())(i);
+	}
+      if (Input.flags.writeOppzCorrelationDiagram == 1)
+	{
+	  oppzCorrelationDiagram_total.allocate(1000);
+	  for (int i=0; i<1000; i++)
+	    oppzCorrelationDiagram_total(i) = 
+	      (*QMCnode.getOppzCorrelationDiagram())(i);
+	}
+    }
 #endif
 }
 
@@ -1042,12 +1195,218 @@ void QMCManager::writeElectronDensityHistograms()
         }
         delete beta_strm;
         beta_strm = 0;
-	      betaHistograms_total(i).deallocate();
+	betaHistograms_total(i).deallocate();
       }
     }
     alphaHistograms_total.deallocate();
     betaHistograms_total.deallocate();
   }
+
+  if (nalpha > 1 || nbeta > 1)
+    {
+      if (Input.flags.writePllxCorrelationDiagram == 1)
+	{
+	  string pllxFile = baseFileName + ".pllx.CorrelationDiagram";
+	  ofstream * pllxStrm = new ofstream(pllxFile.c_str());
+	  pllxStrm->precision(15);
+
+	  // We just print out the raw 2D histograms
+
+	  double min = Input.flags.pllxCorrelationDiagramMin;
+	  double max = Input.flags.pllxCorrelationDiagramMax;
+	  double dr = (max-min)/pllxCorrelationDiagram_total.dim1();
+	  double rvalue = min;
+
+	  for (int i=0; i<pllxCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *pllxStrm << "\t" << rvalue;
+	    }
+	  *pllxStrm << endl;
+
+	  for (int i=0; i<pllxCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *pllxStrm << rvalue;
+	      for (int j=0; j<(pllxCorrelationDiagram_total(i)).dim1(); j++)
+		*pllxStrm << "\t" << (pllxCorrelationDiagram_total(i))(j);
+	      *pllxStrm << endl;
+	      pllxCorrelationDiagram_total(i).deallocate();
+	    }
+	  delete pllxStrm;
+	  pllxStrm = 0;
+	  pllxCorrelationDiagram_total.deallocate();
+	}
+      if (Input.flags.writePllyCorrelationDiagram == 1)
+	{
+	  string pllyFile = baseFileName + ".plly.CorrelationDiagram";
+	  ofstream * pllyStrm = new ofstream(pllyFile.c_str());
+	  pllyStrm->precision(15);
+
+	  // We just print out the raw 2D histograms
+
+	  double min = Input.flags.pllyCorrelationDiagramMin;
+	  double max = Input.flags.pllyCorrelationDiagramMax;
+	  double dr = (max-min)/pllyCorrelationDiagram_total.dim1();
+	  double rvalue = min;
+
+	  for (int i=0; i<pllyCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *pllyStrm << "\t" << rvalue;
+	    }
+	  *pllyStrm << endl;
+
+	  for (int i=0; i<pllyCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *pllyStrm << rvalue;
+	      for (int j=0; j<(pllyCorrelationDiagram_total(i)).dim1(); j++)
+		*pllyStrm << "\t" << (pllyCorrelationDiagram_total(i))(j);
+	      *pllyStrm << endl;
+	      pllyCorrelationDiagram_total(i).deallocate();
+	    }
+	  delete pllyStrm;
+	  pllyStrm = 0;
+	  pllyCorrelationDiagram_total.deallocate();
+	}
+      if (Input.flags.writePllzCorrelationDiagram == 1)
+	{
+	  string pllzFile = baseFileName + ".pllz.CorrelationDiagram";
+	  ofstream * pllzStrm = new ofstream(pllzFile.c_str());
+	  pllzStrm->precision(15);
+
+	  // We just print out the raw 2D histograms
+
+	  double min = Input.flags.pllzCorrelationDiagramMin;
+	  double max = Input.flags.pllzCorrelationDiagramMax;
+	  double dr = (max-min)/pllzCorrelationDiagram_total.dim1();
+	  double rvalue = min;
+
+	  for (int i=0; i<pllzCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *pllzStrm << "\t" << rvalue;
+	    }
+	  *pllzStrm << endl;
+
+	  for (int i=0; i<pllzCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *pllzStrm << rvalue;
+	      for (int j=0; j<(pllzCorrelationDiagram_total(i)).dim1(); j++)
+		*pllzStrm << "\t" << (pllzCorrelationDiagram_total(i))(j);
+	      *pllzStrm << endl;
+	      pllzCorrelationDiagram_total(i).deallocate();
+	    }
+	  delete pllzStrm;
+	  pllzStrm = 0;
+	  pllzCorrelationDiagram_total.deallocate();
+	}
+    }
+  if (nalpha > 0 && nbeta > 0)
+    {
+      if (Input.flags.writeOppxCorrelationDiagram == 1)
+	{
+	  string oppxFile = baseFileName + ".oppx.CorrelationDiagram";
+	  ofstream * oppxStrm = new ofstream(oppxFile.c_str());
+	  oppxStrm->precision(15);
+
+	  // We just print out the raw 2D histograms
+
+	  double min = Input.flags.oppxCorrelationDiagramMin;
+	  double max = Input.flags.oppxCorrelationDiagramMax;
+	  double dr = (max-min)/oppxCorrelationDiagram_total.dim1();
+	  double rvalue = min;
+
+	  for (int i=0; i<oppxCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *oppxStrm << "\t" << rvalue;
+	    }
+	  *oppxStrm << endl;
+
+	  for (int i=0; i<oppxCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *oppxStrm << rvalue;
+	      for (int j=0; j<(oppxCorrelationDiagram_total(i)).dim1(); j++)
+		*oppxStrm << "\t" << (oppxCorrelationDiagram_total(i))(j);
+	      *oppxStrm << endl;
+	      oppxCorrelationDiagram_total(i).deallocate();
+	    }
+	  delete oppxStrm;
+	  oppxStrm = 0;
+	  oppxCorrelationDiagram_total.deallocate();
+	}
+      if (Input.flags.writeOppyCorrelationDiagram == 1)
+	{
+	  string oppyFile = baseFileName + ".oppy.CorrelationDiagram";
+	  ofstream * oppyStrm = new ofstream(oppyFile.c_str());
+	  oppyStrm->precision(15);
+
+	  // We just print out the raw 2D histograms
+
+	  double min = Input.flags.oppyCorrelationDiagramMin;
+	  double max = Input.flags.oppyCorrelationDiagramMax;
+	  double dr = (max-min)/oppyCorrelationDiagram_total.dim1();
+	  double rvalue = min;
+
+	  for (int i=0; i<oppyCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *oppyStrm << "\t" << rvalue;
+	    }
+	  *oppyStrm << endl;
+
+	  for (int i=0; i<oppyCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *oppyStrm << rvalue;
+	      for (int j=0; j<(oppyCorrelationDiagram_total(i)).dim1(); j++)
+		*oppyStrm << "\t" << (oppyCorrelationDiagram_total(i))(j);
+	      *oppyStrm << endl;
+	      oppyCorrelationDiagram_total(i).deallocate();
+	    }
+	  delete oppyStrm;
+	  oppyStrm = 0;
+	  oppyCorrelationDiagram_total.deallocate();
+	}
+      if (Input.flags.writeOppzCorrelationDiagram == 1)
+	{
+	  string oppzFile = baseFileName + ".oppz.CorrelationDiagram";
+	  ofstream * oppzStrm = new ofstream(oppzFile.c_str());
+	  oppzStrm->precision(15);
+
+	  // We just print out the raw 2D histograms
+
+	  double min = Input.flags.oppzCorrelationDiagramMin;
+	  double max = Input.flags.oppzCorrelationDiagramMax;
+	  double dr = (max-min)/oppzCorrelationDiagram_total.dim1();
+	  double rvalue = min;
+
+	  for (int i=0; i<oppzCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *oppzStrm << "\t" << rvalue;
+	    }
+	  *oppzStrm << endl;
+
+	  for (int i=0; i<oppzCorrelationDiagram_total.dim1(); i++)
+	    {
+	      rvalue = min + (i+0.5)*dr;
+	      *oppzStrm << rvalue;
+	      for (int j=0; j<(oppzCorrelationDiagram_total(i)).dim1(); j++)
+		*oppzStrm << "\t" << (oppzCorrelationDiagram_total(i))(j);
+	      *oppzStrm << endl;
+	      oppzCorrelationDiagram_total(i).deallocate();
+	    }
+	  delete oppzStrm;
+	  oppzStrm = 0;
+	  oppzCorrelationDiagram_total.deallocate();
+	}
+    }
+
 #undef PI
 }
 

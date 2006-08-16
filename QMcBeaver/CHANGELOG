@@ -1,3 +1,18 @@
+Wed, Aug 16, 2006 Daniel R. Fisher
+1.  Added the capability to make two dimensional correlation diagrams.
+    A correlation diagram shows the distribution of one coordinate for
+    a pair of electrons.  For example, if we were making a correlation
+    diagram for the x coordinte of parallel spin electrons, at each
+    iteration we would add the weight of the walker to the histogram
+    bin corresponding to x1,x2 for each parallel pair.
+
+2.  Added a shuffle operation to QMCDansWalkerInitialization.  Now,
+    the order of the alpha electrons are shuffled and the order of the
+    beta electrons are shuffled.  This will not change the energy or
+    value of the wavefunction, but will make the correlation diagrams
+    more symmetric. 
+
+
 Thur, 20 July 2006 Amos Anderson
 1.	Changed some of the default parameters.
 

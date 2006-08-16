@@ -679,6 +679,120 @@ class QMCFlags
   double max_pair_distance;
 
   /**
+     1 if the x coordinates of each parallel spin pair of electrons are to be
+     collected in a 2D histogram to make a correlation diagram, and 0 
+     otherwise.
+  */
+  int writePllxCorrelationDiagram;
+
+  /**
+     The minimum value for the x coordinate of the 2D parallel spin correlation
+     diagram.
+  */
+  double pllxCorrelationDiagramMin;
+
+  /**
+     The maximum value for the x coordinate of the 2D parallel spin correlation
+     diagram.
+  */
+  double pllxCorrelationDiagramMax;
+
+  /**
+     1 if the y coordinates of each parallel spin pair of electrons are to be
+     collected in a 2D histogram to make a correlation diagram, and 0 
+     otherwise.
+  */
+  int writePllyCorrelationDiagram;
+
+  /**
+     The minimum value for the y coordinate of the 2D parallel spin correlation
+     diagram.
+  */
+  double pllyCorrelationDiagramMin;
+
+  /**
+     The maximum value for the y coordinate of the 2D parallel spin correlation
+     diagram.
+  */
+  double pllyCorrelationDiagramMax;
+
+  /**
+     1 if the z coordinates of each parallel spin pair of electrons are to be
+     collected in a 2D histogram to make a correlation diagram, and 0 
+     otherwise.
+  */
+  int writePllzCorrelationDiagram;
+
+  /**
+     The minimum value for the z coordinate of the 2D parallel spin correlation
+     diagram.
+  */
+  double pllzCorrelationDiagramMin;
+
+  /**
+     The maximum value for the z coordinate of the 2D parallel spin correlation
+     diagram.
+  */
+  double pllzCorrelationDiagramMax;
+
+  /**
+     1 if the x coordinates of each opposite spin pair of electrons are to be
+     collected in a 2D histogram to make a correlation diagram, and 0 
+     otherwise.
+  */
+  int writeOppxCorrelationDiagram;
+
+  /**
+     The minimum value for the x coordinate of the 2D opposite spin correlation
+     diagram.
+  */
+  double oppxCorrelationDiagramMin;
+
+  /**
+     The maximum value for the x coordinate of the 2D opposite spin correlation
+     diagram.
+  */
+  double oppxCorrelationDiagramMax;
+
+  /**
+     1 if the y coordinates of each opposite spin pair of electrons are to be
+     collected in a 2D histogram to make a correlation diagram, and 0 
+     otherwise.
+  */
+  int writeOppyCorrelationDiagram;
+
+  /**
+     The minimum value for the y coordinate of the 2D opposite spin correlation
+     diagram.
+  */
+  double oppyCorrelationDiagramMin;
+
+  /**
+     The maximum value for the y coordinate of the 2D opposite spin correlation
+     diagram
+  */
+  double oppyCorrelationDiagramMax;
+
+  /**
+     1 if the z coordinates of each opposite spin pair of electrons are to be
+     collected in a 2D histogram to make a correlation diagram, and 0 
+     otherwise.
+  */
+  int writeOppzCorrelationDiagram;
+
+  /**
+     The minimum value for the z coordinate of the 2D opposite spin correlation
+     diagram.
+  */
+  double oppzCorrelationDiagramMin;
+
+  /**
+     The maximum value for the z coordinate of the 2D opposite spin correlation
+     diagram.
+  */
+  double oppzCorrelationDiagramMax;
+
+  /**
      Are Chip and Mike cool?  Answer: Yea Baby!
   */
   string chip_and_mike_are_cool;

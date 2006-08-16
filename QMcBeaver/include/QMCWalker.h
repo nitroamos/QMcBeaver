@@ -147,6 +147,28 @@ public:
                                      Array1D< Array1D<double> > &beta_density);
 
   /**
+    Calculates the 2D correlation diagram for the x, y, or z coordinates of
+    all the parallel spin pairs of electrons.
+    @param coord 0, 1, or 2 depending on which coordinate we are recording
+    @param min the minimum value of the coordinate
+    @param max the maximum value of the coordinate
+    @param CorrelationDiagram the two dimensional histogram of values
+  */
+  void calculatePllCorrelationDiagram(int coord, double min, double max,
+			       Array1D< Array1D<double> > &CorrelationDiagram);
+
+  /**
+    Calculates the 2D correlation diagram for the x, y, or z coordinates of
+    all the opposite spin pairs of electrons.
+    @param coord 0, 1, or 2 depending on which coordinate we are recording
+    @param min the minimum value of the coordinate
+    @param max the maximum value of the coordinate
+    @param CorrelationDiagram the two dimensional histogram of values
+  */
+  void calculateOppCorrelationDiagram(int coord, double min, double max,
+			       Array1D< Array1D<double> > &CorrelationDiagram);
+
+  /**
     Writes the state of this object to an XML stream.
     @param strm XML stream
   */

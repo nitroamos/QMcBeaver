@@ -1108,6 +1108,58 @@ void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
     }
 }
 
+void QMCWalker::calculatePllCorrelationDiagram(int coord, double min, 
+		    double max, Array1D< Array1D<double> > &CorrelationDiagram)
+{
+  int nalpha = Input->WF.getNumberAlphaElectrons();
+  int nbeta = Input->WF.getNumberBetaElectrons();
+  
+  double dr = (max-min)/CorrelationDiagram.dim1();
+  int index1 = -1;
+  int index2 = -1;
+
+  for (int i=0; i<nalpha-1; i++)
+    for (int j=i+1; j<nalpha; j++)
+      if ( (R(i,coord) >= min) && (R(i,coord) <=max) )
+	if ( (R(j,coord) >= min) && (R(j,coord) <= max) )
+	  {
+	    index1 = int((R(i,coord)-min)/dr);
+	    index2 = int((R(j,coord)-min)/dr);
+	    (CorrelationDiagram(index1))(index2) += weight;
+	  }
+
+  for (int i=nalpha; i<nalpha+nbeta-1; i++)
+    for (int j=i+1; j<nalpha+nbeta; j++)
+      if ( (R(i,coord) >= min) && (R(i,coord) <=max) )
+	if ( (R(j,coord) >= min) && (R(j,coord) <= max) )
+	  {
+	    index1 = int((R(i,coord)-min)/dr);
+	    index2 = int((R(j,coord)-min)/dr);
+	    (CorrelationDiagram(index1))(index2) += weight;
+	  }
+}
+
+void QMCWalker::calculateOppCorrelationDiagram(int coord, double min, 
+		    double max, Array1D< Array1D<double> > &CorrelationDiagram)
+{
+  int nalpha = Input->WF.getNumberAlphaElectrons();
+  int nbeta = Input->WF.getNumberBetaElectrons();
+  
+  double dr = (max-min)/CorrelationDiagram.dim1();
+  int index1 = 0;
+  int index2 = 0;
+
+  for (int i=0; i<nalpha; i++)
+    for (int j=nalpha; j<nalpha+nbeta; j++)
+      if ( (R(i,coord) >= min) && (R(i,coord) <=max) )
+	if ( (R(j,coord) >= min) && (R(j,coord) <= max) )
+	  {
+	    index1 = int((R(i,coord)-min)/dr);
+	    index2 = int((R(j,coord)-min)/dr);
+	    (CorrelationDiagram(index1))(index2) += weight;
+	  }
+}
+
 void QMCWalker::toXML(ostream& strm)
 {
   strm << "<QMCWalker>" << endl;

@@ -327,13 +327,14 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
       exit(1); 
     }
 
-  // The electronic coordinates are stored in this array, with the alpha
-  // electrons first, then the betas.
+  // We put the coordinates for the alpha electrons into one array, and the 
+  // coordinates for the beta electrons in another one.
 
-  Array2D<double> R(nelectrons,3);
-
+  Array2D<double> temp_alpha(nalpha,3);
   int alpha_index = 0;
-  int beta_index = nalpha;
+
+  Array2D<double> temp_beta(nbeta,3);
+  int beta_index = 0;
 
   Array2D<double> temp_coords;
   int n_e,n_a,n_b;
@@ -352,18 +353,123 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  for (int j=0; j<n_a; j++)
 	    {
 	      for (int k=0; k<3; k++)
-		R(alpha_index,k) = temp_coords(j,k) + atom_centers(i,k);
+		temp_alpha(alpha_index,k)=temp_coords(j,k)+atom_centers(i,k);
 	      alpha_index++;
 	    }
       
 	  for (int m=0; m<n_b; m++)
 	    {
 	      for (int n=0; n<3; n++)
-		R(beta_index,n) = temp_coords(n_a+m,n) + atom_centers(i,n);
+		temp_beta(beta_index,n)=temp_coords(n_a+m,n)+atom_centers(i,n);
 	      beta_index++;
 	    }
 	}
     }
+
+  // The electronic coordinates are stored in this array, with the alpha
+  // electrons first, then the betas.
+
+  Array2D<double> R(nelectrons,3);
+
+  // We shuffle the order of the alpha electrons and the order of the beta 
+  // electrons.
+
+  Array1D<double> rnd;
+  Array1D<int> index;
+
+  cout << "Before shuffling:" << endl;
+  for (int i=0; i<nalpha; i++)
+    {
+      for (int j=0; j<3; j++)
+	cout << temp_alpha(i,j) << "\t";
+      cout << endl;
+    }
+  cout << endl;
+  for (int i=0; i<nbeta; i++)
+    {
+      for (int j=0; j<3; j++)
+	cout << temp_beta(i,j) << "\t";
+      cout << endl;
+    }
+
+  double temp_rnd;
+  int temp_index;
+
+  if (nalpha > 1)
+    {
+      rnd.allocate(nalpha);
+      index.allocate(nalpha);
+
+      for (int i=0; i<nalpha; i++)
+	{
+	  rnd(i) = ran1(&Input->flags.iseed);
+	  index(i) = i;
+	}
+
+      for (int i=1; i<nalpha; i++)
+	for (int j=0; j<nalpha-i; j++)
+	  if (rnd(j) > rnd(j+1))
+	    {
+	      temp_rnd = rnd(j+1);
+	      temp_index = index(j+1);
+	      
+	      rnd(j+1) = rnd(j);
+	      rnd(j) = temp_rnd;
+	      
+	      index(j+1) = index(j);
+	      index(j) = temp_index;
+	    }
+
+      for (int i=0; i<nalpha; i++)
+	for (int j=0; j<3; j++)
+	  R(i,j) = temp_alpha(index(i),j);
+    }
+
+  if (nbeta > 1)
+    {
+      rnd.allocate(nbeta);
+      index.allocate(nbeta);
+
+      for (int i=0; i<nbeta; i++)
+	{
+	  rnd(i) = ran1(&Input->flags.iseed);
+	  index(i) = i;
+	}
+      
+      for (int i=1; i<nbeta; i++)
+	for (int j=0; j<nbeta-i; j++)
+	  if (rnd(j) > rnd(j+1))
+	    {
+	      temp_rnd = rnd(j+1);
+	      temp_index = index(j+1);
+	      
+	      rnd(j+1) = rnd(j);
+	      rnd(j) = temp_rnd;
+
+	      index(j+1) = index(j);
+	      index(j) = temp_index;
+	    }
+
+      for (int i=0; i<nbeta; i++)
+	for (int j=0; j<3; j++)
+	  R(i+nalpha,j) = temp_beta(index(i),j);
+    }
+
+  cout << "After shuffling:" << endl;
+  for (int i=0; i<nalpha; i++)
+    {
+      for (int j=0; j<3; j++)
+	cout << R(i,j) << "\t";
+      cout << endl;
+    }
+  cout << endl;
+  for (int i=0; i<nbeta; i++)
+    {
+      for (int j=0; j<3; j++)
+	cout << R(nalpha+i,j) << "\t";
+      cout << endl;
+    }
+
   return R;
 }
 

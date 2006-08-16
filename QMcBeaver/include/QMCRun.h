@@ -174,6 +174,42 @@ class QMCRun
   Array1D< Array1D<double> >* getBetaHistograms();
 
   /**
+    Gets a pointer to the 2D x coordinate parallel pair correlation diagram.
+    @return 2D x coordinate parallel pair correlation diagram.
+  */
+  Array1D< Array1D<double> >* getPllxCorrelationDiagram();
+
+  /**
+    Gets a pointer to the 2D y coordinate parallel pair correlation diagram.
+    @return 2D y coordinate parallel pair correlation diagram.
+  */
+  Array1D< Array1D<double> >* getPllyCorrelationDiagram();
+
+  /**
+    Gets a pointer to the 2D z coordinate parallel pair correlation diagram.
+    @return 2D z coordinate parallel pair correlation diagram.
+  */
+  Array1D< Array1D<double> >* getPllzCorrelationDiagram();
+
+  /**
+    Gets a pointer to the 2D x coordinate opposite pair correlation diagram.
+    @return 2D x coordinate opposite pair correlation diagram.
+  */
+  Array1D< Array1D<double> >* getOppxCorrelationDiagram();
+
+  /**
+    Gets a pointer to the 2D y coordinate opposite pair correlation diagram.
+    @return 2D y coordinate opposite pair correlation diagram.
+  */
+  Array1D< Array1D<double> >* getOppyCorrelationDiagram();
+
+  /**
+    Gets a pointer to the 2D z coordinate opposite pair correlation diagram.
+    @return 2D z coordinate opposite pair correlation diagram.
+  */
+  Array1D< Array1D<double> >* getOppzCorrelationDiagram();
+
+  /**
     Gets the size of a bin in the electron density histograms.
   */
   double getdr();
@@ -325,6 +361,36 @@ private:
     unique nucleus.
   */
   Array1D< Array1D<double> > betaHistograms;
+
+  /**
+    The 2D x coordinate parallel pair correlation diagram.
+  */
+  Array1D< Array1D<double> > pllxCorrelationDiagram;
+
+  /**
+    The 2D y coordinate parallel pair correlation diagram.
+  */
+  Array1D< Array1D<double> > pllyCorrelationDiagram;
+
+  /**
+    The 2D z coordinate parallel pair correlation diagram.
+  */
+  Array1D< Array1D<double> > pllzCorrelationDiagram;
+
+  /**
+    The 2D x coordinate opposite pair correlation diagram.
+  */
+  Array1D< Array1D<double> > oppxCorrelationDiagram;
+
+  /**
+    The 2D y coordinate opposite pair correlation diagram.
+  */
+  Array1D< Array1D<double> > oppyCorrelationDiagram;
+
+  /**
+    The 2D z coordinate opposite pair correlation diagram.
+  */
+  Array1D< Array1D<double> > oppzCorrelationDiagram;
 
   /**
     These objects allow HF calculations to be done with QMC.

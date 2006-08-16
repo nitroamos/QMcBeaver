@@ -486,6 +486,34 @@ elif scf_type == "NONE" and ci_type == "ALDET":
             AlphaOccupation[i][k] = 0
             BetaOccupation[i][k] = 0
 
+# GAMESS usually creates many more orbitals than are occupied.  We get rid of
+# the unoccupied orbitals because we don't need them.
+
+total_orbitals = norbitals
+
+if (ci_type != "ALDET"):
+    if (nalpha >= nbeta):
+        norbitals = nalpha
+    elif (nbeta > nalpha):
+        norbitals = nbeta
+
+elif (ci_type == "ALDET"):
+    total_orbitals = norbitals
+    for i in range(total_orbitals):
+        index = norbitals-i-1
+        keep_this_orbital = 0
+        for j in range(ndeterminants):
+            if (AlphaOccupation[j][i] == 1):
+                keep_this_orbital = 1
+                break
+            if (BetaOccupation[j][i] == 1):
+                keep_this_orbital = 1
+                break
+        if (keep_this_orbital == 0):
+            norbitals = norbitals-1
+        elif (keep_this_orbital == 1):
+            break
+
 ##################  PRINT FLAGS: BEGIN    ########################
 
 OUT.write('&flags\n')

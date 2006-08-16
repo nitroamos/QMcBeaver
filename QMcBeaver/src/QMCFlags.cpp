@@ -97,6 +97,13 @@ void QMCFlags::read_flags(string InFileName)
   write_electron_densities       = 0;
   max_pair_distance              = -1;
 
+  writePllxCorrelationDiagram    = 0;
+  writePllyCorrelationDiagram    = 0;
+  writePllzCorrelationDiagram    = 0;
+  writeOppxCorrelationDiagram    = 0;
+  writeOppyCorrelationDiagram    = 0;
+  writeOppzCorrelationDiagram    = 0;
+
   //Wavefunction optmization parameters
   optimize_Psi                   = 0;
   max_optimize_Psi_steps         = 10;
@@ -504,6 +511,96 @@ void QMCFlags::read_flags(string InFileName)
 	  input_file >> temp_string;
 	  max_pair_distance = atof(temp_string.c_str());
 	}
+      else if(temp_string == "writePllxCorrelationDiagram")
+	{
+	  input_file >> temp_string;
+	  writePllxCorrelationDiagram = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "pllxCorrelationDiagramMin")
+	{
+	  input_file >> temp_string;
+	  pllxCorrelationDiagramMin = atof(temp_string.c_str());
+	}
+      else if(temp_string == "pllxCorrelationDiagramMax")
+	{
+	  input_file >> temp_string;
+	  pllxCorrelationDiagramMax = atof(temp_string.c_str());
+	}
+      else if(temp_string == "writePllyCorrelationDiagram")
+	{
+	  input_file >> temp_string;
+	  writePllyCorrelationDiagram = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "pllyCorrelationDiagramMin")
+	{
+	  input_file >> temp_string;
+	  pllyCorrelationDiagramMin = atof(temp_string.c_str());
+	}
+      else if(temp_string == "pllyCorrelationDiagramMax")
+	{
+	  input_file >> temp_string;
+	  pllyCorrelationDiagramMax = atof(temp_string.c_str());
+	}
+      else if(temp_string == "writePllzCorrelationDiagram")
+	{
+	  input_file >> temp_string;
+	  writePllzCorrelationDiagram = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "pllzCorrelationDiagramMin")
+	{
+	  input_file >> temp_string;
+	  pllzCorrelationDiagramMin = atof(temp_string.c_str());
+	}
+      else if(temp_string == "pllzCorrelationDiagramMax")
+	{
+	  input_file >> temp_string;
+	  pllzCorrelationDiagramMax = atof(temp_string.c_str());
+	}
+      else if(temp_string == "writeOppxCorrelationDiagram")
+	{
+	  input_file >> temp_string;
+	  writeOppxCorrelationDiagram = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "oppxCorrelationDiagramMin")
+	{
+	  input_file >> temp_string;
+	  oppxCorrelationDiagramMin = atof(temp_string.c_str());
+	}
+      else if(temp_string == "oppxCorrelationDiagramMax")
+	{
+	  input_file >> temp_string;
+	  oppxCorrelationDiagramMax = atof(temp_string.c_str());
+	}
+      else if(temp_string == "writeOppyCorrelationDiagram")
+	{
+	  input_file >> temp_string;
+	  writeOppyCorrelationDiagram = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "oppyCorrelationDiagramMin")
+	{
+	  input_file >> temp_string;
+	  oppyCorrelationDiagramMin = atof(temp_string.c_str());
+	}
+      else if(temp_string == "oppyCorrelationDiagramMax")
+	{
+	  input_file >> temp_string;
+	  oppyCorrelationDiagramMax = atof(temp_string.c_str());
+	}
+      else if(temp_string == "writeOppzCorrelationDiagram")
+	{
+	  input_file >> temp_string;
+	  writeOppzCorrelationDiagram = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "oppzCorrelationDiagramMin")
+	{
+	  input_file >> temp_string;
+	  oppzCorrelationDiagramMin = atof(temp_string.c_str());
+	}
+      else if(temp_string == "oppzCorrelationDiagramMax")
+	{
+	  input_file >> temp_string;
+	  oppzCorrelationDiagramMax = atof(temp_string.c_str());
+	}
       else if(temp_string == "write_all_energies_out")
         {
           input_file >> temp_string;
@@ -791,11 +888,50 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
   strm << "write_electron_densities\n "
        << flags.write_electron_densities << endl;
+  strm << "max_pair_distance\n " << flags.max_pair_distance << endl;
   strm << "print_transient_properties\n "
        << flags.print_transient_properties << endl;
   strm << "print_transient_properties_interval\n "
        << flags.print_transient_properties_interval << endl;
-  
+
+  strm << "writePllxCorrelationDiagram\n " << flags.writePllxCorrelationDiagram
+       << endl;
+  strm << "pllxCorrelationDiagramMin\n " << flags.pllxCorrelationDiagramMin
+       << endl;
+  strm << "pllxCorrelationDiagramMax\n " << flags.pllxCorrelationDiagramMax
+       << endl;
+  strm << "writePllyCorrelationDiagram\n " << flags.writePllyCorrelationDiagram
+       << endl;
+  strm << "pllyCorrelationDiagramMin\n " << flags.pllyCorrelationDiagramMin
+       << endl;
+  strm << "pllyCorrelationDiagramMax\n " << flags.pllyCorrelationDiagramMax
+       << endl;
+  strm << "writePllzCorrelationDiagram\n " << flags.writePllzCorrelationDiagram
+       << endl;
+  strm << "pllzCorrelationDiagramMin\n " << flags.pllzCorrelationDiagramMin
+       << endl;
+  strm << "pllzCorrelationDiagramMax\n " << flags.pllzCorrelationDiagramMax
+       << endl;
+
+  strm << "writeOppxCorrelationDiagram\n " << flags.writeOppxCorrelationDiagram
+       << endl;
+  strm << "oppxCorrelationDiagramMin\n " << flags.oppxCorrelationDiagramMin
+       << endl;
+  strm << "oppxCorrelationDiagramMax\n " << flags.oppxCorrelationDiagramMax
+       << endl;
+  strm << "writeOppyCorrelationDiagram\n " << flags.writeOppyCorrelationDiagram
+       << endl;
+  strm << "oppyCorrelationDiagramMin\n " << flags.oppyCorrelationDiagramMin
+       << endl;
+  strm << "oppyCorrelationDiagramMax\n " << flags.oppyCorrelationDiagramMax
+       << endl;
+  strm << "writeOppzCorrelationDiagram\n " << flags.writeOppzCorrelationDiagram
+       << endl;
+  strm << "oppzCorrelationDiagramMin\n " << flags.oppzCorrelationDiagramMin
+       << endl;
+  strm << "oppzCorrelationDiagramMax\n " << flags.oppzCorrelationDiagramMax
+       << endl;
+
   strm << "\n# Parameters for wavefunction optimization\n";
   strm << "optimize_Psi\n " << flags.optimize_Psi << endl;
   strm << "optimize_Psi_method\n " << flags.optimize_Psi_method << endl;
