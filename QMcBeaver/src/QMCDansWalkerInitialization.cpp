@@ -377,21 +377,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
   Array1D<double> rnd;
   Array1D<int> index;
 
-  cout << "Before shuffling:" << endl;
-  for (int i=0; i<nalpha; i++)
-    {
-      for (int j=0; j<3; j++)
-	cout << temp_alpha(i,j) << "\t";
-      cout << endl;
-    }
-  cout << endl;
-  for (int i=0; i<nbeta; i++)
-    {
-      for (int j=0; j<3; j++)
-	cout << temp_beta(i,j) << "\t";
-      cout << endl;
-    }
-
   double temp_rnd;
   int temp_index;
 
@@ -453,21 +438,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
       for (int i=0; i<nbeta; i++)
 	for (int j=0; j<3; j++)
 	  R(i+nalpha,j) = temp_beta(index(i),j);
-    }
-
-  cout << "After shuffling:" << endl;
-  for (int i=0; i<nalpha; i++)
-    {
-      for (int j=0; j<3; j++)
-	cout << R(i,j) << "\t";
-      cout << endl;
-    }
-  cout << endl;
-  for (int i=0; i<nbeta; i++)
-    {
-      for (int j=0; j<3; j++)
-	cout << R(nalpha+i,j) << "\t";
-      cout << endl;
     }
 
   return R;
