@@ -1,3 +1,8 @@
+Fri, Aug 25 2006 Daniel R. Fisher
+1.  Eliminated the shuffle step in QMCDansWalkerInitialization.
+    Instead, I will process the correlation diagrams so that they are
+    symmetric.
+
 Wed, Aug 16, 2006 Daniel R. Fisher
 1.  Added the capability to make two dimensional correlation diagrams.
     A correlation diagram shows the distribution of one coordinate for

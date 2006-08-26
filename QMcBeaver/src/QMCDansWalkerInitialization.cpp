@@ -371,9 +371,18 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 
   Array2D<double> R(nelectrons,3);
 
+  for (int i=0; i<nalpha; i++)
+    for (int j=0; j<3; j++)
+      R(i,j) = temp_alpha(i,j);
+
+  for (int i=0; i<nbeta; i++)
+    for (int j=0; j<3; j++)
+      R(i+nalpha,j) = temp_beta(i,j);
+
   // We shuffle the order of the alpha electrons and the order of the beta 
   // electrons.
 
+  /*
   Array1D<double> rnd;
   Array1D<int> index;
 
@@ -439,6 +448,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	for (int j=0; j<3; j++)
 	  R(i+nalpha,j) = temp_beta(index(i),j);
     }
+  */
 
   return R;
 }
