@@ -293,7 +293,17 @@ evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
                        Array2D<qmcfloat>& chi_laplacian)
 {
   //This line helps prevent some floating point errors
-  const double TOOSMALL = 1e-306;
+  //Also, as I discovered the hard way, allowing denormals
+  //can *really* slow down math operations on some processors
+#if defined SINGLEPRECISION || defined QMC_GPU
+//typedef float  qmcfloat;
+  const float TOOSMALL = 1e-29;
+  //const double TOOSMALL = 1e-306;
+#else
+//typedef double qmcfloat;
+  const double TOOSMALL = 1e-290;
+#endif
+
   int el = 0, bf;
   int a, b, c, nGaussians;
   int numBF;
