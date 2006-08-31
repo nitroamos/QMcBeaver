@@ -30,9 +30,8 @@ MRT 1x2 KS      ~
 MRT 2x1 KS      ~
 if rolled must be less than 256 (it won't give an error if too large -- just the wrong answer)
 */
-//static const  int LOOPS_PER_PASS   = 144;
-static        int LOOPS_PER_PASS   = 144;
-static const bool UNROLL_LOOP      = true;  //this penalizes the constructor
+static        int LOOPS_PER_PASS   = 150;
+static const bool UNROLL_LOOP      = true; //this penalizes the constructor
 static const bool USE_CHEAPER      = true;  //changes the precision of the coordinate vars. with this, 4 registers only?
 static const bool USE_TRIANGLES    = true;  //Slightly improves performance
 static const bool CHEAPER_FIRST    = false; //something is wrong with this.
@@ -50,8 +49,8 @@ For matrices that don't evenly divide by 3 or 4, fringe cases are difficult,
 so they haven't been done. So these two must be either 1 or 2.
 According to cjiang, the important case is 2x2 anyway...
 */
-static const  int MRT_W            = 1;
-static const  int MRT_H            = 1;
+static const  int MRT_W            = 2;
+static const  int MRT_H            = 2;
 
 static const bool REUSE_SHADERS    = false;
 static       bool shadersCreated   = false; //this must be false
@@ -100,8 +99,7 @@ GPUQMCMatrix::GPUQMCMatrix()
 GPUQMCMatrix::GPUQMCMatrix(QMCInput *INPUT, Array1D< Array2D<qmcfloat> > & Coeffs, int numCalcs)
 {
 	Input = INPUT;
-	LOOPS_PER_PASS = Input->flags.programmersLongs[0];
-  //LOOPS_PER_PASS = 100;
+	//LOOPS_PER_PASS = Input->flags.programmersLongs[0];
 
   /*>>>>>>>>>>>>>>>>>>>> SET UP CONSTANTS <<<<<<<<<<<<<<<<<<<<*/
   getFactors(numCalcs,nRows,nCols);
@@ -184,6 +182,7 @@ int GPUQMCMatrix::runCalculation(int numCalcs, GLuint bfInput)
     
       for(int iDet=0; iDet<nDets; iDet++)
         {
+          //this command takes a while!!!
           gpuDataFB[iDet].cleanAllBuffers();
           gpuDataFB[iDet].drawTo(0);
           
@@ -575,7 +574,7 @@ void GPUQMCMatrix::getResults(Array2D< Array2D<float>* > & results)
   //*/
 }
 
-string GPUQMCMatrix::generateShader(int start, int stop, bool isFirstPass)
+string GPUQMCMatrix::generateShader(int start, int stop, bool isLastPass)
 {
   /**
    in this shader:
@@ -740,8 +739,9 @@ string GPUQMCMatrix::generateShader(int start, int stop, bool isFirstPass)
   string bLoader =
     "      bJJ   = texRECT(oebf, coord.zw + float2(0,coordJJ.x));           \n";
   string innerLooper =
-    "      coord.xz++;                                                      \n";
-    
+    "      coord += temptype4(1,0,1,0);                                     \n";
+    //"      coord.xz++;                                                      \n";
+
   /*This section creates the multiplication and addition part of the shader
   the best way to understand what it is doing is to look at the shader produced*/
   bool bNeeded = true;
@@ -793,7 +793,12 @@ string GPUQMCMatrix::generateShader(int start, int stop, bool isFirstPass)
       findandreplace(shader,"startOps", start);
       findandreplace(shader,"stopOps",  stop);
     }
-    
+  
+  if(!isLastPass && HOW_TO_ADD == KAHAN_SUMS){
+  shader +=
+    "    output.o11 -= C;                                                \n";
+  }
+
   //The end of the shader
   shader +=
     "    return output;                                                  \n"
@@ -856,7 +861,7 @@ void GPUQMCMatrix::loadShaders()
         
           string generatedShader = generateShader(i*LOOPS_PER_PASS,
                                                   i<numPasses-1?(i+1)*LOOPS_PER_PASS:numLoops,
-                                                  i==0?true:false);
+                                                  i==numPasses-1?true:false);
                                                   
           //This dumps the raw Cg code into a file for viewing it later
           char cgName[256];
