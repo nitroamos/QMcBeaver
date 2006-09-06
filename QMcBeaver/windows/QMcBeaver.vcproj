@@ -290,9 +290,6 @@
 				RelativePath="..\src\AngleDistributions.cpp">
 			</File>
 			<File
-				RelativePath="..\src\Array2D.cpp">
-			</File>
-			<File
 				RelativePath="..\src\AtomicOrbitalInverter.cpp">
 			</File>
 			<File
@@ -392,6 +389,12 @@
 				RelativePath="..\src\QMCDerivativeProperties.cpp">
 			</File>
 			<File
+				RelativePath="..\src\QMCElectronNucleusCusp.cpp">
+			</File>
+			<File
+				RelativePath="..\src\QMCElectronNucleusCuspParameters.cpp">
+			</File>
+			<File
 				RelativePath="..\src\QMCEquilibrationArray.cpp">
 			</File>
 			<File
@@ -402,6 +405,9 @@
 			</File>
 			<File
 				RelativePath="..\src\QMCFunctions.cpp">
+			</File>
+			<File
+				RelativePath="..\src\QMCFutureWalkingProperties.cpp">
 			</File>
 			<File
 				RelativePath="..\src\QMCGreensRatioComponent.cpp">
@@ -447,6 +453,9 @@
 			</File>
 			<File
 				RelativePath="..\src\QMCMolecule.cpp">
+			</File>
+			<File
+				RelativePath="..\src\QMCNuclearForces.cpp">
 			</File>
 			<File
 				RelativePath="..\src\QMCObjectiveFunction.cpp">
@@ -658,6 +667,12 @@
 				RelativePath="..\include\QMCDerivativeProperties.h">
 			</File>
 			<File
+				RelativePath="..\include\QMCElectronNucleusCusp.h">
+			</File>
+			<File
+				RelativePath="..\include\QMCElectronNucleusCuspParameters.h">
+			</File>
+			<File
 				RelativePath="..\include\QMCEquilibrationArray.h">
 			</File>
 			<File
@@ -668,6 +683,9 @@
 			</File>
 			<File
 				RelativePath="..\include\QMCFunctions.h">
+			</File>
+			<File
+				RelativePath="..\include\QMCFutureWalkingProperties.h">
 			</File>
 			<File
 				RelativePath="..\include\QMCGreensRatioComponent.h">
@@ -719,6 +737,9 @@
 			</File>
 			<File
 				RelativePath="..\include\QMCMolecule.h">
+			</File>
+			<File
+				RelativePath="..\include\QMCNuclearForces.h">
 			</File>
 			<File
 				RelativePath="..\include\QMCObjectiveFunction.h">
