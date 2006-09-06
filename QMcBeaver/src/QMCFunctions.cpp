@@ -138,7 +138,7 @@ void QMCFunctions::evaluate(Array1D<QMCWalkerData *> &walkerData,
     finisher.reset(); finisher.start();
     glFinish();
     finisher.stop();
-    printf("finish time: %15d\n", finisher.timeMS() );
+    printf("finish time: %15d\n", finisher.timeUS() );
   }
 #endif
 
@@ -152,8 +152,8 @@ void QMCFunctions::evaluate(Array1D<QMCWalkerData *> &walkerData,
   if(showTimings)
   {
     sw.stop();
-    timeT = sw.timeMS();
-    if(numT >= 0) averageT += sw.timeMS();
+    timeT = sw.timeUS();
+    if(numT >= 0) averageT += sw.timeUS();
     if( num > 1) numT++;
     cout << "total time: " << (int)(timeT+0.5) << " ( " << (int)(averageT/(numT)+0.5) << ")\n";
   }

@@ -219,7 +219,7 @@ GLuint GPUQMCBasisFunction::runCalculation(Array1D<Array2D<double>*> &X, int num
     
 #ifdef PRINT_TIMINGS
   sw.stop();
-  double temp = (double)sw.timeMS()/TIMING_REPS;
+  double temp = (double)sw.timeUS()/TIMING_REPS;
   printf("   bf_loading: %7.2f", temp );
   
   sw.reset(); sw.start();
@@ -274,7 +274,7 @@ GLuint GPUQMCBasisFunction::runCalculation(Array1D<Array2D<double>*> &X, int num
       
     }
   sw.stop();
-  temp = (double)sw.timeMS()/TIMING_REPS;
+  temp = (double)sw.timeUS()/TIMING_REPS;
   printf(" bf_cg: %7.2f", temp );
   
   sw.reset(); sw.start();
@@ -288,7 +288,7 @@ GLuint GPUQMCBasisFunction::runCalculation(Array1D<Array2D<double>*> &X, int num
       
     }
   sw.stop();
-  temp = (double)sw.timeMS()/TIMING_REPS;
+  temp = (double)sw.timeUS()/TIMING_REPS;
   printf(" bf_translate: %7.2f\n", temp );
 #endif
   

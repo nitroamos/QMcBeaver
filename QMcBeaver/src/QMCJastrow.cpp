@@ -120,8 +120,8 @@ void QMCJastrow::setUpGPU(GLuint aElectrons, GLuint bElectrons, int num)
   {
     glFinish();
     sw.stop();
-    timeJ = sw.timeMS();
-    if(numT >= 0) averageJ += sw.timeMS();
+    timeJ = sw.timeUS();
+    if(numT >= 0) averageJ += sw.timeUS();
     if( num > 1) numT++;
     cout << "gpu ee: " << (int)(timeJ/multiplicity+0.5) << " ( " << (int)(averageJ/(numT*multiplicity)+0.5) << ")\n";
   } 
@@ -178,8 +178,8 @@ void QMCJastrow::evaluate(QMCJastrowParameters & JP, Array1D<Array2D<double>*> &
     }
   if(showTimings)
   {
-    timeJ = sw.timeMS();
-    if(numT >= 0) averageJ += sw.timeMS();
+    timeJ = sw.timeUS();
+    if(numT >= 0) averageJ += sw.timeUS();
     if( num > 1) numT++;
     cout << "cpu ee: " << (int)(timeJ/multiplicity+0.5) << " ( " << (int)(averageJ/(numT*multiplicity)+0.5) << ")\n";
   }

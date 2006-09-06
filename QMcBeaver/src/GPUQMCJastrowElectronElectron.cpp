@@ -115,7 +115,7 @@ GLuint GPUQMCJastrowElectronElectron::runCalculation(GLuint aElectronsTexID, GLu
 
 #ifdef PRINT_TIMINGS
   sw.stop();
-  double temp = (double)sw.timeMS()/TIMING_REPS;
+  double temp = (double)sw.timeUS()/TIMING_REPS;
   printf("   jee_trans: %7.2f", temp );
 
   sw.reset(); sw.start();
@@ -160,7 +160,7 @@ GLuint GPUQMCJastrowElectronElectron::runCalculation(GLuint aElectronsTexID, GLu
 #ifdef PRINT_TIMINGS
   }
   sw.stop();
-  temp = (double)sw.timeMS()/TIMING_REPS;
+  temp = (double)sw.timeUS()/TIMING_REPS;
   printf("   jee_poly: %7.2f\n", temp );
 
   sw.reset(); sw.start();
@@ -171,7 +171,7 @@ GLuint GPUQMCJastrowElectronElectron::runCalculation(GLuint aElectronsTexID, GLu
 
 #ifdef PRINT_TIMINGS
   sw.stop();
-  temp = (double)sw.timeMS()/TIMING_REPS;
+  temp = (double)sw.timeUS()/TIMING_REPS;
   printf("   jee_sum:   %7.2f", temp );
 
   sw.reset(); sw.start();
@@ -182,7 +182,7 @@ GLuint GPUQMCJastrowElectronElectron::runCalculation(GLuint aElectronsTexID, GLu
 
 #ifdef PRINT_TIMINGS
     sw.stop();
-    temp = (double)sw.timeMS()/TIMING_REPS;
+    temp = (double)sw.timeUS()/TIMING_REPS;
     printf("   jee_grad: %7.2f\n", temp );
 #endif
 

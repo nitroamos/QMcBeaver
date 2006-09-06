@@ -295,13 +295,15 @@ evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
   //This line helps prevent some floating point errors
   //Also, as I discovered the hard way, allowing denormals
   //can *really* slow down math operations on some processors
+  //maybe switch to using "isnormal"
 #if defined SINGLEPRECISION || defined QMC_GPU
 //typedef float  qmcfloat;
   const float TOOSMALL = 1e-29;
   //const double TOOSMALL = 1e-306;
 #else
 //typedef double qmcfloat;
-  const double TOOSMALL = 1e-290;
+  //const double TOOSMALL = 1e-290;
+  const double TOOSMALL = 1e-306;
 #endif
 
   int el = 0, bf;
