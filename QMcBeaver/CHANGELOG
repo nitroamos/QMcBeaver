@@ -1,3 +1,21 @@
+Wed, Sep 6, 2006 Amos Anderson
+Note: some of these changes are from back in April when I was preparing the paper.
+Hopefully now all the important changes have been preserved.
+1.  I changed several timers relevant to GPU code to use microseconds
+    rather than milliseconds.
+    
+2.  I made some minor modifications to QMCBasisfunction -- maybe more needed
+    to try to cut out denormals. For example, maybe the isnormal function
+    should be employed since denormals add little to the accuracy, but can
+    really slow down some processors since they might be handled in software.
+    
+3.  Some other minor changes to GPU matrix multiplication code. There is
+    a remaining issue regarding initializing walkers and the printPsi option
+    as well as a question of whether Array2D should allow matrices dim = 0.
+    
+4.  I made another change to IeeeMath.cpp -- it now uses the isfinite function,
+    and I deleted all the other junk I had added.
+
 Fri, Aug 25 2006 Daniel R. Fisher
 1.  Eliminated the shuffle step in QMCDansWalkerInitialization.
     Instead, I will process the correlation diagrams so that they are
