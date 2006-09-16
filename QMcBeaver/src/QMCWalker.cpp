@@ -314,7 +314,9 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
         }
         
       radialComponentQF = sqrt(radialComponentQF);
-      radialUnitVector /= radialComponentQF;
+      
+      if (radialComponentQF > 1e-15)
+	radialUnitVector /= radialComponentQF;
       
       // Calculate the gaussian drift components in cylindrical coordinates
       double zCoordinate = max(distanceFromNucleus + zComponentQF * tau,0.0);
@@ -552,7 +554,9 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
         }
         
       radialComponentQF = sqrt(radialComponentQF);
-      radialUnitVector /= radialComponentQF;
+      
+      if (radialComponentQF > 1e-15)
+	radialUnitVector /= radialComponentQF;
       
       // Calculate the gaussian drift components in cylindrical coordinates
       double zCoordinate = max(distanceFromNucleus + zComponentQF * tau,0.0);

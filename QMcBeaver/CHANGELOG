@@ -1,3 +1,12 @@
+Sat, Sep 16, 2006 Daniel R. Fisher
+1.  In QMCWalker::moveElectronsUmrigar93ImportanceSampling() and 
+    calculateReverseGreensFunctionUmrigar93ImportanceSampling(), the
+    displacement is decomposed into z and radial components from the
+    nearest nucleus.  In the case where there is only one nucleus and
+    there is no Jastrow function, the radial component is zero.  This
+    was causing a divide by zero when the radial component was
+    normalized.  I put in a check to fix this problem.
+
 Wed, Sep 6, 2006 Amos Anderson
 Note: some of these changes are from back in April when I was preparing the paper.
 Hopefully now all the important changes have been preserved.

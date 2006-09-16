@@ -43,7 +43,7 @@ bool IeeeMath::isNaN(T x)
   */
   if(true)
   {
-    if( x != x || !isfinite(x) )
+    if( x != x ) ) // || !isfinite(x) )
     {
       return true;
     }
