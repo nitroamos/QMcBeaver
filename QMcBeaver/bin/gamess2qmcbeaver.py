@@ -500,13 +500,13 @@ if (ci_type != "ALDET"):
 elif (ci_type == "ALDET"):
     total_orbitals = norbitals
     for i in range(total_orbitals):
-        index = norbitals-i-1
+        index = total_orbitals-i-1
         keep_this_orbital = 0
         for j in range(ndeterminants):
-            if (AlphaOccupation[j][i] == 1):
+            if (AlphaOccupation[j][index] == 1):
                 keep_this_orbital = 1
                 break
-            if (BetaOccupation[j][i] == 1):
+            if (BetaOccupation[j][index] == 1):
                 keep_this_orbital = 1
                 break
         if (keep_this_orbital == 0):
