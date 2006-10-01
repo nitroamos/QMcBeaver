@@ -330,10 +330,16 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
   // We put the coordinates for the alpha electrons into one array, and the 
   // coordinates for the beta electrons in another one.
 
-  Array2D<double> temp_alpha(nalpha,3);
+  Array2D<double> temp_alpha;
+  if (nalpha > 0)
+    temp_alpha.allocate(nalpha,3);
+
   int alpha_index = 0;
 
-  Array2D<double> temp_beta(nbeta,3);
+  Array2D<double> temp_beta;
+  if (nbeta > 0)
+    temp_beta.allocate(nbeta,3);
+
   int beta_index = 0;
 
   Array2D<double> temp_coords;
@@ -378,77 +384,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
   for (int i=0; i<nbeta; i++)
     for (int j=0; j<3; j++)
       R(i+nalpha,j) = temp_beta(i,j);
-
-  // We shuffle the order of the alpha electrons and the order of the beta 
-  // electrons.
-
-  /*
-  Array1D<double> rnd;
-  Array1D<int> index;
-
-  double temp_rnd;
-  int temp_index;
-
-  if (nalpha > 1)
-    {
-      rnd.allocate(nalpha);
-      index.allocate(nalpha);
-
-      for (int i=0; i<nalpha; i++)
-	{
-	  rnd(i) = ran1(&Input->flags.iseed);
-	  index(i) = i;
-	}
-
-      for (int i=1; i<nalpha; i++)
-	for (int j=0; j<nalpha-i; j++)
-	  if (rnd(j) > rnd(j+1))
-	    {
-	      temp_rnd = rnd(j+1);
-	      temp_index = index(j+1);
-	      
-	      rnd(j+1) = rnd(j);
-	      rnd(j) = temp_rnd;
-	      
-	      index(j+1) = index(j);
-	      index(j) = temp_index;
-	    }
-
-      for (int i=0; i<nalpha; i++)
-	for (int j=0; j<3; j++)
-	  R(i,j) = temp_alpha(index(i),j);
-    }
-
-  if (nbeta > 1)
-    {
-      rnd.allocate(nbeta);
-      index.allocate(nbeta);
-
-      for (int i=0; i<nbeta; i++)
-	{
-	  rnd(i) = ran1(&Input->flags.iseed);
-	  index(i) = i;
-	}
-      
-      for (int i=1; i<nbeta; i++)
-	for (int j=0; j<nbeta-i; j++)
-	  if (rnd(j) > rnd(j+1))
-	    {
-	      temp_rnd = rnd(j+1);
-	      temp_index = index(j+1);
-	      
-	      rnd(j+1) = rnd(j);
-	      rnd(j) = temp_rnd;
-
-	      index(j+1) = index(j);
-	      index(j) = temp_index;
-	    }
-
-      for (int i=0; i<nbeta; i++)
-	for (int j=0; j<3; j++)
-	  R(i+nalpha,j) = temp_beta(index(i),j);
-    }
-  */
 
   return R;
 }
