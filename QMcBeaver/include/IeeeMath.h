@@ -35,6 +35,7 @@ for more details.
 #define IeeeMath_H
 
 #include <limits>
+#include <math.h>
 
 /**
   Functions for IEEE 754 floating point operations.

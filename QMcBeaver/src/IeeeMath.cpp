@@ -31,6 +31,8 @@ for more details.
 
 #include "IeeeMath.h"
 
+#define USING_QSC
+
 template <class T>
 bool IeeeMath::isNaN(T x)
 {
@@ -41,30 +43,29 @@ bool IeeeMath::isNaN(T x)
     Hopefully this function won't give
     any more false positives.
   */
-  if(true)
-  {
-    if( x != x ) ) // || !isfinite(x) )
+#ifdef USING_QSC
+  if( x != x )
     {
       return true;
     }
-    else
+  else
     {
       return false;
     }
-  } else {
-    if( x != x )
+#else
+  if( x != x || !isfinite(x) )
     {
       return true;
     }
-    else
+  else
     {
       return false;
     }
-
-  }
+#endif
 }
 
 //QSC compiler quits if this line is uncommented...
+#if ! defined USING_QSC
 template bool IeeeMath::isNaN<double>(double x);
-
+#endif
 
