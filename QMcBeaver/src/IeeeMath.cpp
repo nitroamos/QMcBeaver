@@ -31,7 +31,9 @@ for more details.
 
 #include "IeeeMath.h"
 
-#define USING_QSC
+#if ! defined _WIN32
+//#define USING_QSC
+#endif
 
 template <class T>
 bool IeeeMath::isNaN(T x)
@@ -43,7 +45,20 @@ bool IeeeMath::isNaN(T x)
     Hopefully this function won't give
     any more false positives.
   */
+
+#ifdef _WIN32
+  if( x != x  || !_finite(x) )
+    {
+      return true;
+    }
+  else
+    {
+      return false;
+    }
+#else
+
 #ifdef USING_QSC
+//Apparently Tru64 doesn't have a "isfinite" function.
   if( x != x )
     {
       return true;
@@ -61,6 +76,8 @@ bool IeeeMath::isNaN(T x)
     {
       return false;
     }
+#endif
+
 #endif
 }
 
