@@ -131,21 +131,25 @@ void QMCSlater::allocate(int N)
   int gpp = Input->flags.getNumGPUWalkers();
 
 
-  D.allocate(wpp-gpp,ndet);
-  D_inv.allocate(wpp-gpp,ndet);
-  Laplacian_D.allocate(wpp-gpp,ndet);
-  Grad_D.allocate(wpp-gpp,ndet,3);
-  for(int j=0; j<D.dim1(); j++)
-    {
-      for (int i=0; i<D.dim2(); i++)
-        {
-          D(j,i).allocate(N,N);
-          D_inv(j,i).allocate(N,N);
-          Laplacian_D(j,i).allocate(N,N);
-          for(int k=0; k<3; k++)
-            Grad_D(j,i,k).allocate(N,N);
-        }
-    }
+  if(wpp - gpp > 0)
+  {
+    D.allocate(wpp-gpp,ndet);
+    D_inv.allocate(wpp-gpp,ndet);
+    Laplacian_D.allocate(wpp-gpp,ndet);
+    Grad_D.allocate(wpp-gpp,ndet,3);
+    for(int j=0; j<D.dim1(); j++)
+      {
+        for (int i=0; i<D.dim2(); i++)
+          {
+            D(j,i).allocate(N,N);
+            D_inv(j,i).allocate(N,N);
+            Laplacian_D(j,i).allocate(N,N);
+            for(int k=0; k<3; k++)
+              Grad_D(j,i,k).allocate(N,N);
+          }
+      }
+  }
+
 #ifdef QMC_GPU
   gpu_D.allocate(gpp,ndet);
   gpu_D_inv.allocate(gpp,ndet);
