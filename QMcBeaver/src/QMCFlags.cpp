@@ -687,6 +687,24 @@ void QMCFlags::read_flags(string InFileName)
       << " run_type = " << run_type << "!" << endl;
     }
 
+#ifdef QMC_GPU
+  if( getNumGPUWalkers() == 0)
+  {
+    cerr << "A GPU run with no GPU walkers? Please set the gpu_walkers_per_pass parameter.\n";
+    exit(1);
+  }
+
+  if( getNumGPUWalkers() + walkers_per_pass != number_of_walkers)
+  {
+    //cerr << "Setting all walkers to be GPU walkers.\n";
+    gpu_walkers_per_pass = -1;
+  }
+
+  cout << "Running GPUQMC with " << walkers_per_pass << " walkers per pass, " <<
+    getNumGPUWalkers() << " of them on the GPU\n";
+
+#endif
+
   if(chip_and_mike_are_cool != "Yea_Baby!")
     {
       cerr << "ERROR: Incorrect value for chip_and_mike_are_cool set" << endl;
