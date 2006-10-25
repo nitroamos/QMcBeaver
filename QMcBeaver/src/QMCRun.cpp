@@ -683,7 +683,9 @@ double QMCRun::getWeights()
   
   for( list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp )
     total_weights += wp->getWeight();
-    
+
+  assert(total_weights > 0.0);
+
   return total_weights;
 }
 
