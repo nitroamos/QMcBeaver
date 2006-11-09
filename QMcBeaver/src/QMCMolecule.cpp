@@ -77,6 +77,12 @@ istream& operator >>(istream &strm, QMCMolecule &rhs)
       rhs.Atom_Labels(i) = 
 	StringManipulation::toFirstUpperRestLower(rhs.Atom_Labels(i));
 
+      if(rhs.Atom_Labels(i) == "&"){
+	cerr << "ERROR: End of geometry section reached prematurely. We were expecting " << rhs.Natoms
+	     << " atoms, but we only got " << i << ".\n";
+	exit(1);
+      }
+
       strm >> rhs.Z(i);
       strm >> rhs.Atom_Positions(i,0);
       strm >> rhs.Atom_Positions(i,1);

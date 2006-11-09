@@ -93,7 +93,7 @@ void QMCCorrelationFunctionParameters::read(istream & strm)
     }
   else
     {
-      cerr << "ERROR: Two non-electron particles in one correlation function!"
+      cerr << "ERROR: Two non-electron particles (" << pt1 << ", " << pt2 << ") in one correlation function!"
 	   << endl;
     }
   
