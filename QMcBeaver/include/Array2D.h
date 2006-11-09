@@ -152,8 +152,8 @@ template <class T> class Array2D
     {
       if( i < 1 || j < 1)
 	{
-	  cerr << "Error: invalid dimensions to allocate\n";
-	  exit(1);
+	  //cerr << "Error: invalid dimensions to allocate\n";
+	  //exit(1);
 	}
 
       if( n_1 != i || n_2 != j )
