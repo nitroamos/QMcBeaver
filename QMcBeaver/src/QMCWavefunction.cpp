@@ -20,6 +20,7 @@ QMCWavefunction::QMCWavefunction()
   Nbeta = 0; 
   Nelectrons = 0;
   Ndeterminants = 0;
+  factor = 1.0;
   trialFunctionType = "restricted";
 }
 
@@ -51,6 +52,15 @@ int QMCWavefunction::getNumberElectrons()
 int QMCWavefunction::getNumberDeterminants()
 {
   return Ndeterminants;
+}
+
+void QMCWavefunction::scaleCoeffs(double scaleFactor)
+{
+  factor *= scaleFactor;
+  AlphaCoeffs *= scaleFactor;
+  BetaCoeffs  *= scaleFactor;
+  //printf("Alpha f-norm is %20.10e\n",AlphaCoeffs.frobeniusNorm());
+  //printf("Beta  f-norm is %20.10e\n",BetaCoeffs.frobeniusNorm());
 }
 
 QMCWavefunction QMCWavefunction::operator=( const QMCWavefunction & rhs )
@@ -153,6 +163,8 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
     } 
   
   rhs.Nelectrons = rhs.Nalpha + rhs.Nbeta;
+  //rhs.scaleCoeffs(4.0);
+
   return strm;
 }
 

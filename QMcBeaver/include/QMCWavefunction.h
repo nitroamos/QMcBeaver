@@ -38,6 +38,7 @@ class QMCWavefunction
   int Nbeta;
   int Nelectrons;
   int Ndeterminants;
+  double factor;
   string trialFunctionType;
 
  public:
@@ -82,6 +83,16 @@ class QMCWavefunction
     @return number of determinants.
   */
   int getNumberDeterminants();
+
+  /**
+     This scales all the values in the orbitals by a constant factor.
+     Since the wavefunction does not have to be normalized in a QMC
+     wavefunction, this will not change anything.
+
+     Numerically however, the calculation may perform better if
+     scaled such that the value of the wavefunction is near 1.0.
+  */
+  void scaleCoeffs(double factor);
 
   /**
     Array containing the coefficients used to construct the alpha orbitals.
