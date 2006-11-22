@@ -42,6 +42,7 @@ for more details.
 #include "QMCInput.h"
 #include "Stopwatch.h"
 #include "QMCElectronNucleusCusp.h"
+#include "svdcmp.h"
 
 #ifdef QMC_GPU
 #include "GPUQMCMatrix.h"
