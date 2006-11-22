@@ -52,7 +52,7 @@ typedef float  qmcfloat;
 const static  float REALLYTINY = 1e-35f;
 #else
 typedef double qmcfloat;
-const static double REALLYTINY = 1e-250;
+const static double REALLYTINY = 1e-300;
 #endif
 
 #if defined SINGLEPRECISION || defined QMC_GPU
@@ -73,8 +73,8 @@ using namespace std;
 
 
 template <class T> class Array2D
-  {
-  private:
+{
+private:
     /**
     Number of elements in the array's first dimension.
     */
@@ -101,14 +101,14 @@ template <class T> class Array2D
     Array1D<int> diINDX;
     Array1D<T> diVV;
 
-  public:
+public:
     /**
     Gets a pointer to an array containing the array elements.  
     The ordering of this array is NOT specified.  
     */
     T* array()
     {
-      return pArray;
+        return pArray;
     }
 
     /**
@@ -118,7 +118,7 @@ template <class T> class Array2D
     */
     int dim1() const
     {
-      return n_1;
+        return n_1;
     }
 
     /**
@@ -128,7 +128,7 @@ template <class T> class Array2D
     */
     int dim2() const
     {
-      return n_2;
+        return n_2;
     }
 
     /**
@@ -138,7 +138,7 @@ template <class T> class Array2D
     */
     int size() const
     {
-      return n_1*n_2;
+        return n_1*n_2;
     }
 
     /**
@@ -150,26 +150,26 @@ template <class T> class Array2D
 
     void allocate(int i, int j)
     {
-      if( i < 1 || j < 1)
-	{
-	  //cerr << "Error: invalid dimensions to allocate\n";
-	  //exit(1);
-	}
-
-      if( n_1 != i || n_2 != j )
+        if( i < 1 || j < 1)
         {
-          deallocate();
+            //cerr << "Error: invalid dimensions to allocate\n";
+            //exit(1);
+        }
 
-          n_1 = i;
-          n_2 = j;
+        if( n_1 != i || n_2 != j )
+        {
+            deallocate();
 
-          if(n_1 >= 1 && n_2 >= 1)
+            n_1 = i;
+            n_2 = j;
+
+            if(n_1 >= 1 && n_2 >= 1)
             {
-              pArray = new T[ n_1*n_2 ];
+                pArray = new T[ n_1*n_2 ];
             }
-          else
+            else
             {
-              pArray = 0;
+                pArray = 0;
             }
         }
     }
@@ -180,15 +180,15 @@ template <class T> class Array2D
 
     void deallocate()
     {
-      delete [] pArray;
-      pArray = 0;
+        delete [] pArray;
+        pArray = 0;
 
-      n_1 = 0;
-      n_2 = 0;
+        n_1 = 0;
+        n_2 = 0;
 
-      diCol.deallocate();
-      diINDX.deallocate();
-      diVV.deallocate();
+        diCol.deallocate();
+        diINDX.deallocate();
+        diVV.deallocate();
     }
 
     /**
@@ -201,28 +201,28 @@ template <class T> class Array2D
     void setupMatrixMultiply(const Array2D<T> & rhs, Array2D<T> & result,
                              const bool rhsIsTransposed) const
     {
-      if(rhsIsTransposed)
+        if(rhsIsTransposed)
         {
-          if(n_2 != rhs.n_2)
+            if(n_2 != rhs.n_2)
             {
-              cerr << "ERROR: Transposed Matrix multiplication: " << n_1 << "x"
-              << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
-              exit(1);
+                cerr << "ERROR: Transposed Matrix multiplication: " << n_1 << "x"
+                << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
+                exit(1);
             }
-          result.allocate(n_1,rhs.n_1);
+            result.allocate(n_1,rhs.n_1);
         }
-      else
+        else
         {
-          if(n_2 != rhs.n_1)
+            if(n_2 != rhs.n_1)
             {
-              cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-              << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
-              exit(1);
+                cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
+                << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
+                exit(1);
             }
-          result.allocate(n_1,rhs.n_2);
+            result.allocate(n_1,rhs.n_2);
         }
 
-      result = (T)(0.0);
+        result = (T)(0.0);
     }
 
 #ifdef USEATLAS
@@ -230,39 +230,39 @@ template <class T> class Array2D
     void gemm(const Array2D<double> & rhs, Array2D<double> & result,
               const bool rhsIsTransposed) const
     {
-      setupMatrixMultiply(rhs,result,rhsIsTransposed);
+        setupMatrixMultiply(rhs,result,rhsIsTransposed);
 
-      //MxN = MxK * KxN 
-      int M = n_1;
-      int N = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
-      int K = n_2; 
-      CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
+        //MxN = MxK * KxN
+        int M = n_1;
+        int N = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
+        int K = n_2;
+        CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
 
-      cblas_dgemm(CBLAS_ORDER(CblasRowMajor),
-                  CBLAS_TRANSPOSE(CblasNoTrans), myTrans,
-                  M, N, K,
-                  1.0, pArray, n_2,
-                  rhs.pArray, rhs.n_2,
-                  0.0, result.pArray, result.n_2);
+        cblas_dgemm(CBLAS_ORDER(CblasRowMajor),
+                    CBLAS_TRANSPOSE(CblasNoTrans), myTrans,
+                    M, N, K,
+                    1.0, pArray, n_2,
+                    rhs.pArray, rhs.n_2,
+                    0.0, result.pArray, result.n_2);
     }
 
     void gemm(const Array2D<float> & rhs, Array2D<float> & result,
               const bool rhsIsTransposed) const
     {
-      setupMatrixMultiply(rhs,result,rhsIsTransposed);
+        setupMatrixMultiply(rhs,result,rhsIsTransposed);
 
-      //MxN = MxK * KxN 
-      int M = n_1;
-      int N = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
-      int K = n_2; 
-      CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
+        //MxN = MxK * KxN
+        int M = n_1;
+        int N = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
+        int K = n_2;
+        CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
 
-      cblas_sgemm(CBLAS_ORDER(CblasRowMajor),
-                  CBLAS_TRANSPOSE(CblasNoTrans),myTrans,
-		  M, N, K,
-                  1.0, pArray, n_2,
-                  rhs.pArray, rhs.n_2,
-                  0.0, result.pArray, result.n_2);
+        cblas_sgemm(CBLAS_ORDER(CblasRowMajor),
+                    CBLAS_TRANSPOSE(CblasNoTrans),myTrans,
+                    M, N, K,
+                    1.0, pArray, n_2,
+                    rhs.pArray, rhs.n_2,
+                    0.0, result.pArray, result.n_2);
     }
 
     /**
@@ -271,7 +271,7 @@ template <class T> class Array2D
     */
     double dotAllElectrons(const Array2D<double> & rhs)
     {
-      return cblas_ddot(n_1*n_2, pArray, 1, rhs.pArray, 1);
+        return cblas_ddot(n_1*n_2, pArray, 1, rhs.pArray, 1);
     }
 
     /**
@@ -280,17 +280,17 @@ template <class T> class Array2D
     */
     double dotOneElectron(const Array2D<double> & rhs, int whichElectron)
     {
-      return cblas_ddot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
+        return cblas_ddot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
     }
 
     float dotAllElectrons(const Array2D<float> & rhs)
     {
-      return cblas_sdot(n_1*n_2, pArray, 1, rhs.pArray, 1);
+        return cblas_sdot(n_1*n_2, pArray, 1, rhs.pArray, 1);
     }
 
     float dotOneElectron(const Array2D<float> & rhs, int whichElectron)
     {
-      return cblas_sdot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
+        return cblas_sdot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
     }
 
 #else
@@ -298,75 +298,75 @@ template <class T> class Array2D
     void gemm(const Array2D<T> & rhs, Array2D<T> & result,
               const bool rhsIsTransposed) const
     {
-      setupMatrixMultiply(rhs,result,rhsIsTransposed);
+        setupMatrixMultiply(rhs,result,rhsIsTransposed);
 
-      //MxN = MxK * KxN
-      int M = n_1;
-      int N = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
-      int K = n_2;
-      T * A = pArray;
-      T * B = rhs.pArray;
-      T * C = result.pArray;
+        //MxN = MxK * KxN
+        int M = n_1;
+        int N = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
+        int K = n_2;
+        T * A = pArray;
+        T * B = rhs.pArray;
+        T * C = result.pArray;
 
-      if(rhsIsTransposed)
+        if(rhsIsTransposed)
         {
-          if(USE_KAHAN)
+            if(USE_KAHAN)
             {
-              T Cee, Why, Tee;
-	      int i, j, k;
-              
-	      for (i = 0; i < M; ++i)
+                T Cee, Why, Tee;
+                int i, j, k;
+
+                for (i = 0; i < M; ++i)
                 {
-                  const register T *Ai_ = A + i*K;
-                  for (j = 0; j < N; ++j)
+                    const register T *Ai_ = A + i*K;
+                    for (j = 0; j < N; ++j)
                     {
-                      const register T *B_j = B + j*K;
-                      register T cij = Ai_[0] * B_j[0];
-                      Cee = 0;
-                      for (k = 1; k < K; ++k)
+                        const register T *B_j = B + j*K;
+                        register T cij = Ai_[0] * B_j[0];
+                        Cee = 0;
+                        for (k = 1; k < K; ++k)
                         {
-                          Why = Ai_[k] * B_j[k] - Cee;
-                          Tee = cij + Why;
-                          Cee = (Tee - cij) - Why;
-                          cij = Tee;
+                            Why = Ai_[k] * B_j[k] - Cee;
+                            Tee = cij + Why;
+                            Cee = (Tee - cij) - Why;
+                            cij = Tee;
                         }
-                      C[i*N + j] = cij;
+                        C[i*N + j] = cij;
                     }
                 }
             }
-          else//no kahan summation formula
+            else//no kahan summation formula
             {
-	      int i, j, k;
+                int i, j, k;
 
-              for (i = 0; i < M; ++i)
+                for (i = 0; i < M; ++i)
                 {
-                  const register T *Ai_ = A + i*K;
-                  for (j = 0; j < N; ++j)
+                    const register T *Ai_ = A + i*K;
+                    for (j = 0; j < N; ++j)
                     {
-                      const register T *B_j = B + j*K;
-                      register T cij = 0;
-                      for (k = 0; k < K; ++k)
+                        const register T *B_j = B + j*K;
+                        register T cij = 0;
+                        for (k = 0; k < K; ++k)
                         {
-                          cij += Ai_[k] * B_j[k];
+                            cij += Ai_[k] * B_j[k];
                         }
-                      C[i*N + j] = cij;
+                        C[i*N + j] = cij;
                     }
                 }
             }
         }
-      else// rhs is not transposed, KSF not implemented here
+        else// rhs is not transposed, KSF not implemented here
         {
-          for (int i = 0; i < M; ++i)
+            for (int i = 0; i < M; ++i)
             {
-              register T *Ai_ = A + i*K;
-              for (int j = 0; j < N; ++j)
+                register T *Ai_ = A + i*K;
+                for (int j = 0; j < N; ++j)
                 {
-                  register T cij = 0;
-                  for (int k = 0; k < K; ++k)
+                    register T cij = 0;
+                    for (int k = 0; k < K; ++k)
                     {
-                      cij += Ai_[k] * B[k*N+j];
+                        cij += Ai_[k] * B[k*N+j];
                     }
-                  C[i*N + j] = cij;
+                    C[i*N + j] = cij;
                 }
             }
         }
@@ -378,10 +378,10 @@ template <class T> class Array2D
     */
     T dotAllElectrons(const Array2D<T> & rhs)
     {
-      register T temp = 0;
-      for(int i=0; i<n_1*n_2; i++)
-        temp += pArray[i]*rhs.pArray[i];
-      return temp;
+        register T temp = 0;
+        for(int i=0; i<n_1*n_2; i++)
+            temp += pArray[i]*rhs.pArray[i];
+        return temp;
     }
 
     /**
@@ -390,21 +390,21 @@ template <class T> class Array2D
     */
     T dotOneElectron(const Array2D<T> & rhs, int whichElectron)
     {
-      register T temp = 0;
-      T * l = pArray + whichElectron*n_2;
-      T * r = rhs.pArray + whichElectron*n_2;
-      for(int i=0; i<n_1; i++)
-        temp += l[i]*r[i];
-      return temp;
+        register T temp = 0;
+        T * l = pArray + whichElectron*n_2;
+        T * r = rhs.pArray + whichElectron*n_2;
+        for(int i=0; i<n_1; i++)
+            temp += l[i]*r[i];
+        return temp;
     }
 #endif
 
     Array2D<T> operator*(const Array2D<T> & rhs) const
     {
-      Array2D<T> TEMP(n_1,rhs.n_2);
-      TEMP = 0;
-      gemm(rhs,TEMP,false);
-      return TEMP;
+        Array2D<T> TEMP(n_1,rhs.n_2);
+        TEMP = 0;
+        gemm(rhs,TEMP,false);
+        return TEMP;
     }
 
     /**
@@ -420,100 +420,133 @@ template <class T> class Array2D
     */
     void ludcmp(double *d, bool *calcOK)
     {
-      int i,j,k;
-      int imax = -1;
-      T big,dum,temp;
-      register T sum;
-      T one = (T)(1.0);
-      T zero = (T)(0.0);
+        int i,j,k;
+        int imax = -1;
+        long double big,dum,temp;
+        long double Why, Cee, Tee;
+        register long double sum;
+        long double one = (T)(1.0);
+        long double zero = (T)(0.0);
 
-      *calcOK = true;
-      *d=1.0;
+        *calcOK = true;
+        *d=1.0;
 
-      diVV.allocate(n_1);
+        diVV.allocate(n_1);
 
-      //this section finds the largest value from each column
-      //and puts its inverse in the vv vector.
-      for (i=0;i<n_1;i++)
+        //this section finds the largest value from each column
+        //and puts its inverse in the vv vector.
+        for (i=0;i<n_1;i++)
         {
-          big=zero;
-          for (j=0;j<n_1;j++)
-            if ((temp=(T)(fabs((double)get(i,j)))) > big)
-              big=temp;
+            big=zero;
+            for (j=0;j<n_1;j++)
+                if ((temp=(T)(fabs((double)get(i,j)))) > big)
+                    big=temp;
 
-          //checks if the column is full of zeros
-          if (big == zero)
+            //checks if the column is full of zeros
+            if (big == zero)
             {
-              // cerr << "Singular matrix in routine ludcmp*********" << endl;
-              *calcOK = false;
-              return;
+                // cerr << "Singular matrix in routine ludcmp*********" << endl;
+                *calcOK = false;
+                return;
             }
 
-          diVV(i)=one/big;
+            diVV(i)=one/big;
         }
 
-      //loop over columns
-      for (j=0;j<n_1;j++)
+        //loop over columns
+        for (j=0;j<n_1;j++)
         {
 
-          //part 1: i < j
-          for (i=0;i<j;i++)
+            //part 1: i < j
+            for (i=0;i<j;i++)
             {
-              sum=get(i,j);
-              for (k=0;k<i;k++)
-                sum -= get(i,k)*get(k,j);
-              pArray[map(i,j)]=sum;
+                sum=-1.0*get(i,j);
+
+                if(USE_KAHAN)
+                {
+                    Cee = 0;
+                    for (k=0;k<i;k++)
+                    {
+                        Why = get(i,k)*get(k,j) - Cee;
+                        Tee = sum + Why;
+                        Cee = (Tee - sum) - Why;
+                        sum = Tee;
+                    }
+                } else {
+
+                    for (k=0;k<i;k++)
+                        sum += get(i,k)*get(k,j);
+
+                }
+
+                pArray[map(i,j)]= -1.0*sum;
             }
 
-          //part 2: i >= j
-          big=zero;
-          for (i=j;i<n_1;i++)
+            //part 2: i >= j
+            big=zero;
+            for (i=j;i<n_1;i++)
             {
-              sum=get(i,j);
-              for (k=0;k<j;k++)
-                sum -= get(i,k)*get(k,j);
-              pArray[map(i,j)]=sum;
+                sum=-1.0*get(i,j);
 
-              //find the best row to pivot
-              if ( (dum=diVV(i)*(T)(fabs((double)sum))) >= big)
+                if(USE_KAHAN)
                 {
-                  big=dum;
-                  imax=i;
+                    Cee = 0;
+                    for (k=0;k<j;k++)
+                    {
+                        Why = get(i,k)*get(k,j) - Cee;
+                        Tee = sum + Why;
+                        Cee = (Tee - sum) - Why;
+                        sum = Tee;
+                    }
+                } else {
+
+                    for (k=0;k<j;k++)
+                        sum += get(i,k)*get(k,j);
+
+                }
+
+                pArray[map(i,j)]=-1.0*sum;
+
+                //find the best row to pivot
+                if ( (dum=diVV(i)*(T)(fabs((double)sum))) >= big)
+                {
+                    big=dum;
+                    imax=i;
                 }
             }
 
-          //if our row isn't the best to pivot, we need to
-          //change to the best
-          if (j != imax)
+            //if our row isn't the best to pivot, we need to
+            //change to the best
+            if (j != imax)
             {
 
-              //swap rows
-              for (k=0;k<n_1;k++)
+                //swap rows
+                for (k=0;k<n_1;k++)
                 {
-                  dum=get(imax,k);
-                  pArray[map(imax,k)]=get(j,k);
-                  pArray[map(j,k)]=dum;
+                    dum=get(imax,k);
+                    pArray[map(imax,k)]=get(j,k);
+                    pArray[map(j,k)]=dum;
                 }
-              //a.swapRows(imax,j);
+                //a.swapRows(imax,j);
 
-              //indicate permutation change
-              *d = -(*d);
+                //indicate permutation change
+                *d = -(*d);
 
-              //update vv
-              diVV(imax)=diVV(j);
+                //update vv
+                diVV(imax)=diVV(j);
             }
-          diINDX(j)=imax;
+            diINDX(j)=imax;
 
-          //make sure we don't divide by zero
-          if (get(j,j) == zero)
-            pArray[map(j,j)]=(T)(REALLYTINY);
+            //make sure we don't divide by zero
+            if (get(j,j) == zero)
+                pArray[map(j,j)]=(T)(REALLYTINY);
 
-          //each element needs to be divided by it's diagonal
-          if (j != n_1)
+            //each element needs to be divided by it's diagonal
+            if (j != n_1)
             {
-              dum=one/(get(j,j));
-              for (i=j+1;i<n_1;i++)
-                pArray[map(i,j)] *= dum;
+                dum=one/(get(j,j));
+                for (i=j+1;i<n_1;i++)
+                    pArray[map(i,j)] *= dum;
             }
 
         }
@@ -532,30 +565,88 @@ template <class T> class Array2D
 
     void lubksb(Array1D<T> &b)
     {
-      int ii=-1, ip;
-      T sum;
+        int ii=-1, ip;
+        long double sum;
+        long double Cee, Why, Tee;
 
-      for (int i=0;i<n_1;i++)
+        for (int i=0;i<n_1;i++)
         {
-          ip=diINDX(i);
-          sum=b(ip);
-          b(ip)=b(i);
+            ip=diINDX(i);
+            sum= -1.0*b(ip);
+            b(ip)=b(i);
 
-          if (ii>=0)   // in previous version had if(ii<0) Checked with NR. ck
-            for (int j=ii;j<=i-1;j++)
-              sum -= get(i,j)*b(j);//we do forward-subsitution to find "y"
-          else if (sum)//our first non-zero element
-            ii=i;
+            if (ii>=0){
+                //we do forward-subsitution to find "y"
 
-          b(i)=sum;
+                if(USE_KAHAN)
+                {
+                    Cee = 0;
+                    for (int j=ii;j<=i-1;j++)
+                    {
+                        Why = get(i,j)*b(j) - Cee;
+                        Tee = sum + Why;
+                        Cee = (Tee - sum) - Why;
+                        sum = Tee;
+                    }
+                } else {
+
+                    for (int j=ii;j<=i-1;j++)
+                        sum += get(i,j)*b(j);
+                }
+
+            } else if (sum){
+                //our first non-zero element
+                ii=i;
+            }
+
+            b(i) = -1.0*sum;
         }
 
-      for (int i=n_1-1;i>=0;i--)
+        for (int i=n_1-1;i>=0;i--)
         {
-          sum=b(i);
-          for (int j=i+1;j<n_1;j++)
-            sum -= get(i,j)*b(j);//back-substitution to find "x"
-          b(i)=sum/get(i,i);
+            sum=-1.0*b(i);
+
+            //back-substitution to find "x"
+            if(USE_KAHAN)
+            {
+                Cee = 0;
+                for (int j=i+1;j<n_1;j++)
+                {
+                    Why = get(i,j)*b(j) - Cee;
+                    Tee = sum + Why;
+                    Cee = (Tee - sum) - Why;
+                    sum = Tee;
+                }
+            } else {
+
+                for (int j=i+1;j<n_1;j++)
+                    sum += get(i,j)*b(j);
+            }
+
+            b(i) = -1.0*sum/get(i,i);
+        }
+    }
+
+    /**
+       This method is supposed to improve the numerical
+       precision of the inverse. Call this only *after*
+       you've already decomposed the matrix into L and U.
+    */
+    void mprove(const Array2D<T> & A, Array2D<T> & inv){
+        int i,j;
+        Array1D<T> r = Array1D<T>(n_1);
+
+        for(int k=0; k<n_1; k++){
+
+            for(int i=0; i<n_2; i++){
+                long double sdp = i == k ? -1.0 : 0.0;
+                for(int j=0; j<n_2; j++)
+                    sdp += (long double) A.get(i,j) * (long double) inv(k,j);
+                r(i) = sdp;
+            }
+
+            lubksb(r);
+            for(int i=0; i<n_1; i++) inv(k,i) -= r(i);
         }
     }
 
@@ -572,72 +663,72 @@ template <class T> class Array2D
 #if defined USELAPACK || defined USECLPK
     void determinant_and_inverse(Array2D<double> &inv, double& det, bool *calcOK)
     {
-      diINDX.allocate(n_1);
+        diINDX.allocate(n_1);
 
-      inv = 0;
-      for(int i=0; i<n_1; i++)
-        inv(i,i) = 1.0;
+        inv = 0;
+        for(int i=0; i<n_1; i++)
+            inv(i,i) = 1.0;
 
-      /* int clapack_dgesv(const enum CBLAS_ORDER Order, const int N, const int NRHS,
-                        double *A, const int lda, int *ipiv,
-                        double *B, const int ldb);*/
+        /* int clapack_dgesv(const enum CBLAS_ORDER Order, const int N, const int NRHS,
+                          double *A, const int lda, int *ipiv,
+                          double *B, const int ldb);*/
 #if defined USECLPK
-      __CLPK_integer info = 0;
-      __CLPK_integer N    = n_1;
-      __CLPK_integer NRHS = n_1;
-      __CLPK_integer LDA  = n_1;
-      __CLPK_integer LDB  = n_1;
-      static Array1D<__CLPK_integer> pivots;
-      pivots.allocate(n_1);
-      dgesv_(&N, &NRHS, pArray, &LDA, pivots.array(), inv.array(), &LDB, &info);
-      //need to transpose output to make it like the other lapack
-      assert(0);
+        __CLPK_integer info = 0;
+        __CLPK_integer N    = n_1;
+        __CLPK_integer NRHS = n_1;
+        __CLPK_integer LDA  = n_1;
+        __CLPK_integer LDB  = n_1;
+        static Array1D<__CLPK_integer> pivots;
+        pivots.allocate(n_1);
+        dgesv_(&N, &NRHS, pArray, &LDA, pivots.array(), inv.array(), &LDB, &info);
+        //need to transpose output to make it like the other lapack
+        assert(0);
 #else
-      int info = clapack_dgesv(CBLAS_ORDER(CblasRowMajor),n_1,n_1,
-                               pArray,n_1,diINDX.array(),inv.array(),n_1);
+        int info = clapack_dgesv(CBLAS_ORDER(CblasRowMajor),n_1,n_1,
+                                 pArray,n_1,diINDX.array(),inv.array(),n_1);
 #endif
-      if(info == 0) *calcOK = true;
-      else *calcOK = false;
+        if(info == 0) *calcOK = true;
+        else *calcOK = false;
 
-      det = 1.0;
-      for(int i=0; i<n_1; i++)
-        det *= get(i,i);
+        det = 1.0;
+        for(int i=0; i<n_1; i++)
+            det *= get(i,i);
     }
 
     void determinant_and_inverse(Array2D<float> &inv, double& det, bool *calcOK)
     {
-      diINDX.allocate(n_1);
+        diINDX.allocate(n_1);
 
-      inv = 0;
-      for(int i=0; i<n_1; i++)
-        inv(i,i) = 1.0;
+        inv = 0;
+        for(int i=0; i<n_1; i++)
+            inv(i,i) = 1.0;
 
-      /* int clapack_dgesv(const enum CBLAS_ORDER Order, const int N, const int NRHS,
-                        double *A, const int lda, int *ipiv,
-                        double *B, const int ldb);*/
+        /* int clapack_dgesv(const enum CBLAS_ORDER Order, const int N, const int NRHS,
+                          double *A, const int lda, int *ipiv,
+                          double *B, const int ldb);*/
 
 #if defined USECLPK
-      __CLPK_integer info = 0;
-      __CLPK_integer N    = n_1;
-      __CLPK_integer NRHS = n_1;
-      __CLPK_integer LDA  = n_1;
-      __CLPK_integer LDB  = n_1;
-      static Array1D<__CLPK_integer> pivots;
-      pivots.allocate(n_1);
-      sgesv_(&N, &NRHS, pArray, &LDA, pivots.array(), inv.array(), &LDB, &info);
-      //need to transpose output to make it like the other lapack
-      assert(0);
+        __CLPK_integer info = 0;
+        __CLPK_integer N    = n_1;
+        __CLPK_integer NRHS = n_1;
+        __CLPK_integer LDA  = n_1;
+        __CLPK_integer LDB  = n_1;
+        static Array1D<__CLPK_integer> pivots;
+        pivots.allocate(n_1);
+        sgesv_(&N, &NRHS, pArray, &LDA, pivots.array(), inv.array(), &LDB, &info);
+        //need to transpose output to make it like the other lapack
+        assert(0);
 #else
-      int info = clapack_sgesv(CBLAS_ORDER(CblasRowMajor),n_1,n_1,
-                               pArray,n_1,diINDX.array(),inv.array(),n_1);
+        int info = clapack_sgesv(CBLAS_ORDER(CblasRowMajor),n_1,n_1,
+                                 pArray,n_1,diINDX.array(),inv.array(),n_1);
 #endif
 
-      if(info == 0) *calcOK = true;
-      else *calcOK = false;
+        if(info == 0) *calcOK = true;
+        else *calcOK = false;
 
-      det = 1.0;
-      for(int i=0; i<n_1; i++)
-        det *= get(i,i);
+        det = 1.0;
+        for(int i=0; i<n_1; i++)
+            det *= get(i,i);
     }
 #else
     /**
@@ -652,33 +743,33 @@ template <class T> class Array2D
     */
     void determinant_and_inverse(Array2D<T> &inv, double& det, bool *calcOK)
     {
-      double d;
-      T one = (T)1.0;
-      T zero = (T)0.0;
+        double d;
+        T one = (T)1.0;
+        T zero = (T)0.0;
 
-      diINDX.allocate(n_1);
-      diCol.allocate(n_1);
-      inv.allocate(n_1,n_1);
+        diINDX.allocate(n_1);
+        diCol.allocate(n_1);
+        inv.allocate(n_1,n_1);
 
-      ludcmp(&d,calcOK);
+        ludcmp(&d,calcOK);
 
-      if( *calcOK )
+        if( *calcOK )
         {
-          for(int j=0; j<n_1; j++)
+            for(int j=0; j<n_1; j++)
             {
-              diCol = zero;
-              diCol(j) = one;
-              lubksb(diCol);
-              //lubksbForInverse(a,diINDX,diCol,j);
-              //for(int i=0;i<n;i++) inv(i,j) = diCol(i);
-              inv.setRow(j,diCol);
-              //for(int i=0;i<n;i++) inv(j,i) = diCol(i);
+                diCol = zero;
+                diCol(j) = one;
+                lubksb(diCol);
+                //lubksbForInverse(a,diINDX,diCol,j);
+                //for(int i=0;i<n;i++) inv(i,j) = diCol(i);
+                inv.setRow(j,diCol);
+                //for(int i=0;i<n;i++) inv(j,i) = diCol(i);
             }
         }
 
-      for(int i=0; i<n_1; i++)
-	d *= get(i,i);
-      det = d;
+        for(int i=0; i<n_1; i++)
+            d *= get(i,i);
+        det = d;
     }
 #endif
 
@@ -688,8 +779,8 @@ template <class T> class Array2D
     */
     void operator=(const Array2D & rhs)
     {
-      if(n_1 != rhs.n_1 || n_2 != rhs.n_2) allocate(rhs.n_1,rhs.n_2);
-      memcpy(pArray, rhs.pArray, sizeof(T)*n_1*n_2);
+        if(n_1 != rhs.n_1 || n_2 != rhs.n_2) allocate(rhs.n_1,rhs.n_2);
+        memcpy(pArray, rhs.pArray, sizeof(T)*n_1*n_2);
     }
 
     /**
@@ -699,20 +790,20 @@ template <class T> class Array2D
     */
     void operator=(const T C)
     {
-      if(n_1 < 1 || n_2 < 1)
-	{
-	  cerr << "Error: can not set Array2D with dims " << n_1 << " and " << n_2 << endl;
-	  exit(1);
-	}
-
-      if(C == 0)
+        if(n_1 < 1 || n_2 < 1)
         {
-          memset(pArray,0,sizeof(T)*n_1*n_2);
-          return;
+            cerr << "Error: can not set Array2D with dims " << n_1 << " and " << n_2 << endl;
+            exit(1);
         }
 
-      for(int i=0; i<n_1*n_2; i++)
-        pArray[i] = C;
+        if(C == 0)
+        {
+            memset(pArray,0,sizeof(T)*n_1*n_2);
+            return;
+        }
+
+        for(int i=0; i<n_1*n_2; i++)
+            pArray[i] = C;
     }
 
     /**
@@ -720,10 +811,10 @@ template <class T> class Array2D
     */
     Array2D operator*(const T C)
     {
-      Array2D<T> TEMP(n_1,n_2);
-      for(int i=0; i<n_1*n_2; i++)
-        TEMP.pArray[i] = C*pArray[i];
-      return TEMP;
+        Array2D<T> TEMP(n_1,n_2);
+        for(int i=0; i<n_1*n_2; i++)
+            TEMP.pArray[i] = C*pArray[i];
+        return TEMP;
     }
 
 
@@ -732,8 +823,8 @@ template <class T> class Array2D
     */
     void operator*=(const T C)
     {
-      for(int i=0; i<n_1*n_2; i++)
-        pArray[i] *= C;
+        for(int i=0; i<n_1*n_2; i++)
+            pArray[i] *= C;
     }
 
 
@@ -743,8 +834,8 @@ template <class T> class Array2D
 
     void operator/=(const T C)
     {
-      T inv = 1.0/C;
-      operator*=(inv);
+        T inv = 1.0/C;
+        operator*=(inv);
     }
 
 
@@ -753,7 +844,7 @@ template <class T> class Array2D
     */
     Array2D()
     {
-      pArray = 0; n_1 = 0; n_2 = 0;
+        pArray = 0; n_1 = 0; n_2 = 0;
     }
 
 
@@ -765,9 +856,9 @@ template <class T> class Array2D
     */
     Array2D(int i, int j)
     {
-      pArray = 0;
-      n_1 = 0; n_2 = 0;
-      allocate(i,j);
+        pArray = 0;
+        n_1 = 0; n_2 = 0;
+        allocate(i,j);
     }
 
 
@@ -778,11 +869,11 @@ template <class T> class Array2D
     */
     Array2D( const Array2D<T> & rhs)
     {
-      n_1 = 0;
-      n_2 = 0;
-      pArray = 0;
-      allocate(rhs.n_1,rhs.n_2);
-      operator=(rhs);
+        n_1 = 0;
+        n_2 = 0;
+        pArray = 0;
+        allocate(rhs.n_1,rhs.n_2);
+        operator=(rhs);
     }
 
     /**
@@ -790,9 +881,9 @@ template <class T> class Array2D
     */
     void setRow(int whichRow, Array1D<T> & rhs)
     {
-      if(whichRow >= n_1)  cerr << "Error: invalid row index\n";
-      if(rhs.dim1() > n_2) cerr << "Error: rhs length is incorrect\n";
-      memcpy(pArray + n_2*whichRow, rhs.array(), sizeof(T)*n_2);
+        if(whichRow >= n_1)  cerr << "Error: invalid row index\n";
+        if(rhs.dim1() > n_2) cerr << "Error: rhs length is incorrect\n";
+        memcpy(pArray + n_2*whichRow, rhs.array(), sizeof(T)*n_2);
     }
 
     /**
@@ -801,7 +892,7 @@ template <class T> class Array2D
     */
     void setRows(int to, int from, int numRows, const Array2D<T> & rhs)
     {
-      memcpy(pArray + n_2*to, rhs.pArray + n_2*from, sizeof(T)*n_2*numRows);
+        memcpy(pArray + n_2*to, rhs.pArray + n_2*from, sizeof(T)*n_2*numRows);
     }
 
     /**
@@ -809,8 +900,8 @@ template <class T> class Array2D
     */
     void setColumn(int to, int from, const Array2D<T> & rhs)
     {
-      for(int i=0; i<n_1; i++)
-        pArray[map(i,to)] = rhs.pArray[rhs.map(i,from)];
+        for(int i=0; i<n_1; i++)
+            pArray[map(i,to)] = rhs.pArray[rhs.map(i,from)];
     }
 
     /**
@@ -818,24 +909,24 @@ template <class T> class Array2D
     */
     ~Array2D()
     {
-      deallocate();
+        deallocate();
     }
 
     /**
     This particular choice indicates row-major format.
     */
     inline int map(int i, int j) const
-      {
+    {
         return n_2*i + j;
-      }
+    }
 
     /**
     Accesses element <code>(i,j)</code> of the array.
     */
     T& operator()(int i,int j)
     {
-      assert(pArray != 0);
-      return pArray[map(i,j)];
+        assert(pArray != 0);
+        return pArray[map(i,j)];
     }
 
     /**
@@ -844,9 +935,45 @@ template <class T> class Array2D
     */
     T get(int i, int j) const
         {
-          assert(pArray != 0);
-          return pArray[map(i,j)];
+            assert(pArray != 0);
+            return pArray[map(i,j)];
         }
+
+    double frobeniusNorm()
+    {
+        double sum = 0;
+        for(int i=0; i<n_1*n_2; i++)
+            sum += pArray[i]*pArray[i];
+        return sqrt(sum);
+    }
+
+    double pInfNorm()
+    {
+        double norm = 0;
+        double sum = 0;
+        for(int i=0; i<n_1; i++){
+            for(int j=0; j<n_2; j++){
+                sum += fabs( get(i,j) );
+            }
+            norm = max(sum,norm);
+            sum = 0;
+        }
+        return norm;
+    }
+
+    double p1Norm()
+    {
+        double norm = 0;
+        double sum = 0;
+        for(int j=0; j<n_2; j++){
+            for(int i=0; i<n_1; i++){
+                sum += fabs( get(i,j) );
+            }
+            norm = max(sum,norm);
+            sum = 0;
+        }
+        return norm;
+    }
 
     /**
     Prints the array to a stream.
@@ -855,21 +982,21 @@ template <class T> class Array2D
     */
     friend ostream& operator<<(ostream & strm, const Array2D<T> & rhs)
     {
-      strm.precision(4);
-      strm.setf(ios_base::scientific);
-      int maxJ = 45;
-      for(int i=0; i<rhs.n_1;i++)
+        strm.precision(4);
+        strm.setf(ios_base::scientific);
+        int maxJ = 45;
+        for(int i=0; i<rhs.n_1;i++)
         {
-          for(int j=0; j<rhs.n_2 && j<maxJ; j++)
+            for(int j=0; j<rhs.n_2 && j<maxJ; j++)
             {
-              strm.width(20);
-              strm.precision(12);
-              strm << rhs.pArray[rhs.map(i,j)];
+                strm.width(20);
+                strm.precision(12);
+                strm << rhs.pArray[rhs.map(i,j)];
             }
-          strm << endl;
+            strm << endl;
         }
-      return strm;
+        return strm;
     }
-  };
+};
 
 #endif
