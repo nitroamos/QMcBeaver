@@ -1,3 +1,9 @@
+Tue, Nov 21, 2006 Amos Anderson
+1.  I added singular value decomposition. It doesn't make a difference
+    but I figured that I'd keep it anyway.
+2.  I verified that we really are calculating KE = 2T - F^2 and
+    I improved relevant commenting.
+
 Wed, Sep 20, 2006 Daniel R. Fisher
 1.  Fixed the function in gamess2qmcbeaver.py that gets rid of
     unoccupied orbitals in the .ckmf file.
