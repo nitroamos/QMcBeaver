@@ -807,7 +807,7 @@ public:
     }
 
     /**
-    Returns the product of an array and a scalar.
+       Returns the product of an array and a scalar.
     */
     Array2D operator*(const T C)
     {
@@ -817,6 +817,27 @@ public:
         return TEMP;
     }
 
+    /**
+       Returns the difference between two Array2Ds
+    */
+    Array2D<T> operator-(const Array2D<T> & rhs) const
+    {
+        Array2D<T> TEMP(n_1,n_2);
+        for(int i=0; i<n_1*n_2; i++)
+            TEMP.pArray[i] = pArray[i] - rhs.pArray[i];
+        return TEMP;
+    }
+
+    /**
+       Returns the sum of two Array2Ds
+    */
+    Array2D<T> operator+(const Array2D<T> & rhs) const
+    {
+        Array2D<T> TEMP(n_1,n_2);
+        for(int i=0; i<n_1*n_2; i++)
+            TEMP.pArray[i] = pArray[i] + rhs.pArray[i];
+        return TEMP;
+    }
 
     /**
     Sets this array equal to itself times a scalar value.
@@ -996,6 +1017,34 @@ public:
             strm << endl;
         }
         return strm;
+    }
+
+    /**
+       This makes it easier to print out the Array2D
+       for input into Mathematica. In Mathematica, you will
+       still have to replace all the scientific notational "e" with "*^".
+    */
+    void printArray2D(ostream & strm, int numSigFig, int columnSpace, int maxJ, char sep, bool sci)
+    {
+        strm.precision(4);
+	if(maxJ < 0) maxJ = n_2;
+	strm << "{";
+        for(int i=0; i<n_1;i++)
+	  {
+	    if(i==0) strm <<  "{";
+	    else     strm << " {";
+            for(int j=0; j<n_2 && j<maxJ; j++)
+            {
+                strm.width(numSigFig+columnSpace);
+                strm.precision(numSigFig);
+		if(sci) strm << scientific;
+                strm << pArray[map(i,j)];
+		if(j<n_2-1) strm << sep;
+            }
+	    if(i<n_1-1)  strm << "},";
+	    else         strm << "}}";
+            strm << endl;
+        }
     }
 };
 
