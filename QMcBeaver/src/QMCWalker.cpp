@@ -129,7 +129,7 @@ void QMCWalker::processPropagation(QMCFunctions & QMF)
     calculateReverseGreensFunction();
   double GreensFunctionRatio =
     reverseGreensFunction/forwardGreensFunction;
-    
+
   if (IeeeMath::isNaN(GreensFunctionRatio))
     calculateMoveAcceptanceProbability(0.0);
   else
@@ -177,87 +177,68 @@ QMCGreensRatioComponent QMCWalker::moveElectronsNoImportanceSampling()
 {
   // Move the electrons of this walker
   double sigma = sqrt(Input->flags.dt);
-  
-  Array2D<double> Displacement(Input->WF.getNumberElectrons(),3);
-  
-  // Add the drift to the displacement
+  dR2 = 0;  
   
   // Don't use the QF  =>  R' = R + gauss_rn
-  Displacement = 0;
-  
-  // Add the randomness to the displacement
-  for(int i=0; i<Displacement.dim1(); i++)
-    for(int j=0; j<Displacement.dim2(); j++)
-      Displacement(i,j) += sigma*gasdev(&Input->flags.iseed);
-    
-  // Calculate the square of the magnitude of the displacement
-  dR2 = 0;
-  for(int i=0; i<Displacement.dim1(); i++)
-    for(int j=0; j<Displacement.dim2(); j++)
-      dR2 += Displacement(i,j) * Displacement(i,j);
-    
-  // Now update the R
-  for(int i=0; i<Displacement.dim1(); i++)
-    for(int j=0; j<Displacement.dim2(); j++)
-      R(i,j) += Displacement(i,j);
-    
-  // Return the greens function for the forward move
-  
-  QMCGreensRatioComponent GF = QMCGreensRatioComponent(1.0);
-  return GF;
+  for(int i=0; i<R.dim1(); i++)
+    {
+      for(int j=0; j<R.dim2(); j++)
+	{
+	  // Add the randomness to the displacement
+	  double drift = sigma*gasdev(&Input->flags.iseed);
+
+	  // Calculate the square of the magnitude of the displacement
+	  dR2 += drift * drift;
+
+	  // Now update the R
+	  R(i,j) += drift;
+	}
+    }
+      
+  return QMCGreensRatioComponent(1.0);
 }
 
 QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
 {
-  // Move the electrons of this walker
-  double sigma = sqrt(Input->flags.dt);
-  
-  Array2D<double> Displacement(Input->WF.getNumberElectrons(),3);
-  
-  // Add the drift to the displacement
+  Array2D<double> Displacement(R.dim1(),R.dim2());
+  double tau    = Input->flags.dt;
+  double sigma  = sqrt(tau);
+  double greens = 0.0;
   
   // Use the QF => R' = R + dt * QF + gauss_rn
-  Displacement = walkerData.modifiedGradPsiRatio;
-  Displacement *= Input->flags.dt;
-  
-  // Add the randomness to the displacement
-  for(int i=0; i<Displacement.dim1(); i++)
-    for(int j=0; j<Displacement.dim2(); j++)
-      Displacement(i,j) += sigma*gasdev(&Input->flags.iseed);
-    
-  // Calculate the square of the magnitude of the displacement
-  dR2 = 0.0;
-  for(int i=0; i<Displacement.dim1(); i++)
-    for(int j=0; j<Displacement.dim2(); j++)
-      dR2 += Displacement(i,j) * Displacement(i,j);
-    
-  // Calculate the Green's function for the forward move
-  
-  double greens = 0.0;
-  double tau = Input->flags.dt;
-  
-  for(int i=0; i<Displacement.dim1(); i++)
-    for(int j=0; j<3; j++)
-      {
-	double temp = Displacement(i,j)-tau*Displacement(i,j);
-	greens += temp*temp;
+  // We have already counted for the factor of 2.0
+  Displacement  = walkerData.modifiedGradPsiRatio;
+  Displacement *= tau;
+  dR2 = 0.0;  
+  for(int i=0; i<R.dim1(); i++)
+    {
+      for(int j=0; j<R.dim2(); j++)
+	{
+	  // Add the randomness to the displacement
+	  double drift = sigma*gasdev(&Input->flags.iseed);
+
+	  // Add the randomness to the displacement
+	  Displacement(i,j) += drift;
+
+	  // Calculate the square of the magnitude of the displacement
+	  dR2 += Displacement(i,j) * Displacement(i,j);
+
+	  // Now update the R
+	  R(i,j) += Displacement(i,j);
+
+	  // Calculate the Green's function for the forward move
+	  // The 'Quantum Force' term cancels out
+	  greens += drift*drift;
+	}
     }
     
-  greens = greens/(2*tau);
-  
+  //k a^2 exp(c)
   double k = 1.0;
   double a = 2.0*3.14159265359*tau;
-  double b = -1.5*Displacement.dim1();
-  double c = -greens;
+  double b = -0.5*R.dim1()*R.dim2();
+  double c = -greens/(2.0*tau);
   
-  QMCGreensRatioComponent GF(k,a,b,c);
-  
-  // Now update the R
-  for(int i=0; i<Displacement.dim1(); i++)
-    for(int j=0; j<Displacement.dim2(); j++)
-      R(i,j) += Displacement(i,j);
-    
-  return GF;
+  return QMCGreensRatioComponent(k,a,b,c);
 }
 
 QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
@@ -469,36 +450,33 @@ QMCGreensRatioComponent QMCWalker::calculateReverseGreensFunction()
 QMCGreensRatioComponent \
 QMCWalker::calculateReverseGreensFunctionNoImportanceSampling()
 {
-  QMCGreensRatioComponent GF = QMCGreensRatioComponent(1.0);
-  return GF;
+  return QMCGreensRatioComponent(1.0);
 }
 
 QMCGreensRatioComponent \
 QMCWalker::calculateReverseGreensFunctionImportanceSampling()
 {
-  double tau = Input->flags.dt;
-  
+  double tau = Input->flags.dt;  
   double greens = 0.0;
   
-  for(int i=0; i< R.dim1(); i++)
-      for(int j=0; j<3; j++)
-        {
-          double temp = OriginalWalker->R(i,j) - TrialWalker->R(i,j) -
-                        tau*TrialWalker->walkerData.modifiedGradPsiRatio(i,j);
-                        
-          greens += temp*temp;
-        }
-    
-  greens = greens/(2*tau);
-  
-  greens = pow(2*3.14159265359*tau,-1.5*R.dim1()) * exp(-greens);
-  
+  for(int i=0; i<R.dim1(); i++)
+    {
+      for(int j=0; j<R.dim2(); j++)
+	{
+	  double temp = OriginalWalker->R(i,j) - TrialWalker->R(i,j) -
+	    tau*TrialWalker->walkerData.modifiedGradPsiRatio(i,j);
+	  
+	  greens += temp*temp;
+	}
+    }
+
+  // k * a^b * exp(c)
   double k = 1.0;
   double a = 2.0*3.14159265359*tau;
-  double b = -1.5*R.dim1();
-  double c = -greens;
-  QMCGreensRatioComponent GF = QMCGreensRatioComponent(k,a,b,c);
-  return GF;
+  double b = -0.5*R.dim1()*R.dim2();
+  double c = -greens/(2.0*tau);
+
+  return QMCGreensRatioComponent(k,a,b,c);
 }
 
 QMCGreensRatioComponent \
@@ -686,10 +664,10 @@ void QMCWalker::reweight_walker()
             sqrt((*oMGPR).dotAllElectrons(*oMGPR));
           double lengthGradOriginalUnmodified =
             sqrt((*oGPR).dotAllElectrons(*oGPR));
-            
+
 	  if (IeeeMath::isNaN(lengthGradTrialModified) || IeeeMath::isNaN(lengthGradTrialUnmodified))
 	    {
-	      cerr << "WARNING: modified Grad Psi Ratio is NaN in "; 
+	      cerr << "WARNING: trial Grad Psi Ratio is NaN in "; 
 	      cerr << "QMCWalker::reweight_walker()" << endl;
 	      weightIsNaN = true;
 	    }
@@ -725,7 +703,13 @@ void QMCWalker::reweight_walker()
               exit(0);
             }
         }
-        
+
+      if (IeeeMath::isNaN(S_trial) || IeeeMath::isNaN(S_original))
+	{
+	  cerr << "Error: S_trial    = " << S_trial << endl;
+	  cerr << "       S_original = " << S_original << endl;
+	}
+
       if( Input->flags.walker_reweighting_method == "simple_symmetric" )
         {
           // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 8
@@ -784,6 +768,7 @@ void QMCWalker::reweight_walker()
 	      cerr << "WARNING: dW = exp(" << temp << ")" << endl;
 	      cerr << "Walker's weight is being set to zero so that it does"
 		   << " not ruin the whole calculation." << endl;
+	      cerr << " p = " << p << "; q = " << q << endl;
 	      dW = 0.0;
 	    }
 	  else
@@ -835,7 +820,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
       
   // calculate the probability of accepting the trial move
   double p = PsiRatio * PsiRatio * GreensRatio * MoveOldWalkerFactor;
-  
+
   if( !(IeeeMath::isNaN(p)) && age > 2*Input->flags.old_walker_acceptance_parameter )
     p = 1;
     
@@ -954,8 +939,22 @@ void QMCWalker::createChildWalkers()
 void QMCWalker::initialize(QMCInput *INPUT)
 {
   Input = INPUT;
-  walkerData.gradPsiRatio.allocate(Input->WF.getNumberElectrons(),3);
-  walkerData.modifiedGradPsiRatio.allocate(Input->WF.getNumberElectrons(),3);
+
+  int numElectrons  = Input->WF.getNumberElectrons();
+  int numDimensions;
+  
+  if(Input->flags.trial_function_type == "restricted" ||
+     Input->flags.trial_function_type == "unrestricted"){     
+    numDimensions = 3;
+  } else {
+    //We're hijacking the Nbasisfunc parameter input
+    numDimensions = Input->flags.Nbasisfunc;
+  }
+
+  R.allocate(numElectrons,numDimensions);
+  walkerData.gradPsiRatio.allocate(numElectrons,numDimensions);
+  walkerData.modifiedGradPsiRatio.allocate(numElectrons,numDimensions);
+
   walkerData.localEnergy     = 0.0;
   walkerData.kineticEnergy   = 0.0;
   walkerData.potentialEnergy = 0.0;
@@ -1001,10 +1000,6 @@ void QMCWalker::initialize(QMCInput *INPUT)
     
   //initialize acceptance probability
   AcceptanceProbability = 0.0;
-    
-  // Make current position in 3N space
-  // N by 3 matrix, R[which electron][x,y, or z]
-  R.allocate(Input->WF.getNumberElectrons(),3);
 }
 
 void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
@@ -1168,10 +1163,10 @@ void QMCWalker::toXML(ostream& strm)
 {
   strm << "<QMCWalker>" << endl;
   strm << "\t<Position>" <<endl;
-  for(int ep=0; ep<Input->WF.getNumberElectrons(); ep++)
+  for(int ep=0; ep<R.dim1(); ep++)
     {
       strm << "\t\t";
-      for(int j=0;j<3;j++)
+      for(int j=0;j<R.dim2();j++)
         {
           strm << R(ep,j) << "    ";
         }
@@ -1193,9 +1188,9 @@ void QMCWalker::readXML(istream& strm, QMCFunctions & QMF)
   // Read position
   strm >> temp;
   
-  for(int ep=0; ep<Input->WF.getNumberElectrons(); ep++)
+  for(int ep=0; ep<R.dim1(); ep++)
     {
-      for(int j=0;j<3;j++)
+      for(int j=0;j<R.dim2();j++)
         {
           strm >> R(ep,j);
         }
@@ -1325,7 +1320,7 @@ void QMCWalker::calculateObservables()
   // Calculate the DistanceMovedAccepted this is the average distance
   // moved on a step
   distanceMovedAccepted = p * dR2;
-  
+
   if (Input->flags.calculate_bf_density == 1)
     {
       for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
@@ -1349,7 +1344,7 @@ void QMCWalker::calculateObservables()
   double calcR1_T=0, calcR1_O=0;
   double calcR2_T=0, calcR2_O=0;
   r2 = 0.0;
-  for(int i=0; i<3; i++)
+  for(int i=0; i<R.dim2(); i++)
     {
       //assuming the nucleus is at the origin
       //also, we're measuring the same thing for both electrons
