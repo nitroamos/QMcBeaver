@@ -18,6 +18,7 @@ QMCWavefunction::QMCWavefunction()
   Nbasisfunc = 0; 
   Nalpha = 0; 
   Nbeta = 0; 
+  Ncharge = 0;
   Nelectrons = 0;
   Ndeterminants = 0;
   factor = 1.0;
@@ -87,6 +88,14 @@ QMCWavefunction QMCWavefunction::operator=( const QMCWavefunction & rhs )
  */
 istream& operator >>(istream &strm,QMCWavefunction &rhs)
 {
+  if (rhs.trialFunctionType == "harmonicoscillator")
+    {
+      rhs.Nalpha = abs(rhs.Ncharge);
+      rhs.Nbeta = 0;
+      rhs.Nelectrons = rhs.Nalpha + rhs.Nbeta;
+      return strm;
+    }
+
   rhs.AlphaCoeffs.allocate(rhs.Norbitals,rhs.Nbasisfunc);
   rhs.BetaCoeffs.allocate(rhs.Norbitals,rhs.Nbasisfunc);
   rhs.AlphaOccupation.allocate(rhs.Ndeterminants,rhs.Norbitals);
@@ -153,7 +162,12 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
     {
       strm >> rhs.CI_coeffs(i);
     }
-  
+
+  if(rhs.Ncharge != 0)
+    {
+      cerr << "Error: molecular charges have not been included in QMcBeaver\n";
+    }
+
   rhs.Nalpha = 0;
   rhs.Nbeta = 0;
   for(int i=0; i<rhs.Norbitals; i++)
@@ -168,12 +182,13 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
   return strm;
 }
 
-void QMCWavefunction::read(int numberOrbitals, int numberBasisFunctions,
+void QMCWavefunction::read(int charge, int numberOrbitals, int numberBasisFunctions,
                            int numberDeterminants, string functionType, string runfile)
 {
   Norbitals  = numberOrbitals;
   Nbasisfunc = numberBasisFunctions;
   Ndeterminants = numberDeterminants;
+  Ncharge = charge;
   trialFunctionType = functionType;
   
   ifstream input_file(runfile.c_str());
@@ -191,6 +206,13 @@ void QMCWavefunction::read(int numberOrbitals, int numberBasisFunctions,
     input_file >> temp_string;
   }
   input_file >> *this;
+
+  if(getNumberAlphaElectrons() + 
+     getNumberBetaElectrons() != getNumberElectrons()){
+    cerr << "Error: We are expecting number alpha electrons " << getNumberAlphaElectrons() <<
+      " + number beta electrons " << getNumberBetaElectrons() << " to add up to the total " <<
+      getNumberElectrons() << endl;
+  }
 }
 
 ostream& operator <<(ostream& strm, QMCWavefunction& rhs)
@@ -247,6 +269,10 @@ ostream& operator <<(ostream& strm, QMCWavefunction& rhs)
 	    }
 	  strm << endl << endl;
 	}
+    }
+  else if (rhs.trialFunctionType == "harmonicoscillator")
+    {
+      return strm;
     }
   
   strm << "Alpha Occupation" << endl;
