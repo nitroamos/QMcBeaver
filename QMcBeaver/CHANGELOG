@@ -1,3 +1,20 @@
+Thr, Dec 6, 2006 Amos Anderson
+1.  I've added the harmonic oscillator to QMcBeaver. To do this,
+    I turned QMCFunctions into an abstract class which various
+    wavefunction definitions can use inheritance to conform the
+    rest of QMcBeaver. To add new wavefunctions, all you have to
+    do is extend QMCFunctions, and supply an evaluate function.
+    To enable this flexibility, I changed several parts of the code.
+    The original QMCFunctions is now called QMCSCFJastrow. To enable
+    n-dimensional harmonic oscillator wavefunctions, I use the
+    nbasisfunc input parameter to select the dimension. Although
+    the harmonic oscillator seems to be behaving correctly, there
+    are probably parts of the code that won't work right. For example,
+    wavefunction optimization.
+2.  I fixed two bugs in the importance_sampling option. Previously,
+    it was neither moving the electrons correctly nor calculating
+    the reverse green's function correctly.
+
 Tue, Nov 21, 2006 Amos Anderson
 1.  I added singular value decomposition. It doesn't make a difference
     but I figured that I'd keep it anyway.
