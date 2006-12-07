@@ -93,6 +93,8 @@ istream& operator >>(istream &strm, QMCMolecule &rhs)
 
 void QMCMolecule::read(string runfile)
 {
+  if(Natoms == 0) return;
+
   ifstream input_file(runfile.c_str());
 
   if(!input_file)

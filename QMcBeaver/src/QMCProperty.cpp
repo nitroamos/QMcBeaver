@@ -666,7 +666,7 @@ double QMCProperty::getBlockVariance(int i)
 {
   double v = DeCorr[i].getVariance();
   double n = DeCorr[i].getNumberSamples();
-  
+
   return v/(n-1);
 }
 
@@ -680,7 +680,7 @@ double QMCProperty::getBlockVarianceStandardDeviation(int i)
 
 double QMCProperty::getBlockStandardDeviation(int i)
 {
-  return sqrt( getBlockVariance(i) );
+  return sqrt( fabs(getBlockVariance(i)) );
 }
 
 double QMCProperty::getBlockStandardDeviationStandardDeviation(int i)
