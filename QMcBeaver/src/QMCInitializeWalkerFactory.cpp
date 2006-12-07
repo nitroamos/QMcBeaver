@@ -29,6 +29,10 @@ QMCInitializeWalker * QMCInitializeWalkerFactory::
     {
       initializeWalker = new QMCDansWalkerInitialization(input);
     }
+  else if (Type == "amos_boring_initialization")
+    {
+      initializeWalker = new QMCAmosBoringWalkerInitialization(input);
+    }
 
   else
     {

@@ -30,7 +30,7 @@ void QMCRun::propagateWalkers(bool writeConfigs)
   
   /*The point here is to collect WALKERS_PER_PASS amount of walkers
     to process at once. Once we have that many (or the last remaining), we 
-    finally run QMF.evaluate which fills up the dataPointers data structure 
+    finally run QMF->evaluate which fills up the dataPointers data structure 
     with values.  The actual data for dataPointers is stored in each walker, so
     initializePropagation asks for a pointer to it. The collection of pointers 
     is then passed around to everybody.
@@ -43,7 +43,7 @@ void QMCRun::propagateWalkers(bool writeConfigs)
       count++;
       index = count%wpp;
       if(index == 0 || count == (int)(wlist.size()))
-	QMF.evaluate(dataPointers,rPointers,index==0?wpp:index, writeConfigs);
+	QMF->evaluate(dataPointers,rPointers,index==0?wpp:index, writeConfigs);
     }
     
   /*At this point, all of the dataPointers have been filled, so we
@@ -53,7 +53,7 @@ void QMCRun::propagateWalkers(bool writeConfigs)
     different order.
    */
   for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
-      wp->processPropagation(QMF);
+      wp->processPropagation(*QMF);
 }
 
 void QMCRun::branchWalkers()
@@ -114,8 +114,15 @@ void QMCRun::zeroOut()
 void QMCRun::initialize(QMCInput *INPUT)
 {
   Input = INPUT;
-  QMF.initialize(Input,&HartreeFock);
-  
+
+  QMF = QMCFunctionsFactory::functionsFactory(INPUT, Input->flags.trial_function_type);
+
+  if(Input->flags.trial_function_type ==   "restricted" ||
+     Input->flags.trial_function_type == "unrestricted"){
+    QMCSCFJastrow * qmfHFJ = static_cast<QMCSCFJastrow*>(QMF);
+    qmfHFJ->initialize(Input,&HartreeFock);
+  }
+
   if (Input->flags.calculate_bf_density == 1)
     {
       bool calcDensity = true;
@@ -359,7 +366,7 @@ void QMCRun::randomlyInitializeWalkers()
       temp_R = IW->initializeWalkerPosition();
 
       w.setR(temp_R);
-      QMF.evaluate(*w.getR(),*w.getWalkerData());
+      QMF->evaluate(*w.getR(),*w.getWalkerData());
   
       initialization_try = 1;
       while( w.isSingular() )
@@ -375,7 +382,7 @@ void QMCRun::randomlyInitializeWalkers()
         
 	  temp_R = IW->initializeWalkerPosition();
 	  w.setR(temp_R);
-	  QMF.evaluate(*w.getR(),*w.getWalkerData());
+	  QMF->evaluate(*w.getR(),*w.getWalkerData());
 	  initialization_try++;
 	}
       wlist.push_back(w);
@@ -684,7 +691,11 @@ double QMCRun::getWeights()
   for( list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp )
     total_weights += wp->getWeight();
 
-  assert(total_weights > 0.0);
+  if(total_weights <= 0.0)
+    {
+      cerr << "Error: we are down to total_weights = " << total_weights << endl;
+      exit(1);
+    }
 
   return total_weights;
 }
@@ -748,7 +759,7 @@ void QMCRun::readXML(istream& strm)
       w.initialize(Input);
       
       // read a walker
-      w.readXML(strm,QMF);
+      w.readXML(strm,*QMF);
       
       wlist.push_back(w);
     }

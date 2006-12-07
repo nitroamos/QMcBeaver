@@ -687,6 +687,57 @@ void QMCFlags::read_flags(string InFileName)
       << " run_type = " << run_type << "!" << endl;
     }
 
+  /**
+     In allowing a harmonic oscillator model, we use some of the regular
+     molecular parameters to help define our HO system.
+  */
+  if(trial_function_type == "harmonicoscillator")
+    {
+      if(walker_initialization_method != "amos_boring_initialization")
+	{
+	  walker_initialization_method = "amos_boring_initialization";
+	  cerr << "Warning: Setting walker_initialization_method to \"" << 
+	    walker_initialization_method << "\" since trial_function_type = " <<
+	    trial_function_type << endl;
+	}
+
+      if(Natoms != 0)
+	{
+	  cerr << "Warning: Setting Natoms to 0 since trial_function_type = "
+	       << trial_function_type << endl;
+	  Natoms = 0;
+	}
+
+      if(Nbasisfunc <= 0)
+	{
+	  cerr << "Error: set nbasisfunc to the number of dimensions for trial_function_type = "
+	       << trial_function_type << endl;
+	  exit(1);
+	}
+
+      if(charge == 0)
+	{
+	  cerr << "Error: set charge to the number of electrons for trial_function_type = "
+	       << trial_function_type << endl;
+	  exit(1);
+	}
+
+    }
+
+  if(nuclear_derivatives != "none" && Natoms == 0)
+    {
+      cerr << "Warning: Setting nuclear_derivatives to \"none\" since Natoms = "
+	   << Natoms << endl;
+      nuclear_derivatives = "none";
+    }
+
+  if(sampling_method == "umrigar93_importance_sampling" && Natoms == 0)
+    {
+      cerr << "Warning: Setting sampling_method to \"no_importance_sampling\" since " <<
+	"umrigar93_importance_sampling requires Natoms > 0\n" << endl;
+      sampling_method = "no_importance_sampling";
+    }
+
 #ifdef QMC_GPU
   if( getNumGPUWalkers() == 0)
   {

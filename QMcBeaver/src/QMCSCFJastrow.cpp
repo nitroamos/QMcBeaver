@@ -10,36 +10,36 @@
 //
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
-#include "QMCFunctions.h"
+#include "QMCSCFJastrow.h"
 
-QMCFunctions::QMCFunctions()
+QMCSCFJastrow::QMCSCFJastrow()
 {
   nalpha = 0;
   nbeta = 0;
 }
 
-QMCFunctions::QMCFunctions(QMCInput *INPUT, QMCHartreeFock *HF)
+QMCSCFJastrow::QMCSCFJastrow(QMCInput *INPUT, QMCHartreeFock *HF)
 {
   initialize(INPUT,HF);
 }
 
-QMCFunctions::QMCFunctions(QMCInput *INPUT)
+QMCSCFJastrow::QMCSCFJastrow(QMCInput *INPUT)
 {
   QMCHartreeFock* HF = 0;
   initialize(INPUT,HF);
 }
 
-QMCFunctions::QMCFunctions(const QMCFunctions & rhs )
+QMCSCFJastrow::QMCSCFJastrow(const QMCSCFJastrow & rhs )
 {
   *this = rhs;
 }
 
-QMCFunctions::~QMCFunctions()
+QMCSCFJastrow::~QMCSCFJastrow()
 {
   SCF_Grad_PsiRatio.deallocate();
 }
 
-void QMCFunctions::operator=(const QMCFunctions & rhs )
+void QMCSCFJastrow::operator=(const QMCSCFJastrow & rhs )
 {
   Input = rhs.Input;
 
@@ -59,7 +59,7 @@ void QMCFunctions::operator=(const QMCFunctions & rhs )
   E_Local                = rhs.E_Local;
 }
 
-void QMCFunctions::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
+void QMCSCFJastrow::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
 {
   Input = INPUT;
 
@@ -84,7 +84,7 @@ void QMCFunctions::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
   SCF_Grad_PsiRatio.allocate(Input->WF.getNumberElectrons(),3);
 }
 
-void QMCFunctions::evaluate(Array1D<QMCWalkerData *> &walkerData,
+void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
                             Array1D<Array2D<double> * > &xData,
                             int num, bool writeConfigs)
 {
@@ -203,7 +203,7 @@ void QMCFunctions::evaluate(Array1D<QMCWalkerData *> &walkerData,
   }
 }
 
-void QMCFunctions::evaluate(Array2D<double> &X, QMCWalkerData & data)
+void QMCSCFJastrow::evaluate(Array2D<double> &X, QMCWalkerData & data)
 {
   Array1D< Array2D<double>* > temp;
   temp.allocate(1);
@@ -259,7 +259,7 @@ void QMCFunctions::evaluate(Array2D<double> &X, QMCWalkerData & data)
 
 //  We end up doing a division with SCF_sum. Therefore, it seems to be critical
 //  to make sure we aren't dividing by too small a number
-void QMCFunctions::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
+void QMCSCFJastrow::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
     Array1D<double> & Chi_Density, int walker)
 {
   QMCGreensRatioComponent SCF_sum = 0.0;
@@ -442,7 +442,7 @@ void QMCFunctions::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
   }
 }
 
-void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
+void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
     Array2D<double> &Modified_Grad_PsiRatio,
     Array2D<double> &Grad_PsiRatio)
 {
@@ -557,44 +557,44 @@ void QMCFunctions::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
   }
 }
 
-void QMCFunctions::calculate_E_Local(int i)
+void QMCSCFJastrow::calculate_E_Local(int i)
 {
   // must calculate Laplacian_PsiRatio before calling this
 
   E_Local = -0.5 * Laplacian_PsiRatio + PE.getEnergy(i);
 }
 
-QMCGreensRatioComponent QMCFunctions::getPsi()
+QMCGreensRatioComponent QMCSCFJastrow::getPsi()
 {
   return Psi;
 }
 
-double QMCFunctions::getLocalEnergy()
+double QMCSCFJastrow::getLocalEnergy()
 {
   return E_Local;
 }
 
-double QMCFunctions::getKineticEnergy()
+double QMCSCFJastrow::getKineticEnergy()
 {
   return -0.5 * Laplacian_PsiRatio;
 }
 
-double QMCFunctions::getPotentialEnergy(int i)
+double QMCSCFJastrow::getPotentialEnergy(int i)
 {
   return PE.getEnergy(i);
 }
 
-double QMCFunctions::getEnergyEE(int i)
+double QMCSCFJastrow::getEnergyEE(int i)
 {
   return PE.getEnergyEE(i);
 }
 
-double QMCFunctions::getEnergyNE(int i)
+double QMCSCFJastrow::getEnergyNE(int i)
 {
   return PE.getEnergyNE(i);
 }
 
-bool QMCFunctions::isSingular(int walker)
+bool QMCSCFJastrow::isSingular(int walker)
 {
   if (nalpha > 0 && Alpha.isSingular(walker))
     return true;
