@@ -18,6 +18,7 @@
 #include "QMCMikesJackedWalkerInitialization.h"
 #include "QMCMikesBetterWalkerInitialization.h"
 #include "QMCDansWalkerInitialization.h"
+#include "QMCAmosBoringWalkerInitialization.h"
 
 using namespace std;
 

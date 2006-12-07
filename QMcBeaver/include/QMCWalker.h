@@ -20,6 +20,7 @@
 #include "MathFunctions.h"
 #include "QMCGreensRatioComponent.h"
 #include "QMCFutureWalkingProperties.h"
+#include "QMCNuclearForces.h"
 
 using namespace std;
 

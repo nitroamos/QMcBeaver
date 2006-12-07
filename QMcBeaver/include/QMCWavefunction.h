@@ -36,6 +36,7 @@ class QMCWavefunction
   int Nbasisfunc;
   int Nalpha;
   int Nbeta;
+  int Ncharge;
   int Nelectrons;
   int Ndeterminants;
   double factor;
@@ -152,12 +153,13 @@ class QMCWavefunction
 
   /**
     Loads the state of the object from a file.
+    @param charge the overall electronic charge of the molecule
     @param numberOrbitals number of orbitals.
     @param numberBasisFunctions number of basis functions.
     @param numberDeterminants number of determinants.
     @param runfile file to load the object state from.
   */
-  void read(int numberOrbitals, int numberBasisFunctions, 
+  void read(int charge, int numberOrbitals, int numberBasisFunctions, 
 	    int numberDeterminants, string functionType, string runfile);
 };
 

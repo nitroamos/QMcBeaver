@@ -23,6 +23,7 @@
 #include "QMCStopwatches.h"
 #include "QMCHartreeFock.h"
 #include "QMCInitializeWalkerFactory.h"
+#include "QMCFunctionsFactory.h"
 
 using namespace std;
 
@@ -235,7 +236,7 @@ private:
   */
   list<QMCWalker> wlist;
 
-  QMCFunctions QMF;
+  QMCFunctions * QMF;
 
   /**
     The array of Decorrelation objects for this group of walkers.
