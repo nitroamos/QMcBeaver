@@ -93,6 +93,7 @@ ostream& operator <<(ostream& strm, QMCDerivativeProperties &rhs)
   strm << endl << "--------------- Virial Ratio (-<V>/<T>) ---------------" << endl;
   for(int fw=0; fw<rhs.fwProperties->numFutureWalking; fw++)
     {
+      if((rhs.fwProperties->props[FW_PE])[fw].getNumberSamples() <= 0) break;
       strm.width(7);
       strm << globalInput.flags.future_walking[fw] << ": " << rhs.getVirialRatio(fw) <<
 	" +/- " << rhs.getVirialRatioStandardDeviation(fw) << endl;

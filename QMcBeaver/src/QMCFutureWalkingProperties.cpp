@@ -269,6 +269,7 @@ ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs)
       strm << endl << "-------------------------- FW " << rhs.names[i] << endl;
       for(int fw=0; fw<rhs.numFutureWalking; fw++)
 	{
+	  if((rhs.props(i))(fw).getNumberSamples() <= 0) break;
 	  strm.width(w1);
 	  strm.precision(p1);
 	  strm << globalInput.flags.dt_effective * globalInput.flags.future_walking[fw] << " <=> ";
@@ -284,6 +285,7 @@ ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs)
       strm << endl << "------------ FW Nuclear Forces ---------------" << endl;
       for(int fw=0; fw<rhs.numFutureWalking; fw++)
 	{
+	  if((rhs.nuclearForces(fw))(0,0).getNumberSamples() <= 0) break;
 	  for (int i=0; i<rhs.nuclearForces(fw).dim1(); i++)
 	    {
 	      for (int j=0; j<rhs.nuclearForces(fw).dim2(); j++)
