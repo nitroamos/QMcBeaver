@@ -662,6 +662,7 @@ void QMCFlags::read_flags(string InFileName)
 
 
   /*************************************************************************
+    Our warning section.
     Make sure that all the input parameters are compatible with each other
   *************************************************************************/
   if(run_type != "variational" && run_type != "diffusion")
@@ -674,6 +675,11 @@ void QMCFlags::read_flags(string InFileName)
     {
       cerr << "ERROR: run_type not set!" << endl;
       exit(1);
+    }
+
+  if(dt > dt_equilibration)
+    {
+      //cerr << "Warning: dt > dt_equilibration" << endl;
     }
 
   if(mpireduce_interval < output_interval)

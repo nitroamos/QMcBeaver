@@ -370,6 +370,7 @@ void QMCSlater::processInverse(int start,
                 psiCopy = psi(i,j);
 
             if(useSVD){
+#if ! defined( USING_QSC )
                 calcOK = SVDecompose(psi(i,j), W, r, 10) == 0 ? true : false;
 
                 (Psi(i+start))(j) = 1.0;
@@ -378,8 +379,8 @@ void QMCSlater::processInverse(int start,
                 for(int ii=0; ii<W.dim1(); ii++){
                     //NOTE: SVD will only provide the absolute value of the determinant
                     (Psi(i+start))(j) *= W(ii);
-                    smallest = min(abs((double)W(ii)),smallest);
-                    largest = max(abs((double)W(ii)),largest);
+                    smallest = min(fabs((double)W(ii)),smallest);
+                    largest = max(fabs((double)W(ii)),largest);
 
                     //the W values are measures of instability
                     //you *might* get away with setting the small ones
@@ -390,7 +391,7 @@ void QMCSlater::processInverse(int start,
                 //cout << "Smallest = " << smallest << " largest = " << largest << " Condition number = " << largest/smallest << endl;
 
                 SVDFwBackSubst(psi(i,j),W,r,inv(i,j));
-
+#endif
             } else {
 
                 //This choice will automatically use LAPACK if it has been linked.
