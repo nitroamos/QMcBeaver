@@ -54,8 +54,9 @@ class QMCRun
 
   /**
     Propagate the QMC calculation one time step forward.
+    @return if the calculation is still ok, it will return true
   */
-  void step(bool writeConfigs);
+  bool step(bool writeConfigs);
 
   /**
     Gets the statistics for the properties that have been calculated.

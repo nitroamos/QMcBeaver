@@ -286,7 +286,7 @@ class CompilerSgiIrix(Compiler):
 class CompilerTru64(Compiler):
     def __init__(self,optimize,debug,profile):
         self.CXX = 'cxx'
-        self.FLAGS = '-ieee -D__USE_STD_IOSTREAM -D__FUNCTION__'
+        self.FLAGS = '-ieee -D__USE_STD_IOSTREAM -D__FUNCTION__ -DUSING_QSC'
         self.INCLUDE = ''
         self.DEPENDENCY = '-M'
 
