@@ -89,12 +89,6 @@ void QMCRun::branchWalkers()
       cerr << "ERROR: Unknown branching method!" << endl;
       exit(1);
     }
-    
-  if( wlist.size() == 0 || getWeights() <= 0)
-  {
-    cerr << "ERROR: all the walkers died!\n";
-    exit(1);
-  }
 }
 
 void QMCRun::zeroOut()
@@ -358,7 +352,8 @@ void QMCRun::randomlyInitializeWalkers()
   QMCInitializeWalker * IW =
     QMCInitializeWalkerFactory::initializeWalkerFactory(Input,
         Input->flags.walker_initialization_method);
-  
+
+  wlist.clear();
   for (int i=0; i<Input->flags.number_of_walkers; i++)
     {
       QMCWalker w;
@@ -691,12 +686,6 @@ double QMCRun::getWeights()
   for( list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end(); ++wp )
     total_weights += wp->getWeight();
 
-  if(total_weights <= 0.0)
-    {
-      cerr << "Error: we are down to total_weights = " << total_weights << endl;
-      exit(1);
-    }
-
   return total_weights;
 }
 
@@ -752,7 +741,8 @@ void QMCRun::readXML(istream& strm)
   // read the walkers
   
   strm >> temp;
-  
+
+  wlist.clear();
   for(int i=0;i<Input->flags.number_of_walkers;i++)
     {
       QMCWalker w;
@@ -824,12 +814,29 @@ int QMCRun::getNumberOfWalkers()
   return (int)wlist.size();
 }
 
-void QMCRun::step(bool writeConfigs)
+bool QMCRun::step(bool writeConfigs)
 {
   propagateWalkers(writeConfigs);
   calculatePopulationSizeBiasCorrectionFactor();
   calculateObservables();
   branchWalkers();
+
+  if(getWeights() <= 0.0 || getNumberOfWalkers() == 0)
+    {
+      cerr << "Error on node " << Input->flags.my_rank << ":" << endl;
+      cerr << "       number walkers   = " << getNumberOfWalkers() << endl;
+      cerr << "       total weight     = " << getWeights() << endl;
+      cerr << "       energy_estimated = " << Input->flags.energy_estimated << endl; 
+      cerr << "       energy_trial     = " << Input->flags.energy_trial << endl; 
+      cerr << "       energy_original  = " << Input->flags.energy_estimated_original << endl; 
+      cerr << "       we're going to reinitialize all walkers..." << endl;
+      
+      Input->flags.energy_estimated = Input->flags.energy_estimated_original;
+      Input->flags.energy_trial     = Input->flags.energy_estimated_original;
+      randomlyInitializeWalkers();
+      return false;
+    }
+  return true;
 }
 
 void QMCRun::calculatePopulationSizeBiasCorrectionFactor()

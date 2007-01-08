@@ -665,16 +665,22 @@ void QMCWalker::reweight_walker()
           double lengthGradOriginalUnmodified =
             sqrt((*oGPR).dotAllElectrons(*oGPR));
 
-	  if (IeeeMath::isNaN(lengthGradTrialModified) || IeeeMath::isNaN(lengthGradTrialUnmodified))
+	  if (IeeeMath::isNaN(lengthGradTrialModified) || IeeeMath::isNaN(lengthGradTrialUnmodified) ||
+	      lengthGradTrialUnmodified == 0)
 	    {
 	      cerr << "WARNING: trial Grad Psi Ratio is NaN in "; 
 	      cerr << "QMCWalker::reweight_walker()" << endl;
+	      cerr << "   lengthGradTrialModified = " << lengthGradTrialModified << endl;
+	      cerr << "   lengthGradTrialUnmodified = " << lengthGradTrialUnmodified << endl;
 	      weightIsNaN = true;
 	    }
-	  if (IeeeMath::isNaN(lengthGradOriginalModified) || IeeeMath::isNaN(lengthGradOriginalUnmodified))
+	  if (IeeeMath::isNaN(lengthGradOriginalModified) || IeeeMath::isNaN(lengthGradOriginalUnmodified) ||
+	      lengthGradOriginalUnmodified == 0)
 	    {
 	      cerr << "WARNING: original Grad Psi Ratio is NaN in "; 
 	      cerr << "QMCWalker::reweight_walker()" << endl;
+	      cerr << "   lengthGradOriginalModified = " << lengthGradOriginalModified << endl;
+	      cerr << "   lengthGradOriginalUnmodified = " << lengthGradOriginalUnmodified << endl;
 	      weightIsNaN = true;
 	    }
 	  else if(Input->flags.energy_modification_type=="modified_umrigar93")
@@ -706,8 +712,12 @@ void QMCWalker::reweight_walker()
 
       if (IeeeMath::isNaN(S_trial) || IeeeMath::isNaN(S_original))
 	{
-	  cerr << "Error: S_trial    = " << S_trial << endl;
-	  cerr << "       S_original = " << S_original << endl;
+	  cerr << "Error: S_trial          = " << S_trial << endl;
+	  cerr << "       S_original       = " << S_original << endl;
+	  cerr << "       energy_trial     = " << Input->flags.energy_trial << endl;
+	  cerr << "       energy_estimated = " << Input->flags.energy_estimated << endl;
+	  cerr << "       trialEnergy      = " << trialEnergy << endl;
+	  cerr << "       originalEnergy   = " << originalEnergy << endl;
 	}
 
       if( Input->flags.walker_reweighting_method == "simple_symmetric" )
@@ -912,7 +922,7 @@ void QMCWalker::acceptOrRejectMove()
       move_accepted = false;
     }
     
-  if( age > Input->flags.old_walker_acceptance_parameter )
+  if( age > Input->flags.old_walker_acceptance_parameter && false)
     {
       cerr << "WARNING: Walker older than old_walker_acceptance_parameter = "
 	   << Input->flags.old_walker_acceptance_parameter << " steps!" << endl;

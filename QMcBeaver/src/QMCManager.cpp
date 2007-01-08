@@ -677,9 +677,47 @@ void QMCManager::run()
     bool writeConfigs = !equilibrating &&
       ( Input.flags.optimize_Psi || Input.flags.print_configs == 1 )  &&
       iteration%Input.flags.print_config_frequency == 0;
-    
-    QMCnode.step( writeConfigs );
 
+    while( !QMCnode.step( writeConfigs ) )
+      {
+	//Let's assume the worst; that all our data is trash.
+	cerr << "Error on node " << Input.flags.my_rank << 
+	  ": QMCManager is trashing data and starting calculation all over!" << endl;
+
+
+	/*
+	  We're starting over here, so we need to reset everything
+	*/
+
+	//Turn off whatever stopwatches were running
+	if( equilibrating )  localTimers.getEquilibrationStopwatch()->stop();
+	else
+	  {
+	    if ( Input.flags.use_equilibration_array == 1 )  QMCnode.stopTimers();
+	    else localTimers.getPropagationStopwatch()->stop();
+	  }
+
+	if(  Input.flags.equilibrate_first_opt_step == 0 )
+	  {
+	    equilibrating = false;
+	  } else {
+	    equilibrating = true;
+	    Input.flags.dt = Input.flags.dt_equilibration;
+	  }
+
+	//Turn on whatever stopwatches need to be running
+	if( equilibrating )  localTimers.getEquilibrationStopwatch()->start();
+	else
+	  {
+	    if ( Input.flags.use_equilibration_array == 1 )  QMCnode.startTimers();
+	    else localTimers.getPropagationStopwatch()->start();
+	  }
+	
+	done = false;
+	iteration = 0;
+	zeroOut();
+      }
+    
     if( !equilibrating )
       {
 	//this is to ensure that Properties_total represents
@@ -1004,8 +1042,8 @@ void QMCManager::equilibration_step()
     ( Input.flags.equilibration_steps-1 );
     // ramp function
     Input.flags.dt -= ddt;
-    
-    if(  Input.flags.dt <= Input.flags.dt_run  )
+
+    if(  iteration >= Input.flags.equilibration_steps )
     {
       Input.flags.dt = Input.flags.dt_run;
       
@@ -1687,7 +1725,16 @@ void QMCManager::updateEstimatedEnergy( QMCProperties* Properties )
 void QMCManager::updateTrialEnergy( double weights, int nwalkers_init )
 {
   // Update the trial energy
-  
+  double ratio = weights / nwalkers_init;
+  double logRatio = 0;
+  if(ratio > 1e-250)
+    {
+      logRatio = log( ratio );
+    } else {
+      //It's pointless to keep lowering the trial energy
+      logRatio = 0;
+    }
+
   if(  equilibrating )
   {
     /*
@@ -1700,13 +1747,13 @@ void QMCManager::updateTrialEnergy( double weights, int nwalkers_init )
 
     //See formula 11 from UNR93
     Input.flags.energy_trial = Input.flags.energy_estimated -
-      1.0 / Input.flags.dt_effective * log(  weights / nwalkers_init );
+      1.0 / Input.flags.dt_effective * logRatio;
   }
   else
   {
     if ( Input.flags.lock_trial_energy == 0 )
     Input.flags.energy_trial = Input.flags.energy_estimated -
-      Input.flags.population_control_parameter * log(  weights / nwalkers_init );
+      Input.flags.population_control_parameter * logRatio;
   }
 }
 

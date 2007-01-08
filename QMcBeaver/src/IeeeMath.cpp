@@ -31,10 +31,6 @@ for more details.
 
 #include "IeeeMath.h"
 
-#if ! defined _WIN32
-//#define USING_QSC
-#endif
-
 template <class T>
 bool IeeeMath::isNaN(T x)
 {
