@@ -54,7 +54,11 @@ double gasdev(long *idum)
 
 double ran1(long *idum)
 {
-  /*notice that the use of static variables means it has a MEMORY!!!*/
+  /*
+    Notice that the use of static variables means
+    that calling ran1 with the same seed will not result
+    in the same random number. It has a MEMORY!!!
+  */
   int j;
   long k;
   static long iy=0;
