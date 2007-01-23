@@ -1,3 +1,19 @@
+Mon, Jan 22, 2007 Amos Anderson
+1.  I changed the memory usage for QMCWalker. Previously, 3 walkers
+    were in existance at each step: this, TrialWalker, OriginalWalker.
+    This means that some of the data is redundant and there are more
+    memory copies than necessary because we only need 2 walkers at
+    each stage. When measuring the change for a very cheap wavefunction,
+    the code now performes ~50% faster I think. I believe I made all
+    the changes correctly, but I wouldn't be surprised if there's
+    a bug somewhere...
+2.  I added a step to branching. If we are going to branch, QMCRun
+    now asks QMCWalker whether it would recommend a branch. Since
+    branching is purely related to efficiency, this step shouldn't
+    change detailed balance. On the other hand, if we refuse to branch
+    at bad spots in the trialfunction, then perhaps we can slow
+    any tendency to blow up, as poor trialfunctions are liable to do.
+
 Thr, Dec 6, 2006 Amos Anderson
 1.  I've added the harmonic oscillator to QMcBeaver. To do this,
     I turned QMCFunctions into an abstract class which various
