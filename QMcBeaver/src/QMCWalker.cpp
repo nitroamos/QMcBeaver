@@ -13,12 +13,17 @@
 #include "QMCWalker.h"
 
 const double QMCWalker::maxFWAsymp = 1.0;
+long int QMCWalker::nextID = 1;
 
 QMCWalker::QMCWalker()
 {
   TrialWalker    = 0;
   OriginalWalker = 0;
-  
+
+  walkerID = ++nextID;
+  parentID = 0;
+  grandpID = 0;
+
   weight = 1.0;
   age    = 0;
   dR2 = 0.0;
@@ -28,17 +33,20 @@ QMCWalker::QMCWalker( const QMCWalker & rhs )
 {
   TrialWalker    = 0;
   OriginalWalker = 0;
-  
+
+  walkerID = ++nextID;
+  parentID = rhs.walkerID;
+  grandpID = rhs.parentID;
+
   *this = rhs;
 }
 
 QMCWalker::~QMCWalker()
 {
-  delete TrialWalker;
   TrialWalker = 0;
-  
+
   delete OriginalWalker;
-  OriginalWalker = 0;
+  OriginalWalker = 0;  
   
   Input = 0;
   
@@ -72,7 +80,7 @@ void QMCWalker::operator=( const QMCWalker & rhs )
   
   weight = rhs.weight;
   age    = rhs.age;
-  
+
   Input = rhs.Input;
   move_accepted         = rhs.move_accepted;
   AcceptanceProbability = rhs.AcceptanceProbability;
@@ -133,11 +141,24 @@ void QMCWalker::processPropagation(QMCFunctions & QMF)
   if (IeeeMath::isNaN(GreensFunctionRatio))
     calculateMoveAcceptanceProbability(0.0);
   else
-  calculateMoveAcceptanceProbability(GreensFunctionRatio);
+    calculateMoveAcceptanceProbability(GreensFunctionRatio);
   
   acceptOrRejectMove();
   reweight_walker();
+
+  if(move_accepted == false)
+    {
+      dR2                   = OriginalWalker->dR2;
+    }
+
   calculateObservables();
+  
+  if(move_accepted == false)
+    {
+      R                     = OriginalWalker->R;
+      walkerData            = OriginalWalker->walkerData;
+      AcceptanceProbability = OriginalWalker->AcceptanceProbability;
+    }
   
   if( TrialWalker->isSingular() )
     {
@@ -154,7 +175,7 @@ QMCGreensRatioComponent QMCWalker::moveElectrons()
       cerr << "ERROR: Negative dt value! (" << Input->flags.dt << ")" << endl;
       exit(0);
     }
-    
+  
   if(Input->flags.sampling_method == "no_importance_sampling")
       return moveElectronsNoImportanceSampling();
   else if(Input->flags.sampling_method == "importance_sampling" )
@@ -579,8 +600,8 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
       for(int i=0; i<3; i++)
         {
           temp = OriginalWalker->R(electron,i) -
-                           ( Input->Molecule.Atom_Positions(nearestNucleus,i) +
-       radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) );
+	    ( Input->Molecule.Atom_Positions(nearestNucleus,i) +
+	      radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) );
                           
           distance1Sq += temp*temp;
         }
@@ -620,6 +641,11 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
 void QMCWalker::reweight_walker()
 {
   double dW = 0.0;
+  double S_trial = 0.0;
+  double S_original = 0.0;
+  double trialEnergy    = TrialWalker->walkerData.localEnergy;
+  double originalEnergy = OriginalWalker->walkerData.localEnergy;
+      
   // determine the weighting factor dW so that the new weight = weight*dW
   
   bool weightIsNaN = false;
@@ -629,13 +655,7 @@ void QMCWalker::reweight_walker()
       dW = 1.0;
 
   else
-    {
-      double S_trial = 0.0;
-      double S_original = 0.0;
-      
-      double trialEnergy = TrialWalker->walkerData.localEnergy;
-      double originalEnergy = OriginalWalker->walkerData.localEnergy;
-      
+    {     
       if( IeeeMath::isNaN(trialEnergy) )
 	{
 	  cerr << "WARNING: trial energy = ";
@@ -716,8 +736,8 @@ void QMCWalker::reweight_walker()
 	  cerr << "       S_original       = " << S_original << endl;
 	  cerr << "       energy_trial     = " << Input->flags.energy_trial << endl;
 	  cerr << "       energy_estimated = " << Input->flags.energy_estimated << endl;
-	  cerr << "       trialEnergy      = " << trialEnergy << endl;
-	  cerr << "       originalEnergy   = " << originalEnergy << endl;
+	  cerr << "       trialEnergy      = " <<    TrialWalker->walkerData.localEnergy << endl;
+	  cerr << "       originalEnergy   = " << OriginalWalker->walkerData.localEnergy << endl;
 	}
 
       if( Input->flags.walker_reweighting_method == "simple_symmetric" )
@@ -768,11 +788,11 @@ void QMCWalker::reweight_walker()
           // statistical error compared to simple_asymmetric and
           // simple_symmetric
           double p = TrialWalker->getAcceptanceProbability();
-          double q = OriginalWalker->getAcceptanceProbability();
+	  double q = 1.0 - p;
           
 	  double temp = (p*0.5*(S_original+S_trial) + q*S_original) *
                         Input->flags.dt_effective;
-                        
+
 	  if (IeeeMath::isNaN(temp) || weightIsNaN == true)
 	    {
 	      cerr << "WARNING: dW = exp(" << temp << ")" << endl;
@@ -791,26 +811,67 @@ void QMCWalker::reweight_walker()
         }
     }
     
-#ifdef DELETE_LARGE_WEIGHT_WALKERS
-    
   // If a very erratic point is discovered during reweighting,
   // give it a statistical weight of zero so that it will be not
   // mess up the calculation.  The cutoff here needs to be played with
-  // to get the best value.
-  
+  // to get the best value.  
   if( dW > 10 )
     {
-      cerr << "WARNING: Walkers weight is being increased by a factor of "
-      << dW << "!" << endl;
+      double p = TrialWalker->getAcceptanceProbability();
+      double q = 1.0 - p;
+      //cerr << scientific;      
+      cerr << "WARNING: Walker weight is being changed by a factor of "
+	   << dW << "!" << endl;
+      cerr << "       w = " << getWeight() << ", age = " << age << endl;
+      cerr << "       p = " << p << "; q = " << q << "; move_accepted = " << move_accepted << endl;
+      cerr << "       walkerID         = " << walkerID << endl;
+      cerr << "       parentID         = " << parentID << endl;
+      cerr << "       grandpID         = " << grandpID << endl;
+
+      /*
       cerr << "Walker's weight is being set to zero so that it does not"
       << " ruin the whole calculation or use all of the "
       << "machine's memory." << endl;
       dW = 0.0;
+      */
+      cerr << "       energy_trial     = " << Input->flags.energy_trial << endl;
+      cerr << "       energy_estimated = " << Input->flags.energy_estimated << endl;
+      cerr << "       S_trial          = " << S_trial << endl;
+      cerr << "       S_original       = " << S_original << endl;
+
+      cerr << "       trialEnergy      = " << trialEnergy << endl;
+      cerr << "       TKE              = " <<    TrialWalker->walkerData.kineticEnergy << endl;
+      cerr << "       TPE              = " <<    TrialWalker->walkerData.potentialEnergy << endl;
+      cerr << "       TEE              = " <<    TrialWalker->walkerData.eeEnergy << endl;
+      cerr << "       TNE              = " <<    TrialWalker->walkerData.neEnergy << endl;
+      cerr << "       TPsi             = " <<    TrialWalker->walkerData.psi << endl;
+
+      cerr << "       originalEnergy   = " << originalEnergy << endl;
+      cerr << "       OKE              = " << OriginalWalker->walkerData.kineticEnergy << endl;
+      cerr << "       OPE              = " << OriginalWalker->walkerData.potentialEnergy << endl;
+      cerr << "       OEE              = " << OriginalWalker->walkerData.eeEnergy << endl;
+      cerr << "       ONE              = " << OriginalWalker->walkerData.neEnergy << endl;
+      cerr << "       OPsi             = " << OriginalWalker->walkerData.psi << endl;
     }
-#endif
-    
+
   // now set the weight of the walker
   setWeight( getWeight() * dW );
+}
+
+bool QMCWalker::branchRecommended()
+{
+  /*
+    This function will be queried before a branch. Since branching is purely an
+    efficiency issue, we can do whatever we want and shouldn't have to worry about
+    ruining detailed balance.
+  */
+  if(!move_accepted && getWeight() > 10.0)
+    {
+      cerr << "Not recommending a branch for walker " << walkerID;
+      cerr << " which has weight = " << getWeight() << endl;
+      return false;
+    }
+  return true;
 }
 
 void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
@@ -819,25 +880,28 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
   
   double PsiRatio = TrialWalker->walkerData.psi/OriginalWalker->walkerData.psi;
   
-  // increase the probability of accepting a move if the walker has not
-  // moved in a long time
-  
-  double MoveOldWalkerFactor = 1.0;
-  
-  if( age > Input->flags.old_walker_acceptance_parameter )
-    MoveOldWalkerFactor =
-      pow(1.1,age-Input->flags.old_walker_acceptance_parameter);
-      
   // calculate the probability of accepting the trial move
-  double p = PsiRatio * PsiRatio * GreensRatio * MoveOldWalkerFactor;
+  double p = PsiRatio * PsiRatio * GreensRatio;
 
-  if( !(IeeeMath::isNaN(p)) && age > 2*Input->flags.old_walker_acceptance_parameter )
-    p = 1;
-    
-  // if the aratio is NaN then reject the move
-  if( IeeeMath::isNaN(p) )
+  if( !(IeeeMath::isNaN(p)))
     {
-      cerr << "WARNING: Rejecting trial walker with NaN aratio!" << endl;
+      // Increase the probability of accepting a move if the walker has not
+      // moved in a long time. Use a cutoff to protect the pow function.
+      // 1.1 ^ 1000 ~= 1e41
+      if(age - Input->flags.old_walker_acceptance_parameter > 1000)
+	{
+	  p = 1.0;
+	} 
+      else if(age - Input->flags.old_walker_acceptance_parameter > 0)
+	{
+	  p *= pow(1.1,age-Input->flags.old_walker_acceptance_parameter);
+	}
+
+    } else {
+      // if the aratio is NaN then reject the move
+      cerr << "WARNING: Rejecting trial walker with NaN p!" << endl;
+      cerr << "         PsiRatio    = " << PsiRatio << endl;
+      cerr << "         GreensRatio = " << GreensRatio << endl;
       p = 0.0;
       // The energies are assigned zero because the later multiplication by 
       // p=0 doesn't result in 0 contribution.
@@ -902,7 +966,6 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
   // Set the probabilities of taking the trial move or keeping the current
   // move
   TrialWalker->setAcceptanceProbability(p);
-  OriginalWalker->setAcceptanceProbability(1.0-p);
 }
 
 void QMCWalker::acceptOrRejectMove()
@@ -910,19 +973,18 @@ void QMCWalker::acceptOrRejectMove()
   if( TrialWalker->getAcceptanceProbability() > ran1(&Input->flags.iseed) )
     {
       // accept the move
-      *this = *TrialWalker;
       age = 0;
       move_accepted = true;
     }
   else
     {
       // reject the move
-      *this = *OriginalWalker;
+      //age measures the number of steps for which the move was not accepted
       age++;
       move_accepted = false;
     }
     
-  if( age > Input->flags.old_walker_acceptance_parameter && false)
+  if( age > Input->flags.old_walker_acceptance_parameter*2)
     {
       cerr << "WARNING: Walker older than old_walker_acceptance_parameter = "
 	   << Input->flags.old_walker_acceptance_parameter << " steps!" << endl;
@@ -933,17 +995,28 @@ void QMCWalker::acceptOrRejectMove()
 
 void QMCWalker::createChildWalkers()
 {
-  if( TrialWalker == 0 )
-    {
-      TrialWalker = new QMCWalker();
-    }
-  *TrialWalker = *this;
-  
+  /*
+    We only ever need 2 walker objects, so AGA modified the code
+    so that we don't use 3 walker objects anymore. In order to preserve
+    the rest of the code, the TrialWalker pointer just points to "this" now,
+    this results in fewer memory copies (since the move is likely to be accepted)
+    than if OriginalWalker pointed to "this".
+
+    Correspondingly, I eliminated redundant data.
+  */
   if( OriginalWalker == 0 )
     {
       OriginalWalker = new QMCWalker();
     }
-  *OriginalWalker = *this;
+
+  //We create a copy of the data we need
+  OriginalWalker->R                     = R;
+  OriginalWalker->walkerData            = walkerData;
+  OriginalWalker->dR2                   = dR2;
+  OriginalWalker->AcceptanceProbability = AcceptanceProbability;
+
+  //And use a psuedonym
+  TrialWalker = this;
 }
 
 void QMCWalker::initialize(QMCInput *INPUT)
@@ -1009,7 +1082,7 @@ void QMCWalker::initialize(QMCInput *INPUT)
     walkerData.chiDensity.allocate(Input->WF.getNumberBasisFunctions());
     
   //initialize acceptance probability
-  AcceptanceProbability = 0.0;
+  setAcceptanceProbability(0.0);
 }
 
 void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
@@ -1297,15 +1370,8 @@ QMCWalkerData* QMCWalker::getWalkerData()
 void QMCWalker::calculateObservables()
 {
   double p = TrialWalker->AcceptanceProbability;
-  double q = OriginalWalker->AcceptanceProbability;
-  
-  if( fabs(p + q - 1.0) > 1e-10 )
-    {
-      cerr << "ERROR: In QMCWalker::calculateObservables probabilities "
-	   << "do not sum correctly!" << endl;
-      exit(0);
-    }
-  
+  double q = 1.0 - p;
+
   // Calculate the Energy ...
   localEnergy = p * TrialWalker->walkerData.localEnergy +
                 q * OriginalWalker->walkerData.localEnergy;
@@ -1323,9 +1389,6 @@ void QMCWalker::calculateObservables()
              q * OriginalWalker->walkerData.neEnergy;
   eeEnergy = p * TrialWalker->walkerData.eeEnergy + 
              q * OriginalWalker->walkerData.eeEnergy;
-
-  // Calculate the acceptance probability
-  AcceptanceProbability = p;
   
   // Calculate the DistanceMovedAccepted this is the average distance
   // moved on a step
@@ -1378,16 +1441,13 @@ void QMCWalker::calculateObservables()
   r2 = (p*(calcR1_T + calcR2_T)
      +  q*(calcR1_O + calcR2_O))/2.0;
 
+  /*
+    This section of code probably measure anything useful
+  */
   double kineticEnergy_grad_O = 0.0;
   double kineticEnergy_grad_T = 0.0;
-  for(int i=0; i<TrialWalker->walkerData.gradPsiRatio.dim1(); i++)
-    for(int j=0; j<TrialWalker->walkerData.gradPsiRatio.dim2(); j++)
-    {
-      kineticEnergy_grad_O += OriginalWalker->walkerData.gradPsiRatio(i,j)
-	* OriginalWalker->walkerData.gradPsiRatio(i,j);
-      kineticEnergy_grad_T += TrialWalker->walkerData.gradPsiRatio(i,j)
-	* TrialWalker->walkerData.gradPsiRatio(i,j);
-    }
+  kineticEnergy_grad_O = OriginalWalker->walkerData.gradPsiRatio.dotAllElectrons(OriginalWalker->walkerData.gradPsiRatio);
+  kineticEnergy_grad_T = TrialWalker->walkerData.gradPsiRatio.dotAllElectrons(TrialWalker->walkerData.gradPsiRatio);
   kineticEnergy_grad = p*kineticEnergy_grad_T*TrialWalker->walkerData.psi
                      + q*kineticEnergy_grad_O*OriginalWalker->walkerData.psi;
 
@@ -1421,10 +1481,17 @@ void QMCWalker::calculateObservables()
 	      fwKineticEnergy(i,j)     *= pWeight;
 	      fwKineticEnergy_grad(i,j)*= pWeight;
 	      fwPotentialEnergy(i,j)   *= pWeight;
-	      
-	      for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
-		for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
-		  (fwNuclearForces(d1,d2))(i,j) *= pWeight;
+
+	      /*
+		//I probably commented out this section because
+		//It doesn't work with harmonic oscillators...
+	      if(Input->flags.nuclear_derivatives != "none")
+		{
+		  for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
+		    for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
+		      (fwNuclearForces(d1,d2))(i,j) *= pWeight;
+		}
+	      */
 	    }
 	  
 	  if(isCollectingFWResults(i,j) == ACCUM )
@@ -1440,9 +1507,14 @@ void QMCWalker::calculateObservables()
 	      fwKineticEnergy_grad(i,j) += aWeight * kineticEnergy_grad;
 	      fwPotentialEnergy(i,j) += aWeight * potentialEnergy;
 
-	      for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
-		for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
-		  (fwNuclearForces(d1,d2))(i,j) += aWeight * walkerData.nuclearDerivatives(d1,d2);
+	      /*
+	      if(Input->flags.nuclear_derivatives != "none")
+		{
+		  for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
+		    for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
+		      (fwNuclearForces(d1,d2))(i,j) += aWeight * walkerData.nuclearDerivatives(d1,d2);
+		}
+	      */
 	    }
 	}
     }
@@ -1466,7 +1538,7 @@ void QMCWalker::calculateObservables( QMCProperties & props )
   props.eeEnergy.newSample( eeEnergy, getWeight() );
   
   // Calculate the Acceptance Probability ...
-  props.acceptanceProbability.newSample( AcceptanceProbability, getWeight() );
+  props.acceptanceProbability.newSample( getAcceptanceProbability(), getWeight() );
   
   // Calculate the DistanceMovedAccepted this is the average distance
   // moved on a step
@@ -1603,11 +1675,11 @@ void QMCWalker::resetFutureWalking(int whichBlock, int whichIsDone)
 
 void QMCWalker::resetFutureWalking()
 {
+  numFWSteps = 0;
   for(int i=0; i<isCollectingFWResults.dim1(); i++)
   {
     isCollectingFWResults(i,0) = ACCUM;
     isCollectingFWResults(i,1) = DONE;
-    numFWSteps[i] = 0;
     for(int j=0; j<isCollectingFWResults.dim2(); j++)
       resetFutureWalking(i,j);
   }
