@@ -604,11 +604,13 @@ void QMCRun::nonunitWeightBranching()
     {
       if( wp->getWeight() > Input->flags.branching_threshold )
         {
-          // Split this walker into two; each with half the weight
-          
-          wp->setWeight( wp->getWeight()/2.0 );
-          
-          WalkersToAdd.push_back( *wp );
+	  if(wp->branchRecommended())
+	    {
+	      // Split this walker into two; each with half the weight
+	      wp->setWeight( wp->getWeight()/2.0 );
+	      
+	      WalkersToAdd.push_back( *wp );
+	    }
         }
       else if( wp->getWeight() < Input->flags.fusion_threshold )
         {
