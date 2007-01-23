@@ -192,7 +192,10 @@ class CompilerIntel(Compiler):
         self.DEPENDENCY = '-MM'
 
         if optimize:
-            self.OPTIMIZATION = '-fast'
+            #The -fast option automatically selects -xP, which means SSE3
+            #Using these compile paramters against GCC default parameters,
+            #icc outperforms GCC by 7 percent on a harmonic oscillator test.
+            self.OPTIMIZATION = '-O3 -ipo -static -parallel -openmp -xN'
         else:
             self.OPTIMIZATION = ''
 
