@@ -138,6 +138,16 @@ public:
   bool isSingular();
 
   /**
+     Branching is only an efficiency consideration, so we should be able
+     to choose not to branch at a particular spot and not change detailed
+     balance. Presumably, if we can choose not to branch at a bad spot
+     in the trialfunction, then we can slow any tendency for the calculation
+     to blow up.
+     @return whether a branch is recommended for a particular iteration
+  */
+  bool branchRecommended();
+
+  /**
     Calculates the distance between each pair of electrons and records it in 
     the appropriate histogram.  This will be used to evaluate pair density 
     functions for DFT development.
@@ -211,7 +221,18 @@ public:
 private:
   double weight;
   int age;
-  
+
+  /**
+     An ID is unique to a calculation, so these IDs can help
+     track down why a particular walker might have gone sour.
+
+     It might also be useful to know the ID of our parent and
+     grandparent.
+  */
+  long int walkerID;
+  long int parentID;
+  long int grandpID;
+
   /**
     These energies are calculated by QMCWalker using the acceptance probability
     as opposed to those calculated by QMCFunction
@@ -364,6 +385,15 @@ private:
     Calculates the observables for this walker.
   */
   void calculateObservables();
+
+ protected:
+
+  /**
+     We need a static variable so that we can assign
+     unique IDs to each walker as they are created.
+  */
+  static long int nextID;
+
 };
 
 #endif
