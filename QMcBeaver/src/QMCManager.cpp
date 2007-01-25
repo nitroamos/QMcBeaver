@@ -1644,23 +1644,23 @@ void QMCManager::receiveSignal(signalType signal)
   switch(signal){
   case SIG_REDUCE:
     if(QMCManager::PRINT_SIG_INFO)
-      cout << "QMCManager procedure for SIG_REDUCE: reduce all properties and dump results, then resume normally." << endl;
+      clog << "QMCManager procedure for SIG_REDUCE: reduce all properties and dump results, then resume normally." << endl;
     QMCManager::REDUCE_ALL_NOW = true;
     break;
   case SIG_INCREASE:
     if(QMCManager::PRINT_SIG_INFO)
-      cout << "QMCManager procedure for SIG_INCREASE: increase Input.flags.max_time_steps by 10%." << endl;
+      clog << "QMCManager procedure for SIG_INCREASE: increase Input.flags.max_time_steps by 10%." << endl;
     QMCManager::INCREASE_TIME = true;
     break;
   case SIG_QUIT:
     if(QMCManager::PRINT_SIG_INFO)
-      cout << "QMCManager procedure for SIG_QUIT: reduce and gracefully end." << endl;
+      clog << "QMCManager procedure for SIG_QUIT: reduce and gracefully end." << endl;
     QMCManager::SIGNAL_SAYS_QUIT = true;
     break;
   case SIG_NOTHING:
     break;
   default:
-    cerr << "Warning: unknown signal sent." << endl;
+    clog << "Warning: unknown signal sent." << endl;
     break;
   }
 }

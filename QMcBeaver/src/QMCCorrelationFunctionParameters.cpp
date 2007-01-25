@@ -56,7 +56,7 @@ void QMCCorrelationFunctionParameters::operator = (const
  * Constants: 1.0 2.0 3.0 4.0 1.0 2.0 1.0
  */
 
-void QMCCorrelationFunctionParameters::read(istream & strm)
+void QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacement)
 {
   string temp;
   
@@ -100,7 +100,14 @@ void QMCCorrelationFunctionParameters::read(istream & strm)
   // Load the correlation function type
   
   strm >> temp >> CorrelationFunctionType;
-  
+
+  if( ParticleTypes(1) != "Electron_up" && ParticleTypes(1) != "Electron_down"
+      && nucCuspReplacement && CorrelationFunctionType != "None")
+    {
+      clog << "WARNING: switching CorrelationFunctionType to \"None\" for (" << pt1 << ", " << pt2 << ")" << 
+	" since we're replacing the cusps.\n";
+      CorrelationFunctionType = "None";
+    }
   // Load the number of parameter types
   
   strm >> temp >> temp;

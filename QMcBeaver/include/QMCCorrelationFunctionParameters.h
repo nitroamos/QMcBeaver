@@ -170,9 +170,11 @@ public:
     Loads the state of the object from an input stream.
 
     @param strm input stream
+    @param nucCuspReplacement indicates whether we need to switch
+    off any electron-nucleus jastrows from the input file
     */
   
-  void read(istream & strm);
+  void read(istream & strm, bool nucCuspReplacement);
 
 
   /**

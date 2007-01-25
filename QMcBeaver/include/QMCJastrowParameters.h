@@ -146,12 +146,14 @@ public:
     @param nucleitypes list of the different kinds of nuclei
     @param linkparams true if nuclear-electron interactions are strictly the 
     same and false otherwise
+    @param nucCuspReplacement indicates whether we need to shut off any
+    electron-nucleus Jastrow functions in the input file
     @param nelup number of up spin electrons
     @param neldn numer of down spin electrons
     @param runfile name of the file to be loaded
   */
-  void read(Array1D<string> & nucleitypes, bool linkparams, int nelup, 
-	    int neldn, string runfile);
+  void read(Array1D<string> & nucleitypes, bool linkparams, bool nucCuspReplacement,
+	    int nelup, int neldn, string runfile);
 
   /**
     Writes the state of the object to an output stream.

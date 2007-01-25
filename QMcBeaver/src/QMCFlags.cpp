@@ -679,17 +679,17 @@ void QMCFlags::read_flags(string InFileName)
 
   if(dt > dt_equilibration)
     {
-      //cerr << "Warning: dt > dt_equilibration" << endl;
+      clog << "Warning: dt > dt_equilibration" << endl;
     }
 
   if(mpireduce_interval < output_interval)
     {
-      //cerr << "Warning: mpireduce_interval < output_interval!" << endl;
+      clog << "Warning: mpireduce_interval < output_interval!" << endl;
     }
 
   if(optimize_Psi == 1 && run_type != "variational")
     {
-      cerr << "ERROR: attempting to optimize the wavefunction for"
+      clog << "ERROR: attempting to optimize the wavefunction for"
       << " run_type = " << run_type << "!" << endl;
     }
 
@@ -702,14 +702,14 @@ void QMCFlags::read_flags(string InFileName)
       if(walker_initialization_method != "amos_boring_initialization")
 	{
 	  walker_initialization_method = "amos_boring_initialization";
-	  cerr << "Warning: Setting walker_initialization_method to \"" << 
+	  clog << "Warning: Setting walker_initialization_method to \"" << 
 	    walker_initialization_method << "\" since trial_function_type = " <<
 	    trial_function_type << endl;
 	}
 
       if(Natoms != 0)
 	{
-	  cerr << "Warning: Setting Natoms to 0 since trial_function_type = "
+	  clog << "Warning: Setting Natoms to 0 since trial_function_type = "
 	       << trial_function_type << endl;
 	  Natoms = 0;
 	}
@@ -732,14 +732,14 @@ void QMCFlags::read_flags(string InFileName)
 
   if(nuclear_derivatives != "none" && Natoms == 0)
     {
-      cerr << "Warning: Setting nuclear_derivatives to \"none\" since Natoms = "
+      clog << "Warning: Setting nuclear_derivatives to \"none\" since Natoms = "
 	   << Natoms << endl;
       nuclear_derivatives = "none";
     }
 
   if(sampling_method == "umrigar93_importance_sampling" && Natoms == 0)
     {
-      cerr << "Warning: Setting sampling_method to \"no_importance_sampling\" since " <<
+      clog << "Warning: Setting sampling_method to \"no_importance_sampling\" since " <<
 	"umrigar93_importance_sampling requires Natoms > 0\n" << endl;
       sampling_method = "no_importance_sampling";
     }

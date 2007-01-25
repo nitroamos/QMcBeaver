@@ -69,6 +69,20 @@ int main(int argcTemp, char *argvTemp[])
       exit(1);
     }
 
+  int rank = -1;
+  MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+
+  if( rank != 0 )
+    {
+      //The idea is that we need a stream to which warnings
+      //can be printed, but only one processor actually needs
+      //do to the warning.
+
+      ofstream dump("/dev/null");
+      if(dump.good())
+	clog.rdbuf(dump.rdbuf());
+    }
+
 #endif
 
 #ifdef QMC_GPU

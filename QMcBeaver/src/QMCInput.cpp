@@ -35,7 +35,7 @@ void QMCInput::read(string inputfile)
  WF.read(flags.charge, flags.Norbitals, flags.Nbasisfunc, flags.Ndeterminants, 
 	 flags.trial_function_type, inputfile);
 
- JP.read(Molecule.NucleiTypes,flags.link_Jastrow_parameters,
+ JP.read(Molecule.NucleiTypes,flags.link_Jastrow_parameters,flags.replace_electron_nucleus_cusps,
 	 WF.getNumberAlphaElectrons(),WF.getNumberBetaElectrons(),inputfile);
 
  outputer = QMCConfigIO(WF.getNumberElectrons());

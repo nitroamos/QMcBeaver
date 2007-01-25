@@ -481,7 +481,7 @@ Array1D<Complex> QMCJastrowParameters::getPoles()
 }
 
 void QMCJastrowParameters::read(Array1D<string> & nucleitypes, 
-				bool linkparams, int nelup, int neldn, 
+				bool linkparams, bool nucCuspReplacement, int nelup, int neldn, 
 				string runfile)
 {
   // Set the internal variable telling if the electrons of different spins
@@ -556,7 +556,7 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
   for(int i=0; i<NumberOfCorrelationFunctions; i++)
     {
       QMCCorrelationFunctionParameters CP;
-      CP.read( file );
+      CP.read( file , nucCuspReplacement);
 
       if( CP.getParticle1Type() == "Electron_up" )
 	{
