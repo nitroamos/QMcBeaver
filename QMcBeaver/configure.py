@@ -398,6 +398,7 @@ optionalarguments = {
     '--noprofile' : 'self.profile = 0',
     '--atlas': 'self.atlas = 1',
     '--lapack': 'self.lapack = 1',
+    '--sprng': 'self.sprng = 1',
     '--float': 'self.float = 1',
     '--gpu': 'self.gpu = 1',
     '--vtune': 'self.vtune = 1',
@@ -414,10 +415,13 @@ class CommandLineArgs:
         self.parallel = 0
         self.atlas = 0
         self.lapack = 0
+        self.sprng = 0
         self.float = 0
         self.gpu = 0
         self.vtune = 0
         self.TAG = ''
+        self.LINK = ''
+        self.INCLUDE = ''
         self.EXE = 'QMcBeaver.$(LABEL).$(VERSION).x'
         self.MAKE = self._getMake()
 
@@ -440,13 +444,23 @@ class CommandLineArgs:
             self.parallel = 1
         
         for arg in sys.argv[3:]:
+            temp = string.split(arg,"=")
             if arg[0:2] == "--":
-                self._testArgValidity(arg)
-                exec optionalarguments[arg]
+                self._testArgValidity(temp[0])
+                exec optionalarguments[temp[0]]
             else:
                 if self.TAG == '':
                     self.TAG = '_'
-                self.TAG += arg;
+                self.TAG += temp[0];
+
+            if len(temp) == 2:
+                libpath = os.path.expanduser(temp[1])
+                includepath = libpath + "/include/"
+                libpath += "/lib/"
+                if os.path.exists(libpath):
+                    self.LINK += " -L" + libpath
+                if os.path.exists(includepath):
+                    self.INCLUDE += " -I" + includepath
                 
         self._testInputValidity()
 
@@ -475,7 +489,7 @@ class CommandLineArgs:
         print 'Any Optional Arguments without the -- will be treated as a tag.'
         print 'The vtune option is to create a position-independent exe'
         print 'necessary for vtune\'s Call Graph.\n'
-        print 'The options gpu, atlas, and lapack all require special libraries.'
+        print 'The options gpu, sprng, atlas, and lapack all require special libraries.'
         print 'See lib/README for setup details.\n'
       
     def _getMake(self):
@@ -527,6 +541,8 @@ class CommandLineArgs:
            extra.append("vtune")
         if self.lapack:
            extra.append("lapack")
+        if self.sprng:
+           extra.append("sprng")
 
         return '_'.join(extra)
 
@@ -557,12 +573,14 @@ class MakeConfigBuilder:
         text += 'LABEL = ' + self._inputs.LABEL + self._inputs.TAG + '\n'
         text += 'VERSION = ' + self.VERSION + '\n'
         text += 'HOME = ' + self.HOME + '\n'
-        text += 'INCLUDE = ' + self.INCLUDE + " " + self._mpi.INCLUDE + '\n'
+        text += 'INCLUDE = ' + self.INCLUDE + self._inputs.INCLUDE + " " + self._mpi.INCLUDE + '\n'
         text += 'FLAGS = ' + self._compiler.FLAGS + self._mpi.FLAGS
         if self._inputs.atlas:
             text += ' -DUSEATLAS '
         if self._inputs.lapack:
             text += ' -DUSELAPACK '
+        if self._inputs.sprng:
+            text += ' -DUSESPRNG '
         if self._inputs.float:
             text += ' -DSINGLEPRECISION'
         if self._inputs.gpu:
@@ -578,7 +596,9 @@ class MakeConfigBuilder:
         text += 'DEBUG = ' + self._compiler.DEBUG + '\n'
         text += 'PROFILE = ' + self._compiler.PROFILE + '\n'
         text += 'PARALLEL = ' + self._mpi.PARALLEL + '\n'
-        text += 'LINK = ' + self._compiler.LINK + self._mpi.LINK + ' -L$(HOME)/lib'
+        text += 'LINK = ' + self._compiler.LINK + self._inputs.LINK + self._mpi.LINK + ' -L$(HOME)/lib'
+        if self._inputs.sprng:
+            text += ' -lsprng'
         if self._inputs.lapack:
             text += ' -llapack -lcblas -latlas'
         if self._inputs.atlas and not self._inputs.lapack:
