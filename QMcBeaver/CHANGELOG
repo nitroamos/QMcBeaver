@@ -1,3 +1,12 @@
+Fri, Feb 9, 2007 Amos Anderson
+1.  I changed random into Random. This makes it easier to use different
+    RNG, and I've included SPRNG compatibility. Although I'm able to
+    compile with SPRNG v4.0 (the C++ version), I get seg fault every time
+    I initialize it, so something is wrong with their library.
+2.  When running the QMcBeaver executable, it will print out whatever info
+    I can find from the preprocessor macros as well as some general compile
+    info.
+
 Mon, Jan 22, 2007 Amos Anderson
 1.  I changed the memory usage for QMCWalker. Previously, 3 walkers
     were in existance at each step: this, TrialWalker, OriginalWalker.
