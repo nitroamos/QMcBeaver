@@ -100,9 +100,9 @@ void DistributionInverter::make_F_and_F_inverse(Array1D<double> &x_input,
 }
 
 //given a uniform random number this will return the original distribution
-double DistributionInverter::random(long &iseed)
+double DistributionInverter::random()
 {
-  F_inverse.evaluate(ran1(&iseed));
+  F_inverse.evaluate(ran.unidev());
   return F_inverse.getFunctionValue();
 }
 

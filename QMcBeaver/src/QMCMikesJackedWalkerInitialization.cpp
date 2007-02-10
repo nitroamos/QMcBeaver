@@ -226,9 +226,9 @@ Array2D<double> QMCMikesJackedWalkerInitialization::initializeWalkerPosition()
 	  //AA is what makes the 3D gaussian use SD as 
 	  //the standard deviation
 
-	  xx = AA*gasdev(&Input->flags.iseed);
-	  yy = AA*gasdev(&Input->flags.iseed);
-	  zz = AA*gasdev(&Input->flags.iseed);
+	  xx = AA*ran.gasdev();
+	  yy = AA*ran.gasdev();
+	  zz = AA*ran.gasdev();
 
 	  R(alpha_index,0) = xx+x;
 	  R(alpha_index,1) = yy+y;
@@ -243,9 +243,9 @@ Array2D<double> QMCMikesJackedWalkerInitialization::initializeWalkerPosition()
 	  //AA is what makes the 3D gaussian use SD as 
 	  //the standard deviation
 
-	  xx = AA*gasdev(&Input->flags.iseed);
-	  yy = AA*gasdev(&Input->flags.iseed);
-	  zz = AA*gasdev(&Input->flags.iseed);
+	  xx = AA*ran.gasdev();
+	  yy = AA*ran.gasdev();
+	  zz = AA*ran.gasdev();
 
 	  R(beta_index,0) = xx+x;
 	  R(beta_index,1) = yy+y;
@@ -326,7 +326,7 @@ Array2D <double> QMCMikesJackedWalkerInitialization::electrons_and_radii()
 	if (Input->WF.AlphaOccupation(0,i) == 1)
 	  {
 	    sum = 0.0;
-            rv = ran1(&Input->flags.iseed);
+            rv = ran.unidev();
             
             for(int j=0; j<Nbasisfunc; j++)
 	      {
@@ -342,7 +342,7 @@ Array2D <double> QMCMikesJackedWalkerInitialization::electrons_and_radii()
 	if (Input->WF.BetaOccupation(0,i) == 1)
 	  {
 	    sum = 0.0;
-	    rv = ran1(&Input->flags.iseed);
+	    rv = ran.unidev();
 
 	    for (int k=0; k<Nbasisfunc; k++)
 	      {

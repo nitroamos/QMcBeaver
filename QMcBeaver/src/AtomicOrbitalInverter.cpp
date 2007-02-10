@@ -161,31 +161,31 @@ void AtomicOrbitalInverter::initialize(int Xn, int Yn, int Zn,Array1D<double> B,
 //}
 //END NOT DONE
 
-void AtomicOrbitalInverter::get_xyz(long &iseed, double &x, double &y, double &z)
+void AtomicOrbitalInverter::get_xyz(double &x, double &y, double &z)
 {
   double r,theta,phi;
   //if((xn+yn+zn)>0)
   if(true)   //just making the spline no matter what right now
     {
-      r     = r_form.random(iseed);
-      theta = theta_form.random(iseed);
+      r     = r_form.random();
+      theta = theta_form.random();
       //if((xn+yn)>0)
       if(true)   //just making the spline no matter what right now
 	{
-	  phi = phi_form.random(iseed);
+	  phi = phi_form.random();
 	}
       else
 	{
 	  //phi is uniform
-	  phi=ran1(&iseed)*2.0*PI;
+	  phi=ran.unidev()*2.0*PI;
 	}
     }
   else
     {
       //theta, phi, and R are uniform so just invert the gaussians
-      r     = invert_gaussians(iseed);
-      theta = ran1(&iseed)*PI;
-      phi   = ran1(&iseed)*2.0*PI;
+      r     = invert_gaussians();
+      theta = ran.unidev()*PI;
+      phi   = ran.unidev()*2.0*PI;
     }
 
   x = r * sin(theta)*cos(phi);
@@ -205,7 +205,7 @@ double AtomicOrbitalInverter::eval_gaussians(double r)
 
 
 //not used in the code on 10/30/01
-double AtomicOrbitalInverter::invert_gaussians(long & iseed)
+double AtomicOrbitalInverter::invert_gaussians()
 {
   //analytically invert the sum of the gaussians squared (another sum of g's)
   
@@ -218,7 +218,7 @@ double AtomicOrbitalInverter::invert_gaussians(long & iseed)
 	  sum_a=sum_a+c(i)*c(j)*sqrt(PI/(b(i)+b(j)));
 	}
     }
-  double R=ran1(&iseed);
+  double R=ran.unidev();
   double sum_b=0.0;
   int I,J;
   I = 0;
@@ -240,5 +240,5 @@ double AtomicOrbitalInverter::invert_gaussians(long & iseed)
   
   double b_new=b(I)+b(J);
   double sigma=sqrt(1/2.0/b_new);
-  return fabs(gasdev(&iseed)*sigma);
+  return fabs(ran.gasdev()*sigma);
 }

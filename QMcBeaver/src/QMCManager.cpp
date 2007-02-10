@@ -30,6 +30,11 @@ for more details.
 
 #include "QMCManager.h"
 
+/**
+   Random.h has an extern call referencing this.
+*/
+Random ran;
+
 bool QMCManager::SIGNAL_SAYS_QUIT         = false;  
 bool QMCManager::REDUCE_ALL_NOW           = false;
 bool QMCManager::INCREASE_TIME            = false;
@@ -52,12 +57,9 @@ void QMCManager::initialize( int argc, char **argv )
   
   // Load the input data
   Input.read( runfile );
-  
-  initializeOutputs();
+  ran.initialize(Input.flags.iseed,Input.flags.my_rank);
 
-  // Crappy random seed for parallel jobs
-  
-  Input.flags.iseed = Input.flags.iseed - Input.flags.my_rank;
+  initializeOutputs();
   
   if ( Input.flags.calculate_bf_density == 1 )
   {
@@ -1538,15 +1540,7 @@ void QMCManager::writeForces()
 void QMCManager::writeXML( ostream & strm )
 {
   // Write out the random seed
-  
-  if ( Input.flags.iseed > 0 )
-  {
-    strm << "<iseed>\n" << -1*Input.flags.iseed << "\n</iseed>" << endl;
-  }
-  else if ( Input.flags.iseed <= 0 )
-  {
-    strm << "<iseed>\n" << Input.flags.iseed << "\n</iseed>" << endl;
-  }
+  ran.writeXML(strm);
   
   // Write out the number of walkers
   strm << "<NumberOfWalkers>\n" << QMCnode.getNumberOfWalkers()
@@ -1583,9 +1577,7 @@ void QMCManager::readXML( istream & strm )
   // Read the random seed
   strm >> temp;
   strm >> temp;
-  Input.flags.iseed = atoi( temp.c_str() );
-  
-  if ( Input.flags.iseed > 0 )  Input.flags.iseed *= -1;
+  ran.readXML(strm);
   
   strm >> temp;
   

@@ -538,7 +538,7 @@ void QMCRun::unitWeightBranching()
 
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
     {
-      int times_to_branch = int(wp->getWeight() + ran1(&Input->flags.iseed))-1;
+      int times_to_branch = int(wp->getWeight() + ran.unidev())-1;
               
       // Set the walkers weight back to unity
       wp->setWeight(1.0);
@@ -629,7 +629,7 @@ void QMCRun::nonunitWeightBranching()
               double weight2 = wp->getWeight();
               double weight3 = weight1 + weight2;
               
-              if( ran1(&Input->flags.iseed) < weight1/weight3 )
+              if( ran.unidev() < weight1/weight3 )
                 {
                   // Keep TempWalkerToDelete and delete other
                   

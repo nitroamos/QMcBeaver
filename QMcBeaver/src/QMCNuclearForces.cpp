@@ -639,11 +639,11 @@ void QMCNuclearForces::randomlyRotate(Array2D<double> & points, double scale)
   Array2D<double> rotmat = Array2D<double>(3,3);
   double pi = acos(-1.0);
   //phi (aka alpha) goes from 0 to 2pi
-  double phi = 2.0*pi*ran1(&Input->flags.iseed);
+  double phi = 2.0*pi*ran.unidev();
   //theta (aka beta) ranges between 0 to pi, but different distribution
-  double theta = acos(2.0*(ran1(&Input->flags.iseed) - 0.5));
+  double theta = acos(2.0*(ran.unidev() - 0.5));
   //psi (aka gamma) goes from 0 to 2pi
-  double psi = 2.0*pi*ran1(&Input->flags.iseed);
+  double psi = 2.0*pi*ran.unidev();
   
   double sinpsi, cospsi, sinthe, costhe, sinphi, cosphi;
   sinphi = sin(phi);   cosphi = cos(phi);

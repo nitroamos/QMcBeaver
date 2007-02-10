@@ -206,7 +206,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsNoImportanceSampling()
       for(int j=0; j<R.dim2(); j++)
 	{
 	  // Add the randomness to the displacement
-	  double drift = sigma*gasdev(&Input->flags.iseed);
+	  double drift = sigma*ran.gasdev();
 
 	  // Calculate the square of the magnitude of the displacement
 	  dR2 += drift * drift;
@@ -236,7 +236,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
       for(int j=0; j<R.dim2(); j++)
 	{
 	  // Add the randomness to the displacement
-	  double drift = sigma*gasdev(&Input->flags.iseed);
+	  double drift = sigma*ran.gasdev();
 
 	  // Add the randomness to the displacement
 	  Displacement(i,j) += drift;
@@ -355,7 +355,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       double probabilityGaussianTypeMove = 1.0 - probabilitySlaterTypeMove;
       // Randomly decide which electron moving method to use
       
-      if( probabilityGaussianTypeMove > ran1(&Input->flags.iseed) )
+      if( probabilityGaussianTypeMove > ran.unidev() )
         {
           // Gaussian Type Move
           
@@ -366,7 +366,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
           for(int i=0; i<3; i++)
               newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i)
       + radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) +
-                               sqrt(tau)*gasdev(&Input->flags.iseed);
+                               sqrt(tau)*ran.gasdev();
             }
       else
         {
@@ -377,9 +377,9 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
             
           // add random part
           
-          double r = randomDistribution1(&Input->flags.iseed)/(2.0*expParam);
-          double phi = 2*3.14159265359*ran1(&Input->flags.iseed);
-          double theta = sindev(&Input->flags.iseed);
+          double r = ran.randomDistribution1()/(2.0*expParam);
+          double phi = 2*3.14159265359*ran.unidev();
+          double theta = ran.sindev();
           
           newPosition(0) += r*sin(theta)*cos(phi);
           newPosition(1) += r*sin(theta)*sin(phi);
@@ -970,7 +970,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
 
 void QMCWalker::acceptOrRejectMove()
 {
-  if( TrialWalker->getAcceptanceProbability() > ran1(&Input->flags.iseed) )
+  if( TrialWalker->getAcceptanceProbability() > ran.unidev() )
     {
       // accept the move
       age = 0;

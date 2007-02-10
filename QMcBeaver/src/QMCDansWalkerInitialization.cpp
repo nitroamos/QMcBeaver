@@ -449,7 +449,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
   double rv;  //uniform [0,1] random variable
 
   // First we decide which determinant we will use to distribute the elecs.
-  rv = ran1(&Input->flags.iseed);
+  rv = ran.unidev();
 
   int determinant_index = 0;
   for (int i=0; i<Input->WF.getNumberDeterminants(); i++)
@@ -467,7 +467,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
       if (Input->WF.AlphaOccupation(determinant_index,i) == 1)
 	{
           sum = 0.0;
-          rv = ran1(&Input->flags.iseed);
+          rv = ran.unidev();
 
           for (int j=0; j<Nbasisfunc; j++)
             {
@@ -484,7 +484,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
       if (Input->WF.BetaOccupation(determinant_index,i) == 1)
 	{
 	  sum = 0.0;
-          rv = ran1(&Input->flags.iseed);
+          rv = ran.unidev();
 
 	  for (int k=0; k<Nbasisfunc; k++)
 	    {
@@ -649,9 +649,9 @@ dist_energy_level(int Z, int n, int nalpha, int nbeta)
   // We use a random vector of unit length as our axis, and rotate all the 
   // points in the energy level about it by a random angle.
 
-  double phi = ran1(&Input->flags.iseed)*2*PI;
-  double theta = sindev(&Input->flags.iseed);
-  double angle = ran1(&Input->flags.iseed)*2*PI;
+  double phi = ran.unidev()*2*PI;
+  double theta = ran.sindev();
+  double angle = ran.unidev()*2*PI;
 
   Array1D<double> axis(3);
   axis(0) = sin(theta)*cos(phi);
@@ -673,7 +673,7 @@ double QMCDansWalkerInitialization::generatePhiCoordinate(int index)
   // These distributions are uniform with respect to phi.
   if (index == 0 || index == 1 || index == 2 || index == 5) 
     {
-      return ran1(&Input->flags.iseed)*2*PI;
+      return ran.unidev()*2*PI;
     }
   else
     {
@@ -737,7 +737,7 @@ double QMCDansWalkerInitialization::generatePhiCoordinate(int index)
               phiSplinesMade(index) = 1;
 	    }
 	}
-      phiSplines(index).evaluate(ran1(&Input->flags.iseed));
+      phiSplines(index).evaluate(ran.unidev());
       return phiSplines(index).getFunctionValue();
     }
 }
@@ -747,7 +747,7 @@ double QMCDansWalkerInitialization::generateThetaCoordinate(int index)
   // This distribution is uniform in theta.
   if (index == 0)
     {
-      return sindev(&Input->flags.iseed);
+      return ran.sindev();
     }
   else
     {
@@ -830,7 +830,7 @@ double QMCDansWalkerInitialization::generateThetaCoordinate(int index)
 	      thetaSplinesMade(index) = 1;
 	    }
 	}
-      thetaSplines(index).evaluate(ran1(&Input->flags.iseed));
+      thetaSplines(index).evaluate(ran.unidev());
       return thetaSplines(index).getFunctionValue();
     }
 }
@@ -855,7 +855,7 @@ Array1D<double> QMCDansWalkerInitialization::\
   for (int i=0; i<nelecs; i++)
     {
       radialSplines(atomicNumberIndex,energyLevelIndex).evaluate\
-                                                   (ran1(&Input->flags.iseed));
+                                                   (ran.unidev());
       r_locs(i) = radialSplines(atomicNumberIndex,energyLevelIndex).\
                                                             getFunctionValue();
     }

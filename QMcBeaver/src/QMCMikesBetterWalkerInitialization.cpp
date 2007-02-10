@@ -70,7 +70,7 @@ Array3D<double> QMCMikesBetterWalkerInitialization::initializeBunchOfWalkersPosi
 	  z0=atom_centers(which_atom,2);
 	  
 	  //AOI.initialize(Xn,Yn,Zn,B,C);
-	  //AOI.get_xyz(&Input->flags.iseed,x,y,z);
+	  //AOI.get_xyz(x,y,z);
 	  
 	  x=x+x0;
 	  y=y+y0;

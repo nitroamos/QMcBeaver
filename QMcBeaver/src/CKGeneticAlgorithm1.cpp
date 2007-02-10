@@ -21,8 +21,6 @@ CKGeneticAlgorithm1::CKGeneticAlgorithm1(QMCObjectiveFunction * function,
   PopulationSize    = populationsize;
   MutationRate      = mutationrate;
   InitialDistributionWidth = distributionwidth;
-
-  iseed = 102304;
 }
 
 void CKGeneticAlgorithm1::initializePopulation(Array1D<double> &initialguess)
@@ -38,7 +36,7 @@ void CKGeneticAlgorithm1::initializePopulation(Array1D<double> &initialguess)
       for(int j=0; j<initialguess.dim1(); j++)
 	{
 	  Parameters(j) = initialguess(j) + 
-	    InitialDistributionWidth*gasdev( &iseed );
+	    InitialDistributionWidth*ran.gasdev();
 	}
       
       ParamArray(i) = Parameters;
@@ -62,7 +60,7 @@ void CKGeneticAlgorithm1::mutate(Array1D<double>& parameters)
 {
   for(int i=0; i<parameters.dim1(); i++)
     {
-      parameters(i) += MutationRate*gasdev( &iseed );
+      parameters(i) += MutationRate*ran.gasdev();
     }
 }
 
@@ -73,7 +71,7 @@ Array1D<double> CKGeneticAlgorithm1::crossover(Array1D<double> &Parent1,
 
   for(int i=0; i<result.dim1(); i++)
     {
-      double alpha = ran1( &iseed );
+      double alpha = ran.unidev();
       result(i)    = alpha * Parent1(i) + (1.0-alpha) * Parent2(i);
     }
 
@@ -91,7 +89,7 @@ int CKGeneticAlgorithm1::selectParent()
   // be inverted so that # = PopulationSize * (1-sqrt(1-ran(0,1)))
   // for our case # = int( PopulationSize * (1-sqrt(1-ran(0,1))) );
 
-  return int( PopulationSize * ( 1-sqrt( 1-ran1(&iseed) ) ) );
+  return int( PopulationSize * ( 1-sqrt( 1-ran.unidev() ) ) );
 }
 
 void CKGeneticAlgorithm1::generateNewPopulation()

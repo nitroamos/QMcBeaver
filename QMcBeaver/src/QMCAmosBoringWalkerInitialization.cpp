@@ -26,8 +26,8 @@ Array2D<double> QMCAmosBoringWalkerInitialization::initializeWalkerPosition()
 
   for(int i=0; i<R.dim1(); i++){
     for(int j=0; j<R.dim2(); j++){
-      //R(i,j) = (ran1(&Input->flags.iseed) - 0.5)/3.0;
-      R(i,j) = gasdev(&Input->flags.iseed);
+      //R(i,j) = (ran.unidev() - 0.5)/3.0;
+      R(i,j) = ran.gasdev();
     }
   }
   return R;

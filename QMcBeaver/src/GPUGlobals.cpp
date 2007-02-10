@@ -339,7 +339,7 @@ const char * GPUGlobals::gpubench_getDriverVersion(void)
   return returnValue;
 }
 
-void GPUGlobals::printVersions()
+void GPUGlobals::printVersions(ostream & strm)
 {
   const char* vendor = (const char *) glGetString(GL_VENDOR);
   const char* render = (const char *) glGetString(GL_RENDERER);
@@ -371,10 +371,10 @@ void GPUGlobals::printVersions()
       gpu_make = unknown_gpu;
     }
     
-  cout << " " << gpubench_getDriverVersion() << ", Cg Version: " << CG_VERSION_NUM;
-  if(g_cgProfile == CG_PROFILE_FP40) cout << ", Using fp40\n";
-  if(g_cgProfile == CG_PROFILE_FP30) cout << ", Using fp30\n";
-  if(g_cgProfile == CG_PROFILE_FP20) cout << ", Using fp20\n";
+  strm << " " << gpubench_getDriverVersion() << ", Cg Version: " << CG_VERSION_NUM;
+  if(g_cgProfile == CG_PROFILE_FP40) strm << ", Using fp40\n";
+  if(g_cgProfile == CG_PROFILE_FP30) strm << ", Using fp30\n";
+  if(g_cgProfile == CG_PROFILE_FP20) strm << ", Using fp20\n";
 }
 
 void GPUGlobals::writeShader(const char * shader, const char * filename)
