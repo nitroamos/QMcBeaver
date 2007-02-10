@@ -49,6 +49,45 @@ enum signalChannels { CHANNEL1 = SIGURG, CHANNEL2 = 40 };
 
 using namespace std;
 
+void printCompileInfo(ostream & strm)
+{
+  strm << "QMcBeaver version " << VERSION << " was compiled in ";
+
+#ifdef SINGLEPRECISION
+  strm << "single";
+#else
+  strm << "double";
+#endif
+  strm << " precision." << endl;
+
+#ifdef __DATE__
+  strm << "Compiled on " << __DATE__ << " " << __TIME__ << endl;
+#endif
+#ifdef __VERSION__
+  strm << "Compiler version " << __VERSION__ << endl;
+#endif
+
+  strm << "With the libraries:";
+#ifdef PARALLEL
+  strm << " MPI";
+#endif
+#ifdef USEATLAS
+  strm << " ATLAS";
+#endif
+#ifdef USELAPACK
+  strm << " LAPACK"; 
+#endif
+#ifdef USESPRNG
+  strm << " SPRNG";
+#endif
+#ifdef QMC_GPU
+  strm << endl;
+  GPUGlobals::printVersions(strm);
+#endif
+  strm << endl;
+  strm << "Signaling: CHANNEL1 = " << CHANNEL1 << " CHANNEL2 = " << CHANNEL2 << endl;
+}
+
 int main(int argcTemp, char *argvTemp[])
 {
   argc = argcTemp;
@@ -85,24 +124,12 @@ int main(int argcTemp, char *argvTemp[])
 
 #endif
 
+  if(argcTemp == 1 || showExtraHeaders)
+    printCompileInfo(clog);
+
 #ifdef QMC_GPU
-  if(showExtraHeaders) cout << "GPU mode\n";
   openGLBootStrap();
 #else
-
-  string precision;
-#ifdef SINGLEPRECISION
-  precision = "single";
-#else
-  precision = "double";
-#endif
-
-#ifdef USEATLAS
-  if(showExtraHeaders) cout << "CPU (" << precision << ") mode, using ATLAS\n";
-#else
-  if(showExtraHeaders) cout << "CPU (" << precision << ") mode, not using ATLAS\n";
-#endif
-
   qmcbeaver();
 #endif
 
@@ -314,9 +341,6 @@ void openGLBootStrap()
   assert(g_cgProfile != CG_PROFILE_UNKNOWN);
   cgGLSetOptimalOptions(g_cgProfile);
   ////////End Initialize Cg
-
-  //some feedback for what has been set up
-  GPUGlobals::printVersions();
 
   /*Once this is called, the whole program is placed on the GLUT "poll-for-events"
   stack. It will not return from this function call maybe unless there is an error*/
