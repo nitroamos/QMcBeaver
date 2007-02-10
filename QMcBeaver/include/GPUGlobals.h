@@ -15,6 +15,7 @@
 #include <GL/glut.h>
 #include <Cg/cgGL.h>
 #include "Array2D.h"
+#include <iostream>
 #include <sstream>
 #include <fstream>
 
@@ -43,6 +44,8 @@ const static int nvidia_gpu   = 1;
 const static int ati_gpu      = 2;
 const static int labs3d_gpu   = 3;
 const static int unknown_gpu  = 4;
+
+using namespace std;
 
 class GPUGlobals
   {
@@ -148,7 +151,7 @@ class GPUGlobals
       /**
        Prints all the GPU specific info to cout.
       */
-      static void printVersions();
+      static void printVersions(ostream & strm);
       
       /**
        Just dumps a char * into a file.

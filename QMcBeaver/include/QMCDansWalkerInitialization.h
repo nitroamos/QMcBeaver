@@ -10,7 +10,7 @@
 #include "Array1D.h"
 #include "Array2D.h"
 
-#include "random.h"
+#include "Random.h"
 
 #include <fstream>
 #include <string>

@@ -13,11 +13,11 @@
 #ifndef CKGENETICALGORITHM1_H
 #define CKGENETICALGORITHM1_H
 
-#include "random.h"
 #include "SortedParameterScorePairList.h"
 #include "QMCObjectiveFunction.h"
 #include "QMCObjectiveFunctionResult.h"
 #include "QMCOptimizationAlgorithm.h"
+#include "Random.h"
 
 /**
   A moderately greedy genetic algorithm for trying to globally optimize
@@ -87,11 +87,6 @@ private:
     Best parameter set found.
     */
   ParameterScorePair BestPopulationMember;
-
-  /**
-    Integer seed used in the random number generation.
-    */
-  long iseed;
 
   /**
     Mutates the input parameters by adding an N-dimensional gaussian 

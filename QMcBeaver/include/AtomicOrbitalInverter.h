@@ -21,7 +21,7 @@
 
 #include "Array1D.h"
 #include "LinearSpline.h"
-#include "random.h"
+#include "Random.h"
 #include "DistributionInverter.h"
 //#include "QMCBasisFunctionCoefficients.h" //NOT DONE
 
@@ -76,7 +76,7 @@ public:
   /**
      given a uniform random number this will return the xyz coords
   */
-  void get_xyz(long & iseed, double &x, double &y, double &z);
+  void get_xyz(double &x, double &y, double &z);
 
   /**
      Use the current b and c arrays to evaluate the gaussian part
@@ -86,7 +86,7 @@ public:
   /**
      Invert the current gaussian part
   */
-  double invert_gaussians(long & iseed);
+  double invert_gaussians();
 
 private:
 

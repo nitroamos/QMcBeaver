@@ -15,7 +15,7 @@
 
 #include "QMCInitializeWalker.h"
 #include "QMCInput.h"
-#include "random.h"
+#include "Random.h"
 
 using namespace std;
 

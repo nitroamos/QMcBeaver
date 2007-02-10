@@ -20,7 +20,7 @@
 #include <math.h>
 
 #include "Array1D.h"
-#include "random.h"
+#include "Random.h"
 #include "LinearSpline.h"
 
 using namespace std;
@@ -58,7 +58,7 @@ public:
 
      @param iseed seed for generating the random number.
   */
-  double random(long &iseed);
+  double random();
   
 private:
   //F_inverse=inverse(F); give me a y and I'll give you an x

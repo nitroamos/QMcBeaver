@@ -14,7 +14,7 @@
 #include "Array2D.h"
 #include "LU.h"
 #include "QMCInput.h"
-#include "random.h"
+#include "Random.h"
 #include "CubicSpline.h"
 #include "QMCWalkerData.h"
 #include "fastfunctions.h"

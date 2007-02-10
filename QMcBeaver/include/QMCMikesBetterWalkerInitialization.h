@@ -15,7 +15,7 @@
 
 #include "QMCInput.h"
 #include "QMCInitializeWalker.h"
-#include "random.h"
+#include "Random.h"
 #include "AtomicOrbitalInverter.h"
 
 using namespace std;
