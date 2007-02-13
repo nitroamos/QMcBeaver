@@ -52,10 +52,8 @@ Random::~Random()
 
 void Random::initialize(long seed, int rank)
 {
-  start = seed - rank;
- 
 #ifdef USESPRNG
-  int sprng_seed = (int)(start);
+  int sprng_seed = (int)(seed);
 
   //The sign bit probably doesn't matter...
   if(sprng_seed < 0)
@@ -99,7 +97,15 @@ void Random::initialize(long seed, int rank)
     }
 
 #else
-  if(start > 0) start *= -1;
+  if(seed > 0) seed *= -1;
+  start = seed;
+  current = seed;
+
+  int my_seed = current;
+  for(int i=0; i<rank; i++)
+    my_seed = intdev();
+  current = -1*abs(my_seed);
+
   //resetting ran1's internal static variables
   iy = 0;
 #endif
@@ -123,7 +129,7 @@ void Random::writeXML(ostream & strm)
 #ifdef USESPRNG
   char * buffer;
   int bytes_required = stream->pack_sprng(&buffer);
-  strm << "<sprng>\n" << *buffer << "\n</iseed>" << endl;
+  strm << "<sprng>\n" << *buffer << "\n</sprng>" << endl;
 #else
   //Note: this doesn't fully save the state of ran1
   strm << "<iseed>\n" << current << "\n</iseed>" << endl;
@@ -152,6 +158,16 @@ void Random::readXML(istream & strm)
 #endif
 }
 
+int Random::intdev()
+{
+#ifdef USESPRNG
+  return stream->isprng();
+#else
+  double temp = ran1(&current);
+  int val = (int)(INT_MAX*temp);
+  return val;
+#endif
+}
 double Random::unidev()
 {
 #ifdef USESPRNG

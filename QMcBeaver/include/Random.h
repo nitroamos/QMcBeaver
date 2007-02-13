@@ -16,6 +16,7 @@
 #include <iostream>
 #include <string>
 #include <math.h>
+#include <limits>
 
 #ifdef USESPRNG
 #include "sprng_cpp.h"
@@ -115,6 +116,16 @@ class Random
      @param strm where the stream info is available to be read.
   */
   void readXML(istream & strm);
+
+  /**
+     This will generate a random integer with a uniform
+     deviation. If the SPRNG library is available, it will
+     be used.
+     
+     @param idum random number seed
+     @return uniform random number on \f$[0,INT_MAX]\f$.
+  */
+  int intdev();
 
   /**
      This will generate a random number with a uniform
