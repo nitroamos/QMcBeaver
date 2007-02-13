@@ -1,3 +1,10 @@
+Tue, Feb 13, 2007 Amos Anderson
+1.  I fixed a bug in the checkpointing mechanism. It works again.
+
+2.  I changed how parallel RNG seeds are generated. Now, it will
+    request my_rank integers from the generator, and the last integer
+    drawn will be used as the random seed.
+
 Fri, Feb 9, 2007 Amos Anderson
 1.  I changed random into Random. This makes it easier to use different
     RNG, and I've included SPRNG compatibility. Although I'm able to
