@@ -262,6 +262,12 @@ void QMCProperties::readXML(istream& strm)
     
   // Close XML
   strm >> temp;
+  if(temp != "</QMCProperties>")
+    {
+      clog << "Error: checkpoint read failed in QMCProperties. We expected a \"</QMCProperties>\"" <<
+	" tag, but found \"" << temp << "\"." << endl;
+      exit(0);
+    }
 }
 
 ostream& operator <<(ostream& strm, QMCProperties &rhs)

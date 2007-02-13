@@ -1575,26 +1575,21 @@ void QMCManager::readXML( istream & strm )
   string temp;
   
   // Read the random seed
+  // This is the first read from the checkpoint
   strm >> temp;
+  ran.readXML(strm);  
   strm >> temp;
-  ran.readXML(strm);
-  
-  strm >> temp;
-  
+
   // Read in the number of walkers
   strm >> temp >> temp;
-  
   Input.flags.number_of_walkers = atoi( temp.c_str() );
-  
   strm >> temp;
   
   // Read in if the node is equilibrating
-  strm >> temp >> temp;
-  
+  strm >> temp >> temp;  
   equilibrating = atoi( temp.c_str() );
-  
   strm >> temp;
-  
+
   if(  !equilibrating )
   {
     Input.flags.dt = Input.flags.dt_run;
@@ -1615,12 +1610,19 @@ void QMCManager::initializeCalculationState()
   localTimers.getInitializationStopwatch()->start();
   
   if( qmcCheckpoint && Input.flags.use_available_checkpoints == 1 )
-    // There is a checkpoint file
-    readXML( qmcCheckpoint );
+    {
+      // There is a checkpoint file
+      clog << "Reading in checkpointed file...";
+      readXML( qmcCheckpoint );
+      clog << " successful.\n";
+      writeEnergyResultsSummary( cout ); 
+    }
   else
-    // There is not a checkpoint file
-    QMCnode.randomlyInitializeWalkers();
-  
+    {
+      // There is not a checkpoint file
+      QMCnode.randomlyInitializeWalkers();
+    }
+
   localTimers.getInitializationStopwatch() ->stop();
   
   qmcCheckpoint.close();
