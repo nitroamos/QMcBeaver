@@ -36,6 +36,8 @@
 //   1 -> bailed out (no convergence after maxiter-many iterations)
 //  -2 -> illegally-sized matrices 
 
+#if ! defined USING_QSC
+
 #include "svdcmp.h"
 
 template<typename T>int _SVDecompose(Array2D<T> &A, Array1D<T> &W, Array2D<T> &V, int maxiter)
@@ -341,3 +343,4 @@ int SVDFwBackSubst(const Array2D<float> &u, const Array1D<float> &w,
 		   const Array2D<float> &v, Array2D<float> &inv)
 {  return(_SVDFwBackSubst(u,w,v,inv));  }
 
+#endif
