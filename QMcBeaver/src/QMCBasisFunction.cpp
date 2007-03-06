@@ -292,26 +292,20 @@ evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
                        Array2D<qmcfloat>& chi_grz,
                        Array2D<qmcfloat>& chi_laplacian)
 {
-  //This line helps prevent some floating point errors
-  //Also, as I discovered the hard way, allowing denormals
-  //can *really* slow down math operations on some processors
-  //maybe switch to using "isnormal"
 #if defined SINGLEPRECISION || defined QMC_GPU
-//typedef float  qmcfloat;
-  const float TOOSMALL = 1e-29;
-  //const double TOOSMALL = 1e-306;
+  const float TOOSMALL = 1e-35;
 #else
-//typedef double qmcfloat;
-  //const double TOOSMALL = 1e-290;
   const double TOOSMALL = 1e-306;
 #endif
 
   int el = 0, bf;
   int a, b, c, nGaussians;
   int numBF;
-  double x, y, z, x2, y2, z2, r_sq, xyz;
-  double p0, p1, exp_term, temp;
-  double chi, chi_gradx, chi_grady, chi_gradz, chi_lap;
+
+  qmcfloat x, y, z, x2, y2, z2, r_sq, xyz;
+  qmcfloat p0, p1, exp_term, temp;
+  qmcfloat chi, chi_gradx, chi_grady, chi_gradz, chi_lap;
+
   for (int index=start; index<=stop; index++)
     {
       bf = 0;
@@ -360,7 +354,18 @@ evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
                                 - (4.0*(a+b+c)+6.0-4.0*r_sq*p0)*p0)*exp_term;
                 }
 
-              //This block could safely be commented out for most compilers
+              /*
+		This next block is unneeded if we're flushing underflow to zero
+		or if the computer doesn't slow down too much with denormal
+		values.
+
+		Allowing denormal floating point values can really slow down the machine since
+		they are likely handled in software (as opposed to hardware).
+
+		Further, I was finding that some machines were crashing when transcendental
+		math functions were evaluated with denormals later in the code...
+	      */	      
+	      /*
               if(chi > 0 && chi < TOOSMALL) chi = TOOSMALL;
               if(chi < 0 && chi > -1.0*TOOSMALL) chi = -1.0*TOOSMALL;
               if(chi_gradx > 0 && chi_gradx < TOOSMALL) chi_gradx = TOOSMALL;
@@ -371,6 +376,7 @@ evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
               if(chi_gradz < 0 && chi_gradz > -1.0*TOOSMALL) chi_gradz = -1.0*TOOSMALL;
               if(chi_lap > 0 && chi_lap < TOOSMALL) chi_lap = TOOSMALL;
               if(chi_lap < 0 && chi_lap > -1.0*TOOSMALL) chi_lap = -1.0*TOOSMALL;
+	      */
 
               chi_value(el,bf)     = (qmcfloat)chi;
               chi_grx(el,bf)       = (qmcfloat)chi_gradx;
