@@ -54,9 +54,11 @@ class QMCRun
 
   /**
     Propagate the QMC calculation one time step forward.
+
+    @param iteration our current iteration number. If equilibrating, less than zero
     @return if the calculation is still ok, it will return true
   */
-  bool step(bool writeConfigs);
+  bool step(bool writeConfigs, int iteration);
 
   /**
     Gets the statistics for the properties that have been calculated.
@@ -308,8 +310,10 @@ private:
     this is to enable this function to call QMCFunction for several walkers
     at once (i.e. in chunks) by pausing the rest of the tasks that QMCWalker
     has to do.
+
+    @param iteration our current iteration number. If equilibrating, less than zero
   */
-  void propagateWalkers(bool writeConfigs);
+  void propagateWalkers(bool writeConfigs, int iteration);
 
   /**
     Creates and destroys walkers based on their weights.

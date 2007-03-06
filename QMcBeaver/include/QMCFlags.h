@@ -60,6 +60,33 @@ class QMCFlags
   string output_file_name;
 
   /**
+     Name of the checkpoint file to read in.
+     The checkpoint files will automatically have a suffix added to them
+     according to parallel node rank. It will search both the current
+     directory for the checkpoint file, as well as in a directory also
+     called checkin_file_name.
+
+     There is some use in permitting a different input than output since
+     several runs might want to use the same input, and you don't want to
+     overwrite the original checkpoints. For example, the checkpoint represents
+     a (probably) equilibrated distribution.
+
+     If this flag is not specified, it will assume the name of the
+     ckmf file.
+  */
+  string checkin_file_name;
+
+  /**
+     Name of the checkpoint file to write out. It will try to put
+     the checkpoint files into a directory with the name
+     checkout_file_name.
+
+     If this flag is not specified, it will assume the name of the
+     ckmf file.
+  */
+  string checkout_file_name;
+
+  /**
      Restart input file name for the calculation.  This is the base file 
      name with the ".01.ckmf" extension.
   */
@@ -247,7 +274,7 @@ class QMCFlags
 
   /**
      Maximum number of time steps the calculation will run for.
-     Set max_time_steps < 0 if you do not want it to be used as termination
+     Set max_time_steps = 0 if you do not want it to be used as termination
      criteria.
   */
   unsigned long max_time_steps;
@@ -259,7 +286,7 @@ class QMCFlags
      depending on dt. This makes it easier to use the same input files
      for different dt.
 
-     Set max_time < 0 if you do not want it to be used as termination
+     Set max_time = 0 if you do not want it to be used as termination
      criteria.
 
      There is an ambiguitiy as far as what this parameter means when doing
@@ -342,6 +369,9 @@ class QMCFlags
   /**
      1 if the accumulated statistics in the input checkpoint file
      are to be discarded, and 0 otherwise.
+
+     This is useful if you want to keep the (equilibrated) walker
+     positions and weights, but don't want the accumulated statistics.
   */
   int zero_out_checkpoint_statistics;
 

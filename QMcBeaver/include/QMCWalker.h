@@ -13,6 +13,8 @@
 #ifndef QMCWALKER_H
 #define QMCWALKER_H
 
+#include <string>
+
 #include "IeeeMath.h"
 #include "QMCFunctions.h"
 #include "QMCInitializeWalkerFactory.h"
@@ -85,8 +87,9 @@ public:
 
     @param (output) data to put a pointer to this walkerData
     @param (output) R to put a pointer to this' new configuration
+    @param iteration our current iteration number. If equilibrating, less than zero
   */
-  void initializePropagation(QMCWalkerData * &data, Array2D<double> * &R);
+  void initializePropagation(QMCWalkerData * &data, Array2D<double> * &R, int iteration);
 
   /**
      This function completes the processing. The forwardGreensFunction was
@@ -146,6 +149,12 @@ public:
      @return whether a branch is recommended for a particular iteration
   */
   bool branchRecommended();
+
+  /**
+     This will return a string with a short identification
+     of this walker.
+   */
+  string ID();
 
   /**
     Calculates the distance between each pair of electrons and records it in 
@@ -219,6 +228,11 @@ public:
   void resetFutureWalking();
     
 private:
+  /*
+    We might want to behave differently if we are equilibrating.
+   */
+  int iteration;
+
   double weight;
   int age;
 
