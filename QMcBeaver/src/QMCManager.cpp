@@ -1721,7 +1721,7 @@ void QMCManager::checkTerminationCriteria()
 
 void QMCManager::checkMaxStepsTerminationCriteria()
 {
-  if(  Input.flags.max_time_steps < 0 )
+  if(  Input.flags.max_time_steps == 0 )
     return;
   if(  iteration >= Input.flags.max_time_steps )
   {
@@ -1731,7 +1731,7 @@ void QMCManager::checkMaxStepsTerminationCriteria()
 
 void QMCManager::checkMaxTimeTerminationCriteria()
 {
-  if(  Input.flags.max_time < 0 )
+  if(  Input.flags.max_time == 0 )
     return;
   static unsigned long total_time =
     (unsigned long)(Input.flags.max_time / Input.flags.dt_run);
