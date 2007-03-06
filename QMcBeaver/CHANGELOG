@@ -1,3 +1,13 @@
+Tue, Mar 6, 2007 Amos Anderson
+1.  I improved checkpointing. It will now put the checkpoint files
+    into a sub directory. This means less clutter for a parallel job.
+    It also allows you to specify a name to use for input checkpoint
+    and a separate name for output checkpoint.
+2.  QMCWalkers can now know the current iteration. This is useful
+    since we might want to be more aggressive in handling bad walkers
+    while equilibrating.
+3.  I also improved the QMCWalker warning system.
+
 Tue, Feb 13, 2007 Amos Anderson
 1.  I fixed a bug in the checkpointing mechanism. It works again.
 
