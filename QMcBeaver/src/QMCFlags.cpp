@@ -87,6 +87,8 @@ void QMCFlags::read_flags(string InFileName)
   checkpoint_interval            = 1000;
   checkpoint                     = 0;
   use_available_checkpoints      = 0;
+  checkin_file_name              = "";
+  checkout_file_name             = "";
   zero_out_checkpoint_statistics = 0;
   print_transient_properties     = 0;
   print_transient_properties_interval = 10000;
@@ -314,6 +316,14 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
           use_available_checkpoints = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "checkpoint_input_name")
+        {
+          input_file >> checkin_file_name;
+        }
+      else if(temp_string == "checkpoint_output_name")
+        {
+          input_file >> checkout_file_name;
         }
       else if(temp_string == "equilibration_steps")
         {
@@ -677,6 +687,11 @@ void QMCFlags::read_flags(string InFileName)
       exit(1);
     }
 
+  if(dt_equilibration < 0)
+    {
+      dt_equilibration = dt;
+    }
+
   if(dt > dt_equilibration)
     {
       clog << "Warning: dt > dt_equilibration" << endl;
@@ -809,7 +824,16 @@ void QMCFlags::set_filenames(string runfile)
   results_file_name = file_name + ".rslts";
   density_file_name = file_name + ".density";
   force_file_name   = file_name + ".force";
-    
+
+  if(checkin_file_name == "")
+    {
+      checkin_file_name = base_file_name;
+    }
+  if(checkout_file_name == "")
+    {
+      checkout_file_name = base_file_name;
+    }
+
   char my_rank_string[32];
 #ifdef _WIN32
   _snprintf( my_rank_string, 32, "%d", my_rank );
@@ -889,7 +913,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "# Parameters for QMC\n";
   strm << "run_type\n " << flags.run_type << endl;
   strm << "dt\n " << flags.dt_run << endl;
-  strm << "number_of_walkers\n " << flags.number_of_walkers << endl;
+  strm << "number_of_walkers\n " << flags.number_of_walkers_initial<< endl;
   strm << "max_time_steps\n " << flags.max_time_steps << endl;
   strm << "max_time\n " << flags.max_time << endl;
   strm << "desired_convergence\n " << flags.desired_convergence << endl;
@@ -955,6 +979,8 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "checkpoint_interval\n " << flags.checkpoint_interval << endl;
   strm << "use_available_checkpoints\n "
        << flags.use_available_checkpoints << endl;
+  strm << "checkpoint_input_name\n "
+       << flags.checkout_file_name << endl;
   strm << "zero_out_checkpoint_statistics\n "
        << flags.zero_out_checkpoint_statistics << endl;
   strm << "print_configs\n " << flags.print_configs << endl;

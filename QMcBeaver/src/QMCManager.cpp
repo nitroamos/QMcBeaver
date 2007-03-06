@@ -680,7 +680,7 @@ void QMCManager::run()
       ( Input.flags.optimize_Psi || Input.flags.print_configs == 1 )  &&
       iteration%Input.flags.print_config_frequency == 0;
 
-    while( !QMCnode.step( writeConfigs ) )
+    while( !QMCnode.step( writeConfigs, iteration - Input.flags.equilibration_steps ) )
       {
 	//Let's assume the worst; that all our data is trash.
 	cerr << "Error on node " << Input.flags.my_rank << 
@@ -855,6 +855,12 @@ void QMCManager::run()
 
 	  cout << *this;
 	  *getResultsOutputStream() << *this;
+	  writeTimingData( cout );
+
+	  if(Input.flags.checkpoint == 1)
+	    writeCheckpoint();
+
+	  writeRestart();
 	}
 
       if( iteration % Input.flags.mpireduce_interval == 0 )
@@ -929,6 +935,7 @@ void QMCManager::run()
 	    gatherProperties();
 	    if ( Input.flags.write_electron_densities == 1)
 	      gatherHistograms();
+
 	    break;
 	    
 	  case QMC_SYNCHRONIZE:
@@ -948,6 +955,7 @@ void QMCManager::run()
 	    
 	    if(Input.flags.nuclear_derivatives != "none")
 	      gatherForces();
+
 	    break;	
 	    
 	  case QMC_REDUCE_ALL:
@@ -972,6 +980,10 @@ void QMCManager::run()
 	    
 	    if(Input.flags.nuclear_derivatives != "none")
 	      gatherForces();
+
+	    if(Input.flags.checkpoint == 1)
+	      writeCheckpoint();
+
 	    break;
 	  }	
 
@@ -983,6 +995,22 @@ void QMCManager::run()
 	equilibration_step();
       }
   }
+
+  /*
+    When we've gotten to this stage in the code,
+    the run has completed, so let's write the most
+    up to date info we have.
+   */
+  if( Input.flags.my_rank == 0 )
+    {
+      writeEnergyResultsSummary( cout );
+      writeEnergyResultsSummary( *qmcOut );
+    }
+
+  if( Input.flags.checkpoint == 1 )
+    {
+      writeCheckpoint();
+    }
   
   if(  Input.flags.write_all_energies_out == 1 )
   {
@@ -1557,9 +1585,18 @@ void QMCManager::writeXML( ostream & strm )
 void QMCManager::writeCheckpoint()
 {
   // Create the checkpoint file name
-  string filename = Input.flags.base_file_name + ".checkpoint." +
+  string filename = Input.flags.checkout_file_name + ".checkpoint." +
   StringManipulation::intToString( Input.flags.my_rank );
-  
+
+  /*
+    This is the OS dependent part of storing the checkpoint files
+    in a subdirectory. Seems pretty safe... It can be commented out
+    if it doesn't work.
+   */
+  string command = "mkdir -p " + Input.flags.checkout_file_name;
+  if(!system(command.c_str()))
+     filename = Input.flags.checkout_file_name + "/" + filename;
+
   // Initilize and set the output formatting
   ofstream QMCcheckpoint( filename.c_str() );
   //  QMCcheckpoint.setf(ios::fixed,ios::floatfield);
@@ -1601,21 +1638,37 @@ void QMCManager::readXML( istream & strm )
 void QMCManager::initializeCalculationState()
 {
   // Create the checkpoint file name
-  string filename = Input.flags.base_file_name + ".checkpoint." +
+  string filename = Input.flags.checkin_file_name + ".checkpoint." +
   StringManipulation::intToString( Input.flags.my_rank );
   
   // open the input stream
   ifstream qmcCheckpoint( filename.c_str() );
-  
+
+  /*
+    If no checkpoint file exists in the current directory,
+    then let's look in one particular subdirectory. During
+    parallel runs, each processor creates a checkpoint file,
+    cluttering the directory. This might be OS dependent a bit,
+    but it preserved sanity.
+   */
+  if(!qmcCheckpoint)
+    {
+      filename = Input.flags.checkin_file_name + "/" + filename;
+      qmcCheckpoint.clear();
+      qmcCheckpoint.open(filename.c_str());
+    }
+
   localTimers.getInitializationStopwatch()->start();
   
   if( qmcCheckpoint && Input.flags.use_available_checkpoints == 1 )
     {
       // There is a checkpoint file
-      clog << "Reading in checkpointed file...";
+      clog << "Reading in checkpointed file " << filename << "...";
       readXML( qmcCheckpoint );
-      clog << " successful.\n";
-      writeEnergyResultsSummary( cout ); 
+      clog << " successful." << endl;
+      writeEnergyResultsSummary( clog );
+      if(Input.flags.zero_out_checkpoint_statistics == 1)
+	clog << "Will zero the checkpoint." << endl;
     }
   else
     {
@@ -1670,8 +1723,7 @@ void QMCManager::checkMaxStepsTerminationCriteria()
 {
   if(  Input.flags.max_time_steps < 0 )
     return;
-  if(  Properties_total.energy.getNumberSamples()  >=
-       Input.flags.max_time_steps )
+  if(  iteration >= Input.flags.max_time_steps )
   {
     done = true;
   }
