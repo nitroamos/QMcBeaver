@@ -17,7 +17,7 @@ QMCRun::QMCRun()
   populationSizeBiasCorrectionFactor = 1.0;
 }
 
-void QMCRun::propagateWalkers(bool writeConfigs)
+void QMCRun::propagateWalkers(bool writeConfigs, int iteration)
 {
   int count = 0;
   int index = 0;
@@ -39,7 +39,7 @@ void QMCRun::propagateWalkers(bool writeConfigs)
   */
   for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
     {
-      wp->initializePropagation(dataPointers(index),rPointers(index));
+      wp->initializePropagation(dataPointers(index),rPointers(index), iteration);
       count++;
       index = count%wpp;
       if(index == 0 || count == (int)(wlist.size()))
@@ -816,9 +816,9 @@ int QMCRun::getNumberOfWalkers()
   return (int)wlist.size();
 }
 
-bool QMCRun::step(bool writeConfigs)
+bool QMCRun::step(bool writeConfigs, int iteration)
 {
-  propagateWalkers(writeConfigs);
+  propagateWalkers(writeConfigs,iteration);
   calculatePopulationSizeBiasCorrectionFactor();
   calculateObservables();
   branchWalkers();

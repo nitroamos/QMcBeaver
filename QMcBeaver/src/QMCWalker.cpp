@@ -123,8 +123,10 @@ void QMCWalker::operator=( const QMCWalker & rhs )
 }
 
 void QMCWalker::initializePropagation(QMCWalkerData * &data,
-                                      Array2D<double> * &rToCalc)
+                                      Array2D<double> * &rToCalc,
+				      int iteration)
 {
+  this->iteration = iteration;
   createChildWalkers();
   forwardGreensFunction = TrialWalker->moveElectrons();
   data = & TrialWalker->walkerData;
@@ -364,9 +366,9 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
           //   zCoordinate * zUnitVector +
           //   gaussian random number with standard deviation sqrt(tau)
           for(int i=0; i<3; i++)
-              newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i)
-      + radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) +
-                               sqrt(tau)*ran.gasdev();
+	    newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i)
+	      + radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) +
+	      sqrt(tau)*ran.gasdev();
             }
       else
         {
@@ -811,51 +813,83 @@ void QMCWalker::reweight_walker()
         }
     }
     
-  // If a very erratic point is discovered during reweighting,
-  // give it a statistical weight of zero so that it will be not
-  // mess up the calculation.  The cutoff here needs to be played with
-  // to get the best value.  
-  if( dW > 10 )
+  if( dW > 10 && getWeight() > 0.0)
     {
+      /*
+	This occurance actually usually happens when the
+	energy_trial is bad, not when the walker itself is bad.
+       */ 
+
       double p = TrialWalker->getAcceptanceProbability();
       double q = 1.0 - p;
-      //cerr << scientific;      
-      cerr << "WARNING: Walker weight is being changed by a factor of "
-	   << dW << "!" << endl;
-      cerr << "       w = " << getWeight() << ", age = " << age << endl;
-      cerr << "       p = " << p << "; q = " << q << "; move_accepted = " << move_accepted << endl;
-      cerr << "       walkerID         = " << walkerID << endl;
-      cerr << "       parentID         = " << parentID << endl;
-      cerr << "       grandpID         = " << grandpID << endl;
-
-      /*
-      cerr << "Walker's weight is being set to zero so that it does not"
-      << " ruin the whole calculation or use all of the "
-      << "machine's memory." << endl;
-      dW = 0.0;
-      */
+      //cerr << scientific;
+      cerr << "WARNING: dW = " << dW << " for walker " << ID();
+      cerr << "       p = " << p << "; q = " << q;
       cerr << "       energy_trial     = " << Input->flags.energy_trial << endl;
       cerr << "       energy_estimated = " << Input->flags.energy_estimated << endl;
       cerr << "       S_trial          = " << S_trial << endl;
       cerr << "       S_original       = " << S_original << endl;
 
+      cerr << "       TKE              = " << TrialWalker->walkerData.kineticEnergy << endl;
+      cerr << "       TPE              = " << TrialWalker->walkerData.potentialEnergy << endl;
+      cerr << "       TEE              = " << TrialWalker->walkerData.eeEnergy << endl;
+      cerr << "       TNE              = " << TrialWalker->walkerData.neEnergy << endl;
+      cerr << "       TPsi             = " << TrialWalker->walkerData.psi << endl;
       cerr << "       trialEnergy      = " << trialEnergy << endl;
-      cerr << "       TKE              = " <<    TrialWalker->walkerData.kineticEnergy << endl;
-      cerr << "       TPE              = " <<    TrialWalker->walkerData.potentialEnergy << endl;
-      cerr << "       TEE              = " <<    TrialWalker->walkerData.eeEnergy << endl;
-      cerr << "       TNE              = " <<    TrialWalker->walkerData.neEnergy << endl;
-      cerr << "       TPsi             = " <<    TrialWalker->walkerData.psi << endl;
 
-      cerr << "       originalEnergy   = " << originalEnergy << endl;
       cerr << "       OKE              = " << OriginalWalker->walkerData.kineticEnergy << endl;
       cerr << "       OPE              = " << OriginalWalker->walkerData.potentialEnergy << endl;
       cerr << "       OEE              = " << OriginalWalker->walkerData.eeEnergy << endl;
       cerr << "       ONE              = " << OriginalWalker->walkerData.neEnergy << endl;
       cerr << "       OPsi             = " << OriginalWalker->walkerData.psi << endl;
+      cerr << "       originalEnergy   = " << originalEnergy << endl;
     }
 
   // now set the weight of the walker
   setWeight( getWeight() * dW );
+
+  if(iteration < 0 && getWeight() > 0.0 &&
+     Input->flags.run_type != "variational" )
+    {
+      /*
+	We're equilibrating when iteration < 0.
+
+	If we're equilibrating, we can be more aggressive about
+	handling bad walkers.
+      */
+
+      if(getWeight() > 4.0*Input->flags.branching_threshold ||
+	 age > Input->flags.old_walker_acceptance_parameter)
+	{
+	  cerr << "WARNING: Deleting bad walker " << ID();
+	  cerr << "  dW     = " << dW << endl;
+	  setWeight(0.0);
+	  return;
+	}
+      if(age > 1 && dW > Input->flags.branching_threshold)
+	{
+	  cerr << "WARNING: Deleting poor walker " << ID();
+	  cerr << "  dW     = " << dW << endl;
+	  setWeight(0.0);
+	  return;
+	}
+    }
+
+}
+
+string QMCWalker::ID()
+{
+  double virial = -TrialWalker->walkerData.potentialEnergy/TrialWalker->walkerData.kineticEnergy;
+
+  stringstream id;
+  id << "(" << walkerID << "<" << parentID << "<" << grandpID;
+  id << "::" << Input->flags.my_rank << ")" << endl;
+  id << "  weight = " << getWeight() << endl;
+  id << "  energy = " << TrialWalker->walkerData.localEnergy << endl;
+  id << "  virial = " << virial << endl;
+  id << "  age    = " << age << endl;
+  id << "  iter   = " << iteration << endl;
+  return id.str();
 }
 
 bool QMCWalker::branchRecommended()
@@ -864,14 +898,44 @@ bool QMCWalker::branchRecommended()
     This function will be queried before a branch. Since branching is purely an
     efficiency issue, we can do whatever we want and shouldn't have to worry about
     ruining detailed balance.
+
+    We're equilibrating when iteration < 0, so we can be more aggressive in penalizing
+    bad walkers.
   */
-  if(!move_accepted && getWeight() > 10.0)
+  bool shouldRecommend = true;
+  bool shouldWarn = false;
+  int aged = age - Input->flags.old_walker_acceptance_parameter;
+
+  if(age >= 5 && iteration < 0)
     {
-      cerr << "Not recommending a branch for walker " << walkerID;
-      cerr << " which has weight = " << getWeight() << endl;
-      return false;
+      shouldRecommend = false;
+      if(age%10 == 0) shouldWarn = true;
     }
-  return true;
+  if(age > 0 && getWeight() > 2.0*Input->flags.branching_threshold)
+    {
+      shouldRecommend = false;
+      if(aged < 0 && getWeight() > 3.0*Input->flags.branching_threshold)
+	shouldWarn = true;
+    }
+  if( aged >= 0 )
+    {
+      shouldRecommend = false;
+      if(aged%10 == 0) shouldWarn = true;
+    }
+
+  double virial = -TrialWalker->walkerData.potentialEnergy/TrialWalker->walkerData.kineticEnergy;
+  if(fabs(virial) < 1e-2)
+    {
+      shouldRecommend = false;
+      if(aged == 0) shouldWarn = true;
+    }
+
+  if(shouldWarn && !shouldRecommend)
+    {
+      cerr << "WARNING: Not recommending a branch for walker " << ID();
+    }
+
+  return shouldRecommend;
 }
 
 void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
@@ -882,13 +946,16 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
   
   // calculate the probability of accepting the trial move
   double p = PsiRatio * PsiRatio * GreensRatio;
-
+  
   if( !(IeeeMath::isNaN(p)))
     {
-      // Increase the probability of accepting a move if the walker has not
-      // moved in a long time. Use a cutoff to protect the pow function.
       // 1.1 ^ 1000 ~= 1e41
       if(age - Input->flags.old_walker_acceptance_parameter > 1000)
+	{
+	  //setWeight(0.0);
+	  p = 1.0;
+	} 
+      else if(age - Input->flags.old_walker_acceptance_parameter > 500)
 	{
 	  p = 1.0;
 	} 
@@ -896,7 +963,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
 	{
 	  p *= pow(1.1,age-Input->flags.old_walker_acceptance_parameter);
 	}
-
+      
     } else {
       // if the aratio is NaN then reject the move
       cerr << "WARNING: Rejecting trial walker with NaN p!" << endl;
@@ -911,7 +978,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
       TrialWalker->walkerData.neEnergy        = 0;
       TrialWalker->walkerData.eeEnergy        = 0;
     }
-    
+  
   // The particular NaN that this is correcting for is not revealed by isinf or
   // isnan...
   double kineticEnergy = TrialWalker->walkerData.kineticEnergy;
@@ -984,12 +1051,10 @@ void QMCWalker::acceptOrRejectMove()
       move_accepted = false;
     }
     
-  if( age > Input->flags.old_walker_acceptance_parameter*2)
+  if( age - Input->flags.old_walker_acceptance_parameter > 200 &&
+      (age - Input->flags.old_walker_acceptance_parameter)%50 == 0 )
     {
-      cerr << "WARNING: Walker older than old_walker_acceptance_parameter = "
-	   << Input->flags.old_walker_acceptance_parameter << " steps!" << endl;
-      cerr << " age    = " << age << endl;
-      cerr << " weight = " << getWeight() << endl;
+      cerr << "WARNING: Aged walker " << ID();
     }
 }
 
