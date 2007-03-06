@@ -105,7 +105,7 @@ void QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
       && nucCuspReplacement && CorrelationFunctionType != "None")
     {
       clog << "WARNING: switching CorrelationFunctionType to \"None\" for (" << pt1 << ", " << pt2 << ")" << 
-	" since we're replacing the cusps.\n";
+	" since we're replacing the cusps." << endl;
       CorrelationFunctionType = "None";
     }
   // Load the number of parameter types
