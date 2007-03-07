@@ -16,35 +16,38 @@ import sys
 import string
 import os
 
-#this script will email you <input>out when it's done if you
-#change this address
+default_nodes = 1
+default_ppn   = 4
+default_queue = "smallq"
+
 emailaddress = "your@address.edu"
 
 if len(sys.argv) < 2: 
-	print "bsubqmcbeaverrun.py <exe> <filename> <number of nodes> <processors per node> <queue name>"
-	print "(you can edit this script for it to email you the output file!)"
+	print "bsubqmcbeaverrun.py <exe> <filename> " + \
+		"[number of nodes="+str(default_nodes)+"] " \
+		"[processors per node="+str(default_ppn)+"] " \
+		"[queue name=" + default_queue + "]"
 	sys.exit(0)
 
 exe        = sys.argv[1]
 filename   = sys.argv[2]   
 
 if len(sys.argv) > 3:
-	nodes      = sys.argv[3]
+	nodes      = string.atoi(sys.argv[3])
 else:
-	nodes      = "1"
+	nodes      = default_nodes
 
 if len(sys.argv) > 4:
-	ppn        = sys.argv[4]
+	ppn        = string.atoi(sys.argv[4])
 else:
-	ppn        = "4"
+	ppn        = default_ppn
 
 if len(sys.argv) > 5:
 	queue      = sys.argv[5]
 else:
-#	queue      = "largeq"
-	queue      = "smallq"
+	queue      = default_queue
 
-processors = string.atoi(nodes)*string.atoi(ppn)
+processors = nodes*ppn
 
 base = filename[:-4]
 file = open(base+'run','w')
