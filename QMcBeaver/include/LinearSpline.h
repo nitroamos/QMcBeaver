@@ -26,7 +26,7 @@ using namespace std;
    Very crude linear spline class.
 */
 
-class LinearSpline : FunctionR1toR1
+class LinearSpline : public FunctionR1toR1
 {
 public:
   LinearSpline(){;}                  //constructs a Spline_Linear
