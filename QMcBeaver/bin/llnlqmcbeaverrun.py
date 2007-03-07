@@ -16,38 +16,72 @@ import sys
 import string
 import os
 
-# FLAGS
-# r - run
+default_nodes = 1
+default_ppn   = 8
+default_bank  = "caltech"
 
-if len(sys.argv) < 4: 
-	print "llnl_run.py <filename> <number of nodes> <time limit in h> <flags>"
+emailaddress = "your@address.edu"
+
+if len(sys.argv) < 2: 
+	print "llnlqmcbeaverrun.py <exe> <filename> " + \
+		"[number of nodes="+str(default_nodes)+"] " \
+		"[processors per node="+str(default_ppn)+"] " \
+		"[bank name=" + default_bank + "]"
 	sys.exit(0)
 
-filename   = sys.argv[1]
-nodes      = sys.argv[2]
-processors = str(string.atoi(nodes)*4)
-time       = sys.argv[3]
-flags      = sys.argv[4]
+exe        = sys.argv[1]
+filename   = sys.argv[2]   
 
-file = open(filename[:len(filename)-4]+'run','w')
+if len(sys.argv) > 3:
+	nodes      = string.atoi(sys.argv[3])
+else:
+	nodes      = default_nodes
+
+if len(sys.argv) > 4:
+	ppn        = string.atoi(sys.argv[4])
+else:
+	ppn        = default_ppn
+ 
+if len(sys.argv) > 5:
+	queue      = sys.argv[5]
+else:
+	queue      = default_bank
+
+processors = nodes*ppn
+
+base = filename[:-4]
+file = open(base+'run','w')
+ckmf_file = open(filename,'r')
+ckmf_data = ckmf_file.readlines()
+ckmf_file.close()
+
+for i in range(len(ckmf_data)):
+	if string.find(ckmf_data[i],"temp_dir") == 0:
+		temp_dir = ckmf_data[i+1][:-1]
+		break
+
+print "Using temp space: " + temp_dir
 
 file.write("#!/bin/csh         # Sets your shell\n")
-file.write("#PSUB -s /bin/csh  # Sets your shell in batch\n")
-file.write("#PSUB -c 100Mb     # Select a 100Mb memory limit\n")
-file.write("#PSUB -ln " + nodes + "        # Number of nodes you want to use\n")
-file.write("#PSUB -g " + processors + "         # Number of tasks to use, 4 tasks per node\n")
+#file.write("#PSUB -s /bin/csh  # Sets your shell in batch\n")
+#file.write("#PSUB -c 100Mb     # Select a 100Mb memory limit\n")
+file.write("#PSUB -ln " + str(nodes) + "        # Number of nodes you want to use\n")
+file.write("#PSUB -g " + str(processors) + "         # Number of tasks to use\n")
 file.write("#PSUB  -eo         # Send std error & std out to the same file\n")
-file.write("#PSUB -tM " + time + "h       # Select your time limit. The default time limit\n")
-file.write("                   # is only 30 minutes! Time can be HH:MM:SS or HH:MM\n")
-file.write("#PSUB -b caltech\n")
+file.write("#PSUB -tM 1h       # Select your time limit.\n")
+file.write("#PSUB -b " + queue + "\n")
 file.write("#PSUB -me          # mail at end of calc\n")
 file.write("#PSUB -mb          # mail at begining of calc\n")
 file.write("\n")
 file.write("cd " + os.getcwd() + "\n")
-file.write("poe /g/g20/drk3548/code/QMcBeaver/bin/pQMcBeaver.llnl " + filename + "\n")
+file.write("poe " + exe + " " + filename + " >& " + base + "out\n")
 file.close()
 
-if string.find(flags,'r') != -1:
-	print "Submitting " + filename
-	os.system("psub " + filename[:len(filename)-4]+'run')
+if emailaddress != "your@address.edu":
+	file.write("csh -c \"cat " + base + "run; cat " + base + "out;\" | /bin/mailx -s \"[up] " + base + "out\" " + emailaddress + "\n\n\n")
+file.close()
 
+print "Submitting " + filename + " to " + str(processors) + " processors."
+command = "psub " + base +"run"
+print command
+os.system(command)
