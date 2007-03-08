@@ -1731,11 +1731,11 @@ void QMCManager::checkMaxStepsTerminationCriteria()
 
 void QMCManager::checkMaxTimeTerminationCriteria()
 {
-  if(  Input.flags.max_time == 0 )
+  if(  Input.flags.max_time <= 0 )
     return;
   static unsigned long total_time =
     (unsigned long)(Input.flags.max_time / Input.flags.dt_run);
-  cout << "total time " << total_time << endl;
+  
   if(  Properties_total.energy.getNumberSamples()  >=
        total_time )
   {

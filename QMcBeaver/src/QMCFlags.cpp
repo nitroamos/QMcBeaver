@@ -27,7 +27,7 @@ void QMCFlags::read_flags(string InFileName)
   dt                             = 0.01;
   desired_convergence            = 0.0;
   max_time_steps                 = 1000000;
-  max_time                       = -1.0;
+  max_time                       = 0.0;
   number_of_walkers              = 1;
 
   //Initialization parameters
