@@ -109,8 +109,6 @@ void Random::initialize(long seed, int rank)
   //resetting ran1's internal static variables
   iy = 0;
 #endif
-
-  current = start;
 }
 
 void Random::printStream(ostream & strm)
