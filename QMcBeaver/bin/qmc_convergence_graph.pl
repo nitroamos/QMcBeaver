@@ -10,14 +10,17 @@
 
 use strict;
 
-#hartrees or kcal/mol?
+#hartrees (=1) or kcal/mol (=627.50960803)?
 my $units = 627.50960803;
 
-#absolute energies or relative to each other?
+#absolute energies (=0) or relative (=1) to each other?
 my $shift = 1;
 
 #keep only 1 line every $drop lines
-my $drop = 1;
+my $drop = 10;
+
+#should the x axis be samples (=1) or iterations (=0)?
+my $xaxis_samples = 0;
 
 my $gnuplot = "/usr/local/bin/gnuplot";
 `setenv GDFONTPATH /Library/Fonts:/System/Library/Fonts`;
@@ -25,8 +28,10 @@ my $date = `date`;
 chomp $date;
 
 if($#ARGV < 0) {
-  print "Usage: qmc_convergence_graph.pl output1.out [output2.out ...]\n";
-  print "Will produce a graph of energy vs num samples";
+  #if the first arguement is a plotfile.dat, then we'll add new data to it
+  #otherwise, we'll create a new plotfile.dat
+  print "Usage: qmc_convergence_graph.pl {plotfile.dat || output1.out} [output2.out ...]\n";
+  print "Will produce a graph of energy vs num samples or iterations.";
   die;
 }
 
@@ -36,7 +41,16 @@ my $y_max = 0;
 my $all_dt = 0;
 my $all_nw = 0;
 
-open (DATFILE, ">plotfile.dat");
+if($ARGV[0] =~ /.dat$/)
+{
+    print "Adding data to $ARGV[0]\n";
+    open (DATFILE, ">>plotfile.dat");
+} else {
+    print "Truncating $ARGV[0]\n";
+    open (DATFILE, ">plotfile.dat");
+}
+
+my $lastlines = "";
 for(my $index=0; $index<=$#ARGV; $index++){
     if(!(-f $ARGV[$index]) || $ARGV[$index] !~ /.out$/){ next; }
     my $base = substr($ARGV[$index],0,-4);
@@ -96,16 +110,19 @@ for(my $index=0; $index<=$#ARGV; $index++){
 	}
 	chomp $line;
 	my @data = split/[ ]+/,$line;
-	#print "line $#data is $line\n";
-	if($#data == 8){
+	#this is the number of data elements per line
+	if($#data >= 8){
 	    $counter++;
 	    $iteration   = $data[1];
 	    $eavg        = $data[2];
 	    $estd        = $data[3];
-	    $num_samples = $data[8];
+	    $num_samples = $data[$#data];
 	    #make sure we have the first and last data points included
 	    next if($counter%$drop != 0 && $counter != 1 && $iteration%100 == 0);
 	    $fordatfile .= sprintf "%20i %20.10f %20.10f %20i\n", $num_samples, $eavg, $estd, $iteration;
+	    if($iteration%100 != 0){
+		$lastlines .= sprintf "%30s $line\n","$base";
+	    }
 	} elsif($line =~ /Results/) {
 	    $more = 0;
 	}
@@ -118,15 +135,9 @@ for(my $index=0; $index<=$#ARGV; $index++){
     #$base =~ s/_/\\\\_/g;
     printf DATFILE "#%19s %20s %20s %20s\n", "dt=$dt","$base","E=$eavg","";
     print DATFILE "$fordatfile\n\n";
-
-    if($eavg < $y_min || $y_min == 0){
-	$y_min = $eavg;
-    }
-    if($eavg > $y_max || $y_max == 0){
-	$y_max = $eavg;
-    }
 } 
 close DATFILE;
+print "$lastlines";
 
 #now it's time to generate gnuplot gifs
 my @titles;
@@ -134,14 +145,28 @@ my $file_name = "qmc_energies.gif";
   
 #let's not assume we know what's in the data files
 open (DAT_FILE, "plotfile.dat");
-while(my $line = <DAT_FILE>){
+my $line = <DAT_FILE>;
+while($line){
+    chomp $line;
+    my @data = split/[= ]+/, $line;
+    
     if($line =~ "dt="){
-	chomp $line;
-	my @data = split/[= ]+/, $line;
 	if($all_dt == -1 && $data[2] != 0){
 	    push(@titles,"$data[3], dt=$data[2]"); 
 	} else {
 	    push(@titles,"$data[3]"); 
+	}
+    }
+
+    $line = <DAT_FILE>;
+
+    #Make sure we have the last line in a series
+    if($line !~ /[0-9]/ && "$data[2]" =~ /[0-9]/){
+	if($data[2] < $y_min || $y_min == 0){
+	    $y_min = $data[2];
+	}
+	if($data[2] > $y_max || $y_max == 0){
+	    $y_max = $data[2];
 	}
     }
 }
@@ -172,6 +197,12 @@ if($all_nw != -1){
     $title_extra .= ", nw=$all_nw";
 }
 
+my $xindex = 4;
+my $xlabel = "Num Iterations";
+if($xaxis_samples == 1){
+    $xindex = 1;
+    $xlabel = "Num Samples";
+}
 `/bin/rm -f $file_name`;
 open(GNUPLOT, "|$gnuplot");
 print GNUPLOT <<gnuplot_Commands_Done;
@@ -189,7 +220,7 @@ set nokey
 set key outside below box noenhanced
 set yrange[$y_min:$y_max]
 set title "QMC Runs${title_extra}\\n{/=8${date}}"
-set xlabel "Num Samples"
+set xlabel "$xlabel"
 set ylabel "$ylabel"
 set grid ytics
 set mytics
@@ -198,10 +229,10 @@ gnuplot_Commands_Done
   
 print GNUPLOT "plot ";
 for(my $i=0; $i<$#titles; $i++){
-    print GNUPLOT " \"plotfile.dat\" index $i using 1:(\$2-$shift)*$units:(\$3*$units) title \"$titles[$i]\" with yerrorlines,\\";
+    print GNUPLOT " \"plotfile.dat\" index $i using $xindex:(\$2-$shift)*$units:(\$3*$units) title \"$titles[$i]\" with yerrorlines,\\";
     print GNUPLOT "\n";
 }
-print GNUPLOT " \"plotfile.dat\" index $#titles using 1:(\$2-$shift)*$units:(\$3*$units) title \"$titles[$#titles]\" with yerrorlines\n"; 
+print GNUPLOT " \"plotfile.dat\" index $#titles using $xindex:(\$2-$shift)*$units:(\$3*$units) title \"$titles[$#titles]\" with yerrorlines\n"; 
 
 close (GNUPLOT);
 #`/bin/rm $_.dat`;
