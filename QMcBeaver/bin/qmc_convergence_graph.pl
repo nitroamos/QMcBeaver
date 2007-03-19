@@ -17,7 +17,7 @@ my $units = 627.50960803;
 my $shift = 1;
 
 #keep only 1 line every $drop lines
-my $drop = 10;
+my $drop = 1;
 
 #should the x axis be samples (=1) or iterations (=0)?
 my $xaxis_samples = 0;
@@ -46,7 +46,7 @@ if($ARGV[0] =~ /.dat$/)
     print "Adding data to $ARGV[0]\n";
     open (DATFILE, ">>plotfile.dat");
 } else {
-    print "Truncating $ARGV[0]\n";
+    print "Truncating plotfile.dat\n";
     open (DATFILE, ">plotfile.dat");
 }
 
@@ -101,13 +101,18 @@ for(my $index=0; $index<=$#ARGV; $index++){
     my $num_samples;
     my $fordatfile = "";
     my $counter = 0;
-    my $warned = 0;
+    my $numwarnings = 0;
     while($line and $more == 1){
 	$line = <OUTFILE>;
-	if($line =~ /WARNING/ && $warned == 0){
-	    $base = "*" . $base;
-	    $warned = 1;
+	if($line =~ /WARNING/)
+	{
+	    if($numwarnings == 0)
+	    {
+		$base = "*" . $base;
+	    }
+	    $numwarnings++;
 	}
+	next if($line =~ /[a-zA-Z]/);
 	chomp $line;
 	my @data = split/[ ]+/,$line;
 	#this is the number of data elements per line
@@ -130,7 +135,7 @@ for(my $index=0; $index<=$#ARGV; $index++){
     close OUTFILE;
 
     my $in_kcal = $eavg*$units;
-    printf "%50s %15s %15s E_h=%20.14f E_kcal=%20.10f\n","$base","dt=$dt","nw=$nw",$eavg,$in_kcal;
+    printf "%50s %15s %15s E_h=%20.14f E_kcal=%20.10f Num Warnings=%i\n","$base","dt=$dt","nw=$nw",$eavg,$in_kcal,$numwarnings;
     #if we are in enhanced text mode, we need to double escape the "_"
     #$base =~ s/_/\\\\_/g;
     printf DATFILE "#%19s %20s %20s %20s\n", "dt=$dt","$base","E=$eavg","";
