@@ -89,11 +89,7 @@ for(my $index=0; $index<=$#ARGV; $index++){
     close CKMFFILE;
 
     open (OUTFILE,  "$base.out");
-    my $line = <OUTFILE>;
-    while($line !~ "Iteration"){
-	$line = <OUTFILE>;
-    }
-
+    my $line;
     my $more = 1;
     my $eavg;
     my $estd;
@@ -102,9 +98,8 @@ for(my $index=0; $index<=$#ARGV; $index++){
     my $fordatfile = "";
     my $counter = 0;
     my $numwarnings = 0;
-    while($line and $more == 1){
-	$line = <OUTFILE>;
-	if($line =~ /WARNING/)
+    while(<OUTFILE>){
+	if(/WARNING/ || /ERROR/)
 	{
 	    if($numwarnings == 0)
 	    {
@@ -112,28 +107,28 @@ for(my $index=0; $index<=$#ARGV; $index++){
 	    }
 	    $numwarnings++;
 	}
-	next if($line =~ /[a-zA-Z]/);
-	chomp $line;
-	my @data = split/[ ]+/,$line;
-	#this is the number of data elements per line
+	next if($_ =~ /[a-zA-Z]/ && $_ !~ /Results/);
+	chomp;
+	my @data = split/[ ]+/;
+        #this is the number of data elements per line
 	if($#data >= 8){
 	    $counter++;
 	    $iteration   = $data[1];
 	    $eavg        = $data[2];
 	    $estd        = $data[3];
 	    $num_samples = $data[$#data];
+	    next if($num_samples <= 0);
+
 	    #make sure we have the first and last data points included
 	    next if($counter%$drop != 0 && $counter != 1 && $iteration%100 == 0);
 	    $fordatfile .= sprintf "%20i %20.10f %20.10f %20i\n", $num_samples, $eavg, $estd, $iteration;
-	    if($iteration%100 != 0){
-		$lastlines .= sprintf "%30s $line\n","$base";
-	    }
-	} elsif($line =~ /Results/) {
+	    $line = sprintf "%30s $_\n","$base";
+	} elsif(/Results/) {
 	    $more = 0;
 	}
     }    
     close OUTFILE;
-
+    $lastlines .= "$line";
     my $in_kcal = $eavg*$units;
     printf "%50s %15s %15s E_h=%20.14f E_kcal=%20.10f Num Warnings=%i\n","$base","dt=$dt","nw=$nw",$eavg,$in_kcal,$numwarnings;
     #if we are in enhanced text mode, we need to double escape the "_"
