@@ -71,6 +71,12 @@ class Random
   /**
      Generates a uniform random number on \f$[0,1]\f$ using the ran1 algorithm 
      from numerical recipes.
+
+     "Minimal" random number generator of Park and Miller with Bays-Durham shuffle
+     and added safeguards. Returns a uniform random deviate between 0.0 and 1.0, exclusive
+     of the end point values. Call with *idum a negative number to initialize, and thereafter
+     do not alter *idum between sucessive deviates in a sequence. RNMX should approximate
+     the largest floating value that is less than 1.
      
      @param idum random number seed
      @return uniform random number on \f$[0,1]\f$.

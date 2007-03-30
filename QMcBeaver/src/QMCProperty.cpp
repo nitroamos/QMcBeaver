@@ -71,7 +71,7 @@ double QMCProperty::getStandardDeviation()
   else if (decorr_depth == -1)
   {
     // DDDA has not converged.
-    return 1000;
+    return 99;
   }
   else return getBlockStandardDeviation(decorr_depth);
 }
@@ -619,8 +619,6 @@ ostream& operator <<(ostream& strm, QMCProperty &rhs)
     printf("%20.12e +/- %20.12e (%li samples)\n",rhs.getAverage(),rhs.getStandardDeviation(),rhs.getNumberSamples());
   }
 
-  return strm;
-
   /*
    double a = rhs.stdevFittingParameters[0] * rhs.stdevFittingParameters[0];
    double b = rhs.stdevFittingParameters[1] * rhs.stdevFittingParameters[1];
@@ -635,31 +633,33 @@ ostream& operator <<(ostream& strm, QMCProperty &rhs)
    strm << endl;
    */
   
-  int width = 19;
-  strm << setw(width) << "DeCorr_depth" << setw(width) << "samples" << setw(width) << "Ave" 
-    << setw(width) << "Std" << setw(width) << "StdStd" << setw(width) << "Var" 
-    << setw(width) << "VarStd" << endl;
-  strm.precision(10);
-  
-  for(int i=0;i<DCL;i++)
-  {
-    if( rhs.DeCorr[i].getNumberSamples() > 0 )
+  if(false)
     {
-      strm << setw(width) << i << setw(width) << rhs.DeCorr[i].getNumberSamples() 
-      << setw(width) << rhs.DeCorr[i].getAverage();
+      int width = 19;
+      strm << setw(width) << "DeCorr_depth" << setw(width) << "samples" << setw(width) << "Ave" 
+	   << setw(width) << "Std" << setw(width) << "StdStd" << setw(width) << "Var" 
+	   << setw(width) << "VarStd" << endl;
+      strm.precision(10);
       
-      if( rhs.DeCorr[i].getNumberSamples() > 1 )
+      for(int i=0;i<DCL;i++)
+	{
+	  if( rhs.DeCorr[i].getNumberSamples() > 0 )
 	    {
-	      strm << setw(width) << rhs.getBlockStandardDeviation(i)
-        << setw(width) << rhs.getBlockStandardDeviationStandardDeviation(i)
-        << setw(width) << rhs.getBlockVariance(i)
-        << setw(width) << rhs.getBlockVarianceStandardDeviation(i);
-	    }
-      
-      strm << endl;
-    }  
-  }
-  
+	      strm << setw(width) << i << setw(width) << rhs.DeCorr[i].getNumberSamples() 
+		   << setw(width) << rhs.DeCorr[i].getAverage();
+	      
+	      if( rhs.DeCorr[i].getNumberSamples() > 1 )
+		{
+		  strm << setw(width) << rhs.getBlockStandardDeviation(i)
+		       << setw(width) << rhs.getBlockStandardDeviationStandardDeviation(i)
+		       << setw(width) << rhs.getBlockVariance(i)
+		       << setw(width) << rhs.getBlockVarianceStandardDeviation(i);
+		}
+	      
+	      strm << endl;
+	    }  
+	}
+    }
   return strm;
 }
 

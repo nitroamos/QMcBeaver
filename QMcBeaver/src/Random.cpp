@@ -52,6 +52,13 @@ Random::~Random()
 
 void Random::initialize(long seed, int rank)
 {
+  if(seed == 0)
+    {
+      srand( time(NULL) );
+      seed = -rand();
+      clog << "Using iseed = " << seed << endl;
+    }
+
 #ifdef USESPRNG
   int sprng_seed = (int)(seed);
 
@@ -97,6 +104,7 @@ void Random::initialize(long seed, int rank)
     }
 
 #else
+  // ran1 needs to be initialized with a negative number
   if(seed > 0) seed *= -1;
   start = seed;
   current = seed;
@@ -108,6 +116,9 @@ void Random::initialize(long seed, int rank)
 
   //resetting ran1's internal static variables
   iy = 0;
+  for(int i=0; i<NTAB; i++)
+    iv[i] = 0;
+
 #endif
 }
 

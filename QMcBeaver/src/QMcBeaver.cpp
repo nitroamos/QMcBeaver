@@ -16,7 +16,7 @@
 
 #include "QMCManager.h"
 
-static const bool showExtraHeaders = false;
+static const bool showExtraHeaders = !false;
 
 QMCInput globalInput;
 
@@ -171,6 +171,7 @@ void qmcbeaver()
 
   if( TheMan.getInputData()->flags.my_rank == 0 )
     {
+      cout.flush(); cerr.flush(); clog.flush();
       cout << "***************  TheMan.run();" << endl;
       cout << setw(10) << "Iteration" << setw(width) << "Eavg" << setw(width) << "Estd" << setw(width)
 	   << "Num. Walkers" << setw(width) << "Trial Energy" << setw(width) << "dt_effective"
@@ -203,7 +204,7 @@ void qmcbeaver()
       if( TheMan.getInputData()->flags.my_rank == 0 )
         {
           TheMan.writeRestart();
-
+	  cout.flush(); cerr.flush(); clog.flush();
           cout << "***************  TheMan.run();" << endl;
           cout << setw(10) << "iteration" << setw(width) << "Eavg" << setw(width) << "Estd" << setw(width)
           << "Eavg-Estd" << setw(width) << "Eavg+Estd" << setw(width) << "Num. Walkers"
