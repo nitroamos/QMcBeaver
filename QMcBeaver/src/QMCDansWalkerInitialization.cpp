@@ -505,29 +505,43 @@ Array2D<double> QMCDansWalkerInitialization::
 dist_center(int atomic_charge, int n_e, int n_a, int n_b)
 {
   Array2D<double> e_locs(n_e,3);
+  e_locs = 1e20;
 
   if (n_e <= 2) 
     e_locs = dist_energy_level(atomic_charge,1,n_a,n_b);
       
   else if (n_e > 2 && n_e <= 10)
     {
+      //num n_a/n_b remaining after first level
+      int n_a_r = n_a;
+      int n_b_r = n_b;
+
       Array2D<double> level_1_of_2(2,3);
       level_1_of_2 = dist_energy_level(atomic_charge,1,1,1);
-      for (int i=0; i<3; i++)
-        {
-	  e_locs(0,i) = level_1_of_2(0,i);
-	  e_locs(n_a,i) = level_1_of_2(1,i);
+      
+      if(n_a_r > 0)
+	{
+	  for (int i=0; i<3; i++)
+	    e_locs(0,i) = level_1_of_2(0,i);
+	  n_a_r--;
 	}
-      Array2D<double> level_2_of_2(n_e-2,3);
-      level_2_of_2 = dist_energy_level(atomic_charge,2,n_a-1,n_b-1); 
+      if(n_b_r > 0)
+	{
+	  for (int i=0; i<3; i++)
+	    e_locs(n_a,i) = level_1_of_2(1,i);
+	  n_b_r--;
+	}
 
-      for (int j=0; j<n_a-1; j++)
+      Array2D<double> level_2_of_2(n_a_r + n_b_r,3);
+      level_2_of_2 = dist_energy_level(atomic_charge,2,n_a_r,n_b_r); 
+
+      for (int j=0; j<n_a_r; j++)
 	for (int k=0; k<3; k++)
-	  e_locs(1+j,k) = level_2_of_2(j,k);
+	  e_locs(n_a - n_a_r + j,k) = level_2_of_2(j,k);
 
-      for (int m=0; m<n_b-1; m++)
+      for (int m=0; m<n_b_r; m++)
 	for (int n=0; n<3; n++)
-	  e_locs(1+n_a+m,n) = level_2_of_2(n_a-1+m,n);
+	  e_locs(n_b - n_b_r + n_a + m,n) = level_2_of_2(n_a_r+m,n);
     }
 
   else if (n_e > 10 && n_e <=18)
