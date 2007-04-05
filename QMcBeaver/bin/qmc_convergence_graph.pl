@@ -98,14 +98,23 @@ for(my $index=0; $index<=$#ARGV; $index++){
     my $fordatfile = "";
     my $counter = 0;
     my $numwarnings = 0;
+    my $numerrors = 0;
     while(<OUTFILE>){
-	if(/WARNING/ || /ERROR/)
+	if(/WARNING/)
 	{
 	    if($numwarnings == 0)
 	    {
-		$base = "*" . $base;
+		$base = "?" . $base;
 	    }
 	    $numwarnings++;
+	}
+	if(/ERROR/)
+	{
+	    if($numerrors == 0)
+	    {
+		$base = "!" . $base;
+	    }
+	    $numerrors++;
 	}
 	next if($_ =~ /[a-zA-Z]/ && $_ !~ /Results/);
 	chomp;
@@ -130,7 +139,7 @@ for(my $index=0; $index<=$#ARGV; $index++){
     close OUTFILE;
     $lastlines .= "$line";
     my $in_kcal = $eavg*$units;
-    printf "%50s %15s %15s E_h=%20.14f E_kcal=%20.10f Num Warnings=%i\n","$base","dt=$dt","nw=$nw",$eavg,$in_kcal,$numwarnings;
+    printf "%50s %15s %15s E_h=%20.14f E_kcal=%20.10f Err=%i Warn=%i\n","$base","dt=$dt","nw=$nw",$eavg,$in_kcal,$numerrors,$numwarnings;
     #if we are in enhanced text mode, we need to double escape the "_"
     #$base =~ s/_/\\\\_/g;
     printf DATFILE "#%19s %20s %20s %20s\n", "dt=$dt","$base","E=$eavg","";
