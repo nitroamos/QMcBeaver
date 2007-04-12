@@ -12,9 +12,7 @@ QMCEquilibrationArray::QMCEquilibrationArray()
 void QMCEquilibrationArray::zeroOut()
 {
   for (int i=0; i<EQ; i++)
-    {
-      Eq_Array[i].zeroOut();
-    }
+    Eq_Array[i].zeroOut();
 
   decorr_objects = 1;
   Eq_Array[0].setStartingStep(1);
@@ -27,14 +25,10 @@ void QMCEquilibrationArray::setCalcDensity(bool calcDensity,
   nBasisFunc = nbasisfunctions;
 
   for (int i=0; i<EQ; i++)
-    {
-      Eq_Array[i].getProperties()->setCalcDensity
-                                                (calcDensity, nbasisfunctions);
-    }
+    Eq_Array[i].getProperties()->setCalcDensity(calcDensity, nbasisfunctions);
 }
 
-void QMCEquilibrationArray::setCalcForces(bool calcForces,
-					  int dim1, int dim2)                                                                                           
+void QMCEquilibrationArray::setCalcForces(bool calcForces, int dim1, int dim2)
 {
   calc_forces = calcForces;
   for (int i=0; i<EQ; i++)
@@ -78,10 +72,8 @@ int QMCEquilibrationArray::getDecorrObjectIndex()
   int obj = 0;
   while(true)
     {
-      if (Eq_Array[obj].getProperties()->energy.getStandardDeviation() < 1000)
-        {
-	  break;
-	}
+      if (Eq_Array[obj].getProperties()->energy.getStandardDeviation() < 99)
+	break;
       else
         {
 	  obj++;
@@ -89,16 +81,21 @@ int QMCEquilibrationArray::getDecorrObjectIndex()
 	}
     }
 
-  double value = Eq_Array[0].getProperties()->energy.getAverage() + 
-    3*Eq_Array[0].getProperties()->energy.getSeriallyCorrelatedVariance()/
-    sqrt(Eq_Array[0].getProperties()->energy.getNumberSamples()-1.0);
+  int nSamples_tot = Eq_Array[0].getProperties()->energy.getNumberSamples();
+  int nSamples_element = -1;
+
+  double value = Eq_Array[0].getProperties()->energy.getAverage() + 50*
+    sqrt(Eq_Array[0].getProperties()->energy.getSeriallyCorrelatedVariance()/
+    (nSamples_tot-1));
+
   obj = 0;
 
   for (int i=1; i<decorr_objects; i++)
     {
+      nSamples_element = Eq_Array[i].getProperties()->energy.getNumberSamples();
       double test = Eq_Array[i].getProperties()->energy.getAverage() +
-	3*Eq_Array[i].getProperties()->energy.getSeriallyCorrelatedVariance()/
-	sqrt(Eq_Array[i].getProperties()->energy.getNumberSamples()-1.0);
+        50*nSamples_tot*sqrt(Eq_Array[i].getProperties()->energy.getSeriallyCorrelatedVariance()/(nSamples_element-1))/nSamples_element;
+
       if (IeeeMath::isNaN(test)) continue;
       if (test < value)
 	{

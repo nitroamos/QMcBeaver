@@ -199,95 +199,170 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  }
       }
 
-  // Now we check to make sure no center has too many electrons of the same 
-  // type.
+  // Now we check to make sure no center has too many or too few electrons of 
+  // one type.  We want to make sure each energy level is full before we start
+  // filling the next one.  We assume the previous checks have made the atoms
+  // neutral.  One example of what we want to prevent in this section is a Li
+  // atom with three alphas.  It is neutral, but the first energy level was not
+  // filled before we started occupying the second.
 
   for (int i=0; i<natoms; i++)
     {
-      if (Input->Molecule.Z(i) <= 18 && ab_count(i,1) > 9)
-	{
-	  int extra_alphas = ab_count(i,1)-9;
-	  for (int j=0; j<extra_alphas; j++)
-	    for (int k=0; k<natoms; k++)
-	      if (k != i && ab_count(k,1) < ab_count(k,2))
-		{
-		  ab_count(i,1) -= 1;
-		  ab_count(k,1) += 1;
-		  ab_count(i,2) += 1;
-		  ab_count(k,2) -= 1;
-		  break;
-		}
-	}
-      if (Input->Molecule.Z(i) <= 18 && ab_count(i,2) > 9)
-	{
-	  int extra_betas = ab_count(i,2)-9;
-	  for (int m=0; m<extra_betas; m++)
-	    for (int n=0; n<natoms; n++)
-	      if (n != i && ab_count(n,1) > ab_count(n,2))
-		{
-		  ab_count(i,2) -= 1;
-		  ab_count(n,2) += 1;
-		  ab_count(i,1) += 1;
-		  ab_count(n,1) -= 1;
-		  break;
-		}
-	}
-      if (Input->Molecule.Z(i) <= 10 && ab_count(i,1) > 5)
-	{
-	  int extra_alphas = ab_count(i,1)-5;
-	  for (int j=0; j<extra_alphas; j++)
-	    for (int k=0; k<natoms; k++)
-	      if (k != i && ab_count(k,1) < ab_count(k,2))
-		{ 
-		  ab_count(i,1) -= 1;
-	          ab_count(k,1) += 1;
-	          ab_count(i,2) += 1;
-	          ab_count(k,2) -= 1;
-	          break;
-	        }
-	}
-      if (Input->Molecule.Z(i) <= 10 && ab_count(i,2) > 5)
-	{
-	  int extra_betas = ab_count(i,2)-5;
-	  for (int m=0; m<extra_betas; m++)
-	    for (int n=0; n<natoms; n++)
-	      if (n != i && ab_count(n,1) > ab_count(n,2))
-		{
-		  ab_count(i,2) -= 1;
-		  ab_count(n,2) += 1;
-		  ab_count(i,1) += 1;
-		  ab_count(n,1) -= 1;
-		  break;
-		}
-	}
-      if (Input->Molecule.Z(i) <= 2 && ab_count(i,1) > 1)
-	{
-	  int extra_alphas = ab_count(i,1)-1;
-	  for (int p=0; p<extra_alphas; p++)
-	    for (int q=0; q<natoms; q++)
-              if (q != i && ab_count(q,1) < ab_count(q,2))
-                {
-                  ab_count(i,1) -= 1;
-                  ab_count(q,1) += 1;
-                  ab_count(i,2) += 1;
-                  ab_count(q,2) -= 1;
-                  break;
-                }
-	}
-      if (Input->Molecule.Z(i) <= 2 && ab_count(i,2) > 1)
-	{
-	  int extra_betas = ab_count(i,2)-1;
-	  for (int r=0; r<extra_betas; r++)
-	    for (int s=0; s<natoms; s++)
-              if (s != i && ab_count(s,1) > ab_count(s,2))
-                {
-                  ab_count(i,2) -= 1;
-                  ab_count(i,1) += 1;
-                  ab_count(s,2) += 1;
-                  ab_count(s,1) -= 1;
-                  break;
-                }
-	}
+      if (Input->Molecule.Z(i) <= 2)
+        {
+          // If this atom is in the first row, it should not have more than one
+          // electron of one type.
+
+          if (ab_count(i,1) > 1)
+            {
+              int extra_alphas = ab_count(i,1)-1;
+              for (int p=0; p<extra_alphas; p++)
+                for (int q=0; q<natoms; q++)
+                  if (q != i && ab_count(q,1) < ab_count(q,2))
+                    {
+                      ab_count(i,1) -= 1;
+                      ab_count(q,1) += 1;
+                      ab_count(i,2) += 1;
+                      ab_count(q,2) -= 1;
+                      break;
+                    }
+            }
+          if (ab_count(i,2) > 1)
+            {
+              int extra_betas = ab_count(i,2)-1;
+              for (int r=0; r<extra_betas; r++)
+                for (int s=0; s<natoms; s++)
+                  if (s != i && ab_count(s,1) > ab_count(s,2))
+                    {
+                      ab_count(i,2) -= 1;
+                      ab_count(i,1) += 1;
+                      ab_count(s,2) += 1;
+                      ab_count(s,1) -= 1;
+                      break;
+                    }
+            }
+        }
+      if (Input->Molecule.Z(i) <= 10 && Input->Molecule.Z(i) > 2)
+        {
+          // If this atom is in the second row, it should have at least one but
+          // no more than five electrons of one type.
+          if (ab_count(i,1) > 5)
+            {
+              int extra_alphas = ab_count(i,1)-5;
+              for (int j=0; j<extra_alphas; j++)
+                for (int k=0; k<natoms; k++)
+                  if (k != i && ab_count(k,1) < ab_count(k,2))
+                    { 
+                      ab_count(i,1) -= 1;
+                      ab_count(k,1) += 1;
+                      ab_count(i,2) += 1;
+                      ab_count(k,2) -= 1;
+                      break;
+                    }      
+            }
+          if (ab_count(i,1) == 0)
+            {
+              // If there are zero alphas on this atom, the first energy level
+              // is not filled, so we can't start the second one.  We need to
+              // get an alpha from another atom.
+              for (int j=0; j<natoms; j++)
+                if (j != i && ab_count(j,1) > ab_count(j,2))
+                  {
+                    ab_count(i,1) += 1;
+                    ab_count(j,1) -= 1;
+                    ab_count(i,2) -= 1;
+                    ab_count(j,2) += 1;
+                    break;
+                  }
+            }
+          if (ab_count(i,2) > 5)
+            {
+              int extra_betas = ab_count(i,2)-5;
+              for (int m=0; m<extra_betas; m++)
+                for (int n=0; n<natoms; n++)
+                  if (n != i && ab_count(n,1) > ab_count(n,2))
+                    {
+                      ab_count(i,2) -= 1;
+                      ab_count(n,2) += 1;
+                      ab_count(i,1) += 1;
+                      ab_count(n,1) -= 1;
+                      break;
+                    }
+            }
+          if (ab_count(i,2) == 0)
+            {
+              for (int j=0; j<natoms; j++)
+                if (j != i && ab_count(j,2) > ab_count(j,1))
+                  {
+                    ab_count(i,2) += 1;
+                    ab_count(j,2) -= 1;
+                    ab_count(i,1) -= 1;
+                    ab_count(j,1) += 1;
+                    break;
+                  }
+            }
+        }
+      if (Input->Molecule.Z(i) <= 18 && Input->Molecule.Z(i) > 10)
+        {
+          // If the atom is in the third row, we want it to have at least five
+          // but no more than nine electrons of each type.
+          if (ab_count(i,1) > 9)
+            {
+              int extra_alphas = ab_count(i,1)-9;
+              for (int j=0; j<extra_alphas; j++)
+                for (int k=0; k<natoms; k++)
+                  if (k != i && ab_count(k,1) < ab_count(k,2))
+                    {
+                      ab_count(i,1) -= 1;
+                      ab_count(k,1) += 1;
+                      ab_count(i,2) += 1;
+                      ab_count(k,2) -= 1;
+                      break;
+                    }
+            }
+          if (ab_count(i,1) < 5)
+            {
+              int alphas_needed = 5-ab_count(i,1);
+              for (int j=0; j<alphas_needed; j++)
+                for (int k=0; k<natoms; k++)
+                  if (k != i && ab_count(k,1) > ab_count(k,2))
+                    {
+                      ab_count(i,1) += 1;
+                      ab_count(k,1) -= 1;
+                      ab_count(i,2) -= 1;
+                      ab_count(k,2) += 1;
+                      break;
+                    }
+            }
+          if (ab_count(i,2) > 9)
+            {
+              int extra_betas = ab_count(i,2)-9;
+              for (int m=0; m<extra_betas; m++)
+                for (int n=0; n<natoms; n++)
+                  if (n != i && ab_count(n,1) > ab_count(n,2))
+                    {
+                      ab_count(i,2) -= 1;
+                      ab_count(n,2) += 1;
+                      ab_count(i,1) += 1;
+                      ab_count(n,1) -= 1;
+                      break;
+                    }
+            }
+          if (ab_count(i,2) < 5)
+            {
+              int betas_needed = 5-ab_count(i,2);
+              for (int j=0; j<betas_needed; j++)
+                for (int k=0; k<natoms; k++)
+                  if (k != i && ab_count(k,2) > ab_count(k,1))
+                    {
+                      ab_count(i,2) += 1;
+                      ab_count(k,2) -= 1;
+                      ab_count(i,1) -= 1;
+                      ab_count(k,1) += 1;
+                      break;
+                    }
+            }
+        }       
     }
 
   // Check to see that all electrons have been assigned.
@@ -327,23 +402,16 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
       exit(1); 
     }
 
-  // We put the coordinates for the alpha electrons into one array, and the 
-  // coordinates for the beta electrons in another one.
-
-  Array2D<double> temp_alpha;
-  if (nalpha > 0)
-    temp_alpha.allocate(nalpha,3);
-
   int alpha_index = 0;
-
-  Array2D<double> temp_beta;
-  if (nbeta > 0)
-    temp_beta.allocate(nbeta,3);
-
   int beta_index = 0;
 
   Array2D<double> temp_coords;
   int n_e,n_a,n_b;
+
+  // The electronic coordinates are stored in this array, with the alpha
+  // electrons first, then the betas.
+
+  Array2D<double> R(nelectrons,3);
 
   for (int i=0; i<natoms; i++)
     {
@@ -359,32 +427,18 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  for (int j=0; j<n_a; j++)
 	    {
 	      for (int k=0; k<3; k++)
-		temp_alpha(alpha_index,k)=temp_coords(j,k)+atom_centers(i,k);
+		R(alpha_index,k) = temp_coords(j,k) + atom_centers(i,k);
 	      alpha_index++;
 	    }
       
 	  for (int m=0; m<n_b; m++)
 	    {
 	      for (int n=0; n<3; n++)
-		temp_beta(beta_index,n)=temp_coords(n_a+m,n)+atom_centers(i,n);
+		R(nalpha+beta_index,n)=temp_coords(n_a+m,n)+atom_centers(i,n);
 	      beta_index++;
 	    }
 	}
     }
-
-  // The electronic coordinates are stored in this array, with the alpha
-  // electrons first, then the betas.
-
-  Array2D<double> R(nelectrons,3);
-
-  for (int i=0; i<nalpha; i++)
-    for (int j=0; j<3; j++)
-      R(i,j) = temp_alpha(i,j);
-
-  for (int i=0; i<nbeta; i++)
-    for (int j=0; j<3; j++)
-      R(i+nalpha,j) = temp_beta(i,j);
-
   return R;
 }
 
@@ -512,36 +566,24 @@ dist_center(int atomic_charge, int n_e, int n_a, int n_b)
       
   else if (n_e > 2 && n_e <= 10)
     {
-      //num n_a/n_b remaining after first level
-      int n_a_r = n_a;
-      int n_b_r = n_b;
-
       Array2D<double> level_1_of_2(2,3);
       level_1_of_2 = dist_energy_level(atomic_charge,1,1,1);
-      
-      if(n_a_r > 0)
+      for (int i=0; i<3; i++)
 	{
-	  for (int i=0; i<3; i++)
-	    e_locs(0,i) = level_1_of_2(0,i);
-	  n_a_r--;
-	}
-      if(n_b_r > 0)
-	{
-	  for (int i=0; i<3; i++)
-	    e_locs(n_a,i) = level_1_of_2(1,i);
-	  n_b_r--;
+	  e_locs(0,i) = level_1_of_2(0,i);
+	  e_locs(n_a,i) = level_1_of_2(1,i);
 	}
 
-      Array2D<double> level_2_of_2(n_a_r + n_b_r,3);
-      level_2_of_2 = dist_energy_level(atomic_charge,2,n_a_r,n_b_r); 
+      Array2D<double> level_2_of_2(n_e-2,3);
+      level_2_of_2 = dist_energy_level(atomic_charge,2,n_a-1,n_b-1); 
 
-      for (int j=0; j<n_a_r; j++)
+      for (int j=0; j<n_a-1; j++)
 	for (int k=0; k<3; k++)
-	  e_locs(n_a - n_a_r + j,k) = level_2_of_2(j,k);
+	  e_locs(1+j,k) = level_2_of_2(j,k);
 
-      for (int m=0; m<n_b_r; m++)
+      for (int m=0; m<n_b-1; m++)
 	for (int n=0; n<3; n++)
-	  e_locs(n_b - n_b_r + n_a + m,n) = level_2_of_2(n_a_r+m,n);
+	  e_locs(1+n_a+m,n) = level_2_of_2(n_a-1+m,n);
     }
 
   else if (n_e > 10 && n_e <=18)

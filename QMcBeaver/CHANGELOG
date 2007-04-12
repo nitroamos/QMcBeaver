@@ -1,3 +1,14 @@
+Wed, Apr 11, 2007 Daniel R Fisher
+1.  I fixed a bug in QMCDansWalkerInitialization.  In some cases, it
+    allowing energy levels to be occupied before the lower energy
+    level was completely full.  When the atoms are checked to see if
+    they are charged and the electrons are moved around, it also makes
+    sure that the lower energy level is full before the next one
+    starts to be occupied.
+2.  I changed the objective function in QMCEquilibrationArray.  I have
+    been messing around with the objective function in the course of
+    writing the paper, and found a new one that works better.
+
 Tue, Mar 6, 2007 Amos Anderson
 1.  I improved checkpointing. It will now put the checkpoint files
     into a sub directory. This means less clutter for a parallel job.
