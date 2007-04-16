@@ -1,3 +1,13 @@
+Sun, Apr 15, 2007 Daniel R Fisher
+1.  I changed the way that checkpoint files are written by QMCProperty
+    and QMCEquilibrationArray.  Previously, QMCProperty wrote out the
+    whole decorrelation array, which has 30 elements.  In a typical
+    calculation, only about 20 of them are active, so about a third of
+    the data being written out was zeros.  I changed it to write out
+    only the active elements.  I made a similar change in
+    QMCEquilibrationArray.  This reduces the size of the checkpoint
+    files by about half.
+
 Wed, Apr 11, 2007 Daniel R Fisher
 1.  I fixed a bug in QMCDansWalkerInitialization.  In some cases, it
     allowing energy levels to be occupied before the lower energy

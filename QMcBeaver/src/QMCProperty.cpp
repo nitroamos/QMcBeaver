@@ -504,10 +504,33 @@ void QMCProperty::toXML(ostream& strm)
   // Open XML
   strm << "<QMCProperty>" << endl;
   
+  // DCL=30.  This means that 2^30=1e9 iterations are necessary for there to be
+  // one sample in the last element of the array.  Most of our calculations
+  // will run for a few million iterations at most, so most of the data we are
+  // printing out in the checkpoint files will be zeros.  I am changing this
+  // to only print out the elements of the array that have samples.  This will
+  // make the checkpoint files smaller and faster to read and write.
+
+  // Figure out which elements of the array have samples.
+
+  int active_elements = 0;
+
+  for (int i=0; i<DCL; i++)
+    {
+      if (DeCorr[i].getNumberSamples() == 0)
+	break;
+      else 
+	active_elements++;
+    }
+
+  strm << "<NumberOfElements>" << endl;
+  strm << active_elements << endl;
+  strm << "</NumberOfElements>" << endl;
+
   // statistics
   strm << "<DeCorrStatistics>" << endl;
   
-  for(int i=0; i<DCL; i++)
+  for(int i=0; i<active_elements; i++)
   {
     DeCorr[i].toXML(strm);
   }
@@ -517,7 +540,7 @@ void QMCProperty::toXML(ostream& strm)
   // decorr flags
   strm << "<DeCorrFlags>" << endl;
   
-  for(int i=0; i<DCL; i++)
+  for(int i=0; i<active_elements; i++)
   {
     strm << DeCorr_flags[i] << endl;
   }
@@ -527,7 +550,7 @@ void QMCProperty::toXML(ostream& strm)
   // decorr sample
   strm << "<DeCorrSamples>" << endl;
   
-  for(int i=0; i<DCL; i++)
+  for(int i=0; i<active_elements; i++)
   {
     strm << DeCorr_sample[i] << endl;
   }
@@ -537,7 +560,7 @@ void QMCProperty::toXML(ostream& strm)
   // decorr weight
   strm << "<DeCorrWeights>" << endl;
   
-  for(int i=0; i<DCL; i++)
+  for(int i=0; i<active_elements; i++)
   {
     strm << DeCorr_weight[i] << endl;
   }
@@ -555,10 +578,33 @@ void QMCProperty::readXML(istream& strm)
   // Open XML
   strm >> temp;
   
+  if (temp != "<QMCProperty>")
+    {
+      cerr << "Error in QMCProperty::readXML().  Expected <QMCProperty>, ";
+      cerr << "instead we read" << temp << endl;
+      exit(0);
+    }
+
+  // Get the number of active elements.
+
+  strm >> temp;
+  strm >> temp;
+
+  int active_elements = atoi(temp.c_str());
+
+  strm >> temp;
+
   // statistics
   strm >> temp;
   
-  for(int i=0; i<DCL; i++)
+  if (temp != "<DeCorrStatistics>")
+    {
+      cerr << "Error in QMCProperty::readXML().  Expected <DeCorrStatistics>,";
+      cerr << " instead we read" << temp << endl;
+      exit(0);
+    }
+
+  for(int i=0; i<active_elements; i++)
   {
     DeCorr[i].readXML(strm);
   }
@@ -568,7 +614,14 @@ void QMCProperty::readXML(istream& strm)
   // decorr flags
   strm >> temp;
   
-  for(int i=0; i<DCL; i++)
+  if (temp != "<DeCorrFlags>")
+    {
+      cerr << "Error in QMCProperty::readXML().  Expected <DeCorrFlags>, ";
+      cerr << "instead we read" << temp << endl;
+      exit(0);
+    }
+
+  for(int i=0; i<active_elements; i++)
   {
     strm >> temp;
     DeCorr_flags[i] = atoi(temp.c_str());
@@ -579,7 +632,14 @@ void QMCProperty::readXML(istream& strm)
   // decorr sample
   strm >> temp;
   
-  for(int i=0; i<DCL; i++)
+  if (temp != "<DeCorrSamples>")
+    {
+      cerr << "Error in QMCProperty::readXML().  Expected <DeCorrSamples>, ";
+      cerr << "instead we read" << temp << endl;
+      exit(0);
+    }
+
+  for(int i=0; i<active_elements; i++)
   {
     strm >> temp;
     DeCorr_sample[i] = atof(temp.c_str());
@@ -589,17 +649,34 @@ void QMCProperty::readXML(istream& strm)
   
   // decorr weight
   strm >> temp;
+
+  if (temp != "<DeCorrWeights>")
+    {
+      cerr << "Error in QMCProperty::readXML().  Expected <DeCorrWeights>, ";
+      cerr << "instead we read" << temp << endl;
+      exit(0);
+    }
   
-  for(int i=0; i<DCL; i++)
+  for(int i=0; i<active_elements; i++)
   {
     strm >> temp;
     DeCorr_weight[i] = atof(temp.c_str());
   }
   
+  for (int i=active_elements; i<DCL; i++)
+    DeCorr[i].zeroOut();
+
   strm >> temp;
   
   // Close XML
   strm >> temp;
+
+  if (temp != "</QMCProperty>")
+    {
+      cerr << "Error in QMCProperty::readXML().  Expected </QMCProperty>, ";
+      cerr << "instead we read" << temp << endl;
+      exit(0);
+    }
 }
   
 ostream& operator <<(ostream& strm, QMCProperty &rhs)

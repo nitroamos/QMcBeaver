@@ -142,7 +142,8 @@ void QMCEquilibrationArray::toXML(ostream& strm)
   // Open XML
   strm << "<QMCEquilibrationArray>" << endl;
   strm << "<decorr_objects>\n" << decorr_objects << "\n</decorr_objects>\n";
-  for (int i=0; i<EQ; i++) Eq_Array[i].getProperties()->toXML(strm);
+  for (int i=0; i<decorr_objects; i++) 
+    Eq_Array[i].getProperties()->toXML(strm);
   strm << "</QMCEquilibrationArray>" << endl;
 }
 
@@ -159,7 +160,7 @@ void QMCEquilibrationArray::readXML(istream& strm)
 
   strm >> temp;
 
-  for (int i=0; i<EQ; i++) 
+  for (int i=0; i<decorr_objects; i++) 
     Eq_Array[i].getProperties()->readXML(strm);
   
   strm >> temp;
@@ -169,6 +170,9 @@ void QMCEquilibrationArray::readXML(istream& strm)
       long step = power(2,i);
       Eq_Array[i].setStartingStep(step);
     }
+
+  for (int i=decorr_objects; i<EQ; i++)
+    Eq_Array[i].getProperties()->zeroOut();
 }
 
 long QMCEquilibrationArray::power(int a, int b)
