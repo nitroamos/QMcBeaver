@@ -274,6 +274,8 @@ ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs)
   int w2 = 10;
   int p1 = 2;
 
+  if(rhs.numFutureWalking <= 1) return strm;
+
   for(int i=0; i<rhs.props.size(); i++)
     {
       strm << endl << "-------------------------- FW " << rhs.names[i] << endl;
