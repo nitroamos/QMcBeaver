@@ -55,8 +55,11 @@ void Random::initialize(long seed, int rank)
   if(seed == 0)
     {
       srand( time(NULL) );
-      seed = -rand();
-      clog << "Using iseed = " << seed << endl;
+      current = -rand();
+      seed = intdev();
+      reset();
+      //intdev returns a postive number, but we'll be switching the sign
+      clog << "Using iseed = -" << seed << endl;
     }
 
 #ifdef USESPRNG
@@ -113,15 +116,21 @@ void Random::initialize(long seed, int rank)
   for(int i=0; i<rank; i++)
     my_seed = intdev();
   current = -1*abs(my_seed);
+  reset();
+#endif
+}
 
+void Random::reset()
+{
+#ifdef USESPRNG
+
+#else
   //resetting ran1's internal static variables
   iy = 0;
   for(int i=0; i<NTAB; i++)
     iv[i] = 0;
-
 #endif
 }
-
 void Random::printStream(ostream & strm)
 {
   strm << "Random stream info:" << endl;

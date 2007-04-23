@@ -103,6 +103,11 @@ class Random
   void initialize(long seed, int rank);
 
   /**
+     This will clear the internal variables of the RNG
+   */
+  void reset();
+
+  /**
      Print the current status of the random number generator.
 
      @param strm A strm to print to.
