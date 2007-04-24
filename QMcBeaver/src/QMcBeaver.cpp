@@ -210,6 +210,7 @@ void qmcbeaver()
           << "Eavg-Estd" << setw(width) << "Eavg+Estd" << setw(width) << "Num. Walkers"
           << setw(width) << "Trial Energy" << setw(width) << "Eff. dt"
           << setw(width) << "Weights" << endl;
+	  cout.setf( ios::fixed,ios::floatfield );
         }
 
       TheMan.zeroOut();

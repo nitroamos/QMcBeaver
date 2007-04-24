@@ -57,6 +57,11 @@ void SortedParameterScorePairList::clear()
   PSPList.clear();
 }
 
+void SortedParameterScorePairList::resize(int newsize)
+{
+  PSPList.resize(newsize);
+}
+
 void SortedParameterScorePairList::operator=(const 
 					     SortedParameterScorePairList & 
 					     SPSL)

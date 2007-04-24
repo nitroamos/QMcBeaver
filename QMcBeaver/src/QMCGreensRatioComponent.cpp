@@ -153,6 +153,8 @@ double QMCGreensRatioComponent::getValue() const
       cerr << "c:\t" << c << endl;
       exit(1);
     }      
+  if(c>500.0)
+    return k*pow(a,b)*1e250;
   return k*pow(a,b)*exp(c);
 }
 

@@ -16,7 +16,7 @@ ParameterScorePair::ParameterScorePair()
 {
 }
 
-ParameterScorePair::ParameterScorePair(double score, 
+ParameterScorePair::ParameterScorePair(QMCObjectiveFunctionResult score, 
 				       Array1D<double> & parameters)
 {
   this->Score = score;
@@ -37,7 +37,7 @@ void ParameterScorePair::operator=(const ParameterScorePair &PSP)
 bool ParameterScorePair::operator<(const ParameterScorePair &PSP) const
 {
   bool returnvalue = true;
-  if( Score < PSP.Score )
+  if( getScore() < PSP.getScore() )
     {
       returnvalue = true;
     }
@@ -49,9 +49,21 @@ bool ParameterScorePair::operator<(const ParameterScorePair &PSP) const
   return returnvalue;
 }
 
-double ParameterScorePair::getScore()
+ostream& operator<<(ostream & strm, const ParameterScorePair & rhs)
 {
-  return Score;
+  strm << "Score " << setw(20) << rhs.getScore() << endl;
+  strm << "     ";
+  strm << "Parameters    " << rhs.Parameters;
+  strm << "     ";
+  strm << "Energy      " << setw(20) << rhs.Score.getEnergyAve() << " +/- " << rhs.Score.getEnergyVar();
+  strm << " (# samples = " << rhs.Score.getNumberSamples() << ")" << endl;
+  return strm;
+}
+
+double ParameterScorePair::getScore() const
+{
+  double score = Score.getScore();
+  return score;
 }
 
 Array1D<double> * ParameterScorePair::getParameters()

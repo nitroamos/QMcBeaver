@@ -104,8 +104,8 @@ void QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
   if( ParticleTypes(1) != "Electron_up" && ParticleTypes(1) != "Electron_down"
       && nucCuspReplacement && CorrelationFunctionType != "None")
     {
-      clog << "WARNING: switching CorrelationFunctionType to \"None\" for (" << pt1 << ", " << pt2 << ")" << 
-	" since we're replacing the cusps." << endl;
+      //clog << "WARNING: switching CorrelationFunctionType to \"None\" for (" << pt1 << ", " << pt2 << ")" << 
+      //" since we're replacing the cusps." << endl;
       CorrelationFunctionType = "None";
     }
   // Load the number of parameter types
