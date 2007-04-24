@@ -19,6 +19,7 @@
 #include "Array1D.h"
 #include "Array2D.h"
 #include "QMCGreensRatioComponent.h"
+#include "QMCInput.h"
 
 using namespace std;
 
@@ -29,38 +30,58 @@ using namespace std;
    QMCFunction to be treated a little bit differently without significant
    modifications to QMCWalker.
 */
-struct QMCWalkerData {
+class QMCWalkerData {
+ public:
+  QMCWalkerData();
+  ~QMCWalkerData();
+
+  void initialize(QMCInput * input, int numDimensions,
+		  int numNucForceDim1, int numNucForceDim2);
+
+  QMCInput * Input;
+
   double localEnergy, kineticEnergy, potentialEnergy;
   double neEnergy, eeEnergy;
 
+  double SCF_Laplacian_PsiRatio;
+  double lnJ;
+  Array2D<double> SCF_Grad_PsiRatio;
+  
   QMCGreensRatioComponent psi;
   bool isSingular;
   
+  double modificationRatio;
+  
   /**
-    Gets the ratio of the wavefunction gradient to the wavefunction value at
-    the last evaluated electronic configuration.  This is also known as the
-    quantum force.
+     Gets the ratio of the wavefunction gradient to the wavefunction value at
+     the last evaluated electronic configuration.  This is also known as the
+     quantum force.
   */
   Array2D<double> gradPsiRatio;
-
+  
   /**
-    Gets a modified version of the ratio of the wavefunction gradient to the 
-    wavefunction value at the last evaluated electronic configuration.  
-    The modifications typically help deal with singularities near nodes,
-    and the particular type of modification can be selected.  
-    This is also known as the modified quantum force.
+     Gets a modified version of the ratio of the wavefunction gradient to the 
+     wavefunction value at the last evaluated electronic configuration.  
+     The modifications typically help deal with singularities near nodes,
+     and the particular type of modification can be selected.  
+     This is also known as the modified quantum force.
   */
   Array2D<double> modifiedGradPsiRatio;
-
+  
   /**
-    This holds derivatives of the Hamiltonian (Hellman-Feynmann theorem)
-    evaluated with respect to each nucleus.
+     This holds derivatives of the Hamiltonian (Hellman-Feynmann theorem)
+     evaluated with respect to each nucleus.
   */  
   Array2D<double> nuclearDerivatives;
   
   Array1D<double> chiDensity;
-
+  
   stringstream * configOutput;
+
+  double getModifiedLocalEnergy();
+  void zero();
+  void writeConfigs(Array2D<double> & Positions, double weight);
+  friend ostream& operator<<(ostream & strm, const QMCWalkerData & rhs);
 };
 
 #endif

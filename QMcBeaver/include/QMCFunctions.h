@@ -66,7 +66,7 @@ public:
   virtual void evaluate(Array2D<double> &X, QMCWalkerData & data) = 0;
 
   virtual void evaluate(Array1D<QMCWalkerData *> &walkerData, 
-		Array1D<Array2D<double> * > &xData, int num, bool writeConfig) = 0;
+		Array1D<Array2D<double> * > &xData, int num) = 0;
 
   /**
     Sets two QMCFunctions objects equal.

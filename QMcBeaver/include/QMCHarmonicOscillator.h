@@ -70,7 +70,9 @@ public:
     if true, the walkerData.configOutput will be given its info
   */
 
-  void evaluate(Array1D<QMCWalkerData *> &walkerData, Array1D<Array2D<double> * > &xData, int num, bool writeConfig);
+  void evaluate(Array1D<QMCWalkerData *> &walkerData,
+		Array1D<Array2D<double> * > &xData,
+		int num);
 
   void evaluate(Array2D<double> &X, QMCWalkerData & data)
     {
@@ -80,7 +82,7 @@ public:
       Array1D< QMCWalkerData * > tempWD;
       tempWD.allocate(1);
       tempWD(0) = &data;
-      evaluate(tempWD,tempX,1,false);
+      evaluate(tempWD,tempX,1);
     }
 
   /**

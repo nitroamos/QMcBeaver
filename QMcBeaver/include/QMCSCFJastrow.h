@@ -108,12 +108,11 @@ public:
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
     @param data all the data that a QMCWalker should require
-    @param writeConfig if the program is writing configs, we need to know here.
     if true, the walkerData.configOutput will be given its info
   */
   void evaluate(Array2D<double> &X, QMCWalkerData & data);
   void evaluate(Array1D<QMCWalkerData *> &walkerData, 
-		Array1D<Array2D<double> * > &xData, int num, bool writeConfig);
+		Array1D<Array2D<double> * > &xData, int num);
 
   /**
     Sets two QMCSCFJastrow objects equal.

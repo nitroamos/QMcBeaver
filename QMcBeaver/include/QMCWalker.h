@@ -97,7 +97,7 @@ public:
      initializePropagation, no parameters need to be passed. This function 
      should not be called without first calling initializePropagation.
   */
-  void processPropagation(QMCFunctions & QMF);
+  void processPropagation(QMCFunctions & QMF, bool writeConfigs);
 
   /**
     Calculates the observables for this walker and adds them to the input
@@ -155,6 +155,8 @@ public:
      of this walker.
    */
   string ID();
+  void branchID();
+  void newID();
 
   /**
     Calculates the distance between each pair of electrons and records it in 
@@ -215,8 +217,9 @@ public:
   /**
     Sets the positions of the electrons.
     @param temp_R the positions of the electrons
+    @return whether the position is ok
   */
-  void setR(Array2D<double>& temp_R);
+  bool setR(Array2D<double>& temp_R);
 
   /**
     Gets the walkerData for this walker
@@ -235,17 +238,18 @@ private:
 
   double weight;
   int age;
+  int ageMoved;
+  bool locationWarned;
+  double dW;
 
   /**
-     An ID is unique to a calculation, so these IDs can help
-     track down why a particular walker might have gone sour.
+     An ID and processor rank are unique identifiers for each walker.
+     This array will keep track of our ID as well as some number of ancestors.
 
-     It might also be useful to know the ID of our parent and
-     grandparent.
+     This information can help track down the source of a problem.
   */
-  long int walkerID;
-  long int parentID;
-  long int grandpID;
+  static const int numAncestors = 5;
+  long int genealogy[numAncestors];
 
   /**
     These energies are calculated by QMCWalker using the acceptance probability

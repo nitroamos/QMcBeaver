@@ -233,6 +233,22 @@ class QMCFlags
   int old_walker_acceptance_parameter;
 
   /**
+     Warning verbosity level. A higher integer should correspond to more
+     warnings printed.
+   */
+  int warn_verbosity;
+
+  /**
+     Controls
+   */
+  double rel_cutoff;
+
+  /**
+     Branching recommendations
+   */
+  int limit_branching;
+  
+  /**
      Time step being used for the calculation.
 
      Notes: There is sort of a balance here. If dt
@@ -668,6 +684,13 @@ class QMCFlags
      satisfy the electron nucleus cusp consitions near nuclei and 0 otherwise.
   */
   int replace_electron_nucleus_cusps;
+
+  /**
+     1 if we'll use the energy cutoff recommended by
+     DePasquale, Rothstein, Vrbik JCP, 89, 3629, 1988
+     0 otherwise
+   */
+  string energy_cutoff_type;
 
   /**
      1 if every VMC calculation used to generated correlated-sampling
