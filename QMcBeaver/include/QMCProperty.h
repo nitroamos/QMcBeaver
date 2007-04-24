@@ -162,11 +162,16 @@ public:
   void readXML(istream& strm);
 
   /**
-    Formats and prints the property to a stream.
+    Formats and prints the all the decorrelation data 
+    for the property to a stream.
+  */
+  void printAll(ostream & strm);
+
+  /**
+    Formats and prints the property to a stream as a single
+    line.
   */
   friend ostream& operator <<(ostream& strm, QMCProperty &rhs);
-
- private:
 
   /**
     Gets the correct variance for the block.  Where the variance is 
@@ -227,6 +232,8 @@ public:
     @return standard deviation of the standard deviation for block.
   */
   double getBlockVarianceStandardDeviation(int i);
+
+ private:
 
   /**
     Calculates the value and gradient of the function used to fit the
