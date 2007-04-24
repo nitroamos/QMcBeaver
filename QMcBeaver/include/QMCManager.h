@@ -315,8 +315,9 @@ class QMCManager
      and designated to be used, the state is loaded from them; otherwise,
      the state is randomly generated according to the prescription in the
      input data.
+     @param iseed the value read in from the input file
   */
-  void initializeCalculationState();
+  void initializeCalculationState(long int iseed);
 
   /**
      Send all of the processors the input file name.
@@ -440,8 +441,9 @@ class QMCManager
      be formatted exactly like the output from <code>toXML</code> because
      it is not intelligent.
      @param strm XML stream
+     @return whether the read was successful
   */
-  void readXML(istream & strm);
+  bool readXML(istream & strm);
 };
 
 #endif
