@@ -13,30 +13,37 @@
 #include "QMCWalker.h"
 
 const double QMCWalker::maxFWAsymp = 1.0;
-long int QMCWalker::nextID = 1;
+long int QMCWalker::nextID = 0;
 
 QMCWalker::QMCWalker()
 {
   TrialWalker    = 0;
   OriginalWalker = 0;
 
-  walkerID = ++nextID;
-  parentID = 0;
-  grandpID = 0;
+  weight   = 1.0;
+  age      = 0;
+  dR2      = 0.0;
+  ageMoved = -1;
+}
 
-  weight = 1.0;
-  age    = 0;
-  dR2 = 0.0;
+void QMCWalker::branchID()
+{
+  for(int i=numAncestors-1; i > 0; i--)
+    genealogy[i] = genealogy[i-1];
+  genealogy[0] = ++nextID;
+}
+
+void QMCWalker::newID()
+{
+  genealogy[0] = ++nextID;
+  for(int i=1; i < numAncestors; i++)
+    genealogy[i] = -1;
 }
 
 QMCWalker::QMCWalker( const QMCWalker & rhs )
 {
   TrialWalker    = 0;
   OriginalWalker = 0;
-
-  walkerID = ++nextID;
-  parentID = rhs.walkerID;
-  grandpID = rhs.parentID;
 
   *this = rhs;
 }
@@ -78,8 +85,12 @@ void QMCWalker::operator=( const QMCWalker & rhs )
   // This is not required because these are just temporary variables used in
   // propagating the electrons.
   
-  weight = rhs.weight;
-  age    = rhs.age;
+  weight   = rhs.weight;
+  age      = rhs.age;
+  ageMoved = rhs.ageMoved;
+
+  for(int i=0; i<numAncestors; i++)
+    genealogy[i] = rhs.genealogy[i];
 
   Input = rhs.Input;
   move_accepted         = rhs.move_accepted;
@@ -133,12 +144,12 @@ void QMCWalker::initializePropagation(QMCWalkerData * &data,
   rToCalc = & TrialWalker->R;
 }
 
-void QMCWalker::processPropagation(QMCFunctions & QMF)
+void QMCWalker::processPropagation(QMCFunctions & QMF, bool writeConfigs)
 {
   QMCGreensRatioComponent reverseGreensFunction =
     calculateReverseGreensFunction();
   double GreensFunctionRatio =
-    reverseGreensFunction/forwardGreensFunction;
+    (double)(reverseGreensFunction/forwardGreensFunction);
 
   if (IeeeMath::isNaN(GreensFunctionRatio))
     calculateMoveAcceptanceProbability(0.0);
@@ -148,9 +159,28 @@ void QMCWalker::processPropagation(QMCFunctions & QMF)
   acceptOrRejectMove();
   reweight_walker();
 
+  if(getWeight() == 0)
+    return;
+
   if(move_accepted == false)
     {
       dR2                   = OriginalWalker->dR2;
+    }
+
+  if(writeConfigs)
+    {
+      /*
+	If we want to be able to exactly recompose the statistics
+	off of a cfgs file, then we'll need to print both configurations,
+	since both are used in calculateObservables().
+      */
+      /*
+      double p = TrialWalker->AcceptanceProbability;
+      double q = 1.0 - p;
+
+      TrialWalker->walkerData.writeConfigs(TrialWalker->R,p);
+      OriginalWalker->walkerData.writeConfigs(OriginalWalker->R,q);
+      */
     }
 
   calculateObservables();
@@ -166,6 +196,15 @@ void QMCWalker::processPropagation(QMCFunctions & QMF)
     {
       cerr << "WARNING: Reinitializing a singular walker!!" << endl;
       initializeWalkerPosition(QMF);
+    }
+
+  if(writeConfigs)
+    {
+      /*
+	Assuming the AcceptanceProbability is near one, this
+	is probably more efficient than the option above.
+       */
+      walkerData.writeConfigs(R, AcceptanceProbability);
     }
 }
 
@@ -642,7 +681,7 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
 
 void QMCWalker::reweight_walker()
 {
-  double dW = 0.0;
+  dW = 0.0;
   double S_trial = 0.0;
   double S_original = 0.0;
   double trialEnergy    = TrialWalker->walkerData.localEnergy;
@@ -687,25 +726,7 @@ void QMCWalker::reweight_walker()
           double lengthGradOriginalUnmodified =
             sqrt((*oGPR).dotAllElectrons(*oGPR));
 
-	  if (IeeeMath::isNaN(lengthGradTrialModified) || IeeeMath::isNaN(lengthGradTrialUnmodified) ||
-	      lengthGradTrialUnmodified == 0)
-	    {
-	      cerr << "WARNING: trial Grad Psi Ratio is NaN in "; 
-	      cerr << "QMCWalker::reweight_walker()" << endl;
-	      cerr << "   lengthGradTrialModified = " << lengthGradTrialModified << endl;
-	      cerr << "   lengthGradTrialUnmodified = " << lengthGradTrialUnmodified << endl;
-	      weightIsNaN = true;
-	    }
-	  if (IeeeMath::isNaN(lengthGradOriginalModified) || IeeeMath::isNaN(lengthGradOriginalUnmodified) ||
-	      lengthGradOriginalUnmodified == 0)
-	    {
-	      cerr << "WARNING: original Grad Psi Ratio is NaN in "; 
-	      cerr << "QMCWalker::reweight_walker()" << endl;
-	      cerr << "   lengthGradOriginalModified = " << lengthGradOriginalModified << endl;
-	      cerr << "   lengthGradOriginalUnmodified = " << lengthGradOriginalUnmodified << endl;
-	      weightIsNaN = true;
-	    }
-	  else if(Input->flags.energy_modification_type=="modified_umrigar93")
+	  if(Input->flags.energy_modification_type=="modified_umrigar93")
             {
               S_trial = (Input->flags.energy_trial - trialEnergy)*
                         (lengthGradTrialModified/lengthGradTrialUnmodified);
@@ -812,44 +833,29 @@ void QMCWalker::reweight_walker()
           exit(0);
         }
     }
-    
-  if( dW > 10 && getWeight() > 0.0)
-    {
-      /*
-	This occurance actually usually happens when the
-	energy_trial is bad, not when the walker itself is bad.
-       */ 
 
-      double p = TrialWalker->getAcceptanceProbability();
-      double q = 1.0 - p;
-      //cerr << scientific;
-      cerr << "WARNING: dW = " << dW << " for walker " << ID();
-      cerr << "       p = " << p << "; q = " << q;
-      cerr << "       energy_trial     = " << Input->flags.energy_trial << endl;
-      cerr << "       energy_estimated = " << Input->flags.energy_estimated << endl;
-      cerr << "       S_trial          = " << S_trial << endl;
-      cerr << "       S_original       = " << S_original << endl;
-
-      cerr << "       TKE              = " << TrialWalker->walkerData.kineticEnergy << endl;
-      cerr << "       TPE              = " << TrialWalker->walkerData.potentialEnergy << endl;
-      cerr << "       TEE              = " << TrialWalker->walkerData.eeEnergy << endl;
-      cerr << "       TNE              = " << TrialWalker->walkerData.neEnergy << endl;
-      cerr << "       TPsi             = " << TrialWalker->walkerData.psi << endl;
-      cerr << "       trialEnergy      = " << trialEnergy << endl;
-
-      cerr << "       OKE              = " << OriginalWalker->walkerData.kineticEnergy << endl;
-      cerr << "       OPE              = " << OriginalWalker->walkerData.potentialEnergy << endl;
-      cerr << "       OEE              = " << OriginalWalker->walkerData.eeEnergy << endl;
-      cerr << "       ONE              = " << OriginalWalker->walkerData.neEnergy << endl;
-      cerr << "       OPsi             = " << OriginalWalker->walkerData.psi << endl;
-      cerr << "       originalEnergy   = " << originalEnergy << endl;
-    }
 
   // now set the weight of the walker
   setWeight( getWeight() * dW );
 
-  if(iteration < 0 && getWeight() > 0.0 &&
-     Input->flags.run_type != "variational" )
+  if(getWeight() <= 0.0 || Input->flags.run_type == "variational")
+    return;
+
+  double rel_diff;
+  if(move_accepted)
+    {
+      rel_diff = fabs( (TrialWalker->walkerData.localEnergy -
+			Input->flags.energy_estimated_original)/
+		       Input->flags.energy_estimated_original);
+    }
+  else
+    {
+      rel_diff = fabs( (OriginalWalker->walkerData.localEnergy -
+			Input->flags.energy_estimated_original)/
+		       Input->flags.energy_estimated_original);
+    }
+
+  if(iteration < -100)
     {
       /*
 	We're equilibrating when iteration < 0.
@@ -857,85 +863,305 @@ void QMCWalker::reweight_walker()
 	If we're equilibrating, we can be more aggressive about
 	handling bad walkers.
       */
+      
+      // we probably don't need warnings for the first couple steps
+      int steps = iteration + Input->flags.equilibration_steps;
+      // the number of steps until warnings are printed
+      int min_steps = 5;
 
-      if(getWeight() > 4.0*Input->flags.branching_threshold ||
-	 age > Input->flags.old_walker_acceptance_parameter)
+      if(getWeight() > 1.5*Input->flags.branching_threshold)
 	{
-	  cerr << "WARNING: Deleting bad walker " << ID();
-	  cerr << "  dW     = " << dW << endl;
+	  if(steps > min_steps)
+	    {
+	      cerr << "WARNING: Deleting heavy walker " << ID();
+	      cerr.flush();
+	    }
 	  setWeight(0.0);
 	  return;
 	}
-      if(age > 1 && dW > Input->flags.branching_threshold)
+
+      if(getWeight() < 0.1)
 	{
-	  cerr << "WARNING: Deleting poor walker " << ID();
-	  cerr << "  dW     = " << dW << endl;
+	  if(steps > min_steps)
+	    {
+	      cerr << "WARNING: Deleting light walker " << ID();
+	      cerr.flush();
+	    }
+	  setWeight(0.0);
+	  return;
+	}
+
+      if(dW > 1.5 || dW < 0.5)
+	{
+	  if(steps > min_steps)
+	    {
+
+	      if(dW > 2.0 || dW < 0.25)
+		{
+		  double p = TrialWalker->getAcceptanceProbability();
+		  double q = 1.0 - p;
+		  
+		  cerr << "WARNING: Deleting walker with bad dW " << ID();
+		  cerr << "       p = " << p << "; q = " << q;
+		  cerr << "       energy_trial     = " << Input->flags.energy_trial << endl;
+		  cerr << "       energy_estimated = " << Input->flags.energy_estimated << endl;
+		  cerr << "       S_trial          = " << S_trial << endl;
+		  cerr << "       S_original       = " << S_original << endl;
+		  cerr << "TrialWalker:" << endl << TrialWalker->walkerData;
+		  cerr << "OriginalWalker:" << endl << OriginalWalker->walkerData;
+		  cerr << endl;
+		}
+	      else
+		{
+		  //cerr << "WARNING: Deleting fast growth walker " << ID();
+		}
+	      cerr.flush();
+	    }
+	  setWeight(0.0);
+	  return;
+	}
+
+      double rel_cutoff = Input->flags.rel_cutoff;
+      if(rel_diff > rel_cutoff && steps > min_steps)
+	{
+	  /*
+	    A lot of walkers when initialized will have bad energies. So we
+	    want to give them a couple of chances to move first.
+
+	    Since rel_diff uses the SCF energy, it will bias the energy
+	    toward zero, so we want a tradeoff between biasing the energy
+	    and not allowing horrible energies into the average.
+
+	    rel_diff > 1 corresponds to a positive energy, clearly unacceptable.
+	    Is there any argument suggesting that a Local Energy can never be +'ve?
+	   */
+	  if(rel_diff > rel_cutoff && steps > 2*min_steps){
+	    cerr << "WARNING: Deleting walker with bad energy " << ID();
+	    cerr.flush();
+	  }
+	  setWeight(0.0);
+	  return;
+	}
+
+      int age_cutoff = 30;
+      if(age >= age_cutoff)
+	{
+	  // I don't see how a warning here could be very useful...
+	  if(steps > age_cutoff && false)
+	    {
+	      cerr << "WARNING: Deleting aged walker " << ID();
+	      cerr.flush();
+	    }
 	  setWeight(0.0);
 	  return;
 	}
     }
+  else
+    {
+      /*
+	We're not equillibrating anymore, so we want to be more
+	careful. We'll only delete walkers we know will mess up
+	the calculation.
 
-}
+	How aggressive can we be?
+      */
+      if(getWeight() > 50.0)
+	{
+	  cerr << "ERROR: Deleting heavy walker " << ID();
+	  cerr.flush();
+	  setWeight(0.0);
+	  return;
+	}
 
-string QMCWalker::ID()
-{
-  double virial = -TrialWalker->walkerData.potentialEnergy/TrialWalker->walkerData.kineticEnergy;
+      if(rel_diff > 5.0)
+	{
+	  /*
+	    Maybe this warning is unnecessary since it won't be included
+	    in the energy anyway....
+	   */
+	  cerr << "ERROR: Deleting walker with bad energy " << ID();
+	  cerr.flush();
+	  setWeight(0.0);
+	  return;
+	}
 
-  stringstream id;
-  id << "(" << walkerID << "<" << parentID << "<" << grandpID;
-  id << "::" << Input->flags.my_rank << ")" << endl;
-  id << "  weight = " << getWeight() << endl;
-  id << "  energy = " << TrialWalker->walkerData.localEnergy << endl;
-  id << "  virial = " << virial << endl;
-  id << "  age    = " << age << endl;
-  id << "  iter   = " << iteration << endl;
-  return id.str();
+      if(dW > 4.0)
+	{
+	  stringstream strm;
+	  double p = TrialWalker->getAcceptanceProbability();
+	  double q = 1.0 - p;
+	  
+	  strm << "ERROR: Deleting fast growth walker " << ID();
+	  strm << "       p = " << p << "; q = " << q;
+	  strm << "       energy_trial     = " << Input->flags.energy_trial << endl;
+	  strm << "       energy_estimated = " << Input->flags.energy_estimated << endl;
+	  strm << "       S_trial          = " << S_trial << endl;
+	  strm << "       S_original       = " << S_original << endl;
+	  strm << "TrialWalker:" << endl << TrialWalker->walkerData;
+	  strm << "OriginalWalker:" << endl << OriginalWalker->walkerData;
+	  strm << endl;
+	  cerr << strm.str();
+	  cerr.flush();
+	  setWeight(0.0);
+	  return;
+	}
+    }
 }
 
 bool QMCWalker::branchRecommended()
 {
   /*
-    This function will be queried before a branch. Since branching is purely an
+    This function will be queried before a branch, meaning the walker is a
+    candidate for branching. Since branching is purely an
     efficiency issue, we can do whatever we want and shouldn't have to worry about
     ruining detailed balance.
 
     We're equilibrating when iteration < 0, so we can be more aggressive in penalizing
-    bad walkers.
+    bad walkers... On the other hand, since we're deleting a lot of walkers during
+    equilibration, maybe we want to make branching easier to replenish the loses.
+
+    The difficulty is trying to get some warnings, but not too many. If we didn't
+    delete all the bad walkers during equilibration, then "badness" can propagate
+    through the calculation.
+    
+    By the time this function is called, OriginalWalker == TrialWalker
   */
+  /*
+    Some ideas to try:
+    1) No branching until you've moved at least once.
+    2) No branching if LE - TrialEnergy is outside some range (relative or abs?).
+    3) A walker can't contribute to the energy average if its weight is too large
+    4) Walkers can only be deleted if they haven't moved (and then raise the threshold?)
+    5) 
+   */
   bool shouldRecommend = true;
   bool shouldWarn = false;
-  int aged = age - Input->flags.old_walker_acceptance_parameter;
+  int aged = age - 10;
 
-  if(age >= 5 && iteration < 0)
+  if(age > 4)
     {
       shouldRecommend = false;
-      if(age%10 == 0) shouldWarn = true;
-    }
-  if(age > 0 && getWeight() > 2.0*Input->flags.branching_threshold)
-    {
-      shouldRecommend = false;
-      if(aged < 0 && getWeight() > 3.0*Input->flags.branching_threshold)
+      if(age >= Input->flags.old_walker_acceptance_parameter && age%10 == 0)
 	shouldWarn = true;
     }
-  if( aged >= 0 )
+  if(dW > 1.5)
     {
       shouldRecommend = false;
-      if(aged%10 == 0) shouldWarn = true;
+      if(iteration%10 == 0 && getWeight() > 2.0*Input->flags.branching_threshold)
+	shouldWarn = true;
+      if(dW > 2.0)
+	shouldWarn = true;
+    }
+  if(getWeight() > 2.0*Input->flags.branching_threshold)
+    {
+      shouldRecommend = false;
+      if(iteration%10 == 0 &&
+	 getWeight() > 2.0*Input->flags.branching_threshold &&
+	 dW > 1.0)
+	shouldWarn = true;
     }
 
   double virial = -TrialWalker->walkerData.potentialEnergy/TrialWalker->walkerData.kineticEnergy;
-  if(fabs(virial) < 1e-2)
+
+  // Relatively large virial ratios do not appear to correlate with bad E_L.
+  // It's hard to know how this would be a good indicator given rel_diff
+  if(fabs(virial) < 0.1)
     {
       shouldRecommend = false;
-      if(aged == 0) shouldWarn = true;
+      //only warn when we arrive at a bad spot
+      if(age == 0)
+	shouldWarn = true;
     }
 
-  if(shouldWarn && !shouldRecommend)
+  double rel_diff = fabs( (TrialWalker->walkerData.localEnergy -
+			   Input->flags.energy_estimated_original)/
+			  Input->flags.energy_estimated_original);
+  if(rel_diff > 1.0)
+    {
+      shouldRecommend = false;
+      if(age == 0)
+	shouldWarn = true;
+    }
+
+  if(shouldWarn && !shouldRecommend && iteration > 0)
     {
       cerr << "WARNING: Not recommending a branch for walker " << ID();
+      cerr.flush();
     }
 
   return shouldRecommend;
+}
+
+string QMCWalker::ID()
+{
+  /*
+    The output only depends upon move_accepted if
+    ID() is called before the processPropagation function completes
+    since the last thing processPropagation does is 
+    syncronize the Trial and Original walkerData.
+   */
+  QMCWalkerData * wd;
+  if(move_accepted)
+    wd = & TrialWalker->walkerData;
+  else
+    wd = & OriginalWalker->walkerData;
+
+  double virial = 0;
+  if(fabs(wd->kineticEnergy) > 1e-30)
+    virial = -wd->potentialEnergy/wd->kineticEnergy;
+
+  double rel_diff = fabs( (wd->localEnergy -
+		    Input->flags.energy_estimated_original)/
+		   Input->flags.energy_estimated_original);
+
+  stringstream id;
+
+  id << "(" << genealogy[0];
+  for(int i=1; i<numAncestors; i++)
+    id << "<" << genealogy[i];
+
+  id << "::" << Input->flags.my_rank << ")" << endl;
+
+  id << "     weight = ";
+  id.precision(15);
+  id.width(20);
+  id << getWeight() << endl;
+
+  id << "         dW = ";
+  id.precision(15);
+  id.width(20);
+  id << dW << endl;
+
+  id << "     energy = ";
+  id.precision(15);
+  id.width(20);
+  id << wd->localEnergy << endl;
+
+  /*
+  id << "  mod.ratio = ";
+  id.precision(15);
+  id.width(20);
+  id << wd->modificationRatio << endl;
+  */
+
+  id << "     virial = ";
+  id.precision(15);
+  id.width(20);
+  id << virial << endl;
+
+  id << "   rel_diff = ";
+  id.precision(15);
+  id.width(20);
+  id << rel_diff << endl;
+
+  id << "        age = ";
+  id.width(20);
+  id << age << endl;
+  
+  id << "       iter = ";
+  id.width(20);
+  id << iteration << endl;
+  return id.str();
 }
 
 void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
@@ -972,11 +1198,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
       p = 0.0;
       // The energies are assigned zero because the later multiplication by 
       // p=0 doesn't result in 0 contribution.
-      TrialWalker->walkerData.kineticEnergy   = 0;
-      TrialWalker->walkerData.potentialEnergy = 0;
-      TrialWalker->walkerData.localEnergy     = 0;
-      TrialWalker->walkerData.neEnergy        = 0;
-      TrialWalker->walkerData.eeEnergy        = 0;
+      TrialWalker->walkerData.zero();
     }
   
   // The particular NaN that this is correcting for is not revealed by isinf or
@@ -986,11 +1208,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
     {
       cerr << "WARNING: Rejecting trial walker with NaN kinetic energy!" << endl;
       p = 0.0;
-      TrialWalker->walkerData.kineticEnergy   = 0;
-      TrialWalker->walkerData.potentialEnergy = 0;
-      TrialWalker->walkerData.localEnergy     = 0;
-      TrialWalker->walkerData.neEnergy        = 0;
-      TrialWalker->walkerData.eeEnergy        = 0;
+      TrialWalker->walkerData.zero();
     }
 
   double potentialEnergy = TrialWalker->walkerData.potentialEnergy;
@@ -998,11 +1216,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
     {
       cerr << "WARNING: Rejecting trial walker with NaN potential energy!" << endl;
       p = 0.0;
-      TrialWalker->walkerData.kineticEnergy   = 0;
-      TrialWalker->walkerData.potentialEnergy = 0;
-      TrialWalker->walkerData.localEnergy     = 0;
-      TrialWalker->walkerData.neEnergy        = 0;
-      TrialWalker->walkerData.eeEnergy        = 0;
+      TrialWalker->walkerData.zero();
     }
     
   // if the trial position is singular reject the move
@@ -1010,11 +1224,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
     {
       cerr << "WARNING: Rejecting singular trial walker!" << endl;
       p = 0.0;
-      TrialWalker->walkerData.kineticEnergy   = 0;
-      TrialWalker->walkerData.potentialEnergy = 0;
-      TrialWalker->walkerData.localEnergy     = 0;
-      TrialWalker->walkerData.neEnergy        = 0;
-      TrialWalker->walkerData.eeEnergy        = 0;
+      TrialWalker->walkerData.zero();
     }
     
   // Fixed Node Condition
@@ -1040,6 +1250,7 @@ void QMCWalker::acceptOrRejectMove()
   if( TrialWalker->getAcceptanceProbability() > ran.unidev() )
     {
       // accept the move
+      ageMoved = age;
       age = 0;
       move_accepted = true;
     }
@@ -1050,11 +1261,20 @@ void QMCWalker::acceptOrRejectMove()
       age++;
       move_accepted = false;
     }
-    
-  if( age - Input->flags.old_walker_acceptance_parameter > 200 &&
-      (age - Input->flags.old_walker_acceptance_parameter)%50 == 0 )
+
+  int aged = age - Input->flags.old_walker_acceptance_parameter;
+  if( iteration > 0)
     {
-      cerr << "WARNING: Aged walker " << ID();
+      if(ageMoved > Input->flags.old_walker_acceptance_parameter + 15)
+	{
+	  cerr << "WARNING: Old walker moved after " << ageMoved << " iterations " << ID();
+	}
+      /*
+      if(aged >= 50 && aged%50 == 0)
+	{
+	  cerr << "WARNING: Aged walker " << ID();
+	}
+      */
     }
 }
 
@@ -1088,8 +1308,11 @@ void QMCWalker::initialize(QMCInput *INPUT)
 {
   Input = INPUT;
 
+  int numFW = Input->flags.future_walking.size();
   int numElectrons  = Input->WF.getNumberElectrons();
   int numDimensions;
+  int numNucForceDim1;
+  int numNucForceDim2;
   
   if(Input->flags.trial_function_type == "restricted" ||
      Input->flags.trial_function_type == "unrestricted"){     
@@ -1099,19 +1322,28 @@ void QMCWalker::initialize(QMCInput *INPUT)
     numDimensions = Input->flags.Nbasisfunc;
   }
 
-  R.allocate(numElectrons,numDimensions);
-  walkerData.gradPsiRatio.allocate(numElectrons,numDimensions);
-  walkerData.modifiedGradPsiRatio.allocate(numElectrons,numDimensions);
+  if(Input->flags.nuclear_derivatives != "none")
+    {
+      if(Input->flags.nuclear_derivatives != "bin_force_density")
+	{
+	  numNucForceDim1 = Input->Molecule.getNumberAtoms();
+	  numNucForceDim2 = 3;
+	} else {
+	  numNucForceDim1 = QMCNuclearForces::getNumBins();
+	  numNucForceDim2 = 1;
+	}
+      
+      fwNuclearForces.allocate(numNucForceDim1,numNucForceDim2);
+      
+      for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
+	for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
+	  fwNuclearForces(d1,d2).allocate(numFW,2);
+    }
 
-  walkerData.localEnergy     = 0.0;
-  walkerData.kineticEnergy   = 0.0;
-  walkerData.potentialEnergy = 0.0;
-  walkerData.neEnergy        = 0.0;
-  walkerData.eeEnergy        = 0.0;
-  walkerData.psi             = 0.0;
-  walkerData.configOutput    = new stringstream();
-  
-  int numFW = Input->flags.future_walking.size();
+  R.allocate(numElectrons,numDimensions);
+
+  walkerData.initialize(Input,numDimensions,numNucForceDim1,numNucForceDim2);
+
   numFWSteps.resize(numFW);
   
   isCollectingFWResults.allocate(numFW,2);
@@ -1124,28 +1356,8 @@ void QMCWalker::initialize(QMCInput *INPUT)
   fwKineticEnergy.allocate(numFW,2);
   fwKineticEnergy_grad.allocate(numFW,2);
   fwPotentialEnergy.allocate(numFW,2);
-  
-  if(Input->flags.nuclear_derivatives != "none")
-  {    
-    if(Input->flags.nuclear_derivatives != "bin_force_density")
-    {
-      walkerData.nuclearDerivatives.allocate(Input->Molecule.getNumberAtoms(), 3);
-    } else {
-      walkerData.nuclearDerivatives.allocate(QMCNuclearForces::getNumBins(), 1);      
-    }
-  
-    fwNuclearForces.allocate(walkerData.nuclearDerivatives.dim1(),
-                             walkerData.nuclearDerivatives.dim2());
-
-    for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
-      for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
-        fwNuclearForces(d1,d2).allocate(numFW,2);
-  }
   resetFutureWalking();
-    
-  if (Input->flags.calculate_bf_density == 1)
-    walkerData.chiDensity.allocate(Input->WF.getNumberBasisFunctions());
-    
+        
   //initialize acceptance probability
   setAcceptanceProbability(0.0);
 }
@@ -1360,6 +1572,7 @@ void QMCWalker::readXML(istream& strm, QMCFunctions & QMF)
   strm >> temp >> temp >> temp >> temp >> temp;
   
   QMF.evaluate(R,walkerData);
+  newID();
 }
 
 void QMCWalker::initializeWalkerPosition(QMCFunctions & QMF)
@@ -1422,9 +1635,18 @@ Array2D<double> * QMCWalker::getR()
   return &R;
 }
 
-void QMCWalker::setR(Array2D<double>& temp_R)
+bool QMCWalker::setR(Array2D<double>& temp_R)
 {
-  R = temp_R;
+  bool ok = true;
+  for(int i=0; i<temp_R.dim1(); i++)
+    for(int j=0; j<temp_R.dim2(); j++)
+      if(IeeeMath::isNaN(temp_R(i,j)) || temp_R(i,j) == 0 || fabs(temp_R(i,j)) > 500.0 )
+	{
+	  cout << "(" << i << "," << j << ") = " << temp_R(i,j) << endl;
+	  ok = false;
+	}
+  if(ok) R = temp_R;
+  return ok;
 }
 
 QMCWalkerData* QMCWalker::getWalkerData()
@@ -1587,21 +1809,67 @@ void QMCWalker::calculateObservables()
 
 void QMCWalker::calculateObservables( QMCProperties & props )
 {
+  if(getWeight() <= 0.0)
+    return;
+
   // Add the data from this walker to the accumulating properties
   
-  // Calculate the Energy ...
-  props.energy.newSample( localEnergy, getWeight() );
-  
-  // Calculate the Kinetic Energy  
-  props.kineticEnergy.newSample( kineticEnergy, getWeight() );
-  
-  // Calculate the Potential Energy  
-  props.potentialEnergy.newSample( potentialEnergy, getWeight() );
-  
-  // Calculate the ne and ee potential energy
-  props.neEnergy.newSample( neEnergy, getWeight() );
-  props.eeEnergy.newSample( eeEnergy, getWeight() );
-  
+  /*
+    What we want to measure is how bad the bad ones are.
+    So, we want to set this cutoff high enough to cut out
+    all the good to decent walkers.
+   */
+  /*
+  if(ageMoved > 1){
+    props.walkerAge.newSample(ageMoved,1.0);
+  }
+  */
+  ageMoved = -1;
+
+
+  props.weightChange.newSample(dW,1.0);
+    
+  double rel_diff = fabs( (localEnergy -
+			   Input->flags.energy_estimated_original)/
+			  Input->flags.energy_estimated_original);
+  if(rel_diff < Input->flags.rel_cutoff)
+    {
+      // Calculate the Energy ...
+      props.energy.newSample( localEnergy, getWeight() );
+      
+      // Calculate the Kinetic Energy  
+      props.kineticEnergy.newSample( kineticEnergy, getWeight() );
+      
+      // Calculate the Potential Energy  
+      props.potentialEnergy.newSample( potentialEnergy, getWeight() );
+      
+      // Calculate the ne and ee potential energy
+      props.neEnergy.newSample( neEnergy, getWeight() );
+      props.eeEnergy.newSample( eeEnergy, getWeight() );
+    }
+  else
+    {
+      if(age == 0)
+	{
+	  bool shouldWarn = false;
+	  switch(Input->flags.warn_verbosity)
+	    {
+	    case 0: break;
+	    case 1: if(rel_diff > 5.0) shouldWarn = true; break;
+	    case 2: if(rel_diff > 2.0) shouldWarn = true; break;
+	    case 3: if(rel_diff > 1.0) shouldWarn = true; break;
+	    case 4: shouldWarn = true; break;
+	    default: break;
+	    }
+
+	  if(shouldWarn && iteration + Input->flags.equilibration_steps > 5){
+	    cerr << "ERROR: Not including walker in average " << ID();
+	    cerr << "   localEnergy = " << localEnergy << endl;
+	    cerr.flush();
+	  }
+	}
+    }
+
   // Calculate the Acceptance Probability ...
   props.acceptanceProbability.newSample( getAcceptanceProbability(), getWeight() );
   
