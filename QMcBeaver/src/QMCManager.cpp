@@ -57,7 +57,6 @@ void QMCManager::initialize( int argc, char **argv )
   
   // Load the input data
   Input.read( runfile );
-  ran.initialize(Input.flags.iseed,Input.flags.my_rank);
 
   initializeOutputs();
   
@@ -79,21 +78,12 @@ void QMCManager::initialize( int argc, char **argv )
   }
 
   QMCnode.initialize( &Input );
-
-  // Set equilibrating = true so that the run equilibrates before taking
-  // data
   
-  if(  Input.flags.equilibrate_first_opt_step == 0 )
-    equilibrating = false;
-  else
-    equilibrating = true;
-  
-  done = false;
-  
+  done = false;  
   iteration = 0;
   
   // Initialize the calculation state
-  initializeCalculationState();
+  initializeCalculationState(Input.flags.iseed);
 }
 
 void QMCManager::initializeMPI()
@@ -270,6 +260,11 @@ void QMCManager::gatherProperties()
   Properties_total = *QMCnode.getProperties();
   fwProperties_total = *QMCnode.getFWProperties();
 #endif
+
+  if( equilibrating )
+    {
+      QMCnode.zeroOut();
+    }
 }
 
 void QMCManager::synchronizeDMCEnsemble()
@@ -787,7 +782,9 @@ void QMCManager::run()
     if( equilibrating )
     {
       localTimers.getEquilibrationStopwatch() ->stop();
-      QMCnode.zeroOut();
+      //We don't want to zero out here because there is some
+      //interesting info we want to print in writeEnergyResultsSummary
+      //QMCnode.zeroOut();
     }
     else
     {
@@ -834,6 +831,10 @@ void QMCManager::run()
 
 	  sendAllProcessorsACommand( QMC_REDUCE_ALL );
 
+	  /*
+	    Write the best data known to root processor
+	    just in case the reduce fails.
+	   */
 	  writeEnergyResultsSummary( cout );
 	  writeEnergyResultsSummary( *qmcOut );
 
@@ -852,6 +853,13 @@ void QMCManager::run()
 	  
 	  if(Input.flags.nuclear_derivatives != "none")
 	    gatherForces();
+
+	  /*
+	    This should represent the best data known
+	    to all processors.
+	   */
+	  writeEnergyResultsSummary( cout );
+	  writeEnergyResultsSummary( *qmcOut );
 
 	  cout << *this;
 	  *getResultsOutputStream() << *this;
@@ -1000,6 +1008,8 @@ void QMCManager::run()
     When we've gotten to this stage in the code,
     the run has completed, so let's write the most
     up to date info we have.
+
+    This may end up being redundant information...
    */
   if( Input.flags.my_rank == 0 )
     {
@@ -1018,6 +1028,13 @@ void QMCManager::run()
     delete energy_strm_out;
     energy_strm_out = 0;
   }
+
+  /*
+    We want to update what we believe the original energy estimate is
+    so that it represents the HF + Jastrow. This update is important
+    for some WF optimization methods (e.g. umrigar88).
+  */
+  updateEstimatedEnergy(&Properties_total);
 }
 
 void QMCManager::optimize()
@@ -1480,29 +1497,43 @@ void QMCManager::writeElectronDensityHistograms()
 
 void QMCManager::writeEnergyResultsSummary( ostream & strm )
 {
-  // Print one iteration out
-  int width = 19;
+  int width = 15;
   double Eave = Properties_total.energy.getAverage();
   double Estd = Properties_total.energy.getStandardDeviation();
   
   if(  Estd > 1.0e6 )
     Estd = 0.0;
-  
-  strm << setw( 10 )  << iteration;
+
+  strm.flush();
+
+  /*
+    If we're still equilibrating, we'll get a negative iteration.
+    This allows us to zeroOut for equilibration after we've printed
+    this information now that we have a more clear way to indicate
+    whether we're equilibrating.
+   */
+  long iter = iteration - Input.flags.equilibration_steps;
+  strm << setw( 10 )  << iter << " ";
   
   strm << setprecision( 10 );
   
-  strm << setw(width)  << Eave << setw(width)  << Estd;
+  strm << setw(width)  << Eave << " " << setw(width)  << Estd << " ";
   
-  strm << setw(width) << QMCnode.getNumberOfWalkers();
+  strm << setw(width) << QMCnode.getNumberOfWalkers() << " ";
   
-  strm << setw(width) << Input.flags.energy_trial << setw(width)  << Input.flags.dt_effective;
+  strm << setw(width) << Input.flags.energy_trial << " " << setw(width)  << Input.flags.dt_effective << " ";
   
-  strm << setw(width) << QMCnode.getWeights();
-  
+  strm << setw(width) << QMCnode.getWeights() << " ";
+
+  /*
+  strm << setw(width) << Properties_total.walkerAge.getAverage() << " ";
+  strm << setw(width) << Properties_total.weightChange.getAverage() << " ";
+  strm << setw(width) << Properties_total.growthRate.getAverage() << " ";
+  */
   strm << setw(width) << Properties_total.energy.getNumberSamples();
   
   strm << endl << setprecision( 15 );
+  strm.flush();
 }
 
 void QMCManager::writeTransientProperties( int label )
@@ -1607,13 +1638,20 @@ void QMCManager::writeCheckpoint()
   QMCcheckpoint.close();
 }
 
-void QMCManager::readXML( istream & strm )
+bool QMCManager::readXML( istream & strm )
 {
   string temp;
   
   // Read the random seed
   // This is the first read from the checkpoint
   strm >> temp;
+  if(temp != "<iseed>")
+    {
+      clog << "Error: checkpoint read failed in QMCManager."
+	   << " We expected to read a \"<iseed>\""
+	   << " tag, but found \"" << temp << "\"." << endl;
+      return false;
+    }
   ran.readXML(strm);  
   strm >> temp;
 
@@ -1626,16 +1664,11 @@ void QMCManager::readXML( istream & strm )
   strm >> temp >> temp;  
   equilibrating = atoi( temp.c_str() );
   strm >> temp;
-
-  if(  !equilibrating )
-  {
-    Input.flags.dt = Input.flags.dt_run;
-  }
   
-  QMCnode.readXML( strm );
+  return QMCnode.readXML( strm );
 }
 
-void QMCManager::initializeCalculationState()
+void QMCManager::initializeCalculationState(long int iseed)
 {
   // Create the checkpoint file name
   string filename = Input.flags.checkin_file_name + ".checkpoint." +
@@ -1649,7 +1682,7 @@ void QMCManager::initializeCalculationState()
     then let's look in one particular subdirectory. During
     parallel runs, each processor creates a checkpoint file,
     cluttering the directory. This might be OS dependent a bit,
-    but it preserved sanity.
+    but it preserves sanity.
    */
   if(!qmcCheckpoint)
     {
@@ -1660,25 +1693,56 @@ void QMCManager::initializeCalculationState()
 
   localTimers.getInitializationStopwatch()->start();
   
+  bool ok = false;
   if( qmcCheckpoint && Input.flags.use_available_checkpoints == 1 )
     {
       // There is a checkpoint file
-      clog << "Reading in checkpointed file " << filename << "...";
-      readXML( qmcCheckpoint );
-      clog << " successful." << endl;
-      writeEnergyResultsSummary( clog );
-      if(Input.flags.zero_out_checkpoint_statistics == 1)
-	clog << "Will zero the checkpoint." << endl;
-    }
-  else
-    {
-      // There is not a checkpoint file
-      QMCnode.randomlyInitializeWalkers();
+      clog << "Reading in checkpointed file " << filename << "..." << endl;
+      ok = readXML( qmcCheckpoint );
+      qmcCheckpoint.close();
+      if(ok)
+	{
+	  clog << "Checkpoint read successful." << endl;
+	  writeEnergyResultsSummary( clog );
+	  if(Input.flags.zero_out_checkpoint_statistics == 1)
+	    clog << "Will zero the checkpoint, preserving only the configurations." << endl;
+	} else {
+	  /*
+	    We assume that a calculation from scratch is better than exiting.
+	  */
+	  clog << "Checkpoint read NOT successful, random initialization." << endl;
+	}
     }
 
-  localTimers.getInitializationStopwatch() ->stop();
+  if(!ok)
+    {
+      //Make sure we're not initalizing ran from the checkpoint
+      ran.initialize(iseed,Input.flags.my_rank);
+
+      /*
+	There is no checkpoint file, or checkpoint read failed.
+	If the read failed, then we want to be sure we remove everything
+	we read in from the checkpoint.
+      */
+      QMCnode.randomlyInitializeWalkers();
+
+      // Make sure any checkpointed data is removed.
+      zeroOut();
   
-  qmcCheckpoint.close();
+      if(  Input.flags.equilibrate_first_opt_step == 0 )
+	equilibrating = false;
+      else
+	equilibrating = true;
+    }
+
+  if( equilibrating )
+  {
+    Input.flags.dt = Input.flags.dt_equilibration;
+  } else {
+    Input.flags.dt = Input.flags.dt_run;
+  }
+
+  localTimers.getInitializationStopwatch() ->stop();
 }
 
 void QMCManager::receiveSignal(signalType signal)
