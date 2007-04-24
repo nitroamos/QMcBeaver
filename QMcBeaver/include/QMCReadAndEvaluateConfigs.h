@@ -93,10 +93,15 @@ private:
   Array2D<double> D2;
   double lnJ;
   double PE;
+  double weight;
 
-  // given a set of parameters perform the necessary calcualtions and
-  // add the results to the properties.
-  void AddNewConfigToProperites(Array1D<double> &Params,
+  /**
+     Given a set of parameters perform the necessary calcualtions and
+     add the results to the properties.
+     
+     @return whether the config had any particularly bad energies
+  */
+  bool AddNewConfigToProperites(Array1D<double> &Params,
 				QMCProperties &Properties);
 
   // Calculate the local energy of the current configuration with the currently

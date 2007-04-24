@@ -18,6 +18,10 @@ static const bool inBinary = true;
 
 QMCConfigIO::QMCConfigIO()
 {
+  if(!inBinary)
+    {
+      clog << "Warning: CFGS file is not being written in binary!!" << endl;
+    }
   config_strm = 0;
   areWriting = true;
   numWritten = 0;
@@ -31,6 +35,10 @@ QMCConfigIO::~QMCConfigIO()
 
 QMCConfigIO::QMCConfigIO(int numE)
 {
+  if(!inBinary)
+    {
+      clog << "Warning: CFGS file is not being written in binary!!" << endl;
+    }
   config_strm = 0;
   areWriting = true;
   numWritten = 0;
@@ -87,12 +95,12 @@ void QMCConfigIO::open(string name, bool forWriting)
   config_strm->clear();
 }
 
-void QMCConfigIO::writeCorrelatedSamplingConfiguration(
-                                                       Array2D<double> & R,
+void QMCConfigIO::writeCorrelatedSamplingConfiguration(Array2D<double> & R,
                                                        double SCF_Laplacian_PsiRatio,
                                                        Array2D<double> & SCF_Grad_PsiRatio,
                                                        double lnJastrow,
-                                                       double PE)
+                                                       double PE,
+						       double weight)
 {
 
   if(config_strm == 0)
@@ -116,6 +124,7 @@ void QMCConfigIO::writeCorrelatedSamplingConfiguration(
                         sizeof(*SCF_Grad_PsiRatio.array())*SCF_Grad_PsiRatio.dim1()*3 );
     config_strm->write( (char*) &lnJastrow, sizeof(double) );
     config_strm->write( (char*) &PE, sizeof(double) ); 
+    config_strm->write( (char*) &weight, sizeof(double) ); 
   }
   else
   {
@@ -154,17 +163,19 @@ void QMCConfigIO::writeCorrelatedSamplingConfiguration(
     strm << "\t" << lnJastrow << endl;
     strm << "PE\t" << endl;
     strm << "\t" << PE << endl;
+    strm << "W\t" << endl;
+    strm << "\t" << weight << endl;
   }
 
   numWritten++;
 }
 
-void QMCConfigIO::readCorrelatedSamplingConfiguration(
-                                                      Array2D<double> & R,
+void QMCConfigIO::readCorrelatedSamplingConfiguration(Array2D<double> & R,
                                                       double & SCF_Laplacian_PsiRatio,
                                                       Array2D<double> & SCF_Grad_PsiRatio,
                                                       double & lnJastrow,
-                                                      double & PE)
+                                                      double & PE,
+						      double & weight)
 {
   if(config_strm == 0)
   {
@@ -187,6 +198,7 @@ void QMCConfigIO::readCorrelatedSamplingConfiguration(
                         sizeof(*SCF_Grad_PsiRatio.array())*SCF_Grad_PsiRatio.dim1()*3 );
     config_strm->read( (char*) &lnJastrow, sizeof(double) );
     config_strm->read( (char*) &PE, sizeof(double) ); 
+    config_strm->read( (char*) &weight, sizeof(double) ); 
   }
   else
   {
@@ -228,6 +240,10 @@ void QMCConfigIO::readCorrelatedSamplingConfiguration(
     // read PE
     strm >> stemp;
     strm >> PE;
+
+    // read the weight
+    strm >> stemp;
+    strm >> weight;
   }
   config_strm->flush();
 }

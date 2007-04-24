@@ -191,16 +191,19 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
 
   for (int i=0; i<configsToSkip; i++)
     {
-      Input->outputer.readCorrelatedSamplingConfiguration(R,D1,D2,lnJ,PE);
+      Input->outputer.readCorrelatedSamplingConfiguration(R,D1,D2,lnJ,PE,weight);
     }
 
   // read configurations until the file is empty
 
+  Array1D<int> numBad = Array1D<int>(Params.dim1());
+  numBad = 0;
   while( !Input->outputer.eof() )
     {
       // read the next configuration
 
-      Input->outputer.readCorrelatedSamplingConfiguration(R,D1,D2,lnJ,PE);
+      lnJ = 0.0;
+      Input->outputer.readCorrelatedSamplingConfiguration(R,D1,D2,lnJ,PE,weight);
       
       // On some computers, it seems this class was reading one extra config
       // in, assiging zeros to all the parameters. Why was it doing this?
@@ -215,18 +218,27 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
 
           for(int i=0; i<Params.dim1(); i++)
             {
-              AddNewConfigToProperites(Params(i),Properties(i));
+              bool ok = AddNewConfigToProperites(Params(i),Properties(i));
+	      if(!ok) numBad[i]++;
             }
         }
     }
   Input->outputer.close();
+
+  for(int i=0; i<Params.dim1(); i++)
+    {
+      if(numBad[i] != 0){
+	cout << "Warning: " << numBad[i] << " bad configurations for Param("<<i<<") = " << Params(i);
+      }
+    }
 }
 
 // given a set of parameters perform the necessary calculations and
 // add the results to the properties.
-void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
+bool QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
   Array1D<double> &Params,QMCProperties &Properties)
 {
+  bool ok = true;
   // Calculate the jastrow values
 
   Input->JP.setParameterVector( Params );
@@ -255,12 +267,15 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
 
       if(E_Local > MAXIMUM_ENERGY_VALUE)
         {
-          E_Local = MAXIMUM_ENERGY_VALUE;
+          E_Local = 0.0;
+	  logWeight = 0.0;
+	  ok = false;
         }
 
       if(logWeight > MAXIMUM_LOG_WEIGHT_VALUE)
         {
-          logWeight = MAXIMUM_LOG_WEIGHT_VALUE;
+          logWeight = 0.0;
+	  ok = false;
         }
     }
   else
@@ -274,8 +289,10 @@ void QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
 
   // Place the results into the properties
 
-  Properties.energy.newSample(E_Local,exp(logWeight));
+  Properties.energy.newSample(E_Local,weight*exp(logWeight));
   Properties.logWeights.newSample(logWeight,1.0);
+
+  return ok;
 }
 
 // Calculate the local energy of the current configuration with the currently
@@ -349,6 +366,14 @@ double QMCReadAndEvaluateConfigs::calc_E_Local_current()
 // calculated jastrow
 double QMCReadAndEvaluateConfigs::calc_log_weight_current()
 {
+  /*
+    This is equilvalent to using both a guide wavefunction and a
+    trial wavefunction (see HLR pg 62). This weighting factor was
+    recommended for optimization in the Umrigar 88 PRL paper.
+    
+    Each sample is weighted by
+    w = \frac{ \Psi^2 }{ \Psi_g^2 }
+   */
   double logweight = 2*(Jastrow.getLnJastrow(0) - lnJ);
   return logweight;
 }

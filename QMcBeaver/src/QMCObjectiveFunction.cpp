@@ -24,21 +24,55 @@ Array1D<QMCObjectiveFunctionResult> QMCObjectiveFunction::evaluate(
   // calculate properties from the configuration file
   Array1D<QMCProperties> Properties; 
   RAEC.rootCalculateProperties(Params, Properties);
-
+  
   // process the properties and put the results into RESULTS
   Array1D<QMCObjectiveFunctionResult> RESULTS(Params.dim1());
-  
+
   for(int i=0;i<Params.dim1();i++)
     {
       Input->JP.setParameterVector(Params(i));
       Array1D<Complex> poles = Input->JP.getPoles();
 
+      bool print = false;
+
+      /*
+	We'll try to be sure we print all the data for the
+	initial parameters so we can compare with the others.
+       */
+      if(fabs(Properties(i).logWeights.getAverage()) < 1e-2)
+	print = true;
+
+      if(print){
+	cout << "Params(" << i << ") are " << Params(i);
+	cout << "LogWeights: " << Properties(i).logWeights;
+	cout << "Energy:     " << Properties(i).energy;
+	//cout << "Estimated energy: " << Input->flags.energy_estimated << endl;
+      }
+
+      /*
+	There is some question regarding which kind of variance to use.
+	HLR pg 70 recommends getBlockVariance
+       */
+      //double Evar = Properties(i).energy.getSeriallyCorrelatedVariance();
+      //double Evar = Properties(i).energy.getVariance();
+      double Evar = Properties(i).energy.getBlockVariance(0);
+
+      	
       QMCObjectiveFunctionResult newResult(Input,
-		   Properties(i).energy.getAverage(),
-		   Properties(i).energy.getSeriallyCorrelatedVariance(),
-		   Properties(i).logWeights.getAverage(),
-		   Properties(i).logWeights.getSeriallyCorrelatedVariance(),
-		   poles);
+					   Properties(i).energy.getAverage(),
+					   Evar,
+					   Properties(i).logWeights.getAverage(),
+					   Properties(i).logWeights.getBlockVariance(0),
+					   Properties(i).energy.getNumberSamples(),
+					   poles);
+ 
+      if(print){
+	double Ediff = Properties(i).energy.getAverage() -
+	  Input->flags.energy_estimated;
+	cout << "(Evar  = " << Evar
+	     << ") + (Ediff^2 = " << (Ediff*Ediff)
+	     << ") = (Score   = " << newResult.getScore() << ")" << endl << endl;
+      }
 
       RESULTS(i) = newResult;
     }
@@ -48,7 +82,7 @@ Array1D<QMCObjectiveFunctionResult> QMCObjectiveFunction::evaluate(
 
 // Return the result of the objective function evaluation
 QMCObjectiveFunctionResult QMCObjectiveFunction::evaluate(Array1D<double> &
-						                        Params)
+							  Params)
 {
   Array1D< Array1D<double> > P(1);
   P(0) = Params;
@@ -88,8 +122,15 @@ void QMCObjectiveFunction::numerical_grad(Array1D<double> &Params,
   double epsilon = 0.001;
   int dimension  = Params.dim1();
 
-  // Create a set of parameters displaced in every direction.
-  // The last vector is the original set of Params.
+  /*
+    This is a 2 point numerical derivative, where epsilon
+    is the h parameter. It might be useful to upgrade this
+    to a 3 point derivative since the added cost of additional
+    parameters in a call to evaluate is negligible.
+
+    Create a set of parameters displaced in every direction.
+    The last vector is the original set of Params.
+  */
   Array1D< Array1D<double> > Params_Vector(dimension+1);
 
   for(int i=0; i<dimension+1; i++)
@@ -112,6 +153,11 @@ void QMCObjectiveFunction::numerical_grad(Array1D<double> &Params,
     }
 
 }
+
+
+
+
+
 
 
 

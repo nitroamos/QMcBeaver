@@ -33,6 +33,7 @@ class QMCObjectiveFunctionResult
      Creates a new uninitialized instance of this class.
   */
   QMCObjectiveFunctionResult();
+  ~QMCObjectiveFunctionResult();
 
   /**
      Creates and initializes a new instance of this class.
@@ -45,9 +46,11 @@ class QMCObjectiveFunctionResult
      @param logWeightVar variance in the above quantity.
      @param poles of the correlation functions
   */ 
-  QMCObjectiveFunctionResult(QMCInput *input, double energyAve, 
-			     double energyVar, double logWeightAve,
-			     double logWeightVar, Array1D<Complex> & poles);
+  QMCObjectiveFunctionResult(QMCInput *input,
+			     double energyAve, double energyVar,
+			     double logWeightAve, double logWeightVar, 
+			     int numSamples,
+			     Array1D<Complex> & poles);
 
   /**
      Creates a new instance of this class and makes it equivalent to another
@@ -78,15 +81,17 @@ class QMCObjectiveFunctionResult
 
      @return calculated average energy value.
   */
-  double getEnergyAve();
+  double getEnergyAve() const;
 
   /**
      Gets the calculated energy variance.
 
      @return calculated energy variance.
   */
-  double getEnergyVar();
- 
+  double getEnergyVar() const;
+
+  int getNumberSamples() const;
+
   /**
      Gets a score for this function evaluation.  Better scores have lower
      values.  The algorithm used for arriving at the scoris is determined
@@ -95,7 +100,7 @@ class QMCObjectiveFunctionResult
 
      @return score for the function evaluation.
   */
-  double getScore();
+  double getScore() const;
   
   /**
      Gets a score for this function evaluation that is to be used in
@@ -113,7 +118,7 @@ class QMCObjectiveFunctionResult
 
      @param rhs object to set this object equal to.
   */
-  void operator=(QMCObjectiveFunctionResult &rhs);
+  void operator=(const QMCObjectiveFunctionResult &rhs);
 
   /**
      Prints the contents of this object in a human readable format.
@@ -122,6 +127,7 @@ class QMCObjectiveFunctionResult
 			     const QMCObjectiveFunctionResult & rhs);
 
  private:
+  int numSamples;
   double log_weights_ave;
   double log_weights_var;
   double energy_ave;

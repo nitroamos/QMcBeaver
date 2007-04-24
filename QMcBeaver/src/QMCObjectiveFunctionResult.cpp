@@ -16,11 +16,19 @@ QMCObjectiveFunctionResult::QMCObjectiveFunctionResult()
 {
 }
 
+QMCObjectiveFunctionResult::~QMCObjectiveFunctionResult()
+{
+  Input = 0;
+}
+
 QMCObjectiveFunctionResult::QMCObjectiveFunctionResult(QMCInput *input,
-  double energyAve, double energyVar, double logWeightAve, double logWeightVar,
-						      Array1D<Complex> & poles)
+						       double energyAve, double energyVar,
+						       double logWeightAve, double logWeightVar,
+						       int numSamples,
+						       Array1D<Complex> & poles)
 {
   Input = input;
+  this->numSamples = numSamples;
 
   set_energy_ave( energyAve );
   set_energy_var( energyVar );
@@ -47,17 +55,22 @@ double QMCObjectiveFunctionResult::getLogWeightsVar()
   return log_weights_var;
 }
 
-double QMCObjectiveFunctionResult::getEnergyAve()
+double QMCObjectiveFunctionResult::getEnergyAve() const
 {
   return energy_ave;
 }
 
-double QMCObjectiveFunctionResult::getEnergyVar()
+double QMCObjectiveFunctionResult::getEnergyVar() const
 {
   return energy_var;
 }
 
-double QMCObjectiveFunctionResult::getScore()
+int QMCObjectiveFunctionResult::getNumberSamples() const
+{
+  return numSamples;
+}
+
+double QMCObjectiveFunctionResult::getScore() const
 {
   return score;
 }
@@ -139,7 +152,7 @@ void QMCObjectiveFunctionResult::set_energy_var(double ev)
     }
 }
 
-void QMCObjectiveFunctionResult::operator=(QMCObjectiveFunctionResult &rhs)
+void QMCObjectiveFunctionResult::operator=(const QMCObjectiveFunctionResult &rhs)
 {
   this->score                = rhs.score;
   this->score_for_derivative = rhs.score_for_derivative;
@@ -147,6 +160,7 @@ void QMCObjectiveFunctionResult::operator=(QMCObjectiveFunctionResult &rhs)
   this->log_weights_var      = rhs.log_weights_var;
   this->energy_ave           = rhs.energy_ave;
   this->energy_var           = rhs.energy_var;
+  this->numSamples           = rhs.numSamples;
   this->Input                = rhs.Input;
 }
 
@@ -314,7 +328,19 @@ double QMCObjectiveFunctionResult::calculate_monkey_spank()
 // From umrigar's 1998 phys rev let paper on QMC optimization
 double QMCObjectiveFunctionResult::calculate_umrigar88()
 {
-  double temp = Input->flags.energy_estimated_original - getEnergyAve();
+  /*
+    We want the most recent value for the reference energy,
+    either the HF-J or MCSCF-J or whatever that we just calculated
+    in the variational run.
+    
+    This may look a little strange, but what we're doing is
+    shifting the energy so that the variance is measured
+    relative to energy_estimated. However, this is a bit different
+    since we're mixing the types of variance here... A look at Umrigar's
+    more recent optimization papers still recommend mixing variance and
+    energy minimization.
+  */
+  double temp = Input->flags.energy_estimated - getEnergyAve();
   double val = getEnergyVar() + temp*temp;
   return val;
 }
@@ -338,10 +364,20 @@ double QMCObjectiveFunctionResult::calculate_penalty_function(
 	{
 	  distance = poles(i).abs();
 	}
+
       if(distance <= 0){
-	cerr << "ERROR: distance from real axis is " << distance << "  in OFR, can\'t take log\n";
 	penalty = 1e100; 
+	cerr << "Warning: distance from real axis is " << distance << "  in OFR, can\'t take log" << endl;
+	cerr << "         poles(" << i << ") = " << poles(i) << endl;
+	cerr << "         penalty will be set to " << penalty << endl;
+	cerr.flush();
       } else {
+
+	/*
+	  Singularities exist when the poles are on the +'ve real
+	  axis. So, a configuration's score will be improved (lowered)
+	  the further it is from this region.
+	 */
 	penalty -= log( distance );
       }
     }

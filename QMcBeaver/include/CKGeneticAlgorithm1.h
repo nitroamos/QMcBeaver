@@ -18,6 +18,7 @@
 #include "QMCObjectiveFunctionResult.h"
 #include "QMCOptimizationAlgorithm.h"
 #include "Random.h"
+#include "Stopwatch.h"
 
 /**
   A moderately greedy genetic algorithm for trying to globally optimize
@@ -58,6 +59,8 @@ public:
   Array1D<double> optimize(Array1D<double> & initialGuess);
 
 private:
+  Stopwatch sw;
+
   /**
     Objective function to optimize.
     */
@@ -91,11 +94,14 @@ private:
   /**
     Mutates the input parameters by adding an N-dimensional gaussian 
     random variable with a standard deviation of <code>MutationRate</code>.
+    
+    It will make sure that no parameter goes below zero.
 
     @param parameters parameters to be mutated and the returned mutated 
     parameters.
+    @param width the width of the gaussian drift applied to each parameter
     */
-  void mutate(Array1D<double>& parameters);
+  void mutate(Array1D<double>& parameters, double width);
 
   /**
     Generates a child by breeding two parents.  The fraction of each

@@ -14,6 +14,8 @@
 #define PARAMETERSCOREPAIR_H
 
 #include "Array1D.h"
+#include "QMCObjectiveFunctionResult.h"
+#include <iomanip>
 
 /**
   A container which holds a set of parameters and an associated scalar
@@ -35,7 +37,7 @@ public:
     @param score Score.
     @param parameters Parameters.
     */
-  ParameterScorePair(double score, Array1D<double> & parameters);
+  ParameterScorePair(QMCObjectiveFunctionResult score, Array1D<double> & parameters);
 
   /**
     Creates an instance of this class which is equal to another instance.
@@ -47,7 +49,7 @@ public:
 
     @return score.
     */
-  double getScore();
+  double getScore() const;
 
   /**
     Gets the parameters.
@@ -68,8 +70,14 @@ public:
     */
   bool operator<(const ParameterScorePair &PSP) const;
 
+  /**
+     Prints the contents of this object in a human readable format.
+  */
+  friend ostream& operator<<(ostream & strm, 
+			     const ParameterScorePair & rhs);
+
 private:
-  double Score;
+  QMCObjectiveFunctionResult Score;
   Array1D<double> Parameters;
 };
 

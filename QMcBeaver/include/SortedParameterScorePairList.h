@@ -67,6 +67,14 @@ public:
   void clear();
 
   /**
+     This will change the size of the list.
+     If the new size is less than the current size,
+     we will save the best elements since the list
+     is sorted.
+   */
+  void resize(int newsize);
+
+  /**
     Sets two objects equal to one another.
 
     @param SPSL object to set this object equal to.

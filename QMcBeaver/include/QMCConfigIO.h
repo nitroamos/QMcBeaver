@@ -109,40 +109,44 @@ public:
   void setPrecision();
 
   /**
-    This will write the contents of all the arguments
-    sent to this function into the configuration file.
-    It will only print numElectrons x 3 elements from
-    the arrays.
-    
-    @param R position vectors for all the electrons
-    @param SCF_Laplacian_PsiRatio the calculated "D1"
-    @param SCF_Grad_PsiRatio gradient vectors for all the electrons
-    @param lnJastrow the result of the Jastrow functions
-    @param PE the potential energy for the configuration
-	*/  
+     This will write the contents of all the arguments
+     sent to this function into the configuration file.
+     It will only print numElectrons x 3 elements from
+     the arrays.
+     
+     @param R position vectors for all the electrons
+     @param SCF_Laplacian_PsiRatio the calculated "D1"
+     @param SCF_Grad_PsiRatio gradient vectors for all the electrons
+     @param lnJastrow the result of the Jastrow functions
+     @param PE the potential energy for the configuration
+     @param weight a weight associated with the configuration
+  */
   void writeCorrelatedSamplingConfiguration(
     Array2D<double> & R,
     double SCF_Laplacian_PsiRatio,
     Array2D<double> & SCF_Grad_PsiRatio,
     double lnJastrow,
-    double PE);
+    double PE,
+    double weight);
 
   /**
-    This will read one set of parameters from the configuration
-    file and store them in the arguments to this function.
-    
-    @param R position vectors for all the electrons
-    @param SCF_Laplacian_PsiRatio the calculated "D1"
-    @param SCF_Grad_PsiRatio gradient vectors for all the electrons
-    @param lnJastrow the result of the Jastrow functions
-    @param PE the potential energy for the configuration
-	*/  
+     This will read one set of parameters from the configuration
+     file and store them in the arguments to this function.
+     
+     @param R position vectors for all the electrons
+     @param SCF_Laplacian_PsiRatio the calculated "D1"
+     @param SCF_Grad_PsiRatio gradient vectors for all the electrons
+     @param lnJastrow the result of the Jastrow functions
+     @param PE the potential energy for the configuration
+     @param weight a weight associated with the configuration
+  */  
   void readCorrelatedSamplingConfiguration(
     Array2D<double> & R,
     double & SCF_Laplacian_PsiRatio,
     Array2D<double> & SCF_Grad_PsiRatio,
     double & lnJastrow,
-    double & PE);
+    double & PE,
+    double & weight);
     
   /**
     Just in case we want to augment our output file...
