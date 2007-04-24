@@ -38,7 +38,6 @@ Stopwatch::Stopwatch()
 
   reset();
 
-
 #ifdef PARALLEL
   if( !mpiTypeCreated )
     {
@@ -51,8 +50,10 @@ Stopwatch::Stopwatch()
 
 void Stopwatch::reset()
 {
-  total_us=0;
-  running=false;
+  stime1   = 0;
+  micro1   = 0;
+  total_us = 0;
+  running  = false;
 }
 
 void Stopwatch::start()
@@ -115,8 +116,27 @@ string Stopwatch::toString()
 {
   ostringstream stream;
   longType time = timeMS();
+  if(time <= 0)
+    {
+      gettimeofday(&tp,&tz);
+      stime2 = tp.tv_sec;
+      micro2 = tp.tv_usec;
+      time = (longType)((stime2-stime1)*1e6 + micro2 - micro1);
+      time /= 1000;
+    }
   double hrs = time/(1000.0*60.0*60.0);
-  stream << time << " ms " << " (" << hrs << " hrs)";
+  double mins = time/(1000.0*60.0);
+  double secs = time/(1000.0);
+  int wdth = 20;
+  int prec  = 5;
+  stream.width(wdth); stream.precision(prec);
+  stream << time << " ms  " << " = ";
+  stream.width(wdth); stream.precision(prec);
+  stream << secs << " s   " << " = ";
+  stream.width(wdth); stream.precision(prec);
+  stream << mins << " mins" << " = ";
+  stream.width(wdth); stream.precision(prec);
+  stream << hrs <<  " hrs ";
   return stream.str();
 }
 
