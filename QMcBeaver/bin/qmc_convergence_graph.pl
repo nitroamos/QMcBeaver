@@ -50,11 +50,20 @@ if($ARGV[0] =~ /.dat$/)
     open (DATFILE, ">plotfile.dat");
 }
 
+my $num_results;
+my $ave_result;
+
 my $lastlines = "";
 for(my $index=0; $index<=$#ARGV; $index++){
-    if(!(-f $ARGV[$index]) || $ARGV[$index] !~ /.out$/){ next; }
-    my $base = substr($ARGV[$index],0,-4);
-    
+    next if(!(-f $ARGV[$index]));
+    my $base = "";
+    if($ARGV[$index] =~ /.out$/){
+	$base = substr($ARGV[$index],0,-4);
+    } elsif($ARGV[$index] =~ /.qmc$/){
+	$base = substr($ARGV[$index],0,-4);
+    } else {
+	next;
+    }
     my $dt = 0;
     my $nw = 0;
     open (CKMFFILE, "$base.ckmf");
@@ -88,8 +97,9 @@ for(my $index=0; $index<=$#ARGV; $index++){
     }
     close CKMFFILE;
 
-    open (OUTFILE,  "$base.out");
+    open (OUTFILE,  "$ARGV[$index]");
     my $line;
+    my @data;
     my $more = 1;
     my $eavg;
     my $estd;
@@ -118,7 +128,7 @@ for(my $index=0; $index<=$#ARGV; $index++){
 	}
 	next if($_ =~ /[a-zA-Z]/ && $_ !~ /Results/);
 	chomp;
-	my @data = split/[ ]+/;
+	@data = split/[ ]+/;
         #this is the number of data elements per line
 	if($#data >= 8){
 	    $counter++;
@@ -138,6 +148,10 @@ for(my $index=0; $index<=$#ARGV; $index++){
     }    
     close OUTFILE;
     $lastlines .= "$line";
+    if($eavg < 0){
+	$ave_result += $eavg;
+	$num_results++;
+    }
     my $in_kcal = $eavg*$units;
     printf "%50s %15s %15s E_h=%20.14f E_kcal=%20.10f Err=%i Warn=%i\n","$base","dt=$dt","nw=$nw",$eavg,$in_kcal,$numerrors,$numwarnings;
     #if we are in enhanced text mode, we need to double escape the "_"
@@ -147,6 +161,11 @@ for(my $index=0; $index<=$#ARGV; $index++){
 } 
 close DATFILE;
 print "$lastlines";
+
+if($num_results > 0){
+    $ave_result /= $num_results;
+    print "Average result = $ave_result\n";
+}
 
 #now it's time to generate gnuplot gifs
 my @titles;
