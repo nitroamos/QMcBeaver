@@ -122,8 +122,9 @@ public:
   /**
     Loads the state of this object from an XML stream.
     @param strm XML stream
+    @return whether the read was successful
   */
-  void readXML(istream& strm);
+  bool readXML(istream& strm);
 
   /**
     Formats and prints the properties to a stream.

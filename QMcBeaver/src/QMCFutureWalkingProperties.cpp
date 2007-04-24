@@ -227,7 +227,7 @@ void QMCFutureWalkingProperties::toXML(ostream& strm)
   strm << "</QMCFutureWalkingProperties>" << endl;
 }
 
-void QMCFutureWalkingProperties::readXML(istream& strm)
+bool QMCFutureWalkingProperties::readXML(istream& strm)
 {
   string temp;
 
@@ -264,8 +264,9 @@ void QMCFutureWalkingProperties::readXML(istream& strm)
       clog << "Error: checkpoint read failed in QMCFutureWalkingProperties."
 	   << " We expected to read a \"</QMCFutureWalkingProperties>\""
 	   << " tag, but found \"" << temp << "\"." << endl;
-      exit(0);
+      return false;
     }
+  return true;
 }
 
 ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs)
