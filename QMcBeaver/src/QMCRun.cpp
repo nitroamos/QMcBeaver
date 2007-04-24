@@ -43,9 +43,9 @@ void QMCRun::propagateWalkers(bool writeConfigs, int iteration)
       count++;
       index = count%wpp;
       if(index == 0 || count == (int)(wlist.size()))
-	QMF->evaluate(dataPointers,rPointers,index==0?wpp:index, writeConfigs);
+	QMF->evaluate(dataPointers,rPointers,index==0?wpp:index);
     }
-    
+
   /*At this point, all of the dataPointers have been filled, so we
     can tell each walker to finish processing each move. Note this will
     give different answers than before (when all processing was done before
@@ -53,7 +53,7 @@ void QMCRun::propagateWalkers(bool writeConfigs, int iteration)
     different order.
    */
   for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
-      wp->processPropagation(*QMF);
+      wp->processPropagation(*QMF, writeConfigs);
 }
 
 void QMCRun::branchWalkers()
@@ -83,6 +83,11 @@ void QMCRun::branchWalkers()
       // with another walker if its weight falls below a threshold.
       
       nonunitWeightBranching();
+    }
+  else if( Input->flags.branching_method == "ack_reconfiguration" )
+    {
+      
+      ack_reconfiguration();
     }
   else
     {
@@ -354,33 +359,60 @@ void QMCRun::randomlyInitializeWalkers()
         Input->flags.walker_initialization_method);
 
   wlist.clear();
-  for (int i=0; i<Input->flags.number_of_walkers; i++)
+  Input->flags.number_of_walkers = 0;
+  for (int i=0; i<Input->flags.number_of_walkers_initial; i++)
     {
       QMCWalker w;
       w.initialize(Input);
-      temp_R = IW->initializeWalkerPosition();
 
-      w.setR(temp_R);
+      temp_R = IW->initializeWalkerPosition();
+      while(w.setR(temp_R) == false){
+	cerr << "Error: initial walker " << i << " position is bad, retrying..." << endl;
+	cerr.flush();
+	temp_R = IW->initializeWalkerPosition();
+      }
+
       QMF->evaluate(*w.getR(),*w.getWalkerData());
   
+      /*
+	A lot of walkers are going to start off with a poor
+	rel_diff. We only want to delete the ones that are practically
+	singular, because the other poor ones will be taken care of.
+
+	On the other hand, if we delete them here, we get a fresh walker,
+	as opposed to deleting it in QMCWalker, when it will be replaced
+	by a different, high weight, walker.
+       */
+      double rel_diff = fabs( (w.getWalkerData()->localEnergy -
+			       Input->flags.energy_estimated_original)/
+			      Input->flags.energy_estimated_original);
       initialization_try = 1;
-      while( w.isSingular() )
+      while( (w.isSingular() || rel_diff > 5.0) && initialization_try < 1000)
 	{
-	  cerr << "Regenerating Walker..." << endl;
-      
-	  if( initialization_try > 10 )
-	    {
-	      cerr << "ERROR: 10 consecutive singular configurations while "
-		   << "trying to initialize walker!" << endl;
-	      exit(0);
-	    }
+	  //cerr << "Regenerating Walker " << i << ", rel_diff = " << rel_diff <<  "..." << endl;
+	  //cerr.flush();
         
 	  temp_R = IW->initializeWalkerPosition();
 	  w.setR(temp_R);
 	  QMF->evaluate(*w.getR(),*w.getWalkerData());
+	  
+	  rel_diff = fabs( (w.getWalkerData()->localEnergy -
+			    Input->flags.energy_estimated_original)/
+			   Input->flags.energy_estimated_original);
+
 	  initialization_try++;
 	}
+
+      int cutoff = 100;
+      if( initialization_try > cutoff )
+	{
+	  cerr << "ERROR: " << initialization_try << " consecutive singular configurations while "
+	       << "trying to initialize walker!" << endl;
+	}
+      
+      w.newID();
       wlist.push_back(w);
+      Input->flags.number_of_walkers++;
     }
   delete IW;
   IW = 0;
@@ -401,7 +433,10 @@ void QMCRun::calculateObservables()
   }
   // Add the pre blocked data from this time step to the accumulated
   // statistics
-  
+
+  timeStepProperties.walkerAge.newSample(getNumberOfWalkers(),1.0);
+  timeStepProperties.growthRate.newSample(growthRate,1.0);
+
   double totalWeights = getWeights() * populationSizeBiasCorrectionFactor;
   
   if (Input->flags.use_equilibration_array == 1)
@@ -538,8 +573,10 @@ void QMCRun::unitWeightBranching()
 
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
     {
-      int times_to_branch = int(wp->getWeight() + ran.unidev())-1;
-              
+      int times_to_branch = 0;
+      if(Input->flags.limit_branching > 0 && wp->branchRecommended())
+	times_to_branch = int(wp->getWeight() + ran.unidev())-1;
+	
       // Set the walkers weight back to unity
       wp->setWeight(1.0);
       
@@ -560,33 +597,16 @@ void QMCRun::unitWeightBranching()
           for(int i=0; i<times_to_branch; i++)
             {
               WalkersToAdd.push_back( *wp );
+	      wp->branchID();
             }
         }
     }
-
-  // Delete the unneeded walkers
-#ifdef DEBUG_BRANCHING
-  if( WalkersToDelete.size() > 0 )
-    {
-      cerr << "Deleting " << WalkersToDelete.size() << " walker(s) from "
-      << wlist.size() << " walkers" << endl;
-    }
-#endif
     
   for( list< list<QMCWalker>::iterator >::iterator
        wtd=WalkersToDelete.begin(); wtd!=WalkersToDelete.end(); ++wtd)
     {
       wlist.erase( *wtd );
     }
-    
-  // Add the new walkers
-#ifdef DEBUG_BRANCHING
-  if( WalkersToAdd.size() > 0 )
-    {
-      cerr << "Adding " << WalkersToAdd.size() << " walker(s) to "
-      << wlist.size() << " walkers" << endl;
-    }
-#endif
     
   wlist.splice( wlist.end(), WalkersToAdd );
 }
@@ -604,14 +624,19 @@ void QMCRun::nonunitWeightBranching()
     {
       if( wp->getWeight() > Input->flags.branching_threshold )
         {
-	  if(wp->branchRecommended())
+	  if(Input->flags.limit_branching > 0 && wp->branchRecommended())
 	    {
 	      // Split this walker into two; each with half the weight
 	      wp->setWeight( wp->getWeight()/2.0 );
 	      
 	      WalkersToAdd.push_back( *wp );
+	      wp->branchID();
 	    }
         }
+      else if( wp->getWeight() < 0.01 )
+	{
+	  WalkersToDelete.push_back(wp);
+	}
       else if( wp->getWeight() < Input->flags.fusion_threshold )
         {
           // This walker needs to be fused with another
@@ -653,31 +678,110 @@ void QMCRun::nonunitWeightBranching()
         }
     }
     
-  // Delete the unneeded walkers
-#ifdef DEBUG_BRANCHING
-  if( WalkersToDelete.size() > 0 )
-    {
-      cerr << "Deleting " << WalkersToDelete.size()
-      << " walker(s) from " << wlist.size() << " walkers" << endl;
-    }
-#endif
-    
   for(list< list<QMCWalker>::iterator >::iterator wtd=WalkersToDelete.begin();
       wtd!=WalkersToDelete.end(); ++wtd)
     {
       wlist.erase( *wtd );
     }
     
-  // Add the new walkers
-#ifdef DEBUG_BRANCHING
-  if( WalkersToAdd.size() > 0 )
+  wlist.splice( wlist.end(), WalkersToAdd );
+}
+
+void QMCRun::ack_reconfiguration()
+{
+  double aveW = getWeights()/getNumberOfWalkers();
+
+  double Nreconfp = 0;
+  double Nreconfn = 0;
+  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
     {
-      cerr << "Adding " << WalkersToAdd.size() << " walker(s) to "
-      << wlist.size() << " walkers" << endl;
+      double w = wp->getWeight()/aveW;
+      if(w >= 1.0){
+	Nreconfp += fabs(w-1.0);
+      } else {
+	Nreconfn += fabs(w-1.0);
+      }
     }
-#endif
+  
+  if(fabs(Nreconfp - Nreconfn) > 1e-5)
+    {
+      cerr << "Error: (Nreconfp = " << Nreconfp << ") != (Nreconfn = " << Nreconfn << ")" << endl;
+    }
+
+  int Nreconf = (int)(Nreconfp + ran.unidev());
+  //int Nreconf = (int)(Nreconfp + 0.5);
+
+  // Make a list of walkers to add and delete
+  list<QMCWalker> WalkersToAdd;
+  list<list<QMCWalker>::iterator> WalkersToDelete;
+
+  int numDeleted = 0;
+  int numToAdd = Nreconf;
+  numToAdd += Input->flags.number_of_walkers_initial - getNumberOfWalkers();
+  while(numDeleted < Nreconf || numToAdd != 0)
+    {
+      
+      /*
+	Older walkers are more likely to be listed in the beginning of the list...
+	biased?
+       */
+      for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
+	{
+	  double w = wp->getWeight()/aveW;
+	  
+	  if(w >= 1.0)
+	    {
+	      if( fabs(w - 1.0) >= ran.unidev() && numToAdd > 0)
+		{
+		  //what if none of the candidates are recommended?
+		  if(Input->flags.limit_branching > 0 && wp->branchRecommended())
+		    {
+		      numToAdd--;
+		      WalkersToAdd.push_back( *wp );
+		      wp->branchID();
+		    }
+		}
+	    }
+	  else if(w > 1e-3)
+	    {
+	      if( fabs(w - 1.0) >= ran.unidev() && numDeleted < Nreconf)
+		{
+		  numDeleted++;
+		  WalkersToDelete.push_back(wp);
+		}
+	    }
+	  else
+	    {
+	      numToAdd++;
+	      WalkersToDelete.push_back(wp);
+	    }
+
+	}
+
+      //we'll remove them from wlist now so we don't select them again
+      for(list< list<QMCWalker>::iterator >::iterator wtd=WalkersToDelete.begin();
+	  wtd!=WalkersToDelete.end(); ++wtd)
+	{
+	  wlist.erase( *wtd );
+	}
+      WalkersToDelete.clear();
+    }
     
   wlist.splice( wlist.end(), WalkersToAdd );
+
+  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
+    {
+      //double w = wp->getWeight()/aveW;
+      //wp->setWeight(w);
+      wp->setWeight(aveW);
+    }
+
+  if(Input->flags.number_of_walkers_initial != getNumberOfWalkers())
+    {
+      cerr << "Warning: walkers didn't rebalance (" <<
+	Input->flags.number_of_walkers_initial << "!=" <<
+	getNumberOfWalkers() << ")" << endl;
+    }
 }
 
 double QMCRun::getWeights()
@@ -722,10 +826,11 @@ void QMCRun::toXML(ostream& strm)
   strm << "</walkers>\n" << endl;
 }
 
-void QMCRun::readXML(istream& strm)
+bool QMCRun::readXML(istream& strm)
 {
   string temp;
-  
+  bool ok = true;
+
   // read populationSizeBiasCorrectionFactor
   strm >> temp >> temp;
   populationSizeBiasCorrectionFactor = atof(temp.c_str());
@@ -736,8 +841,10 @@ void QMCRun::readXML(istream& strm)
     {
       EquilibrationArray.readXML(strm);
     } else {
-      Properties.readXML(strm);
-      fwProperties.readXML(strm);
+      ok = Properties.readXML(strm);
+      if(!ok) return ok;
+      ok = fwProperties.readXML(strm);
+      if(!ok) return ok;
     }
   
   // read the walkers
@@ -757,6 +864,7 @@ void QMCRun::readXML(istream& strm)
     }
     
   strm >> temp;
+  return ok;
 }
 
 void QMCRun::startTimers()
@@ -821,7 +929,10 @@ bool QMCRun::step(bool writeConfigs, int iteration)
   propagateWalkers(writeConfigs,iteration);
   calculatePopulationSizeBiasCorrectionFactor();
   calculateObservables();
+
+  growthRate = getNumberOfWalkers();
   branchWalkers();
+  growthRate -= getNumberOfWalkers();
 
   if(getWeights() <= 0.0 || getNumberOfWalkers() == 0)
     {

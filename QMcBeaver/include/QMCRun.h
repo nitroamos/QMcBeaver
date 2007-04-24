@@ -227,8 +227,9 @@ class QMCRun
   /**
     Reads the state of this object from an XML stream.
     @param strm XML stream
+    @return whether the read was successful
   */
-  void readXML(istream& strm);
+  bool readXML(istream& strm);
 
   void updateHFPotential();
 
@@ -303,6 +304,17 @@ private:
   void nonunitWeightBranching();
 
   /**
+     A new kind of branching where the number of walkers is a constant.
+     Basically, bad walkers are replaced with good walkers. I'm not sure
+     if the implementation is 100% correct.
+
+     See Phys Rev E, vol 16, no 4, pg 4566
+     Diffusion Monte Carlo methods with a fixed number of walkers
+     Assaraf, Caffarel, Khelif
+   */
+  void ack_reconfiguration();
+
+  /**
     Proposes trial walker moves and accepts or rejects them. This function
     steps QMCWalker in two stages. First, it calculates the forward green's
     function by calling initializePropagation, and then it calculates the
@@ -334,7 +346,12 @@ private:
     This factor is described in Umrigar, Nightingale, Runge 1993 paper (UNR93).
   */
   void calculatePopulationSizeBiasCorrectionFactor();
-  
+
+  /**
+     Growth = Births - Deaths
+   */
+  int growthRate;
+
   /**
     The maximum distance between a pair of particles that will be recorded in
     the histograms.
