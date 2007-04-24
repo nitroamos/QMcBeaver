@@ -57,6 +57,10 @@ void QMCProperties::setCalcDensity(bool calcDensity, int nbasisfunctions)
 
 void QMCProperties::zeroOut()
 {
+  walkerAge.zeroOut();
+  weightChange.zeroOut();
+  growthRate.zeroOut();
+
   energy.zeroOut();
   kineticEnergy.zeroOut();
   potentialEnergy.zeroOut();
@@ -75,6 +79,13 @@ void QMCProperties::zeroOut()
 void QMCProperties::newSample(QMCProperties* newProperties, double weight, 
 			      int nwalkers)
 {
+  if(newProperties->walkerAge.getNumberSamples() > 0)
+    walkerAge.newSample(newProperties->walkerAge.getAverage(), 1.0);
+  if(newProperties->weightChange.getNumberSamples() > 0)
+    weightChange.newSample(newProperties->weightChange.getAverage(), 1.0);;
+  if(newProperties->growthRate.getNumberSamples() > 0)
+    growthRate.newSample(newProperties->growthRate.getAverage(), 1.0);
+
   energy.newSample(newProperties->energy.getAverage(), weight);
   kineticEnergy.newSample(newProperties->kineticEnergy.getAverage(), weight);
   potentialEnergy.newSample(newProperties->potentialEnergy.getAverage(),
@@ -103,6 +114,10 @@ void QMCProperties::operator = ( const QMCProperties &rhs )
 {
   matchParametersTo(rhs);
 
+  walkerAge             = rhs.walkerAge;
+  weightChange          = rhs.weightChange;
+  growthRate            = rhs.growthRate;
+
   energy                = rhs.energy;
   kineticEnergy         = rhs.kineticEnergy;
   potentialEnergy       = rhs.potentialEnergy;
@@ -121,6 +136,10 @@ QMCProperties QMCProperties::operator + ( QMCProperties &rhs )
   matchParametersTo(rhs);
   result.matchParametersTo(rhs);
   
+  result.weightChange          = weightChange + rhs.weightChange;
+  result.walkerAge             = walkerAge + rhs.walkerAge;
+  result.growthRate            = growthRate + rhs.growthRate;
+
   result.energy                = energy + rhs.energy;
   result.kineticEnergy         = kineticEnergy + rhs.kineticEnergy;
   result.potentialEnergy       = potentialEnergy + rhs.potentialEnergy;
@@ -186,6 +205,18 @@ void QMCProperties::toXML(ostream& strm)
   distanceMovedTrial.toXML(strm);
   strm << "</DistanceMovedTrial>" << endl;
 
+  strm << "<walkerAge>" << endl;
+  walkerAge.toXML(strm);
+  strm << "</walkerAge>" << endl;
+
+  strm << "<weightChange>" << endl;
+  weightChange.toXML(strm);
+  strm << "</weightChange>" << endl;
+
+  strm << "<growthRate>" << endl;
+  growthRate.toXML(strm);
+  strm << "</growthRate>" << endl;
+
   // Chi Density
   if (calc_density)
     {
@@ -199,7 +230,7 @@ void QMCProperties::toXML(ostream& strm)
   strm << "</QMCProperties>" << endl;
 }
 
-void QMCProperties::readXML(istream& strm)
+bool QMCProperties::readXML(istream& strm)
 {
   string temp;
 
@@ -251,6 +282,18 @@ void QMCProperties::readXML(istream& strm)
   distanceMovedTrial.readXML(strm);
   strm >> temp;
 
+  strm >> temp;
+  walkerAge.readXML(strm);
+  strm >> temp;
+
+  strm >> temp;
+  weightChange.readXML(strm);
+  strm >> temp;
+
+  strm >> temp;
+  growthRate.readXML(strm);
+  strm >> temp;
+
   // Chi Density
   if (calc_density)
     {
@@ -266,8 +309,9 @@ void QMCProperties::readXML(istream& strm)
     {
       clog << "Error: checkpoint read failed in QMCProperties. We expected a \"</QMCProperties>\"" <<
 	" tag, but found \"" << temp << "\"." << endl;
-      exit(0);
+      return false;
     }
+  return true;
 }
 
 ostream& operator <<(ostream& strm, QMCProperties &rhs)
@@ -296,6 +340,15 @@ ostream& operator <<(ostream& strm, QMCProperties &rhs)
   strm << endl << "------------- DistanceMovedTrial -------------" << endl;
   strm << rhs.distanceMovedTrial;
 
+  strm << endl << "----------------- Walker Age -----------------" << endl;
+  strm << rhs.walkerAge;
+
+  strm << endl << "--------------- Weight Change ----------------" << endl;
+  strm << rhs.weightChange;
+
+  strm << endl << "---------------- Growth Rate -----------------" << endl;
+  strm << rhs.growthRate;
+
   strm << endl << "----------------- logWeights -----------------" << endl;
   strm << rhs.logWeights;
 
@@ -317,7 +370,7 @@ void QMCProperties::buildMpiType()
 
   // The number of properties 
   // ADJUST THIS WHEN ADDING NEW PROPERTIES
-  const int NumberOfProperties = 9;
+  const int NumberOfProperties = 12;
   
   int          block_lengths[NumberOfProperties];
   MPI_Aint     displacements[NumberOfProperties];
@@ -343,6 +396,9 @@ void QMCProperties::buildMpiType()
   MPI_Address(&(indata.potentialEnergy), &addresses[7]);  
   MPI_Address(&(indata.neEnergy), &addresses[8]);
   MPI_Address(&(indata.eeEnergy), &addresses[9]);
+  MPI_Address(&(indata.walkerAge), &addresses[10]);
+  MPI_Address(&(indata.weightChange), &addresses[11]);
+  MPI_Address(&(indata.growthRate), &addresses[12]);
   
   // Find the relative addresses of the data elements to the start of 
   // the struct
@@ -396,6 +452,10 @@ void QMCProperties::Reduce_Function(QMCProperties *in, QMCProperties *inout,
       inout[i].distanceMovedAccepted = inout[i].distanceMovedAccepted + 
 	in[i].distanceMovedAccepted;
       inout[i].distanceMovedTrial    = inout[i].distanceMovedTrial + in[i].distanceMovedTrial;
+
+      inout[i].walkerAge             = inout[i].walkerAge + in[i].walkerAge;
+      inout[i].weightChange          = inout[i].weightChange + in[i].weightChange;
+      inout[i].growthRate            = inout[i].growthRate + in[i].growthRate;
     }
 }
 

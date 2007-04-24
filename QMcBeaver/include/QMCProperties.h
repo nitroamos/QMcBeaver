@@ -74,6 +74,10 @@ public:
     Average distance for a trial move.
   */
   QMCProperty distanceMovedTrial;
+
+  QMCProperty walkerAge;
+  QMCProperty weightChange;
+  QMCProperty growthRate;
  
  /**
     Tells if basis function density is being calculated.
@@ -101,11 +105,11 @@ public:
   */
   void zeroOut();
 
-	/**
-		This function will match array allocations to
-		rhs.
-		@param rhs the object who's allocations we want to match
-	*/
+  /**
+     This function will match array allocations to
+     rhs.
+     @param rhs the object who's allocations we want to match
+  */
   void matchParametersTo( const QMCProperties &rhs );
   /**
     Sets two objects equal.
@@ -145,8 +149,9 @@ public:
   /**
     Loads the state of this object from an XML stream.
     @param strm XML stream
+    @return whether the read was successful
   */
-  void readXML(istream& strm);
+  bool readXML(istream& strm);
 
   /**
     Formats and prints the properties to a stream.
