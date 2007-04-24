@@ -155,7 +155,17 @@ public:
      of this walker.
    */
   string ID();
+
+  /*
+    Call this function *after* branching. This will give it a new
+    ID, and use it's parent's ancestory as it's own.
+   */
   void branchID();
+
+  /**
+     Give the walker a fresh ID -- based on a static variable. The ID it
+     gets will be unique to that processor.
+   */
   void newID();
 
   /**
