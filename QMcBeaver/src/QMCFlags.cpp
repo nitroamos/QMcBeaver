@@ -47,11 +47,15 @@ void QMCFlags::read_flags(string InFileName)
   correct_population_size_bias   = 1;
   population_control_parameter   = 1.0;
   old_walker_acceptance_parameter = 50;
+  warn_verbosity                 = 2;
+  rel_cutoff                     = 1.0;
+  limit_branching                = 1;
 
   //Green's function parameters
   sampling_method                = "umrigar93_importance_sampling";
   QF_modification_type           = "umrigar93_unequalelectrons";
   energy_modification_type       = "umrigar93";
+  energy_cutoff_type             = "umrigar93";
   umrigar93_equalelectrons_parameter = 0.5;  // in (0,1]
   synchronize_dmc_ensemble       = 0;
   synchronize_dmc_ensemble_interval = 1000;
@@ -178,9 +182,6 @@ void QMCFlags::read_flags(string InFileName)
 
           input_file >> temp_string;
           iseed = atol(temp_string.c_str());
-          if (iseed > 0) iseed *= -1;
-	  if ((iseed - LONG_MIN) < nprocs)
-	    iseed = LONG_MIN + nprocs;
         }
       else if(temp_string == "sampling_method")
         {
@@ -197,6 +198,10 @@ void QMCFlags::read_flags(string InFileName)
       else if(temp_string == "energy_modification_type")
         {
           input_file >> energy_modification_type;
+        }
+      else if(temp_string == "energy_cutoff_type")
+        {
+          input_file >> energy_cutoff_type;
         }
       else if(temp_string == "umrigar93_equalelectrons_parameter")
         {
@@ -235,6 +240,21 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
           old_walker_acceptance_parameter = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "warn_verbosity")
+        {
+          input_file >> temp_string;
+          warn_verbosity = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "rel_cutoff")
+        {
+          input_file >> temp_string;
+          rel_cutoff = atof(temp_string.c_str());
+        }
+      else if(temp_string == "limit_branching")
+        {
+          input_file >> temp_string;
+          limit_branching = atoi(temp_string.c_str());
         }
       else if(temp_string == "use_basis_function_interpolation")
         {
@@ -834,6 +854,17 @@ void QMCFlags::set_filenames(string runfile)
       checkout_file_name = base_file_name;
     }
 
+  /*
+    This may or may not work... The goal is to try to make
+    the checkpoint directory before all the different processors
+    all try to make it themselves at the same time.
+   */
+  if(checkpoint == 1)
+    {
+      string command = "mkdir -p " + checkout_file_name;
+      system(command.c_str());
+    }
+
   char my_rank_string[32];
 #ifdef _WIN32
   _snprintf( my_rank_string, 32, "%d", my_rank );
@@ -925,6 +956,8 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
        << flags.umrigar93_equalelectrons_parameter << endl;
   strm << "energy_modification_type\n "
        << flags.energy_modification_type << endl;
+  strm << "energy_cutoff_type\n "
+       << flags.energy_cutoff_type << endl;
   strm << "lock_trial_energy\n " << flags.lock_trial_energy << endl;
   strm << "synchronize_dmc_ensemble\n "
        << flags.synchronize_dmc_ensemble << endl;
