@@ -86,7 +86,7 @@ void QMCSCFJastrow::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
 
 void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
                             Array1D<Array2D<double> * > &xData,
-                            int num, bool writeConfigs)
+                            int num)
 {
   //These are some useful benchmarking variables
   static const bool printKE = false;
@@ -180,7 +180,29 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
                                      walkerData(i)->gradPsiRatio);
     calculate_E_Local(i);
 
-    walkerData(i)->isSingular = isSingular(i);
+    Array2D<double> * tMGPR = & walkerData(i)->modifiedGradPsiRatio;
+    Array2D<double> * tGPR  = & walkerData(i)->gradPsiRatio;
+    
+    double lengthGradTrialModified =
+      sqrt((*tMGPR).dotAllElectrons(*tMGPR));
+    double lengthGradTrialUnmodified =
+      sqrt((*tGPR).dotAllElectrons(*tGPR));
+    
+    walkerData(i)->modificationRatio = lengthGradTrialModified/lengthGradTrialUnmodified;
+
+    if (IeeeMath::isNaN(lengthGradTrialModified) ||
+	IeeeMath::isNaN(lengthGradTrialUnmodified) ||
+	IeeeMath::isNaN(walkerData(i)->modificationRatio) ||
+	lengthGradTrialUnmodified == 0)
+      {
+	cerr << "WARNING: trial Grad Psi Ratio is NaN "; 
+	cerr << "   lengthGradTrialModified = " << lengthGradTrialModified << endl;
+	cerr << "   lengthGradTrialUnmodified = " << lengthGradTrialUnmodified << endl;
+	walkerData(i)->isSingular = true;	
+      } else {
+	walkerData(i)->isSingular = isSingular(i);
+      }
+
     walkerData(i)->localEnergy = getLocalEnergy();
     walkerData(i)->kineticEnergy = getKineticEnergy();
     walkerData(i)->potentialEnergy = getPotentialEnergy(i);
@@ -188,10 +210,12 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
     walkerData(i)->eeEnergy = getEnergyEE(i);
     walkerData(i)->psi = getPsi();
 
-    if(writeConfigs)
-      Input->outputer.writeCorrelatedSamplingConfiguration(*xData(i),
-          SCF_Laplacian_PsiRatio,SCF_Grad_PsiRatio,Jastrow.getLnJastrow(i),
-          PE.getEnergy(i));
+    //walkerData will need these if it's going to print configurations
+    walkerData(i)->SCF_Laplacian_PsiRatio = SCF_Laplacian_PsiRatio;
+    walkerData(i)->SCF_Grad_PsiRatio      = SCF_Grad_PsiRatio;
+    walkerData(i)->lnJ                    = Jastrow.getLnJastrow(i);
+
+
     if(false)
     {
       printf("KE %20.10e ", (*walkerData(i)).kineticEnergy );
