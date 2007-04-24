@@ -679,6 +679,35 @@ void QMCProperty::readXML(istream& strm)
     }
 }
   
+void QMCProperty::printAll(ostream & strm)
+{
+  strm << *this;
+  int width = 19;
+  strm << setw(width) << "DeCorr_depth" << setw(width) << "samples" << setw(width) << "Ave" 
+       << setw(width) << "Std" << setw(width) << "StdStd" << setw(width) << "Var" 
+       << setw(width) << "VarStd" << endl;
+  strm.precision(10);
+  
+  for(int i=0;i<DCL;i++)
+    {
+      if( DeCorr[i].getNumberSamples() > 0 )
+	{
+	  strm << setw(width) << i << setw(width) << DeCorr[i].getNumberSamples() 
+	       << setw(width) << DeCorr[i].getAverage();
+	  
+	  if( DeCorr[i].getNumberSamples() > 1 )
+	    {
+	      strm << setw(width) << getBlockStandardDeviation(i)
+		   << setw(width) << getBlockStandardDeviationStandardDeviation(i)
+		   << setw(width) << getBlockVariance(i)
+		   << setw(width) << getBlockVarianceStandardDeviation(i);
+	    }
+	  
+	  strm << endl;
+	}  
+    }
+}
+
 ostream& operator <<(ostream& strm, QMCProperty &rhs)
 {    
   if(!false)
@@ -691,9 +720,9 @@ ostream& operator <<(ostream& strm, QMCProperty &rhs)
 	strm << scientific;
     strm.precision(12);
     strm.width(20);
-    strm << scientific << rhs.getStandardDeviation() << " (" << rhs.getNumberSamples() << " samples)" << endl;
+    strm << scientific << rhs.getStandardDeviation() << " (" << rhs.getNumberSamples() << " samples, decorr depth " << rhs.getDecorrDepth() << ")" << endl;
   } else {
-    printf("%20.12e +/- %20.12e (%li samples)\n",rhs.getAverage(),rhs.getStandardDeviation(),rhs.getNumberSamples());
+    printf("%20.12e +/- %20.12e (%li samples, decorr depth %i)\n",rhs.getAverage(),rhs.getStandardDeviation(),rhs.getNumberSamples(),rhs.getDecorrDepth());
   }
 
   /*
@@ -709,34 +738,6 @@ ostream& operator <<(ostream& strm, QMCProperty &rhs)
    
    strm << endl;
    */
-  
-  if(false)
-    {
-      int width = 19;
-      strm << setw(width) << "DeCorr_depth" << setw(width) << "samples" << setw(width) << "Ave" 
-	   << setw(width) << "Std" << setw(width) << "StdStd" << setw(width) << "Var" 
-	   << setw(width) << "VarStd" << endl;
-      strm.precision(10);
-      
-      for(int i=0;i<DCL;i++)
-	{
-	  if( rhs.DeCorr[i].getNumberSamples() > 0 )
-	    {
-	      strm << setw(width) << i << setw(width) << rhs.DeCorr[i].getNumberSamples() 
-		   << setw(width) << rhs.DeCorr[i].getAverage();
-	      
-	      if( rhs.DeCorr[i].getNumberSamples() > 1 )
-		{
-		  strm << setw(width) << rhs.getBlockStandardDeviation(i)
-		       << setw(width) << rhs.getBlockStandardDeviationStandardDeviation(i)
-		       << setw(width) << rhs.getBlockVariance(i)
-		       << setw(width) << rhs.getBlockVarianceStandardDeviation(i);
-		}
-	      
-	      strm << endl;
-	    }  
-	}
-    }
   return strm;
 }
 
