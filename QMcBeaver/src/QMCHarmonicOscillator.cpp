@@ -31,7 +31,9 @@ QMCHarmonicOscillator::QMCHarmonicOscillator(QMCInput *input)
   w2div2 = 0.5*w*w;
 }
 
-void QMCHarmonicOscillator::evaluate(Array1D<QMCWalkerData *> &walkerData, Array1D<Array2D<double> * > &xData, int num, bool writeConfig)
+void QMCHarmonicOscillator::evaluate(Array1D<QMCWalkerData *> &walkerData,
+				     Array1D<Array2D<double> * > &xData,
+				     int num)
 {
   for(int i=0; i<num; i++)  
     {
