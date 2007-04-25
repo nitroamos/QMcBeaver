@@ -1,3 +1,49 @@
+Tue, Apr 24, 2007 Amos Anderson
+1.  I fixed a bug that prevented the optimization parts of the code
+    from working. The issue was that we printed the trial configurations
+    and not the accepted configurations. To fix this, we need to
+    print configurations in QMCWalker, not QMCSCFJastrow. This problem
+    appears to have been introduced by myself, sorry.
+    I also added a weight variable to the printed configurations,
+    which brings the configuration energy closer to what was calculated.
+2.  I improved the CKGeneticAlgorithm1 a lot. Now it will sort all
+    available results, and keep all the best for the next iteration.
+    Previously it would only save only the best result. It will also print
+    more info.
+
+    I don't understand why we don't just merge the ParameterScorePair class
+    with the QMCObjectiveFunctionResult class. Also, I don't understand the point
+    of making SortedParameterScorePairList it's own class, as opposed to simply using
+    a C++ list.
+3.  I fixed a bug in the umrigar88 optimization method. Previously, it
+    used the HF energy as a reference point, it now uses HF-J as it should.
+4.  I improved error checking for branching in QMCWalker. QMCWalker also
+    has a much better warning system now, which helps a lot in identifying
+    problems.
+5.  I added a more error checking for reading checkpoint files.
+6.  I improved the initialization in QMCRun. Previously, it would accept
+    any initial configuration that's not singular. The check is more
+    stringent now.
+7.  QMCManager will print more info during equilibration, a possibility
+    allowed by printing equilibration iteration numbers as negative.
+    The definition of the iteration variable itself is preserved, the
+    change was just in writeEnergyResultsSummary, and then the place
+    where QMCnode.zeroOut is called was changed.
+8.  QMCWalkerData is now a class, and not a struct anymore. This change
+    permitted some of the code in QMCWalker to be cleaned up.
+9.  I fixed a minor bug in QMCReadAndEvaluateConfigs that resulted
+    in the last configuration being added to the statistics twice.
+    I also improved commenting and warning output a bit.
+    "HLR" refers to the 1994 Hammond, Lester, Reynolds book.
+Summary:
+With these changes, I think the optimization works again, although
+there are probably some more improvements yet.
+
+Furthermore, a DMC calculation is a lot more stable, although it's
+unclear whether the changes I made change the answers. I didn't intend
+to commit all these changes yet, but it was easier to commit them all
+instead of untangling them from the optimization changes.
+
 Sun, Apr 15, 2007 Daniel R Fisher
 1.  I changed the way that checkpoint files are written by QMCProperty
     and QMCEquilibrationArray.  Previously, QMCProperty wrote out the
