@@ -57,7 +57,7 @@ $(DIROBJ)/QMcBeaver.d: QMcBeaver.cpp
 	@echo "" >> $@
 	@echo "" >> $@
 
-$(DIROBJ)/Makefile.dep: $(DEPFILES)
+$(DIROBJ)/Makefile.dep: $(DEPFILES) ../Makefile.config
 	@cat $(DEPFILES) > $(DIROBJ)/Makefile.dep
 	@echo "$(DIROBJ).e: $(OBJECTS)" >> $@
 	@echo "	@echo Creating $(EXE)..." >> $@
