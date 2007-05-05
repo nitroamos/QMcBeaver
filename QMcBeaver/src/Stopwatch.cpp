@@ -116,7 +116,7 @@ string Stopwatch::toString()
 {
   ostringstream stream;
   longType time = timeMS();
-  if(time <= 0)
+  if(time <= 0 && isRunning())
     {
       gettimeofday(&tp,&tz);
       stime2 = tp.tv_sec;
