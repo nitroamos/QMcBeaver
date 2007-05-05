@@ -18,6 +18,22 @@
 
 using namespace std;
 
+#ifdef USEHDF5
+#include "H5Cpp.h"
+
+#ifndef H5_NO_NAMESPACE
+using namespace H5;
+#endif
+
+typedef struct {
+  double SCF_Lap;
+  double weight;
+  double PE;
+  double lnJ;
+} ct_typ;
+
+#endif
+
 /**
   This class is meant to handle all of the file I/O for configuration files,
   which can easily get up to several gigabytes for longer runs on larger
@@ -165,7 +181,18 @@ private:
     This is a pointer we can use to store our the information
     for the stream.
   */
+#ifdef USEHDF5
+  H5File * h5_f;
+
+  DataSet * dst_r;
+  DataSet * dst_g;
+  DataSet * dst_o;
+  CompType * ct;
+  ct_typ packet;
+
+#else
   fstream *config_strm;
+#endif
 
   /**
     The filename we opened the stream with.
@@ -186,7 +213,7 @@ private:
      Number of configurations written
   */
   int numWritten;
-
+  int numRead;
 };
 
 #endif

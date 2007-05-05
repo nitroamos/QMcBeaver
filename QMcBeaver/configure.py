@@ -396,6 +396,7 @@ optionalarguments = {
     '--nodebug' : 'self.debug = 0',
     '--profile' : 'self.profile = 1',
     '--noprofile' : 'self.profile = 0',
+    '--hdf5': 'self.hdf5 = 1',
     '--atlas': 'self.atlas = 1',
     '--lapack': 'self.lapack = 1',
     '--sprng': 'self.sprng = 1',
@@ -413,6 +414,7 @@ class CommandLineArgs:
         self.debug = 0
         self.profile = 0
         self.parallel = 0
+        self.hdf5 = 0
         self.atlas = 0
         self.lapack = 0
         self.sprng = 0
@@ -489,7 +491,7 @@ class CommandLineArgs:
         print 'Any Optional Arguments without the -- will be treated as a tag.'
         print 'The vtune option is to create a position-independent exe'
         print 'necessary for vtune\'s Call Graph.\n'
-        print 'The options gpu, sprng, atlas, and lapack all require special libraries.'
+        print 'Some options require special libraries.'
         print 'See lib/README for setup details.\n'
       
     def _getMake(self):
@@ -525,6 +527,8 @@ class CommandLineArgs:
         #the order here should facilitate selecting the exe via tabs
 #        if self.optimize:
 #            extra.append("optimize")
+        if self.hdf5:
+            extra.append("hdf5")
         if self.atlas:
             extra.append("atlas")
         if self.parallel:
@@ -573,8 +577,15 @@ class MakeConfigBuilder:
         text += 'LABEL = ' + self._inputs.LABEL + self._inputs.TAG + '\n'
         text += 'VERSION = ' + self.VERSION + '\n'
         text += 'HOME = ' + self.HOME + '\n'
-        text += 'INCLUDE = ' + self.INCLUDE + self._inputs.INCLUDE + " " + self._mpi.INCLUDE + '\n'
+        if self._inputs.hdf5:
+            text += 'H5 = /ul/amosa/lib/hdf5/lib/\n'
+        text += 'INCLUDE = ' + self.INCLUDE + self._inputs.INCLUDE + " " + self._mpi.INCLUDE
+        if self._inputs.hdf5:
+            text += ' -I/ul/amosa/lib/hdf5/include -I/ul/amosa/lib/szip/szip2.0-linux-enc/include'
+        text += '\n'
         text += 'FLAGS = ' + self._compiler.FLAGS + self._mpi.FLAGS
+        if self._inputs.hdf5:
+            text += ' -DUSEHDF5 '
         if self._inputs.atlas:
             text += ' -DUSEATLAS '
         if self._inputs.lapack:
@@ -597,6 +608,8 @@ class MakeConfigBuilder:
         text += 'PROFILE = ' + self._compiler.PROFILE + '\n'
         text += 'PARALLEL = ' + self._mpi.PARALLEL + '\n'
         text += 'LINK = ' + self._compiler.LINK + self._inputs.LINK + self._mpi.LINK + ' -L$(HOME)/lib'
+        if self._inputs.hdf5:
+            text += ' -L/ul/amosa/lib/szip/szip2.0-linux-enc/lib -static -lsz $(H5)/libhdf5_cpp.a $(H5)/libhdf5.a -lz'
         if self._inputs.sprng:
             text += ' -lsprng'
         if self._inputs.lapack:

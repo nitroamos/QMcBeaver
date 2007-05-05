@@ -1,3 +1,11 @@
+Sat, May 5, 2007 Amos Anderson
+1.  I added HDF5 capabilities. Unfortunately, it doesn't appear
+    to be much of a performance benefit on top of system binary.
+    Although, it should make a big difference if writing over a
+    network...
+
+    Maybe I just haven't tuned it well enough...
+
 Tue, Apr 24, 2007 Amos Anderson
 1.  I fixed a bug that prevented the optimization parts of the code
     from working. The issue was that we printed the trial configurations
