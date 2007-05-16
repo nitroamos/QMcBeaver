@@ -209,7 +209,7 @@ class CompilerIntel(Compiler):
         else:
             self.PROFILE = ''
             
-        self.LINK = '-lm'
+        self.LINK = '-lm -lstdc++ -static -lcxaguard'
 
 
 class CompilerMPICC(Compiler):
