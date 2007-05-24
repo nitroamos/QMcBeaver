@@ -56,7 +56,8 @@ void QMCManager::initialize( int argc, char **argv )
   string runfile = sendAllProcessorsInputFileName( argv );
   
   // Load the input data
-  Input.read( runfile );
+  Input = globalInput;
+  //Input.read( runfile );
 
   initializeOutputs();
   
@@ -244,7 +245,21 @@ void QMCManager::gatherProperties()
 
   MPI_Reduce( QMCnode.getProperties(), &Properties_total, 1,
               QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, 0, MPI_COMM_WORLD );
+	  
+  MPI_Reduce( QMCnode.getProperties()->der.array(),
+              Properties_total.der.array(),
+	      Properties_total.der.dim1()*Properties_total.der.dim2(),
+              QMCProperty::MPI_TYPE,
+	      QMCProperty::MPI_REDUCE,
+	      0,MPI_COMM_WORLD );
 
+  MPI_Reduce( QMCnode.getProperties()->hess.array(),
+              Properties_total.hess.array(),
+	      Properties_total.hess.dim1()*Properties_total.hess.dim2(),
+              QMCProperty::MPI_TYPE,
+	      QMCProperty::MPI_REDUCE,
+	      0,MPI_COMM_WORLD );
+  
   //reduce over QMCFutureWalkingProperties
   //maybe this doesn't have to happen so often...
   for(int i=0; i<fwProperties_total.props.dim1(); i++)
@@ -258,6 +273,8 @@ void QMCManager::gatherProperties()
   localTimers.getGatherPropertiesStopwatch()->stop();
 #else
   Properties_total = *QMCnode.getProperties();
+  Properties_total.der = QMCnode.getProperties()->der;
+  Properties_total.hess = QMCnode.getProperties()->hess;
   fwProperties_total = *QMCnode.getFWProperties();
 #endif
 
@@ -610,18 +627,39 @@ int QMCManager::pollForACommand()
 #endif
 }
 
-void QMCManager::run()
+bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 {
+  Input = newInput;
+
+  int width = 16;
+  if( Input.flags.my_rank == 0 )
+    {
+      cout.flush(); cerr.flush(); clog.flush();
+      cout << "***************  TheMan.run();" << endl;
+      cout << setw(10)    << "iteration"
+	   << setw(width) << "Eavg"
+	   << setw(width) << "Estd"
+	   << setw(width) << "Num. Walkers"
+	   << setw(width) << "Trial Energy"
+	   << setw(width) << "Eff. dt"
+	   << setw(width) << "Weights"
+	   << setw(width) << "Num. Samples"
+	   << endl;
+      cout.setf( ios::fixed,ios::floatfield );
+    }
+ 
   equilibrationProperties.zeroOut();
   
   done      = false;
   iteration = 0;
-  
-  
-  if( Input.flags.equilibrate_every_opt_step > 0 )
+
+  if( equilibrate )
   {
     equilibrating = true;
     Input.flags.dt = Input.flags.dt_equilibration;
+  } else {
+    equilibrating = false;
+    Input.flags.dt = Input.flags.dt_run;
   }
   
   // Create the file to write all energies out to
@@ -672,9 +710,9 @@ void QMCManager::run()
     }
     
     bool writeConfigs = !equilibrating &&
-      ( Input.flags.optimize_Psi || Input.flags.print_configs == 1 )  &&
+      Input.flags.print_configs == 1 &&
       iteration%Input.flags.print_config_frequency == 0;
-
+    
     while( !QMCnode.step( writeConfigs, iteration - Input.flags.equilibration_steps ) )
       {
 	//Let's assume the worst; that all our data is trash.
@@ -694,12 +732,13 @@ void QMCManager::run()
 	    else localTimers.getPropagationStopwatch()->stop();
 	  }
 
-	if(  Input.flags.equilibrate_first_opt_step == 0 )
+	if( equilibrate )
 	  {
-	    equilibrating = false;
-	  } else {
 	    equilibrating = true;
 	    Input.flags.dt = Input.flags.dt_equilibration;
+	  } else {
+	    equilibrating = false;
+	    Input.flags.dt = Input.flags.dt_run;
 	  }
 
 	//Turn on whatever stopwatches need to be running
@@ -1035,6 +1074,13 @@ void QMCManager::run()
     for some WF optimization methods (e.g. umrigar88).
   */
   updateEstimatedEnergy(&Properties_total);
+
+  /**
+     Whether the run was successfully completed.
+  */
+  if(QMCManager::SIGNAL_SAYS_QUIT)
+    return false;
+  return true;
 }
 
 void QMCManager::optimize()
@@ -1044,15 +1090,15 @@ void QMCManager::optimize()
   int configsToSkip = 0;
   
   if ( Input.flags.use_equilibration_array == 1 )
-  {
-    configsToSkip = 1 + (  iteration - Input.flags.equilibration_steps -
-                             QMCnode.getProperties() ->energy.getNumberSamples()  )  /
-    Input.flags.print_config_frequency;
-  }
+    {
+      configsToSkip = 1 + (  iteration - Input.flags.equilibration_steps -
+			     QMCnode.getProperties() ->energy.getNumberSamples()  )  /
+	Input.flags.print_config_frequency;
+    }
   
   if(  Input.flags.optimize_Psi )
   {
-    QMCCorrelatedSamplingVMCOptimization::optimize( &Input,configsToSkip );
+    QMCCorrelatedSamplingVMCOptimization::optimize( &Input,Properties_total,configsToSkip );
     
     // Print out the optimized parameters
     
@@ -1512,7 +1558,11 @@ void QMCManager::writeEnergyResultsSummary( ostream & strm )
     this information now that we have a more clear way to indicate
     whether we're equilibrating.
    */
-  long iter = iteration - Input.flags.equilibration_steps;
+  long iter = iteration;
+
+  if( equilibrating )
+    iter -= Input.flags.equilibration_steps;
+
   strm << setw( 10 )  << iter << " ";
   
   strm << setprecision( 10 );
@@ -1728,19 +1778,7 @@ void QMCManager::initializeCalculationState(long int iseed)
 
       // Make sure any checkpointed data is removed.
       zeroOut();
-  
-      if(  Input.flags.equilibrate_first_opt_step == 0 )
-	equilibrating = false;
-      else
-	equilibrating = true;
     }
-
-  if( equilibrating )
-  {
-    Input.flags.dt = Input.flags.dt_equilibration;
-  } else {
-    Input.flags.dt = Input.flags.dt_run;
-  }
 
   localTimers.getInitializationStopwatch() ->stop();
 }
@@ -1939,6 +1977,7 @@ ostream&  operator<<( ostream & strm, QMCManager & rhs )
   strm << "**************** Start of Results *****************" << endl;
   strm << rhs.Properties_total;
   strm << rhs.fwProperties_total;
+
   QMCDerivativeProperties derivativeProperties( &rhs.Properties_total,
 						&rhs.fwProperties_total, rhs.Input.flags.dt );
   strm << derivativeProperties << endl;

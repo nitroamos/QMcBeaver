@@ -20,17 +20,48 @@ static const bool showTimings  = false;
 //as well as its laplacian
 static const bool printJastrow = false;
 
+QMCJastrow::QMCJastrow()
+{
+
+
+}
+
+QMCJastrow::~QMCJastrow()
+{
+  for(int i=0; i<grad_sum_U.dim1(); i++)
+    grad_sum_U(i).deallocate();
+
+  sum_U.deallocate();
+  grad_sum_U.deallocate();
+  laplacian_sum_U.deallocate();
+
+  for(int i=0; i<p2_xa.dim1(); i++)
+    for(int j=0; j<p2_xa.dim2(); j++)
+      p2_xa(i,j).deallocate();
+
+  p_a.deallocate();
+  p2_xa.deallocate();
+  p3_xxa.deallocate();
+}
+
 void QMCJastrow::initialize(QMCInput * input)
 {
   Input = input;
+  JastrowElectronNuclear.initialize(Input);
+  JastrowElectronElectron.initialize(Input);
 
   int walkersPerPass = Input->flags.walkers_per_pass;
   sum_U.allocate(walkersPerPass);
   grad_sum_U.allocate(walkersPerPass);
   laplacian_sum_U.allocate(walkersPerPass);
 
-  JastrowElectronNuclear.initialize(Input);
-  JastrowElectronElectron.initialize(Input);
+  p_a.allocate(walkersPerPass,getNumAI());
+  p2_xa.allocate(walkersPerPass,getNumAI());
+  p3_xxa.allocate(walkersPerPass,getNumAI());
+
+  for(int i=0; i<p2_xa.dim1(); i++)
+    for(int j=0; j<p2_xa.dim2(); j++)
+      p2_xa(i,j).allocate(Input->WF.getNumberElectrons(),3);
 
 #ifdef QMC_GPU
   GPUQMCJastrowElectronElectron temp(JastrowElectronElectron, Input->flags.getNumGPUWalkers());
@@ -43,9 +74,25 @@ double QMCJastrow::getJastrow(int which)
   return exp(sum_U(which));
 }
 
+int QMCJastrow::getNumAI()
+{
+  return JastrowElectronElectron.getNumAI() +
+    JastrowElectronNuclear.getNumAI();
+}
+
+double QMCJastrow::get_p_a(int which, int ai)
+{
+  return getJastrow(which)*p_a(which,ai);
+}
+
 double QMCJastrow::getLnJastrow(int which)
 {
   return sum_U(which);
+}
+
+double QMCJastrow::get_p_a_ln(int which, int ai)
+{
+  return p_a(which,ai);
 }
 
 Array2D<double> * QMCJastrow::getGradientLnJastrow(int which)
@@ -53,9 +100,19 @@ Array2D<double> * QMCJastrow::getGradientLnJastrow(int which)
   return &grad_sum_U(which);
 }
 
+Array2D<double> * QMCJastrow::get_p2_xa_ln(int which, int ai)
+{
+  return &p2_xa(which,ai);
+}
+
 double QMCJastrow::getLaplacianLnJastrow(int which)
 {
   return laplacian_sum_U(which);
+}
+
+double QMCJastrow::get_p3_xxa_ln(int which, int ai)
+{
+  return p3_xxa(which,ai);
 }
 
 void QMCJastrow::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
@@ -151,10 +208,35 @@ void QMCJastrow::evaluate(QMCJastrowParameters & JP, Array1D<Array2D<double>*> &
       sum_U(walker) = JastrowElectronNuclear.getLnJastrow() +
                       JastrowElectronElectron.getLnJastrow();
 
+      if (IeeeMath::isNaN( sum_U(walker) ))
+	{
+	  cerr << "WARNING: lnJastrow = " << sum_U(walker) << endl;
+	  cerr << "lnJastrow is being set to 0 to avoid ruining the " << endl;
+	  cerr << "calculation." << endl;
+	  sum_U(walker) = 0.0;
+	}
+
       laplacian_sum_U(walker) = 
         JastrowElectronNuclear.getLaplacianLnJastrow() +
         JastrowElectronElectron.getLaplacianLnJastrow();
 
+      if(Input->flags.calculate_Derivatives == 1)
+	{
+	  for(int ai=0; ai<JastrowElectronElectron.getNumAI(); ai++)
+	    {
+	      p_a(walker,ai)    = JastrowElectronElectron.get_p_a_ln(ai);
+	      p2_xa(walker,ai)  = *JastrowElectronElectron.get_p2_xa_ln(ai);
+	      p3_xxa(walker,ai) = JastrowElectronElectron.get_p3_xxa_ln(ai);
+	    }
+	  int shift = JastrowElectronElectron.getNumAI();
+	  for(int ai=0; ai<JastrowElectronNuclear.getNumAI(); ai++)
+	    {
+	      p_a(walker,ai+shift)    = JastrowElectronNuclear.get_p_a_ln(ai);
+	      p2_xa(walker,ai+shift)  = *JastrowElectronNuclear.get_p2_xa_ln(ai);
+	      p3_xxa(walker,ai+shift) = JastrowElectronNuclear.get_p3_xxa_ln(ai);
+	    }
+	}
+      
       grad_JEN = JastrowElectronNuclear.getGradientLnJastrow();
       grad_JEE = JastrowElectronElectron.getGradientLnJastrow();
 

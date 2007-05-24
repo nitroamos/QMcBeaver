@@ -193,7 +193,8 @@ void QMCObjectiveFunctionResult::set_score(Array1D<Complex> & poles)
     }
 
   // add the penalty function
-  score += calculate_penalty_function(poles);
+  score += QMCJastrowParameters::calculate_penalty_function(poles) *
+    Input->flags.singularity_penalty_function_parameter;
 }
 
 void QMCObjectiveFunctionResult::set_score_for_derivative(
@@ -226,7 +227,8 @@ void QMCObjectiveFunctionResult::set_score_for_derivative(
     }
 
   // add the penalty function
-  score_for_derivative += calculate_penalty_function(poles);
+  score_for_derivative += QMCJastrowParameters::calculate_penalty_function(poles) *
+    Input->flags.singularity_penalty_function_parameter;
 }
 
 //This will calculate the penalty function and return a score for a 
@@ -343,46 +345,6 @@ double QMCObjectiveFunctionResult::calculate_umrigar88()
   double temp = Input->flags.energy_estimated - getEnergyAve();
   double val = getEnergyVar() + temp*temp;
   return val;
-}
-
-// calculates a penalty function for getting singular parameters
-double QMCObjectiveFunctionResult::calculate_penalty_function(
-						     Array1D<Complex> & poles)
-{
-  double penalty = 0.0;
-
-  for(int i=0; i<poles.dim1(); i++)
-    {
-      // calculate the distance of the pole from the positive real axis
-      double distance = 0.0;
-
-      if( poles(i).real() > 0 )
-	{
-	  distance = fabs(poles(i).imaginary());
-	}
-      else
-	{
-	  distance = poles(i).abs();
-	}
-
-      if(distance <= 0){
-	penalty = 1e100; 
-	cerr << "Warning: distance from real axis is " << distance << "  in OFR, can\'t take log" << endl;
-	cerr << "         poles(" << i << ") = " << poles(i) << endl;
-	cerr << "         penalty will be set to " << penalty << endl;
-	cerr.flush();
-      } else {
-
-	/*
-	  Singularities exist when the poles are on the +'ve real
-	  axis. So, a configuration's score will be improved (lowered)
-	  the further it is from this region.
-	 */
-	penalty -= log( distance );
-      }
-    }
-
-  return penalty * Input->flags.singularity_penalty_function_parameter;
 }
 
 ostream& operator<<(ostream & strm, QMCObjectiveFunctionResult & rhs)

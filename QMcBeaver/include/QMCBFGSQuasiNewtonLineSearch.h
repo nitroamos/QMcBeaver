@@ -46,23 +46,7 @@ private:
     Where the search direction is the approximately the Newton step 
     direction.  The step is determined using the BFGS Quasi-Newton algorithm.
     */
-  Array1D<double> searchDirection(Array1D<double> & x, Array1D<double> & g);
-
-
-  /**
-    Approximate inverse hessian used in determining the quasi-newton step.
-    */
-  Array2D<double> approximateInverseHessian;
-
-  /**
-    Solution from the last iteration.
-    */
-  Array1D<double> xOld;
-
-  /**
-    Gradient that was evaluated for the last iteration.
-    */
-  Array1D<double> gradientOld;
+  void calculateHessian();
 };
 
 #endif

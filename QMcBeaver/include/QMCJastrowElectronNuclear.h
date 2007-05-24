@@ -44,6 +44,10 @@ using namespace std;
 class QMCJastrowElectronNuclear
 {
 public:
+  QMCJastrowElectronNuclear();
+
+  ~QMCJastrowElectronNuclear();
+
   /**
     Initializes the class with the data controlling the calculation. 
     
@@ -60,6 +64,30 @@ public:
     a \f$N \times 3\f$ matrix
     */
   void evaluate( QMCJastrowParameters & JP, Array2D<double> & X);
+
+  /**
+     The number of variable parameters the NE Jastrow functions
+     provide.
+  */
+  int getNumAI();
+
+  /**
+     Partial derivative of the natural log of this function with 
+     respect to parameter ai.
+  */
+  double get_p_a_ln(int ai);
+
+  /**
+     Second partial derivative of the natural log of this function with 
+     respect to parameters x and ai.
+  */
+  Array2D<double> * get_p2_xa_ln(int ai);
+
+  /**
+     Third partial derivative of the natural log of this function with 
+     respect to parameters x, x, and ai.
+  */
+  double get_p3_xxa_ln(int ai);
 
   /**
     Gets the value of the natural log of the electron-nuclear Jastrow 
@@ -95,6 +123,16 @@ public:
     (\f$\nabla^2\ln(J)=\nabla^2\sum{u_{i,j}(r_{i,j})}\f$)
     */
   double getLaplacianLnJastrow();
+
+ protected:
+  double sum_U;
+  Array2D<double> grad_sum_U;
+  double laplacian_sum_U;
+  QMCInput* Input;
+  
+  Array1D<double>  p_a;
+  Array1D< Array2D<double> > p2_xa;
+  Array1D<double> p3_xxa;
   
 private:    
   void calculateDistanceAndUnitVector(Array2D<double> & X1, int x1particle, 
@@ -102,10 +140,6 @@ private:
 				      double & r, 
 				      Array1D<double> & UnitVector);
 
-  double sum_U;
-  Array2D<double> grad_sum_U;
-  double laplacian_sum_U;
-  QMCInput* Input;
 };
 
 #endif

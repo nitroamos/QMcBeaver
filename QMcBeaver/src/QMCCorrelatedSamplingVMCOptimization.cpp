@@ -12,11 +12,36 @@
 
 #include "QMCCorrelatedSamplingVMCOptimization.h"
 
-void QMCCorrelatedSamplingVMCOptimization::
-optimize(QMCInput * input, int configsToSkip)
+void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
+						    QMCProperties & lastRun,
+						    int configsToSkip)
 {
   //put initial Jastrow parameters in as the guess
-  Array1D<double> Guess_Jastrow_parameters = input->JP.getParameters();
+  Array1D<double> Guess_parameters = input->getParameters();
+
+  double value;
+
+  QMCDerivativeProperties dp(&lastRun,0,0);
+
+  Array1D<double> gradient;
+  Array2D<double> hessian;
+
+  value = lastRun.energy.getSeriallyCorrelatedVariance();
+  cout << endl;
+  cout << "The energy from the last run:" << endl;
+  cout << lastRun.energy;
+  cout << "Serially correlated variance: " << lastRun.energy.getSeriallyCorrelatedVariance() << endl;
+
+  if( input->flags.optimize_Psi_criteria == "analytical_energy_variance" )
+    {
+      gradient = dp.getParameterGradient();
+    }
+
+  if( input->flags.optimize_Psi_method == "analytical_energy_variance" ||
+      input->flags.optimize_Psi_method == "automatic" )
+    {
+      hessian  = dp.getParameterHessian();
+    }
 
   if( input->flags.my_rank == 0 )
     {
@@ -28,8 +53,11 @@ optimize(QMCInput * input, int configsToSkip)
       QMCOptimizationAlgorithm * optAlg = 
 	QMCOptimizationFactory::optimizationAlgorithmFactory(ObjFunk, input);
       
-      Guess_Jastrow_parameters = 
-	optAlg->optimize(Guess_Jastrow_parameters);
+      Guess_parameters = 
+	optAlg->optimize(Guess_parameters,
+			 value,
+			 gradient,
+			 hessian);
       
       delete optAlg;
       optAlg = 0;
@@ -69,12 +97,26 @@ optimize(QMCInput * input, int configsToSkip)
 #ifdef PARALLEL
 
   // Send the new Guess Jastrow Parameters to everyone
-  MPI_Bcast(Guess_Jastrow_parameters.array(),Guess_Jastrow_parameters.dim1(),
+  MPI_Bcast(Guess_parameters.array(),Guess_parameters.dim1(),
 	    MPI_DOUBLE,0,MPI_COMM_WORLD);
 
 #endif
 
-  input->JP.setParameterVector(Guess_Jastrow_parameters);
+  input->setParameterVector(Guess_parameters);
+
+  double penalty = input->JP.calculate_penalty_function();
+  if(penalty >= 1e10)
+    {
+      clog << endl << endl << endl;
+      clog << "Error: the Jastow's new guess parameters have bad poles (penalty = " << penalty << ")!" << endl;
+      clog << "  Parameters are: " << input->JP.getParameters();
+      clog << "   its poles are: " << input->JP.getPoles();
+      clog << "  Either your guess for initial Jastrow parameters is bad or you need to change your "
+	   << "optimization choices." << endl;
+      exit(0);
+    } else {
+      clog << "Notice: the new parameters have an acceptable singularity penalty = " << penalty << endl;
+    }
 }
 
 

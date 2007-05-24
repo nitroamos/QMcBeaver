@@ -17,6 +17,12 @@ QMCLineSearchStepLengthSelectionAlgorithm *
 {
   QMCLineSearchStepLengthSelectionAlgorithm * algorithm = 0;
 
+  bool isValue = false;
+  double value = 0;
+
+  char ** ptr = 0;
+  value = strtod(Type.c_str(), ptr);
+
   if( Type == "MikesBracketing" )
     {
       algorithm = new QMCMikesBracketingStepLengthSelector();
@@ -24,6 +30,14 @@ QMCLineSearchStepLengthSelectionAlgorithm *
   else if( Type == "Wolfe" )
     {
       algorithm = new QMCWolfeStepLengthSelector();
+    }
+  else if( Type == "None" )
+    {
+      algorithm = new QMCValueStepLength(1.0);
+    }
+  else if( fabs(value) > 1.0e-10 )
+    {
+      algorithm = new QMCValueStepLength(value);
     }
   else
     {

@@ -37,10 +37,13 @@ public:
   Array1D<Complex> getPoles();
   
   double getFunctionValue();
+  double get_p_a(int ai);
   
   double getFirstDerivativeValue();
+  double get_p2_xa(int ai);
   
   double getSecondDerivativeValue();
+  double get_p3_xxa(int ai);
 
   Array1D<double> getNumeratorCoeffs();
 

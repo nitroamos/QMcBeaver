@@ -40,6 +40,10 @@
 class QMCJastrowElectronElectron
 {
 public:
+  QMCJastrowElectronElectron();
+
+  ~QMCJastrowElectronElectron();
+  
   /**
     Initializes the class with the data controlling the calculation. 
     
@@ -67,7 +71,19 @@ public:
     (\f$\ln(J)=\sum{u_{i,j}(r_{i,j})}\f$)
     */
   double getLnJastrow();
-  
+
+  /**
+     The number of EE wavefunction parameters we can take a partial derivative
+     with respect to.
+  */
+  int getNumAI();
+
+  /**
+     Partial derivative of the natural log of the function with respect to
+     parameter ai.
+  */
+  double get_p_a_ln(int ai);
+
   /**
     Gets the gradient of the natural log of the electron-electron 
     Jastrow function with
@@ -81,6 +97,12 @@ public:
   Array2D<double> * getGradientLnJastrow();
 
   /**
+     Second Partial derivative of the natural log of the function with respect to
+     parameters x and ai.
+  */
+  Array2D<double> * get_p2_xa_ln(int ai);
+
+  /**
     Gets the laplacian of the natural log of the electron-electron 
     Jastrow function with
     respect to the cartesian electronic coordinates for the last 
@@ -92,16 +114,27 @@ public:
     */
   double getLaplacianLnJastrow();
 
+  /**
+     Third partial derivative of the natural log of the function with respect to
+     parameters x, x, and ai.
+  */
+  double get_p3_xxa_ln(int ai);
+
 protected:
   QMCInput* Input;
   double sum_U;
   Array2D<double> grad_sum_U;
   double laplacian_sum_U;
 
+  Array1D<double>  p_a;
+  Array1D< Array2D<double> > p2_xa;
+  Array1D<double> p3_xxa;
+
 private:  
 
   void collectForPair(int el1, int el2,
-	QMCCorrelationFunction *U_Function,Array2D<double> & X);
+	QMCCorrelationFunction *U_Function,Array2D<double> & X,
+		      int index, int numP);
 
   void calculateDistanceAndUnitVector(Array2D<double> & X1, int x1particle, 
 				      Array2D<double> &X2, int x2particle, 

@@ -76,12 +76,22 @@ public:
   */
   Array1D<double> getParameters();
 
+  int getNumberEEParameters();
+  int getNumberNEParameters();
+  int getNumberNEupParameters();
+
   /**
      Gets the poles of the correlation functions.
 
      @return poles of the correlation functions.
   */
   Array1D<Complex> getPoles();
+
+  // calculates a penalty function for getting singular parameters
+  double calculate_penalty_function();
+
+  // calculates a penalty function for getting singular parameters
+  static double calculate_penalty_function(Array1D<Complex> & poles);
 
   /**
     Gets the QMCCorrelationFunctionParameters describing up-down electron
@@ -161,7 +171,9 @@ public:
   friend ostream & operator<<(ostream &strm, QMCJastrowParameters & rhs);
     
 private:
-  int NumberOfParameters;
+  int NumberOfEEParameters;
+  int NumberOfNEParameters;
+  int NumberOfNEupParameters;
   Array1D<QMCCorrelationFunctionParameters> EupNuclear;
   Array1D<QMCCorrelationFunctionParameters> EdnNuclear;
   QMCCorrelationFunctionParameters EupEdn;

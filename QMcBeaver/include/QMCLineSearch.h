@@ -15,6 +15,7 @@
 
 #include <math.h>
 
+#include <vector>
 #include "QMCObjectiveFunction.h"
 #include "QMCOptimizationAlgorithm.h"
 #include "QMCLineSearchStepLengthSelectionAlgorithm.h"
@@ -46,7 +47,10 @@ public:
     */
   virtual ~QMCLineSearch(){};
 
-  Array1D<double> optimize(Array1D<double> & initialGuess);
+  Array1D<double> optimize(Array1D<double> & initialGuess,
+			   double value,
+			   Array1D<double> & gradient,
+			   Array2D<double> & hessian);
 
 protected:
 
@@ -55,7 +59,16 @@ protected:
     */
   QMCObjectiveFunction * getObjectiveFunction();
 
+  int dim;
+  vector<double> f;
+  vector< Array1D<double> > x;
+  vector< Array1D<double> > gradient;
+  vector< Array2D<double> > inverseHessian;
+
 private:
+  static int optStep;
+
+  Array1D<double> searchDirection();
 
   /**
     Calculates the search direction at x. x' = x + StepLength * SearchDirection
@@ -63,8 +76,7 @@ private:
     @param x current parameter values.
     @param g current gradient value.
     */
-  virtual Array1D<double> searchDirection(Array1D<double> & x, 
-					  Array1D<double> & g) = 0;
+  virtual void calculateHessian() = 0;
 
   /**
     Calculates the step length at x. x' = x + StepLength * SearchDirection

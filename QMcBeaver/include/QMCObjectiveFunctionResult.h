@@ -154,9 +154,6 @@ class QMCObjectiveFunctionResult
 
   double calculate_monkey_spank();
   double calculate_umrigar88();
-
-  // calculates a penalty function for getting singular parameters
-  double calculate_penalty_function(Array1D<Complex> & poles);
 };
 
 #endif

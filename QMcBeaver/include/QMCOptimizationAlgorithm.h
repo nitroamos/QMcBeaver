@@ -14,6 +14,7 @@
 #define QMCOptimizationAlgorithm_H
 
 #include "Array1D.h"
+#include "Array2D.h"
 
 /**
   Interface for numerical optimization algorithms.
@@ -34,7 +35,10 @@ public:
     @param initialGuess initial guess parameters for the optimization.
     @return optimized parameters.
     */
-  virtual Array1D<double> optimize(Array1D<double> & initialGuess) = 0;
+  virtual Array1D<double> optimize(Array1D<double> & initialGuess,
+				   double value,
+				   Array1D<double> & gradient,
+				   Array2D<double> & hessian) = 0;
 };
 
 #endif

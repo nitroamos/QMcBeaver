@@ -78,8 +78,10 @@ class QMCManager
   /**
      Performs a QMC calculation.  The specifics of the calculation are
      prescribed in the input.
+
+     @return whether the run was cut short (e.g. kill signal)
   */
-  void run();
+  bool run(QMCInput & Input, bool equilibrate);
 
   /**
      Optimizes the parameters in a variational QMC (VMC) calculation using 

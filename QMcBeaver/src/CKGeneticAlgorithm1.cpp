@@ -153,7 +153,10 @@ void CKGeneticAlgorithm1::generateNewPopulation()
   Population.resize(numToKeep);
 }
 
-Array1D<double> CKGeneticAlgorithm1::optimize(Array1D<double> & InitialGuess)
+Array1D<double> CKGeneticAlgorithm1::optimize(Array1D<double> & InitialGuess,
+					      double value,
+					      Array1D<double> & gradient,
+					      Array2D<double> & hessian)
 {
   initializePopulation(InitialGuess);
 

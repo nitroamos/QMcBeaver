@@ -11,12 +11,17 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCLineSearch.h"
+#include "QMCInput.h"
+#include <iomanip>
+
+int QMCLineSearch::optStep = -1;
 
 QMCLineSearch::QMCLineSearch(QMCObjectiveFunction *function, 
-		         QMCLineSearchStepLengthSelectionAlgorithm * stepAlg,
+			     QMCLineSearchStepLengthSelectionAlgorithm * stepAlg,
 			     int MaxSteps, 
 			     double tol)
 {
+  dim           = 0;
   OF            = function;
   stepLengthAlg = stepAlg;
   maximumSteps  = MaxSteps;
@@ -26,56 +31,223 @@ QMCLineSearch::QMCLineSearch(QMCObjectiveFunction *function,
 double QMCLineSearch::stepLength(Array1D<double> & x,Array1D<double> & p,
 				 Array1D<double> & g, double f)
 {
-  return stepLengthAlg->stepLength(OF,x,p,g,f); 
+  if(stepLengthAlg != 0)
+    return stepLengthAlg->stepLength(OF,x,p,g,f); 
+  return 1.0;
 }
 
-Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess)
+Array1D<double> QMCLineSearch::searchDirection()
 {
-  cout << endl;
-  cout << "Beginning Line Search Optimization ... " << endl;
+  calculateHessian();
 
-  // Allocate the point used in the search and initialize its value.
-  Array1D<double> x = InitialGuess;
+  // calculate the search direction, p_k
   
-  // Begin the line search
-  double f_old = 0;
+  Array1D<double> p_k(dim);
+  
+  Array2D<double> & invHess = inverseHessian.back();
+  Array1D<double> & grad    = gradient.back();
 
+  for(int i=0; i<dim; i++)
+    {
+      p_k(i) = 0.0;
+      for(int j=0; j<dim; j++)
+	{
+	  p_k(i) -= invHess(i,j) * grad(j);
+	}
+    }
+  return p_k;
+}
+
+Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
+					double InitialValue,
+					Array1D<double> & InitialGradient,
+					Array2D<double> & InitialHessian)
+					
+{
+  optStep++;
+  cout << endl;
+
+  dim = InitialGuess.dim1();
+  bool useInitialHess = InitialHessian.dim1() == dim && InitialHessian.dim2() == dim;
+  bool useInitialGrad = InitialGradient.dim1() == dim;
+
+  double a_diag = 0.0;
+  if(globalInput.flags.optimize_Psi_method == "automatic")
+    if(optStep < 6)
+      {
+	/*
+	  rotate the hessian in the direction of steepest
+	  descent, described in PRL 94, 150201 (2005)
+	  supposed to make a_diag smaller as optimization progresses...
+	  
+	  If the hessian is the identity matrix, then we have
+	  the steepest descent method. Linear convergence?
+	  
+	  If the hessian is the second derivatives, then
+	  conjugate gradient. Quadratic convergence?
+	  
+	  I think the point is compensating for deficiencies in
+	  the approximate hessian, as well as for nonlinearities
+	  in the objective function.
+	*/
+	a_diag = 0.2;
+	
+	//use Steepest_Descent for a couple iterations first
+	//useInitialHess = false;
+      } else if(optStep < 12)
+	{
+	  a_diag = 0.02;
+	} else if(optStep < 23)
+	  {
+	    a_diag = 2.0e-7;
+	  }
+
+  if( fabs(a_diag) > 0.0){
+    for(int d=0; d<dim; d++)
+      InitialHessian(d,d) = InitialHessian(d,d) + a_diag;
+    
+    cout << "Adding a_diag = " << a_diag
+	 << " to the diagonal elements of the hessian" << endl;
+  }
+  
+  // Allocate the point used in the search and initialize its value.
+  x.push_back(InitialGuess);
+
+  cout << "Beginning Line Search Optimization step " << optStep << " for " << dim
+       << " parameters, max steps = " << maximumSteps << ", with: " << endl;
+  cout << "        InitialValue = " << InitialValue << endl;
+  globalInput.printAIArray(cout,"InitialGuess",20,InitialGuess);
+  if(useInitialGrad)
+    globalInput.printAIArray(cout,"InitialGradient",20,InitialGradient);
+
+  if(useInitialHess)
+    {
+      double nsym = InitialHessian.nonSymmetry();
+      cout << "      InitialHessian   (non symmetry = " << nsym << ") =\n" << InitialHessian;
+    }
+
+  bool ok = false;
+  Array2D<double> InitialInverseHessian(dim,dim);
+  if(useInitialHess)
+    {
+      double det = 0.0;
+      InitialHessian.determinant_and_inverse(InitialInverseHessian,
+					     det, &ok);
+
+      //we're transposing because the determinant_and_inverse returns
+      //the transpose of what we want, so we need to untranspose it.
+      InitialInverseHessian.transpose();
+      if(!ok)
+	{
+	  cerr << "Error: InitialHessian can't be inverted!";
+	  cerr << "   det = " << det << endl;
+	  cerr << "   Using identity matrix instead." << endl;
+	}
+    }
+
+  if(!ok || !useInitialHess)
+    InitialInverseHessian.setToIdentity();
+  inverseHessian.push_back(InitialInverseHessian);
+
+  if(useInitialGrad)
+    gradient.push_back(InitialGradient);
+
+  cout << endl << endl;
   for(int i=0; i<maximumSteps; i++)
     {
-      // Calculate the function value, step length, and search direction.
-      double f = OF->evaluate(x).getScore();
+      cout << endl << "\tIteration: " << i << endl;
 
-      cout << "\tIteration: " << i << endl;
-      cout << "\t\tFunction Value: " << f << endl;
-      cout << "\t\tParameters:     " << x << endl;
+      // Calculate the function value, step length, and search direction.
+      //we may or may not have been given an inital value
+      if(i == 0 && fabs(InitialValue - 99.0) > 1e-10)
+	f.push_back(InitialValue);
+      else
+	f.push_back(OF->evaluate(x[i]).getScore());
       
       // if converged quit
-      if( i>0 && fabs(1.0-f/f_old) < epsilon ) 
+      if( i>0 && fabs(1.0-f[i]/f[i-1]) < epsilon ) 
 	{
 	  cout << "Line Search Optimization Has Converged in " 
 	       << i << " Iterations... " << endl; 
 	  break;
 	}
 
-      Array1D<double> grad_k = getObjectiveFunction()->grad(x);
-      Array1D<double> p_k   = searchDirection(x,grad_k);
-      double alpha_k = stepLength(x,p_k,grad_k,f);
+      if(i > 0 || !useInitialGrad)
+	gradient.push_back(getObjectiveFunction()->grad(x[i]));
+
+      if(i > 0)
+	{
+	  Array2D<double> new_inverseHessian(dim,dim);
+	  new_inverseHessian.setToIdentity();
+	  inverseHessian.push_back(new_inverseHessian);
+	}
+
+      /*
+	this is where the hessian is determined
+	and then A^-1 * b is calculated
+      */
+      Array1D<double> p_k   = searchDirection();
+
+      /*
+	Some methods have fancy ways of modifying the distance
+	we move in the search direction vector.
+      */
+      double alpha_k = stepLength(x[i],
+				  p_k,
+				  gradient[i],
+				  f[i]);
+
+      cout << setw(20) << "Objective Value:";
+      cout.precision(12);
+      cout.width(20);
+      cout << f[i] << endl;
+      globalInput.printAIArray(cout,"Parameters:",20,x[i]);
+      globalInput.printAIArray(cout,"Gradient:",20,gradient[i]);
+      globalInput.printAIArray(cout,"Search Direction:",20,p_k);
+      cout << setw(20) << "stepLength:";
+      cout.precision(12);
+      cout.width(20);
+      cout << alpha_k << endl;
+
+      if(inverseHessian.back().isIdentity())
+	{
+	  cout << "\t\tInverseHessian:   (identity matrix)\n";
+	} else {
+	  double nsym = inverseHessian.back().nonSymmetry();
+	  cout << "\t\tInverseHessian    (non symmetry = " << nsym << "):\n"
+	       << inverseHessian.back();
+	}
 
       // Calculate the next step
-      for(int j=0; j<x.dim1(); j++)
+      Array1D<double> x_new = x.back();
+      for(int j=0; j<dim; j++)
 	{
-	  x(j) += alpha_k * p_k(j);
+	  x_new(j) += alpha_k * p_k(j);
 	}
-	
-      // keep track of the previous function value to know when to finish 
-      // the calc
-      f_old = f;
+      x.push_back(x_new);
     }
 
-  cout << "Ending Line Search Optimization ... " << endl;
-  cout << endl;
+  cout << endl << "Ending Line Search Optimization... " << endl;
 
-  return x;
+  cout << endl;
+  cout << setw(20) << "Best Objective Value:";
+  cout.precision(12);
+  cout.width(20);
+  cout << f.back() << endl;
+  globalInput.printAIArray(cout,"Best Parameters:",20,x.back());
+  cout << endl << endl;
+
+  /*
+  for(unsigned int i=0; i<x.size(); i++)
+    cout << "             x[" << i << "] = " << x[i];
+  for(unsigned int i=0; i<gradient.size(); i++)
+    cout << "      gradient[" << i << "] = " << gradient[i];
+  for(unsigned int i=0; i<inverseHessian.size(); i++)
+    cout << "inverseHessian[" << i << "] =\n" << inverseHessian[i];
+  cout << endl;
+  //*/
+
+  return x.back();
 }
 
 QMCObjectiveFunction * QMCLineSearch::getObjectiveFunction()

@@ -73,11 +73,16 @@ public:
 
     @param rhs object to set this object equal to
   */
-  virtual void operator=(const QMCFunctions & rhs )
+  void operator=(const QMCFunctions & rhs )
     {
       Input = rhs.Input;
       nalpha = rhs.nalpha;
       nbeta = rhs.nbeta;
+    }
+
+  virtual int getNumAI()
+    {
+      return 0;
     }
 
  protected:

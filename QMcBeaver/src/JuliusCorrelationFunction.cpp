@@ -120,14 +120,32 @@ double JuliusCorrelationFunction::getFunctionValue()
   return FunctionValue;
 }
 
+double JuliusCorrelationFunction::get_p_a(int ai)
+{
+  cout << "Parameter derivatives not implemented!\n";
+  return 0.0;
+}
+
 double JuliusCorrelationFunction::getFirstDerivativeValue()
 {
   return dFunctionValue;
 }
 
+double JuliusCorrelationFunction::get_p2_xa(int ai)
+{
+  cout << "Parameter derivatives not implemented!\n";
+  return 0.0;
+}
+
 double JuliusCorrelationFunction::getSecondDerivativeValue()
 {
   return d2FunctionValue;
+}
+
+double JuliusCorrelationFunction::get_p3_xxa(int ai)
+{
+  cout << "Parameter derivatives not implemented!\n";
+  return 0.0;
 }
 
 Array1D<double> JuliusCorrelationFunction::getNumeratorCoeffs()

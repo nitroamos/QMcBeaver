@@ -109,6 +109,10 @@ public:
   double getFirstDerivativeValue();
   double getSecondDerivativeValue();
 
+  double get_p_a(int ai);
+  double get_p2_xa(int ai);
+  double get_p3_xxa(int ai);
+
   /**
     This gives us access to the coefficients that
     this polynomial uses.
@@ -131,7 +135,6 @@ public:
   */
   void operator=(Polynomial rhs);
 
-protected:
   /**
     Gets the number of coefficients in the polynomial.  This is one larger 
     than the order of the polynomial.
@@ -139,7 +142,7 @@ protected:
     @return number of coefficients in the polynomial.
     */
   int getNumberCoefficients();
-  
+
   /**
     Gets the ith coefficient of the polynomial.  Where the polynomial is 
     defined such that

@@ -45,7 +45,7 @@ private:
     x' = x + StepLength * SearchDirection.
     Where the search direction is the negative of the gradient.
     */
-  Array1D<double> searchDirection(Array1D<double> & x,Array1D<double> & g);
+  void calculateHessian();
 };
 
 #endif

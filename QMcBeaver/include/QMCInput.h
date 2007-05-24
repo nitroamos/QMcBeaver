@@ -93,11 +93,33 @@ public:
  */
  void openConfigFile();
 
- /**
-    Write this object's state out to a stream. The same format is 
-    used as in the QMC input file.
- */
- friend ostream& operator<<(ostream & strm, QMCInput & Input);
+  /**
+    Gets the parameters describing the particle-particle interactions,
+    and adds to them the CI coefficients.
+
+    @return parameters for optimizing
+  */
+  Array1D<double> getParameters();
+
+  /**
+    Sets the parameters describing the particle-particle interactions,
+    as well as the CI coefficients.
+
+    @param params new set of parameters
+  */
+  void setParameterVector(Array1D<double> & params);
+
+  /**
+     Print an array, designating the order that the ai
+     parameters are organized by.
+  */
+  void printAIArray(ostream & strm, string name, int width, Array1D<double> & array);
+
+  /**
+     Write this object's state out to a stream. The same format is 
+     used as in the QMC input file.
+  */
+  friend ostream& operator<<(ostream & strm, QMCInput & Input);
 };
 
 extern QMCInput globalInput;

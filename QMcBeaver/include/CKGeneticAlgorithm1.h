@@ -56,7 +56,10 @@ public:
 		      double mutationrate,
 		      double distributionwidth);
 
-  Array1D<double> optimize(Array1D<double> & initialGuess);
+  Array1D<double> optimize(Array1D<double> & initialGuess,
+			   double value,
+			   Array1D<double> & gradient,
+			   Array2D<double> & hessian);
 
 private:
   Stopwatch sw;

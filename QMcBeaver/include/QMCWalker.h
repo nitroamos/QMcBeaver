@@ -59,7 +59,7 @@ public:
     from a stream.
     @param input data input to control the calculation.
   */
-  void initialize(QMCInput *input);
+  void initialize(QMCInput *input, int numAI);
 
   /**
     Initializes the electronic configuration for this walker using an
@@ -269,6 +269,10 @@ private:
   double kineticEnergy;
   double kineticEnergy_grad;
   double potentialEnergy;
+
+  Array1D<double> p3_xxa;
+  Array1D<double> rp_a;
+  
   double r12;
   double r2;
   double ir12;

@@ -18,9 +18,16 @@ QMCSteepestDescent::QMCSteepestDescent(QMCObjectiveFunction * function,
 {
 }
 
-
-Array1D<double> QMCSteepestDescent::searchDirection(Array1D<double> & x,
-						    Array1D<double> & g)
+void QMCSteepestDescent::calculateHessian()
 {
-  return g*-1.0;
+  /*
+    Steepest_Descent is merely the Conjugate Gradient
+    method where the identity matrix is used as the
+    inverse Hessian.
+
+    The inverseHessian was initialized
+    to be the identity matrix.
+
+    Therefore, there's nothing for us to do here.
+  */
 }

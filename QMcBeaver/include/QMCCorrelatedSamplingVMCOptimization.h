@@ -17,6 +17,9 @@
 #include "QMCObjectiveFunction.h"
 #include "QMCOptimizationFactory.h"
 #include "QMCReadAndEvaluateConfigs.h"
+#include "QMCProperties.h"
+#include "QMCDerivativeProperties.h"
+
 
 /**
   Optimize the parameters in a variational QMC (VMC) calculation using
@@ -32,7 +35,7 @@ class QMCCorrelatedSamplingVMCOptimization
 
      @param input data input to control the calculation.
   */
-  static void optimize(QMCInput * input, int configsToSkip);
+  static void optimize(QMCInput * input, QMCProperties & lastRun, int configsToSkip);
 };
 
 #endif

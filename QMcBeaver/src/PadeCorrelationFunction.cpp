@@ -87,14 +87,32 @@ double PadeCorrelationFunction::getFunctionValue()
   return FunctionValue;
 }
 
+double PadeCorrelationFunction::get_p_a(int ai)
+{
+  cout << "Parameter derivatives not implemented yet!!\n";
+  return 0.0;
+}
+
 double PadeCorrelationFunction::getFirstDerivativeValue()
 {
   return dFunctionValue;
 }
 
+double PadeCorrelationFunction::get_p2_xa(int ai)
+{
+  cout << "Parameter derivatives not implemented yet!!\n";
+  return 0.0;
+}
+
 double PadeCorrelationFunction::getSecondDerivativeValue()
 {
   return d2FunctionValue;
+}
+
+double PadeCorrelationFunction::get_p3_xxa(int ai)
+{
+  cout << "Parameter derivatives not implemented yet!!\n";
+  return 0.0;
 }
 
 Array1D<double> PadeCorrelationFunction::getNumeratorCoeffs()

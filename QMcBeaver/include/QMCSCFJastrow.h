@@ -121,10 +121,15 @@ public:
   */
   void operator=(const QMCSCFJastrow & rhs );
 
+  /**
+     The cumulative number of variable parameters in our
+     SCF-Jastrow wavefunction.
+  */
+  int getNumAI();
+
  private:
-  //QMCInput *Input; 
- 
-  //int nalpha, nbeta;
+  QMCWalkerData * wd;
+  Array2D<double> * x;
 
   /**
      Corresponding to QMCFunction's ability to process several walkers 
@@ -139,9 +144,6 @@ public:
   QMCGreensRatioComponent Psi;
   double Laplacian_PsiRatio;
 
-  double SCF_Laplacian_PsiRatio;
-  Array2D<double> SCF_Grad_PsiRatio;
-
   double E_Local;
 
   /**
@@ -149,17 +151,14 @@ public:
      are the data structures this function is meant to fill and are from
      a QMCWalkerData struct.
   */
-  void calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
-				Array1D<double> & Chi_Density, int walker);
+  void calculate_Psi_quantities(int walker);
 
   /**
      This function continues to process results from a QMCSlater calculation.
      Grad_PsiRatio should be passed in as const, but doing so while passing
      it in with an & requires modification of several Array2D functions...
   */
-  void calculate_Modified_Grad_PsiRatio(Array2D<double> & X, 
-					Array2D<double> & Modified_Grad_PsiRatio, 
-					Array2D<double> & Grad_PsiRatio);
+  void calculate_Modified_Grad_PsiRatio();
           
   /**
     Calculate the local energy.

@@ -213,8 +213,15 @@ void QMCReadAndEvaluateConfigs::locally_CalculateProperties(
 
       if (lnJ != 0)
         {
-          // loop over the input configurations and calculate the corresponding
-          // properties
+          /*
+	    Loop over the input configurations and calculate the corresponding
+	    properties.
+
+	    Adding the properties like this will produce the same average
+	    for the energy, but not the same error or std dev because during
+	    a calculation, each timestep QMCProperties includes several entries,
+	    whereas here, each entry comes in as independent data points.
+	  */
 
           for(int i=0; i<Params.dim1(); i++)
             {
@@ -241,7 +248,7 @@ bool QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
   bool ok = true;
   // Calculate the jastrow values
 
-  Input->JP.setParameterVector( Params );
+  Input->setParameterVector( Params );
 
   //there is a much better way to do this...
   Array1D< Array2D<double>* > temp;

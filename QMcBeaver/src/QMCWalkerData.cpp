@@ -27,13 +27,17 @@ QMCWalkerData::QMCWalkerData()
 
 QMCWalkerData::~QMCWalkerData()
 {
+  rp_a.deallocate();
+  p3_xxa.deallocate();
+
   gradPsiRatio.deallocate();
   modifiedGradPsiRatio.deallocate();
   SCF_Grad_PsiRatio.deallocate();
 }
 
 void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
-			       int numNucForceDim1, int numNucForceDim2)
+			       int numNucForceDim1, int numNucForceDim2,
+			       int numAI)
 {
   Input = INPUT;
   int numElectrons  = Input->WF.getNumberElectrons();
@@ -42,11 +46,13 @@ void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
   modifiedGradPsiRatio.allocate(numElectrons,numDimensions);
   SCF_Grad_PsiRatio.allocate(numElectrons,numDimensions);
 
+  rp_a.allocate(numAI);
+  p3_xxa.allocate(numAI);
+
   modificationRatio    = 0.0;
   psi                  = 0.0;
   isSingular           = false;
-  configOutput         = new stringstream();
-  
+    
   if(Input->flags.nuclear_derivatives != "none")
     nuclearDerivatives.allocate(numNucForceDim1, numNucForceDim2);
   
@@ -57,7 +63,7 @@ void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
 double QMCWalkerData::getModifiedLocalEnergy()
 {
   /*
-    I was just playing around here, it didn't
+    I was just playing around with energy_cutoff_type, it didn't
     seem to help much.
    */
 

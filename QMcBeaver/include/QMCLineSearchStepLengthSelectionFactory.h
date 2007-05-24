@@ -18,6 +18,7 @@
 #include "QMCLineSearchStepLengthSelectionAlgorithm.h"
 #include "QMCMikesBracketingStepLengthSelector.h"
 #include "QMCWolfeStepLengthSelector.h"
+#include "QMCValueStepLength.h"
 
 using namespace std;
 

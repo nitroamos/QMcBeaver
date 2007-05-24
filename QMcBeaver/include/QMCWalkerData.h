@@ -36,7 +36,8 @@ class QMCWalkerData {
   ~QMCWalkerData();
 
   void initialize(QMCInput * input, int numDimensions,
-		  int numNucForceDim1, int numNucForceDim2);
+		  int numNucForceDim1, int numNucForceDim2,
+		  int numAI);
 
   QMCInput * Input;
 
@@ -46,6 +47,9 @@ class QMCWalkerData {
   double SCF_Laplacian_PsiRatio;
   double lnJ;
   Array2D<double> SCF_Grad_PsiRatio;
+
+  Array1D<double> rp_a;
+  Array1D<double> p3_xxa;
   
   QMCGreensRatioComponent psi;
   bool isSingular;
@@ -75,8 +79,6 @@ class QMCWalkerData {
   Array2D<double> nuclearDerivatives;
   
   Array1D<double> chiDensity;
-  
-  stringstream * configOutput;
 
   double getModifiedLocalEnergy();
   void zero();

@@ -360,10 +360,12 @@ void QMCRun::randomlyInitializeWalkers()
 
   wlist.clear();
   Input->flags.number_of_walkers = 0;
+  int numAI = QMF->getNumAI();
+
   for (int i=0; i<Input->flags.number_of_walkers_initial; i++)
     {
       QMCWalker w;
-      w.initialize(Input);
+      w.initialize(Input,numAI);
 
       temp_R = IW->initializeWalkerPosition();
       while(w.setR(temp_R) == false){
@@ -855,7 +857,7 @@ bool QMCRun::readXML(istream& strm)
   for(int i=0;i<Input->flags.number_of_walkers;i++)
     {
       QMCWalker w;
-      w.initialize(Input);
+      w.initialize(Input,QMF->getNumAI());
       
       // read a walker
       w.readXML(strm,*QMF);
@@ -926,6 +928,7 @@ int QMCRun::getNumberOfWalkers()
 
 bool QMCRun::step(bool writeConfigs, int iteration)
 {
+  //cout << endl;
   propagateWalkers(writeConfigs,iteration);
   calculatePopulationSizeBiasCorrectionFactor();
   calculateObservables();

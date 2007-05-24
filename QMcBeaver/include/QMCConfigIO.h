@@ -57,6 +57,8 @@ typedef struct {
   
   2) i played around with gzip on the binary output, and the file size difference was
   very small. i conclude from this that compression doesn't make any difference.
+
+  3) Since there can only ever be one file (per node), all the data members are static.
 */
 class QMCConfigIO
 {
@@ -182,38 +184,38 @@ private:
     for the stream.
   */
 #ifdef USEHDF5
-  H5File * h5_f;
+  static H5File * h5_f;
 
-  DataSet * dst_r;
-  DataSet * dst_g;
-  DataSet * dst_o;
-  CompType * ct;
+  static DataSet * dst_r;
+  static DataSet * dst_g;
+  static DataSet * dst_o;
+  static CompType * ct;
   ct_typ packet;
 
 #else
-  fstream *config_strm;
+  static fstream *config_strm;
 #endif
 
   /**
     The filename we opened the stream with.
   */
-  string filename;
+  static string filename;
   
   /**
     Are we reading or writing?
   */
-  bool areWriting;
+  static bool areWriting;
   
   /**
     Number of electrons.
   */  
-  int numElectrons;
+  static int numElectrons;
 
   /**
      Number of configurations written
   */
-  int numWritten;
-  int numRead;
+  static int numWritten;
+  static int numRead;
 };
 
 #endif

@@ -158,6 +158,7 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
   strm >> temp_string;
   strm >> temp_string;
   
+  double norm;
   for (int i=0; i<rhs.Ndeterminants; i++)
     {
       strm >> rhs.CI_coeffs(i);

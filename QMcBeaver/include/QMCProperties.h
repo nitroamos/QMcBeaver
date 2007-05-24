@@ -38,6 +38,7 @@ public:
     Total energy of the system.
   */
   QMCProperty energy;
+  QMCProperty energy2;
 
   /**
     Kinetic energy of the system.
@@ -78,7 +79,17 @@ public:
   QMCProperty walkerAge;
   QMCProperty weightChange;
   QMCProperty growthRate;
- 
+
+  /**
+     The first dimension will indicate which
+     parameter the derivative is respect to.
+     The second dimension will hold all the terms
+     necessary to do the average.
+  */
+  Array2D<QMCProperty> der;
+  //for variance minimization, the hessian only needs one additional term
+  Array2D<QMCProperty> hess;
+
  /**
     Tells if basis function density is being calculated.
   */

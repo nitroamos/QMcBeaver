@@ -25,6 +25,22 @@
 */
 static const bool inBinary = true;
 
+int QMCConfigIO::numRead      = 0;
+int QMCConfigIO::numWritten   = 0;
+int QMCConfigIO::numElectrons = 0;
+bool QMCConfigIO::areWriting  = false;
+string QMCConfigIO::filename  = "";
+
+#ifdef USEHDF5
+H5File * QMCConfigIO::h5_f      = 0;
+DataSet * QMCConfigIO::dst_r    = 0;
+DataSet * QMCConfigIO::dst_g    = 0;
+DataSet * QMCConfigIO::dst_o    = 0;
+CompType * QMCConfigIO::ct      = 0;
+#else
+fstream * QMCConfigIO::config_strm = 0;
+#endif
+
 QMCConfigIO::QMCConfigIO()
 {
 #ifdef USEHDF5

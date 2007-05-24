@@ -94,6 +94,7 @@ void Polynomial::evaluate(double x)
 
 double Polynomial::evaluate(double x, Array1D<double> &coeffs)
 {
+  this->x = x;
   int n = coeffs.dim1()-1;
 
   if( n < 0 )
@@ -112,6 +113,7 @@ double Polynomial::evaluate(double x, Array1D<double> &coeffs)
 
 void Polynomial::evaluateAll(double x, Array1D<double> & coeffs)
 {
+  this->x = x;
   //This method was sort of adapted from 5.3 of Numerical Recipies.
   evaluatedF = true;
   evaluatedDF = true;
@@ -144,6 +146,11 @@ double Polynomial::getFunctionValue()
   return f;
 }
 
+double Polynomial::get_p_a(int ai)
+{
+  return pow(x,ai);
+}
+
 double Polynomial::getFirstDerivativeValue()
 {
   if( evaluatedDF ) return df;
@@ -155,6 +162,12 @@ double Polynomial::getFirstDerivativeValue()
   return df;
 }
 
+double Polynomial::get_p2_xa(int ai)
+{
+  //only one term has a_i in it.
+  return ai * pow(x,ai-1);
+}
+
 double Polynomial::getSecondDerivativeValue()
 {
   if( evaluatedD2F ) return d2f;
@@ -164,6 +177,11 @@ double Polynomial::getSecondDerivativeValue()
   //evaluatedD2F = true;
 
   return d2f;
+}
+
+double Polynomial::get_p3_xxa(int ai)
+{
+  return (ai-1) * ai * pow(x,ai-2);
 }
 
 int Polynomial::getNumberCoefficients()

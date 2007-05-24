@@ -72,6 +72,9 @@ QMCWalker::~QMCWalker()
   fwKineticEnergy_grad.deallocate();
   fwPotentialEnergy.deallocate();
 
+  p3_xxa.deallocate();
+  rp_a.deallocate();
+
   for(int d1=0; d1<fwNuclearForces.dim1(); d1++)
     for(int d2=0; d2<fwNuclearForces.dim2(); d2++)
       fwNuclearForces(d1,d2).deallocate();
@@ -126,6 +129,9 @@ void QMCWalker::operator=( const QMCWalker & rhs )
       }
     }
   }
+
+  p3_xxa.allocate(rhs.p3_xxa.dim1());
+  rp_a.allocate(rhs.rp_a.dim1());
        
   distanceMovedAccepted = rhs.distanceMovedAccepted;
   dR2                   = rhs.dR2;
@@ -174,13 +180,11 @@ void QMCWalker::processPropagation(QMCFunctions & QMF, bool writeConfigs)
 	off of a cfgs file, then we'll need to print both configurations,
 	since both are used in calculateObservables().
       */
-      /*
       double p = TrialWalker->AcceptanceProbability;
       double q = 1.0 - p;
 
       TrialWalker->walkerData.writeConfigs(TrialWalker->R,p);
       OriginalWalker->walkerData.writeConfigs(OriginalWalker->R,q);
-      */
     }
 
   calculateObservables();
@@ -204,7 +208,7 @@ void QMCWalker::processPropagation(QMCFunctions & QMF, bool writeConfigs)
 	Assuming the AcceptanceProbability is near one, this
 	is probably more efficient than the option above.
        */
-      walkerData.writeConfigs(R, AcceptanceProbability);
+      //walkerData.writeConfigs(R, AcceptanceProbability);
     }
 }
 
@@ -1036,7 +1040,7 @@ bool QMCWalker::branchRecommended()
    */
   bool shouldRecommend = true;
   bool shouldWarn = false;
-  int aged = age - 10;
+  //int aged = age - 10;
 
   if(age > 4)
     {
@@ -1262,7 +1266,7 @@ void QMCWalker::acceptOrRejectMove()
       move_accepted = false;
     }
 
-  int aged = age - Input->flags.old_walker_acceptance_parameter;
+  //int aged = age - Input->flags.old_walker_acceptance_parameter;
   if( iteration > 0)
     {
       if(ageMoved > Input->flags.old_walker_acceptance_parameter + 15)
@@ -1304,15 +1308,15 @@ void QMCWalker::createChildWalkers()
   TrialWalker = this;
 }
 
-void QMCWalker::initialize(QMCInput *INPUT)
+void QMCWalker::initialize(QMCInput *INPUT, int numAI)
 {
   Input = INPUT;
 
   int numFW = Input->flags.future_walking.size();
   int numElectrons  = Input->WF.getNumberElectrons();
   int numDimensions;
-  int numNucForceDim1;
-  int numNucForceDim2;
+  int numNucForceDim1 = -1;
+  int numNucForceDim2 = -1;
   
   if(Input->flags.trial_function_type == "restricted" ||
      Input->flags.trial_function_type == "unrestricted"){     
@@ -1342,7 +1346,9 @@ void QMCWalker::initialize(QMCInput *INPUT)
 
   R.allocate(numElectrons,numDimensions);
 
-  walkerData.initialize(Input,numDimensions,numNucForceDim1,numNucForceDim2);
+  walkerData.initialize(Input,numDimensions,
+			numNucForceDim1,numNucForceDim2,
+			numAI);
 
   numFWSteps.resize(numFW);
   
@@ -1357,7 +1363,17 @@ void QMCWalker::initialize(QMCInput *INPUT)
   fwKineticEnergy_grad.allocate(numFW,2);
   fwPotentialEnergy.allocate(numFW,2);
   resetFutureWalking();
-        
+
+  /*
+    If we want to know whether we are collecting parameter derivatives,
+    we just need to check whether the arrays have non zero dimensions.
+  */
+  if(walkerData.rp_a.dim1() > 0)
+    {
+      p3_xxa.allocate(walkerData.p3_xxa.dim1());
+      rp_a.allocate(walkerData.rp_a.dim1());
+    }
+
   //initialize acceptance probability
   setAcceptanceProbability(0.0);
 }
@@ -1676,7 +1692,16 @@ void QMCWalker::calculateObservables()
              q * OriginalWalker->walkerData.neEnergy;
   eeEnergy = p * TrialWalker->walkerData.eeEnergy + 
              q * OriginalWalker->walkerData.eeEnergy;
-  
+
+  for(int ai=0; ai<rp_a.dim1(); ai++)
+    {
+      p3_xxa(ai) = p * TrialWalker->walkerData.p3_xxa(ai) +
+	           q * OriginalWalker->walkerData.p3_xxa(ai);
+      
+      rp_a(ai) = p * TrialWalker->walkerData.rp_a(ai) +
+	         q * OriginalWalker->walkerData.rp_a(ai);
+    }
+
   // Calculate the DistanceMovedAccepted this is the average distance
   // moved on a step
   distanceMovedAccepted = p * dR2;
@@ -1836,6 +1861,7 @@ void QMCWalker::calculateObservables( QMCProperties & props )
     {
       // Calculate the Energy ...
       props.energy.newSample( localEnergy, getWeight() );
+      props.energy2.newSample( localEnergy*localEnergy, getWeight() );
       
       // Calculate the Kinetic Energy  
       props.kineticEnergy.newSample( kineticEnergy, getWeight() );
@@ -1846,6 +1872,23 @@ void QMCWalker::calculateObservables( QMCProperties & props )
       // Calculate the ne and ee potential energy
       props.neEnergy.newSample( neEnergy, getWeight() );
       props.eeEnergy.newSample( eeEnergy, getWeight() );
+
+      for(int ai=0; ai<rp_a.dim1(); ai++)
+	{
+	  /*
+	    This isn't exactly the same since localEnergy is a weighted average
+	    of original and trial walkers...
+	  */
+	  double e2 = localEnergy * localEnergy;
+	  props.der(ai,0).newSample(rp_a(ai),                 getWeight());
+	  props.der(ai,1).newSample(rp_a(ai) * localEnergy,   getWeight());
+	  props.der(ai,2).newSample(rp_a(ai) * e2,            getWeight());
+	  props.der(ai,3).newSample(p3_xxa(ai),               getWeight());
+	  props.der(ai,4).newSample(p3_xxa(ai) * localEnergy, getWeight());
+
+	  for(int aj=0; aj<props.hess.dim2(); aj++)
+	    props.hess(ai,aj).newSample(p3_xxa(ai) * p3_xxa(aj), getWeight());
+	}
     }
   else
     {
@@ -1883,11 +1926,12 @@ void QMCWalker::calculateObservables( QMCProperties & props )
   
   // Calculate the log of the weight
   props.logWeights.newSample(getWeight(),1);
-  
+
   // Calculate the basis function densities
   if (Input->flags.calculate_bf_density == 1)
     for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
       props.chiDensity(i).newSample( walkerData.chiDensity(i), getWeight() );
+
 }
 
 void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )

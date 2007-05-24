@@ -30,7 +30,7 @@ Array1D<QMCObjectiveFunctionResult> QMCObjectiveFunction::evaluate(
 
   for(int i=0;i<Params.dim1();i++)
     {
-      Input->JP.setParameterVector(Params(i));
+      Input->setParameterVector(Params(i));
       Array1D<Complex> poles = Input->JP.getPoles();
 
       bool print = false;
@@ -46,6 +46,7 @@ Array1D<QMCObjectiveFunctionResult> QMCObjectiveFunction::evaluate(
 	cout << "Params(" << i << ") are " << Params(i);
 	cout << "LogWeights: " << Properties(i).logWeights;
 	cout << "Energy:     " << Properties(i).energy;
+	cout << "SC variance:  " << Properties(i).energy.getSeriallyCorrelatedVariance() << endl;
 	//cout << "Estimated energy: " << Input->flags.energy_estimated << endl;
       }
 
@@ -53,9 +54,9 @@ Array1D<QMCObjectiveFunctionResult> QMCObjectiveFunction::evaluate(
 	There is some question regarding which kind of variance to use.
 	HLR pg 70 recommends getBlockVariance
        */
-      //double Evar = Properties(i).energy.getSeriallyCorrelatedVariance();
+      double Evar = Properties(i).energy.getSeriallyCorrelatedVariance();
       //double Evar = Properties(i).energy.getVariance();
-      double Evar = Properties(i).energy.getBlockVariance(0);
+      //double Evar = Properties(i).energy.getBlockVariance(0);
 
       	
       QMCObjectiveFunctionResult newResult(Input,

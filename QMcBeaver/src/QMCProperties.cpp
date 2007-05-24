@@ -12,11 +12,33 @@
 
 #include "QMCProperties.h"
 
+#include "QMCInput.h"
+#include "QMCDerivativeProperties.h"
+
 QMCProperties::QMCProperties()
 {  
   calc_density = false;
   nBasisFunc   = 0;
   zeroOut();
+
+  int numAI = globalInput.getParameters().dim1();
+
+  if(globalInput.flags.calculate_Derivatives == 1)
+    {
+      //second parameter refers to the number of terms necessary
+      //to calculate derivatives of the optimization objective function
+      der.allocate(numAI,5);
+    } else {
+      der.deallocate();
+    }
+
+  if( globalInput.flags.optimize_Psi_method == "analytical_energy_variance" ||
+      globalInput.flags.optimize_Psi_method == "automatic" )
+    {
+      hess.allocate(numAI,numAI);
+    } else {
+      hess.deallocate();
+    }
 
 #ifdef PARALLEL
   if (!mpiTypeCreated)
@@ -30,10 +52,9 @@ QMCProperties::QMCProperties()
 
 QMCProperties::~QMCProperties()
 {
-  if(calc_density)
-    {
-      chiDensity.deallocate();
-    }
+  der.deallocate();
+  hess.deallocate();
+  chiDensity.deallocate();
 }
 
 void QMCProperties::setCalcDensity(bool calcDensity, int nbasisfunctions)
@@ -62,6 +83,7 @@ void QMCProperties::zeroOut()
   growthRate.zeroOut();
 
   energy.zeroOut();
+  energy2.zeroOut();
   kineticEnergy.zeroOut();
   potentialEnergy.zeroOut();
   neEnergy.zeroOut();
@@ -70,7 +92,15 @@ void QMCProperties::zeroOut()
   acceptanceProbability.zeroOut();
   distanceMovedAccepted.zeroOut();
   distanceMovedTrial.zeroOut();
-  
+
+  for(int i=0; i<der.dim1(); i++)
+    for(int j=0; j<der.dim2(); j++)
+      der(i,j).zeroOut();
+
+  for(int i=0; i<hess.dim1(); i++)
+    for(int j=0; j<hess.dim2(); j++)
+      hess(i,j).zeroOut();
+
   if (calc_density)
     for (int i=0; i<nBasisFunc; i++)
       chiDensity(i).zeroOut();
@@ -87,6 +117,7 @@ void QMCProperties::newSample(QMCProperties* newProperties, double weight,
     growthRate.newSample(newProperties->growthRate.getAverage(), 1.0);
 
   energy.newSample(newProperties->energy.getAverage(), weight);
+  energy2.newSample(newProperties->energy2.getAverage(), weight);
   kineticEnergy.newSample(newProperties->kineticEnergy.getAverage(), weight);
   potentialEnergy.newSample(newProperties->potentialEnergy.getAverage(),
 			    weight);
@@ -100,6 +131,13 @@ void QMCProperties::newSample(QMCProperties* newProperties, double weight,
 			       weight);
   logWeights.newSample(newProperties->logWeights.getAverage(), nwalkers);
   
+  for (int i=0; i<der.dim1(); i++)
+    for (int j=0; j<der.dim2(); j++)
+      der(i,j).newSample(newProperties->der(i,j).getAverage(),weight);
+  for (int i=0; i<hess.dim1(); i++)
+    for (int j=0; j<hess.dim2(); j++)
+      hess(i,j).newSample(newProperties->hess(i,j).getAverage(),weight);
+
   if (calc_density)
     for (int i=0; i<nBasisFunc; i++)
       chiDensity(i).newSample(newProperties->chiDensity(i).getAverage(),weight);
@@ -108,6 +146,16 @@ void QMCProperties::newSample(QMCProperties* newProperties, double weight,
 void QMCProperties::matchParametersTo( const QMCProperties &rhs )
 {
   setCalcDensity(rhs.calc_density,rhs.nBasisFunc);
+
+  if(rhs.der.dim1() > 0 && rhs.der.dim2() > 0)
+    der.allocate(rhs.der.dim1(),rhs.der.dim2());
+  else
+    der.deallocate();
+  
+  if(rhs.hess.dim1() > 0 && rhs.hess.dim2() > 0)
+    hess.allocate(rhs.hess.dim1(),rhs.hess.dim2());
+  else
+    hess.deallocate();
 }
 
 void QMCProperties::operator = ( const QMCProperties &rhs )
@@ -119,6 +167,7 @@ void QMCProperties::operator = ( const QMCProperties &rhs )
   growthRate            = rhs.growthRate;
 
   energy                = rhs.energy;
+  energy2               = rhs.energy2;
   kineticEnergy         = rhs.kineticEnergy;
   potentialEnergy       = rhs.potentialEnergy;
   neEnergy              = rhs.neEnergy;
@@ -141,6 +190,7 @@ QMCProperties QMCProperties::operator + ( QMCProperties &rhs )
   result.growthRate            = growthRate + rhs.growthRate;
 
   result.energy                = energy + rhs.energy;
+  result.energy2               = energy2 + rhs.energy2;
   result.kineticEnergy         = kineticEnergy + rhs.kineticEnergy;
   result.potentialEnergy       = potentialEnergy + rhs.potentialEnergy;
   result.neEnergy              = neEnergy + rhs.neEnergy;
@@ -352,6 +402,57 @@ ostream& operator <<(ostream& strm, QMCProperties &rhs)
   strm << endl << "----------------- logWeights -----------------" << endl;
   strm << rhs.logWeights;
 
+  strm << endl << "----------------- Energy^2 -------------------" << endl;
+  strm << rhs.energy2;
+
+  //We almost certainly don't need these printed out
+  if(false){
+    if(rhs.der.dim1() > 0)
+      {
+	strm << endl << "------ Objective Function Derivatives --------" << endl;
+	for(int i=0; i<rhs.der.dim1(); i++)
+	  {
+	    for(int j=0; j<rhs.der.dim2(); j++)
+	      {
+		strm << "Param " << i << " term " << j << ": " << rhs.der(i,j);
+	      }
+	    strm << endl;
+	  }
+      }
+    
+    if(rhs.hess.dim1() > 0)
+      {
+	strm << endl << "------ Objective Function Hessian --------" << endl;
+	for(int i=0; i<rhs.hess.dim1(); i++)
+	  {
+	    for(int j=0; j<rhs.hess.dim2(); j++)
+	      {
+		strm << "i " << i << ", j " << j << ": " << rhs.hess(i,j);
+	      }
+	    strm << endl;
+	  }
+      }
+  }
+
+  if(globalInput.flags.calculate_Derivatives == 1)
+    {
+        QMCDerivativeProperties dp(&rhs,0,0);
+
+	Array1D<double> gradient = dp.getParameterGradient();
+	Array2D<double> hessian = dp.getParameterHessian();
+	if(gradient.dim1() > 0)
+	  {
+	    strm << endl << "------ Objective Function Derivatives --------" << endl;
+	    globalInput.printAIArray(strm,"",5,gradient);
+	  }
+	if(hessian.dim1() > 0)
+	  {
+	    strm << endl << "------ Objective Function Hessian --------" << endl;
+	    strm << hessian;
+	  }
+	strm << endl;
+    }
+
   return strm;
 }
 
@@ -370,7 +471,7 @@ void QMCProperties::buildMpiType()
 
   // The number of properties 
   // ADJUST THIS WHEN ADDING NEW PROPERTIES
-  const int NumberOfProperties = 12;
+  const int NumberOfProperties = 13;
   
   int          block_lengths[NumberOfProperties];
   MPI_Aint     displacements[NumberOfProperties];
@@ -399,6 +500,7 @@ void QMCProperties::buildMpiType()
   MPI_Address(&(indata.walkerAge), &addresses[10]);
   MPI_Address(&(indata.weightChange), &addresses[11]);
   MPI_Address(&(indata.growthRate), &addresses[12]);
+  MPI_Address(&(indata.energy2), &addresses[13]);
   
   // Find the relative addresses of the data elements to the start of 
   // the struct
@@ -456,6 +558,7 @@ void QMCProperties::Reduce_Function(QMCProperties *in, QMCProperties *inout,
       inout[i].walkerAge             = inout[i].walkerAge + in[i].walkerAge;
       inout[i].weightChange          = inout[i].weightChange + in[i].weightChange;
       inout[i].growthRate            = inout[i].growthRate + in[i].growthRate;
+      inout[i].energy2               = inout[i].energy2 + in[i].energy2;
     }
 }
 

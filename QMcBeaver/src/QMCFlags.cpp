@@ -1,3 +1,4 @@
+
 //            QMcBeaver
 //
 //         Constructed by
@@ -11,6 +12,8 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCFlags.h"
+#include "QMCLineSearchStepLengthSelectionAlgorithm.h"
+#include "QMCLineSearchStepLengthSelectionFactory.h"
 
 QMCFlags::QMCFlags()
 {
@@ -114,15 +117,16 @@ void QMCFlags::read_flags(string InFileName)
   optimize_Psi                   = 0;
   max_optimize_Psi_steps         = 10;
   optimize_Psi_barrier_parameter = 1.0;
-  optimize_Psi_criteria          = "umrigar88";
-  optimize_Psi_method            = "BFGSQuasiNewton";
+  calculate_Derivatives          = 0;
+  optimize_Psi_criteria          = "analytical_energy_variance";
+  optimize_Psi_method            = "automatic";
   equilibrate_every_opt_step     = 0;
   equilibrate_first_opt_step     = 1;
   numerical_derivative_surface   = "umrigar88";
-  line_search_step_length        = "Wolfe";
+  line_search_step_length        = "None";
   optimization_max_iterations    = 100;
   optimization_error_tolerance   = 0.001;
-  ck_genetic_algorithm_1_population_size = 30;
+  ck_genetic_algorithm_1_population_size = 1000;
   ck_genetic_algorithm_1_mutation_rate = 0.2;
   ck_genetic_algorithm_1_initial_distribution_deviation = 1.0;
   singularity_penalty_function_parameter = 1.0e-6;
@@ -690,116 +694,9 @@ void QMCFlags::read_flags(string InFileName)
     }
   input_file.close();
 
-
-  /*************************************************************************
-    Our warning section.
-    Make sure that all the input parameters are compatible with each other
-  *************************************************************************/
-  if(run_type != "variational" && run_type != "diffusion")
+  if(!checkFlags())
     {
-      cerr << "ERROR: Unknown run_type: " << run_type << endl;
-      exit(1);
-    }
-  
-  if(run_type == "" )
-    {
-      cerr << "ERROR: run_type not set!" << endl;
-      exit(1);
-    }
-
-  if(dt_equilibration < 0)
-    {
-      dt_equilibration = dt;
-    }
-
-  if(dt > dt_equilibration)
-    {
-      clog << "Warning: dt > dt_equilibration" << endl;
-    }
-
-  if(mpireduce_interval < output_interval)
-    {
-      clog << "Warning: mpireduce_interval < output_interval!" << endl;
-    }
-
-  if(optimize_Psi == 1 && run_type != "variational")
-    {
-      clog << "ERROR: attempting to optimize the wavefunction for"
-      << " run_type = " << run_type << "!" << endl;
-    }
-
-  /**
-     In allowing a harmonic oscillator model, we use some of the regular
-     molecular parameters to help define our HO system.
-  */
-  if(trial_function_type == "harmonicoscillator")
-    {
-      if(walker_initialization_method != "amos_boring_initialization")
-	{
-	  walker_initialization_method = "amos_boring_initialization";
-	  clog << "Warning: Setting walker_initialization_method to \"" << 
-	    walker_initialization_method << "\" since trial_function_type = " <<
-	    trial_function_type << endl;
-	}
-
-      if(Natoms != 0)
-	{
-	  clog << "Warning: Setting Natoms to 0 since trial_function_type = "
-	       << trial_function_type << endl;
-	  Natoms = 0;
-	}
-
-      if(Nbasisfunc <= 0)
-	{
-	  cerr << "Error: set nbasisfunc to the number of dimensions for trial_function_type = "
-	       << trial_function_type << endl;
-	  exit(1);
-	}
-
-      if(charge == 0)
-	{
-	  cerr << "Error: set charge to the number of electrons for trial_function_type = "
-	       << trial_function_type << endl;
-	  exit(1);
-	}
-
-    }
-
-  if(nuclear_derivatives != "none" && Natoms == 0)
-    {
-      clog << "Warning: Setting nuclear_derivatives to \"none\" since Natoms = "
-	   << Natoms << endl;
-      nuclear_derivatives = "none";
-    }
-
-  if(sampling_method == "umrigar93_importance_sampling" && Natoms == 0)
-    {
-      clog << "Warning: Setting sampling_method to \"no_importance_sampling\" since " <<
-	"umrigar93_importance_sampling requires Natoms > 0\n" << endl;
-      sampling_method = "no_importance_sampling";
-    }
-
-#ifdef QMC_GPU
-  if( getNumGPUWalkers() == 0)
-  {
-    cerr << "A GPU run with no GPU walkers? Please set the gpu_walkers_per_pass parameter.\n";
-    exit(1);
-  }
-
-  if( getNumGPUWalkers() + walkers_per_pass != number_of_walkers)
-  {
-    //cerr << "Setting all walkers to be GPU walkers.\n";
-    gpu_walkers_per_pass = -1;
-  }
-
-  cout << "Running GPUQMC with " << walkers_per_pass << " walkers per pass, " <<
-    getNumGPUWalkers() << " of them on the GPU\n";
-
-#endif
-
-  if(chip_and_mike_are_cool != "Yea_Baby!")
-    {
-      cerr << "ERROR: Incorrect value for chip_and_mike_are_cool set" << endl;
+      clog << "Error: serious flaws with parameter choices; no fix available." << endl;
       exit(1);
     }
 
@@ -1128,7 +1025,228 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   return strm;
 }
 
+bool QMCFlags::checkFlags()
+{
+  /*************************************************************************
+    Our warning section.
+    Make sure that all the input parameters are compatible with each other
+  *************************************************************************/
+  if(run_type != "variational" && run_type != "diffusion")
+    {
+      clog << "ERROR: Unknown run_type: " << run_type << endl;
+      return false;
+    }
+  
+  if(max_time_steps <= equilibration_steps)
+    {
+      clog << "ERROR: (max_time_steps = " << max_time_steps
+	   << ") < (equilibration_steps = " << equilibration_steps << ")" << endl; 
+      return false;
+    }
 
+  if(run_type == "" )
+    {
+      clog << "ERROR: run_type not set!" << endl;
+      return false;
+    }
+
+  if(dt_equilibration < 0)
+    {
+      dt_equilibration = dt;
+    }
+
+  if(dt > dt_equilibration)
+    {
+      clog << "Warning: dt > dt_equilibration" << endl;
+    }
+
+  if(mpireduce_interval < output_interval)
+    {
+      clog << "Warning: mpireduce_interval < output_interval!" << endl;
+    }
+
+  /**
+     In allowing a harmonic oscillator model, we use some of the regular
+     molecular parameters to help define our HO system.
+  */
+  if(trial_function_type == "harmonicoscillator")
+    {
+      if(walker_initialization_method != "amos_boring_initialization")
+	{
+	  walker_initialization_method = "amos_boring_initialization";
+	  clog << "Warning: Setting walker_initialization_method to \"" << 
+	    walker_initialization_method << "\" since trial_function_type = " <<
+	    trial_function_type << endl;
+	}
+
+      if(Natoms != 0)
+	{
+	  clog << "Warning: Setting Natoms to 0 since trial_function_type = "
+	       << trial_function_type << endl;
+	  Natoms = 0;
+	}
+
+      if(Nbasisfunc <= 0)
+	{
+	  clog << "Error: set nbasisfunc to the number of dimensions for trial_function_type = "
+	       << trial_function_type << endl;
+	  return false;
+	}
+
+      if(charge == 0)
+	{
+	  clog << "Error: set charge to the number of electrons for trial_function_type = "
+	       << trial_function_type << endl;
+	  return false;
+	}
+    }
+
+  bool needPrintedConfigs = false;
+  if(optimize_Psi == 1)
+    {
+      if(run_type != "variational")
+	{
+	  clog << "ERROR: attempting to optimize the wavefunction for"
+	       << " run_type = " << run_type << "!" << endl;
+	  clog << "Setting run_type = \"variational\"" << endl;
+	  run_type = "variational";
+	}
+
+      /*
+	Just check to be sure the parameter is valid so that the user
+	doesn't have to wait until the end of the run to find out.
+      */
+      QMCLineSearchStepLengthSelectionAlgorithm *stepAlg =
+	QMCLineSearchStepLengthSelectionFactory::factory(line_search_step_length);
+      
+      if(optimize_Psi_method == "analytical_energy_variance" ||
+	 optimize_Psi_method == "automatic")
+	{
+	  needPrintedConfigs = false;
+
+	  if(optimize_Psi_criteria != "analytical_energy_variance")
+	    {
+	      /*
+		Using analytical_energy_variance for method currently means we have
+		"analytical" means of determining the hessian. This requires the analytical
+		measurements of the gradients, which are currently only available if
+		optimize_Psi_criteria = "analytical_energy_variance"
+
+		As for the converse, there's no problem with using analytical gradients with
+		other hessians (i.e. a different optimize_Psi_method). For example, Steepest_Descent.
+	      */
+	      clog << "Warning: if optimize_Psi_method = " << optimize_Psi_method
+		   << " then optimize_Psi_criteria must = \"analytical_energy_variance\"" << endl;
+	      clog << "Warning: setting optimize_Psi_criteria = \"analytical_energy_variance\"" << endl;
+	      optimize_Psi_criteria = "analytical_energy_variance";
+	    }
+
+	  if(optimization_max_iterations != 1)
+	    {
+	      /*
+		Since we don't have any configs in the file, then
+		we have no source of information for more than one
+		iteration. Allowing more than one iteration would requiring the
+		specification of another parameters to take over once we've used the
+		data provided by the recently completed run.
+	      */
+	      clog << "Warning: you probably want optimization_max_iterations = 1!" << endl;
+	      clog << "Setting optimization_max_iterations = 1" << endl;
+	      optimization_max_iterations = 1;
+	    }
+
+	  if(line_search_step_length == "Wolfe" ||
+	     line_search_step_length == "MikesBracketing")
+	    {
+	      /*
+		I don't think this parameter combination would be interesting, so warn.
+	      */
+	      clog << "Warning: you probably want \"None\" as your line_search_step_length!" << endl;
+	      needPrintedConfigs = true;
+	    }
+	  
+	}
+      else
+	{
+	  needPrintedConfigs = true;
+
+	  if(optimize_Psi_method == "Steepest_Descent" &&
+	     optimize_Psi_criteria == "analytical_energy_variance")
+	    needPrintedConfigs = false;
+
+	  if(optimize_Psi_method == "BFGSQuasiNewton" && 
+	     optimization_max_iterations <= 1)
+	    {
+	      clog << "Warning: BFGSQuasiNewton needs optimization_max_iterations > " << optimization_max_iterations << endl;
+	      clog << "Setting optimization_max_iterations = 2" << endl;
+	      optimization_max_iterations = 2;
+	    }
+	}
+
+    } else {
+      //we're not optimizing
+      needPrintedConfigs = false;
+    }
+  
+  if(needPrintedConfigs && print_configs == 0)
+    {
+      clog << "Warning: based on your parameter choices, you need to have print_configs == 1."
+	   << " It will be set to 1 now." << endl;
+      print_configs = 1;
+    }
+  else if(!needPrintedConfigs && print_configs == 1)
+    {
+      clog << "Warning: print_configs == 1 is very expensive, and none of your parameter choices required it." << endl;
+    }
+
+  if(print_configs == 1)
+    {
+      clog << "Using " << temp_dir << " as scratch space for writing config files." << endl;
+    }
+  else if(optimize_Psi == 1)
+    {
+      calculate_Derivatives = 1;
+    }
+
+  if(nuclear_derivatives != "none" && Natoms == 0)
+    {
+      clog << "Warning: Setting nuclear_derivatives to \"none\" since Natoms = "
+	   << Natoms << endl;
+      nuclear_derivatives = "none";
+    }
+
+  if(sampling_method == "umrigar93_importance_sampling" && Natoms == 0)
+    {
+      clog << "Warning: Setting sampling_method to \"no_importance_sampling\" since " <<
+	"umrigar93_importance_sampling requires Natoms > 0\n" << endl;
+      sampling_method = "no_importance_sampling";
+    }
+
+#ifdef QMC_GPU
+  if( getNumGPUWalkers() == 0)
+  {
+    clog << "A GPU run with no GPU walkers? Please set the gpu_walkers_per_pass parameter.\n";
+    return false;
+  }
+
+  if( getNumGPUWalkers() + walkers_per_pass != number_of_walkers)
+  {
+    //clog << "Setting all walkers to be GPU walkers.\n";
+    gpu_walkers_per_pass = -1;
+  }
+
+  cout << "Running GPUQMC with " << walkers_per_pass << " walkers per pass, " <<
+    getNumGPUWalkers() << " of them on the GPU\n";
+
+#endif
+
+  if(chip_and_mike_are_cool != "Yea_Baby!")
+    {
+      clog << "ERROR: Incorrect value for chip_and_mike_are_cool set" << endl;
+      return false;
+    }
+  return true;
+}
 
 
 

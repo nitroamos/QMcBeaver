@@ -22,6 +22,7 @@
 #include "QMCJastrowElectronNuclear.h"
 #include "QMCJastrowElectronElectron.h"
 #include "Stopwatch.h"
+#include "IeeeMath.h"
 
 #ifdef QMC_GPU
 #include "GPUQMCJastrowElectronElectron.h"
@@ -51,6 +52,9 @@ using namespace std;
 class QMCJastrow
 {
 public:
+  QMCJastrow();
+
+  ~QMCJastrow();
 
   /**
     Initializes the class with the data controlling the calculation. 
@@ -114,6 +118,18 @@ public:
     @return Jastrow function value (\f$J=exp(\sum{u_{i,j}(r_{i,j})})\f$).
   */
   double getJastrow(int which);
+
+  /**
+     The cumulative number of parameters we can take partial derivatives
+     with respect to.
+  */
+  int getNumAI();
+
+  /**
+     The partial derivative of this function with repspect to parameter
+     ai.
+   */
+  double get_p_a(int which, int ai);
   
   /**
     Gets the value of the natural log of the Jastrow function for the last 
@@ -124,6 +140,12 @@ public:
     (\f$\ln(J)=\sum{u_{i,j}(r_{i,j})}\f$)
   */
   double getLnJastrow(int which);
+
+  /**
+     The first partial derivative of the ln of this function with repspect to parameter
+     ai.
+   */
+  double get_p_a_ln(int which, int ai);
   
   /**
     Gets the gradient of the natural log of the Jastrow function with
@@ -137,6 +159,12 @@ public:
   Array2D<double> * getGradientLnJastrow(int which);
 
   /**
+     The second partial derivative of the ln of this function with repspect to parameters
+     x and ai.
+   */
+  Array2D<double> * get_p2_xa_ln(int which, int ai);
+
+  /**
     Gets the laplacian of the natural log of the Jastrow function with
     respect to the cartesian electronic coordinates for the last 
     evaluated electronic configuration and parameter set.  
@@ -146,6 +174,12 @@ public:
     (\f$\nabla^2\ln(J)=\nabla^2\sum{u_{i,j}(r_{i,j})}\f$)
   */
   double getLaplacianLnJastrow(int which);
+
+  /**
+     The third partial derivative of the ln of this function with repspect to parameters
+     x, x, and ai.
+   */
+  double get_p3_xxa_ln(int which, int ai);
   
   void operator=(const QMCJastrow & rhs );
 
@@ -153,6 +187,10 @@ protected:
   Array1D<double> sum_U;
   Array1D< Array2D<double> > grad_sum_U;
   Array1D<double> laplacian_sum_U;
+
+  Array2D<double>  p_a;
+  Array2D< Array2D<double> > p2_xa;
+  Array2D<double> p3_xxa;
   
 private:
   QMCJastrowElectronNuclear JastrowElectronNuclear;

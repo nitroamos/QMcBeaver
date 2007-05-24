@@ -572,7 +572,10 @@ class QMCFlags
      1 if the wavefunction is to be optimized during a VMC wavefunction,
      and 0 otherwise.
 
-     Currently, only the Jastro parameters are optimized.
+     Currently, we can optimize:
+     1) EE Jastrow parameters
+     2) NE Jastrow parameters
+     3) CI coefficients
 
      Notes: This will rerun the entire VMC calculation each time it
      optimizes. That is, your calculation time might go up by a factor
@@ -597,6 +600,8 @@ class QMCFlags
      to generate the walkers when correlated sampling is used.
   */
   double optimize_Psi_barrier_parameter;
+
+  int calculate_Derivatives;
 
   /**
      Objective function to optimize when optimizing a VMC wavefunction.
@@ -892,6 +897,16 @@ class QMCFlags
      @param runfile QMC input file name
   */
   void set_filenames(string runfile);
+
+  /**
+     Check for some obvious flaws with parameter
+     combinations. If something is irreparably wrong, then
+     it will return false.
+
+     Otherwise, it will try to correct any problems automatically
+     and return true;
+  */
+  bool checkFlags();
 
   /**
      If we are going to allow the GPU to

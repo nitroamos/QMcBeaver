@@ -80,6 +80,9 @@ void printCompileInfo(ostream & strm)
 #ifdef USESPRNG
   strm << " SPRNG";
 #endif
+#ifdef USEHDF5
+  strm << " HDF5";
+#endif
 #ifdef QMC_GPU
   strm << endl;
   GPUGlobals::printVersions(strm);
@@ -120,12 +123,21 @@ int main(int argcTemp, char *argvTemp[])
       ofstream dump("/dev/null");
       if(dump.good())
 	clog.rdbuf(dump.rdbuf());
+    } else {
+      //point them to the same stream
+      //by default, they're different; which means unix pipe operator >
+      //won't catch everything
+      clog.rdbuf(cout.rdbuf());
     }
-
+#else
+  clog.rdbuf(cout.rdbuf());
 #endif
 
   if(argcTemp == 1 || showExtraHeaders)
-    printCompileInfo(clog);
+    {
+      printCompileInfo(clog);
+      clog << endl << endl;
+    }
 
 #ifdef QMC_GPU
   openGLBootStrap();
@@ -151,7 +163,6 @@ void qmcbeaver()
 {
   Stopwatch timer;
   timer.start();
-  int width = 19;
 
   if(argc < 2)
     {
@@ -164,63 +175,63 @@ void qmcbeaver()
   QMCManager TheMan;
   TheMan.initialize( argc, argv);
 
-  if( TheMan.getInputData()->flags.zero_out_checkpoint_statistics )
+  if( globalInput.flags.zero_out_checkpoint_statistics )
     {
       TheMan.zeroOut();
     }
 
-  if( TheMan.getInputData()->flags.my_rank == 0 )
-    {
-      cout.flush(); cerr.flush(); clog.flush();
-      cout << "***************  TheMan.run();" << endl;
-      cout << setw(10) << "Iteration" << setw(width) << "Eavg" << setw(width) << "Estd" << setw(width)
-	   << "Num. Walkers" << setw(width) << "Trial Energy" << setw(width) << "dt_effective"
-	   << setw(width) << "Weights" << setw(width) << "Total Samples" << endl;
-    }
+  bool ok = TheMan.run(globalInput, true);
 
-  TheMan.run();
-
-  if( TheMan.getInputData()->flags.my_rank == 0 )
+  if( globalInput.flags.my_rank == 0 )
     {
       TheMan.writeRestart();
 
-      cout << "***************  TheMan.print_results();" << endl;
-
+      cout << "***************  Print Results (ok = " << ok << ")" << endl;
       cout << TheMan;
       *TheMan.getResultsOutputStream() << TheMan;
     }
 
   int optloops = 0;
-  while( TheMan.getInputData()->flags.optimize_Psi &&
-         optloops < TheMan.getInputData()->flags.max_optimize_Psi_steps )
+  while( globalInput.flags.optimize_Psi &&
+         optloops < globalInput.flags.max_optimize_Psi_steps &&
+	 ok)
     {
-      if( TheMan.getInputData()->flags.my_rank == 0 )
+      if( globalInput.flags.my_rank == 0 )
         {
-          cout << "***************  TheMan.optimize(), iteration: "  << (optloops+1) << ";" << endl;
+          cout << "***************  Optimize iteration: "  << (optloops+1) << ";" << endl;
+	  TheMan.writeRestart(); 
         }
 
       TheMan.optimize();
-
-      if( TheMan.getInputData()->flags.my_rank == 0 )
-        {
-          TheMan.writeRestart();
-	  cout.flush(); cerr.flush(); clog.flush();
-          cout << "***************  TheMan.run();" << endl;
-          cout << setw(10) << "iteration" << setw(width) << "Eavg" << setw(width) << "Estd" << setw(width)
-          << "Eavg-Estd" << setw(width) << "Eavg+Estd" << setw(width) << "Num. Walkers"
-          << setw(width) << "Trial Energy" << setw(width) << "Eff. dt"
-          << setw(width) << "Weights" << endl;
-	  cout.setf( ios::fixed,ios::floatfield );
-        }
-
       TheMan.zeroOut();
-      TheMan.run();
 
-      if( TheMan.getInputData()->flags.my_rank == 0 )
+      if((optloops+1) % 6 == 0 &&
+	 globalInput.flags.optimize_Psi_method == "automatic")
+	{
+	  /*
+	    max_time_steps includes the equilibration steps. i'd rather
+	    set up the multiplicative factor to be independent of the
+	    number of equilibrtion steps
+	  */
+	  long ts = globalInput.flags.max_time_steps -
+	    globalInput.flags.equilibration_steps;
+
+	  globalInput.flags.max_time_steps = ts*64 + globalInput.flags.equilibration_steps;
+
+	  clog << "Notice: max_time_steps increased to " << globalInput.flags.max_time_steps
+	       << " for optStep = " << optloops << endl;
+	}
+
+      if(globalInput.flags.equilibrate_every_opt_step == 1)
+	ok = TheMan.run(globalInput, true);
+      else
+	ok = TheMan.run(globalInput, false);
+
+      if( globalInput.flags.my_rank == 0 )
         {
           TheMan.writeRestart();
 
-          cout << "***************  TheMan.print_results();" << endl;
+	  cout << "***************  Print Results (ok = " << ok << ")" << endl;
 
           cout << TheMan;
           *TheMan.getResultsOutputStream() << TheMan;
@@ -229,27 +240,27 @@ void qmcbeaver()
       optloops++;
     }
 
-  if( TheMan.getInputData()->flags.my_rank == 0 )
+  if( globalInput.flags.my_rank == 0 )
     {
-      cout << "***************  TheMan.finalize();" << endl;
+      cout << "***************  Finalize" << endl;
     }
   TheMan.finalize();
 
   timer.stop();
 
-  if( TheMan.getInputData()->flags.my_rank == 0 &&
-      TheMan.getInputData()->flags.calculate_bf_density == 1)
+  if( globalInput.flags.my_rank == 0 &&
+      globalInput.flags.calculate_bf_density == 1)
     {
       TheMan.writeBFDensity();
     }
 
-  if( TheMan.getInputData()->flags.my_rank == 0 &&
-      TheMan.getInputData()->flags.nuclear_derivatives != "none")
+  if( globalInput.flags.my_rank == 0 &&
+      globalInput.flags.nuclear_derivatives != "none")
     {
       TheMan.writeForces();
     }
     
-  if( TheMan.getInputData()->flags.my_rank == 0 )
+  if( globalInput.flags.my_rank == 0 )
     {
       cout << "Run Time: " << timer << endl;
       TheMan.writeTimingData(cout);

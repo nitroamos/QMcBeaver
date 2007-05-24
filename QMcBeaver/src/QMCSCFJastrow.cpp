@@ -15,7 +15,9 @@
 QMCSCFJastrow::QMCSCFJastrow()
 {
   nalpha = 0;
-  nbeta = 0;
+  nbeta  = 0;
+  wd     = 0;
+  x      = 0;
 }
 
 QMCSCFJastrow::QMCSCFJastrow(QMCInput *INPUT, QMCHartreeFock *HF)
@@ -36,7 +38,6 @@ QMCSCFJastrow::QMCSCFJastrow(const QMCSCFJastrow & rhs )
 
 QMCSCFJastrow::~QMCSCFJastrow()
 {
-  SCF_Grad_PsiRatio.deallocate();
 }
 
 void QMCSCFJastrow::operator=(const QMCSCFJastrow & rhs )
@@ -54,8 +55,6 @@ void QMCSCFJastrow::operator=(const QMCSCFJastrow & rhs )
 
   Psi                    = rhs.Psi;
   Laplacian_PsiRatio     = rhs.Laplacian_PsiRatio;
-  SCF_Laplacian_PsiRatio = rhs.SCF_Laplacian_PsiRatio;
-  SCF_Grad_PsiRatio      = rhs.SCF_Grad_PsiRatio;
   E_Local                = rhs.E_Local;
 }
 
@@ -81,7 +80,8 @@ void QMCSCFJastrow::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
   if(Input->flags.nuclear_derivatives != "none")
     nf.initialize(Input);
 
-  SCF_Grad_PsiRatio.allocate(Input->WF.getNumberElectrons(),3);
+  wd     = 0;
+  x      = 0;
 }
 
 void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
@@ -89,7 +89,7 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
                             int num)
 {
   //These are some useful benchmarking variables
-  static const bool printKE = false;
+  //static const bool printKE = false;
   static const bool showTimings = !true;
   static double averageT = 0, timeT = 0;
   static double numT = -5;
@@ -173,58 +173,33 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
 
   for(int i=0; i<num; i++)
   {
-    calculate_Psi_quantities(walkerData(i)->gradPsiRatio,
-                             walkerData(i)->chiDensity, i);
-    calculate_Modified_Grad_PsiRatio(*xData(i),
-                                     walkerData(i)->modifiedGradPsiRatio,
-                                     walkerData(i)->gradPsiRatio);
+    /*
+      Load the pointers; all the other functions
+      will just look at these.
+    */
+    wd = walkerData(i);
+    x  = xData(i);
+
+    calculate_Psi_quantities(i);
+    calculate_Modified_Grad_PsiRatio();
     calculate_E_Local(i);
 
-    Array2D<double> * tMGPR = & walkerData(i)->modifiedGradPsiRatio;
-    Array2D<double> * tGPR  = & walkerData(i)->gradPsiRatio;
-    
-    double lengthGradTrialModified =
-      sqrt((*tMGPR).dotAllElectrons(*tMGPR));
-    double lengthGradTrialUnmodified =
-      sqrt((*tGPR).dotAllElectrons(*tGPR));
-    
-    walkerData(i)->modificationRatio = lengthGradTrialModified/lengthGradTrialUnmodified;
-
-    if (IeeeMath::isNaN(lengthGradTrialModified) ||
-	IeeeMath::isNaN(lengthGradTrialUnmodified) ||
-	IeeeMath::isNaN(walkerData(i)->modificationRatio) ||
-	lengthGradTrialUnmodified == 0)
-      {
-	cerr << "WARNING: trial Grad Psi Ratio is NaN "; 
-	cerr << "   lengthGradTrialModified = " << lengthGradTrialModified << endl;
-	cerr << "   lengthGradTrialUnmodified = " << lengthGradTrialUnmodified << endl;
-	walkerData(i)->isSingular = true;	
-      } else {
-	walkerData(i)->isSingular = isSingular(i);
-      }
-
-    walkerData(i)->localEnergy = getLocalEnergy();
-    walkerData(i)->kineticEnergy = getKineticEnergy();
-    walkerData(i)->potentialEnergy = getPotentialEnergy(i);
-    walkerData(i)->neEnergy = getEnergyNE(i);
-    walkerData(i)->eeEnergy = getEnergyEE(i);
-    walkerData(i)->psi = getPsi();
-
-    //walkerData will need these if it's going to print configurations
-    walkerData(i)->SCF_Laplacian_PsiRatio = SCF_Laplacian_PsiRatio;
-    walkerData(i)->SCF_Grad_PsiRatio      = SCF_Grad_PsiRatio;
-    walkerData(i)->lnJ                    = Jastrow.getLnJastrow(i);
-
-
-    if(false)
-    {
-      printf("KE %20.10e ", (*walkerData(i)).kineticEnergy );
-      printf("PE %20.10e ", (*walkerData(i)).potentialEnergy );
-      printf("NE %20.10e ", (*walkerData(i)).neEnergy );
-      printf("EE %20.10e ", (*walkerData(i)).eeEnergy );
-      printf("TE %20.10e\n", (*walkerData(i)).localEnergy );
-    }
+    wd->localEnergy            = getLocalEnergy();
+    wd->kineticEnergy          = getKineticEnergy();
+    wd->potentialEnergy        = getPotentialEnergy(i);
+    wd->neEnergy               = getEnergyNE(i);
+    wd->eeEnergy               = getEnergyEE(i);
+    wd->psi                    = getPsi();
+    wd->lnJ                    = Jastrow.getLnJastrow(i);
+    wd->isSingular            |= isSingular(i);
   }
+
+  /*
+    Just to be sure nobody else tries to look at or
+    modify the data behind these pointers.
+  */
+  wd = 0;
+  x  = 0;
 }
 
 void QMCSCFJastrow::evaluate(Array2D<double> &X, QMCWalkerData & data)
@@ -255,9 +230,10 @@ void QMCSCFJastrow::evaluate(Array2D<double> &X, QMCWalkerData & data)
   Jastrow.evaluate(temp,1,0);
   PE.evaluate(temp,1);
 
-  calculate_Psi_quantities(data.gradPsiRatio,data.chiDensity,0);
-  calculate_Modified_Grad_PsiRatio(X,data.modifiedGradPsiRatio,
-                                   data.gradPsiRatio);
+  wd  = & data;
+  x   = & X;
+  calculate_Psi_quantities(0);
+  calculate_Modified_Grad_PsiRatio();
   calculate_E_Local(0);
 
   if(Input->flags.nuclear_derivatives != "none")
@@ -270,29 +246,19 @@ void QMCSCFJastrow::evaluate(Array2D<double> &X, QMCWalkerData & data)
   data.eeEnergy = getEnergyEE(0);
   data.neEnergy = getEnergyNE(0);
   data.psi = getPsi();
-
-  if(!true)
-  {
-    printf("KE %20.10e ",  data.kineticEnergy );
-    printf("PE %20.10e ",  data.potentialEnergy );
-    printf("NE %20.10e ",  data.neEnergy );
-    printf("EE %20.10e ",  data.eeEnergy );
-    printf("TE %20.10e\n", data.localEnergy );
-  }
 }
 
 //  We end up doing a division with SCF_sum. Therefore, it seems to be critical
 //  to make sure we aren't dividing by too small a number
-void QMCSCFJastrow::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
-    Array1D<double> & Chi_Density, int walker)
+void QMCSCFJastrow::calculate_Psi_quantities(int walker)
 {
   QMCGreensRatioComponent SCF_sum = 0.0;
-  SCF_Laplacian_PsiRatio = 0.0;
   Laplacian_PsiRatio = 0.0;
-  double PsuedoForce2_PsiRatio = 0;
+  //double PsuedoForce2_PsiRatio = 0;
 
-  SCF_Grad_PsiRatio = 0.0;
-  Grad_PsiRatio = 0.0;
+  wd->SCF_Laplacian_PsiRatio = 0.0;
+  wd->SCF_Grad_PsiRatio      = 0.0;
+  wd->gradPsiRatio           = 0.0;
 
   Array1D<QMCGreensRatioComponent> termPsi;
   termPsi.allocate(Input->WF.getNumberDeterminants());
@@ -387,7 +353,7 @@ void QMCSCFJastrow::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
 
         for (int j=0; j<nalpha; j++)
           for (int k=0; k<3; k++)
-            SCF_Grad_PsiRatio(j,k) += psiRatio*term_AlphaGrad[j][k];
+            wd->SCF_Grad_PsiRatio(j,k) += psiRatio*term_AlphaGrad[j][k];
       }
 
       if (nbeta > 0)
@@ -396,79 +362,129 @@ void QMCSCFJastrow::calculate_Psi_quantities(Array2D<double> & Grad_PsiRatio,
 
         for (int j=0; j<nbeta; j++)
           for (int k=0; k<3; k++)
-            SCF_Grad_PsiRatio(j+nalpha,k)+=psiRatio*term_BetaGrad[j][k];
+            wd->SCF_Grad_PsiRatio(j+nalpha,k)+=psiRatio*term_BetaGrad[j][k];
       }
 
-      SCF_Laplacian_PsiRatio += psiRatio *
-                                ((*alphaLaplacian)(i) + (*betaLaplacian)(i));
+      wd->SCF_Laplacian_PsiRatio += psiRatio *
+	((*alphaLaplacian)(i) + (*betaLaplacian)(i));
     }
   }
+  
+  QMCGreensRatioComponent jastrowValue =
+    QMCGreensRatioComponent(1.0,1.0,0.0,Jastrow.getLnJastrow(walker));
+  
+  Psi = SCF_sum * jastrowValue;
+  
+  Laplacian_PsiRatio = wd->SCF_Laplacian_PsiRatio +
+    Jastrow.getLaplacianLnJastrow(walker);
 
-  termPsi.deallocate();
+  Array2D<double>* JastrowGrad = Jastrow.getGradientLnJastrow(walker);
 
-  double lnJastrow = Jastrow.getLnJastrow(walker);
-
-  if (IeeeMath::isNaN(lnJastrow))
-  {
-    cerr << "WARNING: lnJastrow = " << lnJastrow << endl;
-    cerr << "lnJastrow is being set to 0 to avoid ruining the " << endl;
-    cerr << "calculation." << endl;
-  }
-  else
-  {
-    QMCGreensRatioComponent jastrowValue =
-      QMCGreensRatioComponent(1.0,1.0,0.0,Jastrow.getLnJastrow(walker));
-
-    Psi = SCF_sum * jastrowValue;
-
-    Array2D<double>* JastrowGrad = Jastrow.getGradientLnJastrow(walker);
-
-    Laplacian_PsiRatio = SCF_Laplacian_PsiRatio +
-                         Jastrow.getLaplacianLnJastrow(walker);
-
-    for (int i=0; i<Input->WF.getNumberElectrons(); i++)
-      for (int j=0; j<3; j++)
+  for (int i=0; i<Input->WF.getNumberElectrons(); i++)
+    for (int j=0; j<3; j++)
       {
-        Grad_PsiRatio(i,j) = SCF_Grad_PsiRatio(i,j) + (*JastrowGrad)(i,j);
-
+        wd->gradPsiRatio(i,j) = wd->SCF_Grad_PsiRatio(i,j) + (*JastrowGrad)(i,j);
+	
         /*
           We are subtracting (*JastrowGrad)(i,j) because one too many
           was added in the 2*Grad_PsiRatio(i,j) term
           We are including the psuedo-force at this stage
           There are some terms that cancel when calculating
-
+	  
           Laplacian_PsiRatio = del^2 log psi + (del log psi)^2 = 2F^2 - 4T
           KE = -0.5*Laplacian_PsiRatio = 2T - F^2
         */
         Laplacian_PsiRatio += (*JastrowGrad)(i,j) *
-                              (2*Grad_PsiRatio(i,j) - (*JastrowGrad)(i,j));
-
+	  (2*wd->gradPsiRatio(i,j) - (*JastrowGrad)(i,j));
+	
         //This is the 2 * F^2 term = ( del log Psi )^2
-        //PsuedoForce2_PsiRatio += Grad_PsiRatio(i,j) * Grad_PsiRatio(i,j);
+        //PsuedoForce2_PsiRatio += wd->gradPsiRatio(i,j) * wd->gradPsiRatio(i,j);
       }
-  }
-
+  
   //This switches to KE = F
   //Laplacian_PsiRatio = -2.0*PsuedoForce2_PsiRatio;
-
+  
   //This switches to KE = T
   //Laplacian_PsiRatio = 0.5*Laplacian_PsiRatio - PsuedoForce2_PsiRatio;
 
-  // Calculate the basis function density
+  if(Input->flags.calculate_Derivatives == 1)
+    {
+      wd->p3_xxa = 0.0;  
+      for(int ai=0; ai<Jastrow.getNumAI(); ai++)
+	{
+	  //we never need dPsi/dai by itself, we only need the ratio. So this
+	  //is dPsi/dai/Psi.
+	  wd->rp_a(ai)    = Jastrow.get_p_a_ln(walker,ai);
+	  wd->p3_xxa(ai)  = Jastrow.get_p3_xxa_ln(walker,ai);
+	  
+	  Array2D<double>* j_p_xa = Jastrow.get_p2_xa_ln(walker,ai);
+	  
+	  for (int i=0; i<Input->WF.getNumberElectrons(); i++)
+	    {
+	      for (int j=0; j<3; j++)
+		{
+		  wd->p3_xxa(ai) += 2 * (*j_p_xa)(i,j) * wd->SCF_Grad_PsiRatio(i,j);
+		  wd->p3_xxa(ai) += 2 * (*j_p_xa)(i,j) * (*JastrowGrad)(i,j);
+		}
+	    }
+	  wd->p3_xxa(ai) = -0.5*wd->p3_xxa(ai);
+	}
+      
+      int shift = Jastrow.getNumAI();
+      for(int ai=0; ai<Input->WF.getNumberDeterminants()-1; ai++)
+	{
+	  int ci = ai+1;
+	  psiRatio = termPsi(ci)/SCF_sum;
+	  double dPsiRatio_dci = (psiRatio - psiRatio * psiRatio) / Input->WF.CI_coeffs(ci);
+	  
+	  wd->rp_a(ai+shift)    = psiRatio / Input->WF.CI_coeffs(ci);
+	  
+	  for(int cj=0; cj<Input->WF.getNumberDeterminants(); cj++)
+	    {
+	      double dPsiRatio_dcj;
+	      if(cj != ci)
+		dPsiRatio_dcj = -termPsi(cj) * psiRatio / SCF_sum / Input->WF.CI_coeffs(ci);
+	      else
+		dPsiRatio_dcj = dPsiRatio_dci;
+	      
+	      double** term_AlphaGrad = alphaGrad->array()[cj];
+	      double** term_BetaGrad = betaGrad->array()[cj];
+	      
+	      wd->p3_xxa(ai+shift)  += dPsiRatio_dcj * ((*alphaLaplacian)(cj) + (*betaLaplacian)(cj));
+	      
+	      for (int i=0; i<nalpha; i++)
+		for (int j=0; j<3; j++)
+		  wd->p3_xxa(ai+shift) += 2 * (*JastrowGrad)(i,j) * term_AlphaGrad[i][j] * dPsiRatio_dcj;
+	      for (int i=0; i<nbeta; i++)
+		for (int j=0; j<3; j++)
+		  wd->p3_xxa(ai+shift) += 2 * (*JastrowGrad)(i+nalpha,j) * term_BetaGrad[i][j] * dPsiRatio_dcj;
+	    }
+	  wd->p3_xxa(ai+shift) = -0.5*wd->p3_xxa(ai+shift);
+	}
 
+      //This is how you hand check the derivatives
+      /*
+	printf("actual P=%25.15f  XX=%25.15f\n",(double)Psi,-0.5*Laplacian_PsiRatio);
+	for(int ai=0; ai<wd->p3_xxa.dim1(); ai++)
+	printf("ai=%2i RP=%25.15f XXA=%25.15f\n",ai,(double)(Psi * wd->rp_a(ai)),wd->p3_xxa(ai));
+	exit(0);
+      //*/
+    }
+
+  // Calculate the basis function density
   if (Input->flags.calculate_bf_density == 1)
   {
-    Chi_Density = 0.0;
+    wd->chiDensity = 0.0;
     if (nalpha > 0)
-      Chi_Density = Chi_Density + *(Alpha.getChiDensity(walker));
+      wd->chiDensity = wd->chiDensity + *(Alpha.getChiDensity(walker));
     if (nbeta > 0)
-      Chi_Density = Chi_Density + *(Beta.getChiDensity(walker));
+      wd->chiDensity = wd->chiDensity + *(Beta.getChiDensity(walker));
   }
+
+  termPsi.deallocate();
 }
 
-void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
-    Array2D<double> &Modified_Grad_PsiRatio,
-    Array2D<double> &Grad_PsiRatio)
+void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio()
 {
   // Call this after calculate_Grad_PsiRatio() is called
 
@@ -477,7 +493,7 @@ void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
 
   if( Input->flags.QF_modification_type == "none" )
     // do not modify the quantum force
-    Modified_Grad_PsiRatio = Grad_PsiRatio;
+    wd->modifiedGradPsiRatio = wd->gradPsiRatio;
 
   else if( Input->flags.QF_modification_type == "umrigar93_equalelectrons" )
   {
@@ -497,29 +513,29 @@ void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
 
     // Calculate the magnitude squared of the Grad_PsiRatio
     double magsqQF = 0.0;
-    for(int i=0; i<Grad_PsiRatio.dim1(); i++)
-      for(int j=0; j<Grad_PsiRatio.dim2(); j++)
-        magsqQF += Grad_PsiRatio(i,j) * Grad_PsiRatio(i,j);
+    for(int i=0; i<wd->gradPsiRatio.dim1(); i++)
+      for(int j=0; j<wd->gradPsiRatio.dim2(); j++)
+        magsqQF += wd->gradPsiRatio(i,j) * wd->gradPsiRatio(i,j);
 
     factor = ( -1.0 + sqrt( 1.0 + 2*a*magsqQF*Input->flags.dt )) /
              ( a*magsqQF*Input->flags.dt);
 
-    Modified_Grad_PsiRatio = Grad_PsiRatio;
-    Modified_Grad_PsiRatio *= factor;
+    wd->modifiedGradPsiRatio = wd->gradPsiRatio;
+    wd->modifiedGradPsiRatio *= factor;
   }
   else if( Input->flags.QF_modification_type == "umrigar93_unequalelectrons" )
   {
     // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 35-36.
     // The QF for each electron is changed by a different factor
 
-    Modified_Grad_PsiRatio = Grad_PsiRatio;
+    wd->modifiedGradPsiRatio = wd->gradPsiRatio;
     Array1D<double> closest_nucleus_to_electron_norm_vector(3);
     Array1D<double> electron_velocity_norm_vector(3);
-    for(int i=0; i<Modified_Grad_PsiRatio.dim1(); i++)
+    for(int i=0; i<wd->modifiedGradPsiRatio.dim1(); i++)
     {
       // Find the closest nucleus to electron i
       int closest_nucleus_index  =
-        Input->Molecule.findClosestNucleusIndex(X,i);
+        Input->Molecule.findClosestNucleusIndex(*x,i);
       // now we have the closest nucleus identified
 
       // Charge of this nucleus
@@ -532,7 +548,7 @@ void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
       // Unit vector from nearest nucleus to the electron
       for(int xyz=0; xyz<3; xyz++)
       {
-        temp = X(i,xyz) -
+        temp = (*x)(i,xyz) -
                Input->Molecule.Atom_Positions(closest_nucleus_index,xyz);
 
         closest_nucleus_to_electron_norm_vector(xyz) = temp;
@@ -543,7 +559,7 @@ void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
 
       // Unit vector in the direction of electron velocity
       for(int xyz=0; xyz<3; xyz++)
-        electron_velocity_norm_vector(xyz) = Grad_PsiRatio(i,xyz);
+        electron_velocity_norm_vector(xyz) = wd->gradPsiRatio(i,xyz);
 
       double electron_velocity_norm_squared =
         electron_velocity_norm_vector * electron_velocity_norm_vector;
@@ -571,7 +587,7 @@ void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
 
       // Now adjust the QF of electron I
       for(int xyz=0; xyz<3; xyz++)
-        Modified_Grad_PsiRatio(i,xyz) *= factor;
+        wd->modifiedGradPsiRatio(i,xyz) *= factor;
     }
   }
   else
@@ -579,6 +595,27 @@ void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio(Array2D<double> &X,
     cerr << "ERROR: Unknown value for QF_modification_type set!" << endl;
     exit(0);
   }
+
+  Array2D<double> * tMGPR = & wd->modifiedGradPsiRatio;
+  Array2D<double> * tGPR  = & wd->gradPsiRatio;
+  
+  double lengthGradTrialModified =
+    sqrt((*tMGPR).dotAllElectrons(*tMGPR));
+  double lengthGradTrialUnmodified =
+    sqrt((*tGPR).dotAllElectrons(*tGPR));
+  
+  wd->modificationRatio = lengthGradTrialModified/lengthGradTrialUnmodified;
+  
+  if (IeeeMath::isNaN(lengthGradTrialModified) ||
+      IeeeMath::isNaN(lengthGradTrialUnmodified) ||
+      IeeeMath::isNaN(wd->modificationRatio) ||
+      lengthGradTrialUnmodified == 0)
+    {
+      cerr << "WARNING: trial Grad Psi Ratio is NaN "; 
+      cerr << "   lengthGradTrialModified = " << lengthGradTrialModified << endl;
+      cerr << "   lengthGradTrialUnmodified = " << lengthGradTrialUnmodified << endl;
+      wd->isSingular = true;	
+    } 
 }
 
 void QMCSCFJastrow::calculate_E_Local(int i)
@@ -628,7 +665,20 @@ bool QMCSCFJastrow::isSingular(int walker)
     return false;
 }
 
+int QMCSCFJastrow::getNumAI()
+{
+  /*
+    Since the wavefunction is invariant to normalization,
+    there are only N-1 independent CI coefficients.
+  */
+  int numAI = Input->WF.getNumberDeterminants() - 1;
 
+  if(Input->flags.calculate_Derivatives == 1)
+    numAI += Jastrow.getNumAI();
+  else
+    numAI = 0;
+  return numAI;
+}
 
 
 

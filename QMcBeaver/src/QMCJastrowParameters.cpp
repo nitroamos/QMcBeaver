@@ -35,7 +35,9 @@ for more details.
 
 void QMCJastrowParameters::operator=( const QMCJastrowParameters & rhs )
 {
-  NumberOfParameters = rhs.NumberOfParameters;
+  NumberOfEEParameters   = rhs.NumberOfEEParameters;
+  NumberOfNEParameters   = rhs.NumberOfNEParameters;
+  NumberOfNEupParameters = rhs.NumberOfNEupParameters;
   EupNuclear = rhs.EupNuclear;
   EdnNuclear = rhs.EdnNuclear;
   EupEdn = rhs.EupEdn;
@@ -224,6 +226,21 @@ void QMCJastrowParameters::setParameterVector(Array1D<double> & params)
     }
 }
 
+int QMCJastrowParameters::getNumberEEParameters()
+{
+  return NumberOfEEParameters;
+}
+
+int QMCJastrowParameters::getNumberNEParameters()
+{
+  return NumberOfNEParameters;
+}
+
+int QMCJastrowParameters::getNumberNEupParameters()
+{
+  return NumberOfNEupParameters;
+}
+
 Array1D<double> QMCJastrowParameters::getParameters()
 {
   Array1D<double> ParamVect;
@@ -325,7 +342,7 @@ Array1D<double> QMCJastrowParameters::getParameters()
 		EdnNuclear(i).getTotalNumberOfParameters();
 	    }
 	}
-      
+
       ParamVect.allocate( TotalNumberOfParams );
       
       int Counter = 0;
@@ -480,6 +497,52 @@ Array1D<Complex> QMCJastrowParameters::getPoles()
   return results;
 }
 
+double QMCJastrowParameters::calculate_penalty_function()
+{
+  Array1D<Complex> poles = getPoles();
+  return calculate_penalty_function(poles);
+}
+
+// calculates a penalty function for getting singular parameters
+double QMCJastrowParameters::calculate_penalty_function(
+							Array1D<Complex> & poles)
+{
+  double penalty = 0.0;
+
+  for(int i=0; i<poles.dim1(); i++)
+    {
+      // calculate the distance of the pole from the positive real axis
+      double distance = 0.0;
+
+      if( poles(i).real() > 0 )
+	{
+	  distance = fabs(poles(i).imaginary());
+	}
+      else
+	{
+	  distance = poles(i).abs();
+	}
+
+      if(distance <= 0){
+	penalty = 1e100; 
+	cerr << "Warning: distance from real axis is " << distance << "  in OFR, can\'t take log" << endl;
+	cerr << "         poles(" << i << ") = " << poles(i) << endl;
+	cerr << "         penalty will be set to " << penalty << endl;
+	cerr.flush();
+      } else {
+
+	/*
+	  Singularities exist when the poles are on the +'ve real
+	  axis. So, a configuration's score will be improved (lowered)
+	  the further it is from this region.
+	*/
+	penalty -= log( distance );
+      }
+    }
+  
+  return penalty;
+}
+
 void QMCJastrowParameters::read(Array1D<string> & nucleitypes, 
 				bool linkparams, bool nucCuspReplacement, int nelup, int neldn, 
 				string runfile)
@@ -629,6 +692,19 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 
   // if the particles are linked make the down electron parameters equal
   // to the up electron parameters.
+  NumberOfEEParameters   = 0;
+  NumberOfNEParameters   = 0;
+  NumberOfNEupParameters = 0;
+  NumberOfEEParameters += EupEup.getTotalNumberOfParameters();
+  NumberOfEEParameters += EupEdn.getTotalNumberOfParameters();
+
+  for(int i=0; i<EupNuclear.dim1(); i++)
+    {
+      NumberOfNEParameters += 
+	EupNuclear(i).getTotalNumberOfParameters();
+    }
+
+  NumberOfNEupParameters = NumberOfNEParameters;
 
   if( EquivalentElectronUpDownParams )
     {
@@ -647,6 +723,24 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 	  for (int i=0; i<EdnNuclear.dim1(); i++)
 	    EdnNuclear(i).setParticle1Type("Electron_down");
 	}
+    } else {
+
+      NumberOfEEParameters += EdnEdn.getTotalNumberOfParameters();
+
+      for(int i=0; i<EdnNuclear.dim1(); i++)
+	{
+	  NumberOfNEParameters += 
+	    EdnNuclear(i).getTotalNumberOfParameters();
+	}
+    }
+
+  clog << "We loaded " << NumberOfEEParameters << " EE parameters" << endl;
+  if(EquivalentElectronUpDownParams)
+    {
+      clog << "          " << NumberOfNEParameters << " NE parameters" << endl;
+    } else {
+      clog << "          " << NumberOfNEupParameters << " N-Eup parameters" << endl;
+      clog << "          " << (NumberOfNEParameters-NumberOfNEupParameters) << " N-Edn parameters" << endl;
     }
 }
 

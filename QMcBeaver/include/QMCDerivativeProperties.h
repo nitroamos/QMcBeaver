@@ -87,6 +87,18 @@ public:
   double getVirialRatioStandardDeviation(int whichFW);
 
   /**
+     Convert the der terms collected in QMCProperties
+     into the actual gradient.
+  */
+  Array1D<double> getParameterGradient();
+
+  /**
+     Convert the hess terms collected in QMCProperties
+     into the actual hessian.
+  */
+  Array2D<double> getParameterHessian();
+
+  /**
     Formats and prints the properties to a stream in human readable fromat.
     */
   friend ostream& operator <<(ostream& strm, QMCDerivativeProperties &rhs);
