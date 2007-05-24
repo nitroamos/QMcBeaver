@@ -1,3 +1,34 @@
+Wed, May 23, 2007 Amos Anderson
+1.  I added parameter derviatives. I'm using the formulas for
+    variance minimization provided in PRL 94, 150201 (2005).
+    There are many advantages to this, but the primary ones are:
+    a) we don't have to write configurations to file anymore
+    b) the derivatives are more accurate because they're analytic
+    c) we have an acceptable hessian
+
+    WF optimization actually works now. I think... I'm seeing
+    variance drop by at least a factor of 2 from the default
+    parameter settings.
+
+    There were some corresponding API changes as well.
+
+2)  CI coefficents are optimized too. Since the WF is invariant
+    to multiplication by a value, there are NDET-1 additional
+    parameters we can optimize.
+
+3)  I cleaned up QMCLineSearch.cpp and related classes.
+
+4)  I added a new optimize_Psi_method, "automatic". It is my intention
+    that when perfected, it will be essentially blackbox, and the best
+    choice. It follows most of the recommendations from the PRL paper,
+    except I don't have an easy way to calculate eigenvalues, so it doesn't
+    follow all recommendations.
+
+    See the test/lih_opt_test.ckmf for a sample input file.
+
+5)  I cleaned up a bunch of the other code, including QMcBeaver.cpp,
+    Array2D.h, QMCManager.cpp...
+
 Sat, May 5, 2007 Amos Anderson
 1.  I added HDF5 capabilities. Unfortunately, it doesn't appear
     to be much of a performance benefit on top of system binary.
