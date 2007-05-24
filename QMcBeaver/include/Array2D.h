@@ -221,8 +221,6 @@ public:
             }
             result.allocate(n_1,rhs.n_2);
         }
-
-        result = (T)(0.0);
     }
 
 #ifdef USEATLAS
@@ -450,7 +448,7 @@ public:
                 return;
             }
 
-            diVV(i)=one/big;
+            diVV(i)= (T)(one/big);
         }
 
         //loop over columns
@@ -479,7 +477,7 @@ public:
 
                 }
 
-                pArray[map(i,j)]= -1.0*sum;
+                pArray[map(i,j)] = (T)(-1.0*sum);
             }
 
             //part 2: i >= j
@@ -505,7 +503,7 @@ public:
 
                 }
 
-                pArray[map(i,j)]=-1.0*sum;
+                pArray[map(i,j)] = (T)(-1.0*sum);
 
                 //find the best row to pivot
                 if ( (dum=diVV(i)*(T)(fabs((double)sum))) >= big)
@@ -525,7 +523,7 @@ public:
                 {
                     dum=get(imax,k);
                     pArray[map(imax,k)]=get(j,k);
-                    pArray[map(j,k)]=dum;
+                    pArray[map(j,k)] = (T)(dum);
                 }
                 //a.swapRows(imax,j);
 
@@ -546,7 +544,7 @@ public:
             {
                 dum=one/(get(j,j));
                 for (i=j+1;i<n_1;i++)
-                    pArray[map(i,j)] *= dum;
+                    pArray[map(i,j)] *= (T)(dum);
             }
 
         }
@@ -599,7 +597,7 @@ public:
                 ii=i;
             }
 
-            b(i) = -1.0*sum;
+            b(i) = (T)(-1.0*sum);
         }
 
         for (int i=n_1-1;i>=0;i--)
@@ -623,7 +621,7 @@ public:
                     sum += get(i,j)*b(j);
             }
 
-            b(i) = -1.0*sum/get(i,i);
+            b(i) = (T)(-1.0*sum/get(i,i));
         }
     }
 
@@ -772,6 +770,67 @@ public:
         det = d;
     }
 #endif
+
+    void setToIdentity()
+      {
+	*this = (T)(0.0);
+	for(int i=0; i<min(n_1,n_2); i++)
+	  (*this)(i,i) = (T)(1.0);
+      }
+
+    bool isIdentity()
+      {
+	for(int i=0; i<n_1; i++)
+	  for(int j=0; j<n_2; j++)
+	    {
+	      T val       = (*this)(i,j);
+	      if(i == j) val -= 1.0;
+	      if(fabs(val) > REALLYTINY) return false;
+	    }
+	return true;
+      }
+
+    void transpose()
+      {
+	if(n_1 != n_2)
+	  {
+	    cerr << "Array2D::transpose just handles square matrices right now\n";
+	    return;
+	  }
+	for(int i=0; i<n_1; i++)
+	  for(int j=0; j<i; j++)
+	    {
+	      T temp       = (*this)(i,j);
+	      (*this)(i,j) = (*this)(j,i);
+	      (*this)(j,i) = temp;
+	    }
+      }
+
+    double nonSymmetry()
+      {
+	if(n_1 != n_2)
+	  {
+	    cerr << "Array2D::symmetric just handles square matrices right now\n";
+	    return -1.0;
+	  }
+
+	double diff = 0;
+	for(int i=0; i<n_1; i++)
+	  for(int j=0; j<i; j++)
+	    {
+	      double term = 0;
+	      if(fabs((*this)(i,j)) > REALLYTINY)
+		term = ((*this)(i,j) - (*this)(j,i))/(*this)(i,j);
+	      diff += term * term;
+	    }
+
+	//relative error per pair
+	diff = 2.0*diff/(n_1 * n_2 - n_1);
+
+	//if the matrix is symmetric, it should return zero
+	//otherwize, this measurement of symmetry.
+	return diff;
+      }
 
     /**
     Sets two arrays equal. memcpy would probably break if T is a class. is this a problem?
