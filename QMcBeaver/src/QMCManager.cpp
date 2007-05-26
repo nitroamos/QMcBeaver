@@ -92,14 +92,14 @@ void QMCManager::initializeMPI()
 #ifdef PARALLEL
   // Create MPI Community
   
-  if(  MPI_Comm_size( MPI_COMM_WORLD, &Input.flags.nprocs )  )
+  if(  MPI_Comm_size( MPI_COMM_WORLD, &globalInput.flags.nprocs )  )
   {
     cerr << "ERROR: MPI_Comm_size Error" << endl;
     exit( 1 );
   }
   
   // Set Processor Rank
-  if(  MPI_Comm_rank( MPI_COMM_WORLD, &Input.flags.my_rank )  )
+  if(  MPI_Comm_rank( MPI_COMM_WORLD, &globalInput.flags.my_rank )  )
   {
     cerr << "ERROR: MPI_Comm_rank Error" << endl;
     exit( 1 );
@@ -634,9 +634,8 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
   int width = 16;
   if( Input.flags.my_rank == 0 )
     {
-      cout.flush(); cerr.flush(); clog.flush();
-      cout << "***************  TheMan.run();" << endl;
-      cout << setw(10)    << "iteration"
+      clog << "***************  TheMan.run();" << endl;
+      clog << setw(10)    << "iteration"
 	   << setw(width) << "Eavg"
 	   << setw(width) << "Estd"
 	   << setw(width) << "Num. Walkers"
@@ -645,7 +644,7 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 	   << setw(width) << "Weights"
 	   << setw(width) << "Num. Samples"
 	   << endl;
-      cout.setf( ios::fixed,ios::floatfield );
+      clog.setf( ios::fixed,ios::floatfield );
     }
  
   equilibrationProperties.zeroOut();

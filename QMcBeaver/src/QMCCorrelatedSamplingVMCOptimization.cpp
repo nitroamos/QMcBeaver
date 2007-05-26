@@ -17,7 +17,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 						    int configsToSkip)
 {
   //put initial Jastrow parameters in as the guess
-  Array1D<double> Guess_parameters = input->getParameters();
+  Array1D<double> Guess_parameters = globalInput.getParameters();
 
   double value;
 
@@ -27,23 +27,19 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
   Array2D<double> hessian;
 
   value = lastRun.energy.getSeriallyCorrelatedVariance();
-  cout << endl;
-  cout << "The energy from the last run:" << endl;
-  cout << lastRun.energy;
-  cout << "Serially correlated variance: " << lastRun.energy.getSeriallyCorrelatedVariance() << endl;
 
-  if( input->flags.optimize_Psi_criteria == "analytical_energy_variance" )
+  if( globalInput.flags.optimize_Psi_criteria == "analytical_energy_variance" )
     {
       gradient = dp.getParameterGradient();
     }
 
-  if( input->flags.optimize_Psi_method == "analytical_energy_variance" ||
-      input->flags.optimize_Psi_method == "automatic" )
+  if( globalInput.flags.optimize_Psi_method == "analytical_energy_variance" ||
+      globalInput.flags.optimize_Psi_method == "automatic" )
     {
       hessian  = dp.getParameterHessian();
     }
 
-  if( input->flags.my_rank == 0 )
+  if( globalInput.flags.my_rank == 0 )
     {
       // initialize the objective function
       QMCObjectiveFunction ObjFunk;
@@ -102,20 +98,23 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 
 #endif
 
-  input->setParameterVector(Guess_parameters);
+  globalInput.setParameterVector(Guess_parameters);
 
-  double penalty = input->JP.calculate_penalty_function();
-  if(penalty >= 1e10)
+  if(globalInput.flags.my_rank == 0)
     {
-      clog << endl << endl << endl;
-      clog << "Error: the Jastow's new guess parameters have bad poles (penalty = " << penalty << ")!" << endl;
-      clog << "  Parameters are: " << input->JP.getParameters();
-      clog << "   its poles are: " << input->JP.getPoles();
-      clog << "  Either your guess for initial Jastrow parameters is bad or you need to change your "
-	   << "optimization choices." << endl;
-      exit(0);
-    } else {
-      clog << "Notice: the new parameters have an acceptable singularity penalty = " << penalty << endl;
+      double penalty = globalInput.JP.calculate_penalty_function();
+      if(penalty >= 1e10)
+	{
+	  clog << endl << endl << endl;
+	  clog << "Error: the Jastow's new guess parameters have bad poles (penalty = " << penalty << ")!" << endl;
+	  clog << "  Parameters are: " << globalInput.JP.getParameters();
+	  clog << "   its poles are: " << globalInput.JP.getPoles();
+	  clog << "  Either your guess for initial Jastrow parameters is bad or you need to change your "
+	       << "optimization choices." << endl;
+	  exit(0);
+	} else {
+	  clog << "Notice: the new parameters have an acceptable singularity penalty = " << penalty << endl;
+	}
     }
 }
 
