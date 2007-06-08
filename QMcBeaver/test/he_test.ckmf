@@ -1,277 +1,434 @@
+#Created on Fri, 09 Mar 2007 01:20:00 by gamess2qmcbeaver.py using he.inp.out
+#Huzinaga basis from Huzinaga, Miyosho, Sekiya JCP 100, 1435, 1994
+# This test run is designed to illustrate a VMC optimization. Here we
+# Optimize 1 EE Jastrow parameter, and 2 NE Jastrow parameters.
+# I have put in the optimized values that I got in this input file, so
+# you'll have to change them to something else to see optimization at work.
+#
+# The objective value (sample variance) these parameters gave was: 3.084912316981e-04
+# With an energy of 
+#  -2.886707401538e+00 +/-   1.361619150752e-03 (109597 samples, decorr depth 12)
+
 &flags
+# Parameters for QMC
 run_type
  variational
-parallelization_method
- manager_worker
-temp_dir
- ./
-walker_initialization_method
- mikes_jacked_initialization
-walker_initialization_combinations
- 3
-iseed
- -1961964851
+dt
+ 0.001
+number_of_walkers
+ 200
+max_time_steps
+ 10000
+max_time
+ -1
+desired_convergence
+ 0
+warn_verbosity
+ 0
+
+rel_cutoff
+ 5.0
+
+limit_branching
+ 1
+
+# Parameters specific to the Green's function
 sampling_method
  umrigar93_importance_sampling
 QF_modification_type
  umrigar93_unequalelectrons
+umrigar93_equalelectrons_parameter
+ 0.5
 energy_modification_type
  umrigar93
-umrigar93_equalelectrons_parameter
- 5.000000000000000e-01
+lock_trial_energy
+ 0
+synchronize_dmc_ensemble
+ 0
+synchronize_dmc_ensemble_interval
+ 1000
+
+# Parameters specific to weights, branching, and fusion
 walker_reweighting_method
  umrigar93_probability_weighted
 branching_method
  nonunit_weight_branching
 branching_threshold
- 2.000000000000000e+00
+ 2
+fusion_threshold
+ 0.45
+population_control_parameter
+ 1
+correct_population_size_bias
+ 1
 old_walker_acceptance_parameter
  50
+
+# Parameters for initialization
+dt_equilibration
+ 0.002
+use_equilibration_array
+ 0
+equilibration_steps
+ 1000
+equilibration_function
+ ramp
+CKAnnealingEquilibration1_parameter
+ 500
+walker_initialization_method
+ dans_walker_initialization
+walker_initialization_combinations
+ 3
+
+# Parameters for added functionality/improvements
+calculate_bf_density
+ 0
+use_hf_potential
+ 0
+hf_num_average
+ 100
+replace_electron_nucleus_cusps
+ 0
+nuclear_derivatives
+ none
+future_walking
+ 0
+
+# Parameters relating to output
+output_interval
+ 5000
+checkpoint
+ 0
+checkpoint_interval
+ 100000
+use_available_checkpoints
+ 0
+zero_out_checkpoint_statistics
+ 1
+print_configs
+ 0
+print_config_frequency
+ 50
+temp_dir
+ /temp2/amosa/
+write_all_energies_out
+ 0
+write_electron_densities
+ 0
+max_pair_distance
+ -1
+print_transient_properties
+ 0
+print_transient_properties_interval
+ 10000
+writePllxCorrelationDiagram
+ 0
+pllxCorrelationDiagramMin
+ 0
+pllxCorrelationDiagramMax
+ 0
+writePllyCorrelationDiagram
+ 0
+pllyCorrelationDiagramMin
+ 0
+pllyCorrelationDiagramMax
+ 0
+writePllzCorrelationDiagram
+ 0
+pllzCorrelationDiagramMin
+ 0
+pllzCorrelationDiagramMax
+ 0
+writeOppxCorrelationDiagram
+ 0
+oppxCorrelationDiagramMin
+ 0
+oppxCorrelationDiagramMax
+ 0
+writeOppyCorrelationDiagram
+ 0
+oppyCorrelationDiagramMin
+ 0
+oppyCorrelationDiagramMax
+ 0
+writeOppzCorrelationDiagram
+ 0
+oppzCorrelationDiagramMin
+ 0
+oppzCorrelationDiagramMax
+ 0
+
+# Parameters for wavefunction optimization
+optimize_Psi
+ 1
+optimize_Psi_method
+ automatic
+optimize_Psi_criteria
+ analytical_energy_variance
+max_optimize_Psi_steps
+ 25
+equilibrate_first_opt_step
+ 1
+equilibrate_every_opt_step
+ 1
+optimization_max_iterations
+ 1
+optimization_error_tolerance
+ 0.001
+singularity_penalty_function_parameter
+ 1e-06
+optimize_Psi_barrier_parameter
+ 1
+numerical_derivative_surface
+ umrigar88
+line_search_step_length
+ None
+ck_genetic_algorithm_1_population_size
+ 30
+ck_genetic_algorithm_1_mutation_rate
+ 0.2
+ck_genetic_algorithm_1_initial_distribution_deviation
+ 1
+
+# Parameters for computation/MPI
+iseed
+ 0
+parallelization_method
+ manager_worker
+mpireduce_interval
+ 1000
+mpipoll_interval
+ 10
+walkers_per_pass
+ 1
 use_basis_function_interpolation
  0
 number_basis_function_interpolation_grid_points
  1000
 basis_function_interpolation_first_point
- 1.000000000000000e-10
-fusion_threshold
- 5.000000000000000e-01
-dt
- 1.000000000000000e-03
-desired_convergence
- 0.000000000000000e+00
-max_time_steps
- 2000
-dt_equilibration
- 2.000000000000000e-03
-equilibration_steps
- 200
-equilibration_function
- ramp
-CKAnnealingEquilibration1_parameter
- 500
-use_equilibration_array
- 0
-number_of_walkers
- 10
-output_interval
- 100
-mpireduce_interval
- 100
-mpipoll_interval
- 1
-checkpoint_interval
- 1000
-checkpoint
- 0
-use_available_checkpoints
+ 1e-10
+
+# Other parameters
+chip_and_mike_are_cool
+ Yea_Baby!
+
+# Parameters for the molecule and wavefunction
+trial_function_type
+ restricted
+link_Jastrow_parameters
  0
 atoms
  1
 charge
  0
+energy
+ -2.8616799749
 norbitals
- 11
+ 17
 nbasisfunc
- 15
+ 17
 ndeterminants
  1
-energy
- -2.860332035962216e+00
-correct_population_size_bias
- 0
-print_transient_properties
- 0
-print_transient_properties_interval
- 10000
-print_configs
- 0
-print_config_frequency
- 50
-optimize_Psi
- 0
-max_optimize_Psi_steps
- 10
-optimize_Psi_criteria
- energy_variance
-optimize_Psi_method
- BFGSQuasiNewton
-singularity_penalty_function_parameter
- 1.000000000000000e-06
-optimize_Psi_barrier_parameter
- 1.000000000000000e+00
-numerical_derivative_surface
- umrigar88
-line_search_step_length
- Wolfe
-optimization_max_iterations
- 100
-optimization_error_tolerance
- 1.000000000000000e-03
-ck_genetic_algorithm_1_population_size
- 30
-ck_genetic_algorithm_1_mutation_rate
- 2.000000000000000e-01
-ck_genetic_algorithm_1_initial_distribution_deviation
- 1.000000000000000e+00
-link_Jastrow_parameters
- 0
-equilibrate_first_opt_step
- 1
-equilibrate_every_opt_step
- 0
-population_control_parameter
- 1.000000000000000e+00
-write_all_energies_out
- 0
-zero_out_checkpoint_statistics
- 1
-chip_and_mike_are_cool
- Yea_Baby!
-& 
+&
 &geometry
-He	2	0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
+HE	2	0.000000	0.000000	0.000000
 &
 &basis
-He	15	4
-4	s
-	2.340000000000000e+02	3.109111499770000e-01
-	3.516000000000000e+01	5.665439094119999e-01
-	7.989000000000000e+00	8.686186278860000e-01
-	2.212000000000000e+00	9.912097088360000e-01
-1	s
-	6.669000000000000e-01	5.259635285660000e-01
-1	s
-	2.089000000000000e-01	2.202236326720000e-01
-1	px
-	3.044000000000000e+00	5.731204405620000e+00
-1	py
-	3.044000000000000e+00	5.731204405620000e+00
-1	pz
-	3.044000000000000e+00	5.731204405620000e+00
-1	px
-	7.580000000000000e-01	1.008153343850000e+00
-1	py
-	7.580000000000000e-01	1.008153343850000e+00
-1	pz
-	7.580000000000000e-01	1.008153343850000e+00
-1	dxx
-	1.965000000000000e+00	5.367770348250000e+00
-1	dyy
-	1.965000000000000e+00	5.367770348250000e+00
-1	dzz
-	1.965000000000000e+00	5.367770348250000e+00
-1	dxy
-	1.965000000000000e+00	9.297250966520000e+00
-1	dxz
-	1.965000000000000e+00	9.297250966520000e+00
-1	dyz
-	1.965000000000000e+00	9.297250966520000e+00
+HE	17	1
+	1	s
+		293113.1100000	8978.14313323
+	1	s
+		55231.2740000	2567.72723787
+	1	s
+		12413.2150000	838.152993369
+	1	s
+		3284.5401000	309.2188912
+	1	s
+		1006.2242000	127.330123629
+	1	s
+		349.9069200	57.6599804542
+	1	s
+		135.1574900	28.2514134325
+	1	s
+		56.7306440	14.7323957793
+	1	s
+		25.3463850	8.05094968908
+	1	s
+		11.8386330	4.54868916597
+	1	s
+		5.6964472	2.62792610722
+	1	s
+		2.7925021	1.53959050314
+	1	s
+		1.3837553	0.909294502104
+	1	s
+		0.6895619	0.539311940093
+	1	s
+		0.3445152	0.320491402051
+	1	s
+		0.1722927	0.190594449916
+	1	s
+		0.0861868	0.11336804552
 &
 &wavefunction
--3.547932796357530e-01	-4.781673284555680e-01	-3.076209526263020e-01	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
 
--1.604794460466320e-01	-1.156125107789478e+00	1.532266099673872e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
+      3.09931002e-07      1.94510305e-06      1.14430077e-05
+      5.34350301e-05      0.000208867627      0.000698890084
+       0.00206869828       0.00556002902        0.0138668294
+        0.0322104915        0.0688076682         0.130285337
+         0.211214257          0.28031275         0.271806473
+         0.137337722         0.019277985
 
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-6.409044795809400e-02	0.000000000000000e+00	0.000000000000000e+00	
--1.035193128065247e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
+     -8.76205654e-08     -9.76635124e-07     -2.62512237e-06
+     -2.92456786e-05     -3.29229376e-05     -0.000456596606
+     -2.71708979e-05      -0.00465542905       0.00260200589
+       -0.0342833776         0.027798424        -0.186307549
+         0.187591501        -0.740485964         0.915696151
+         -1.79734661          2.11961464
 
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	6.409044795809400e-02	0.000000000000000e+00	
-0.000000000000000e+00	-1.035193128065247e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
+     -2.70409523e-07      4.37500326e-08     -1.24727527e-05
+      1.10469023e-05     -0.000288994831      0.000445502333
+      -0.00409418312       0.00766363126       -0.0392704676
+        0.0727313996         -0.26657493         0.465951195
+         -1.36412003          2.32772284         -5.36383183
+          7.55900065         -3.66428048
 
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	6.409044795809400e-02	
-0.000000000000000e+00	0.000000000000000e+00	-1.035193128065248e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
+      7.18522261e-08     -4.01913697e-06      9.04316052e-06
+     -0.000135717572      0.000322425472      -0.00255141894
+       0.00635142833        -0.031059817        0.0728716329
+        -0.258258534         0.545201047         -1.58969017
+          3.13248879         -8.08410561          12.5664056
+         -9.33290415          2.87064725
 
-1.491567889721144e+00	-1.953194847339456e+00	8.494705200088160e-01	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
+     -1.02448355e-06      4.12424514e-06     -5.29171196e-05
+      0.000173038107      -0.00133853508       0.00409699411
+       -0.0208084238        0.0581559505        -0.214864199
+         0.527647887         -1.59211126          3.53839987
+         -9.76927355          15.7382087          -13.889763
+          7.19297637          -1.8611527
 
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	1.000000000000000e+00	0.000000000000000e+00	
+      1.11612129e-06     -1.71455649e-05      7.57445214e-05
+     -0.000608021919       0.00223626725       -0.0121928893
+        0.0395726827        -0.158072273         0.444973989
+         -1.43135071          3.56878406         -10.4517605
+          17.0749275         -16.3052122          10.5602209
+          -4.7646836          1.17850733
 
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-1.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
+     -4.37174842e-06      2.73683035e-05      -0.00023985033
+       0.00106321615      -0.00633258043        0.0236172161
+         -0.10380376         0.332696387          -1.1677449
+          3.27650881          -10.281968          16.9804831
+         -16.8862581           12.221562         -7.04038225
+          3.07015783        -0.757963117
 
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	1.000000000000000e+00	
+     -7.13115786e-06      8.07353637e-05     -0.000443023868
+       0.00293627531       -0.0126034989        0.0614362671
+        -0.223248278         0.868021949         -2.75593316
+          9.43750748          -15.796182          16.1176145
+         -12.4302364           8.1250926         -4.55814842
+          1.98932826        -0.494397446
 
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
--5.000000000000000e-01	-5.000000000000000e-01	1.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
+      2.14670335e-05     -0.000159825744       0.00121577989
+      -0.00609254166        0.0331436495         -0.13633083
+         0.591327641         -2.13383134          8.13762224
+          -13.809978          14.3647967         -11.5793462
+          8.17348099         -5.23610421          2.94626902
+         -1.29541397         0.323967862
 
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-8.660254037844380e-01	-8.660254037844380e-01	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
+     -4.43732391e-05      0.000443327112      -0.00267991122
+        0.0164782334          -0.0770821         0.373694143
+         -1.53585278          6.64345272         -11.3480203
+          11.9508958         -9.98731127          7.46594299
+         -5.19726129          3.34669184         -1.89826271
+         0.839967529        -0.210953686
+
+      0.000131216235      -0.00106414141       0.00760777427
+       -0.0410745613         0.223115954          -1.0454328
+          5.20289542         -8.78256468          9.24453332
+         -7.95596283          6.25238182          -4.6397002
+           3.2535731         -2.11292661          1.20611558
+        -0.535910097         0.134928136
+
+     -0.000345116522       0.00324697964        -0.020891577
+         0.128426872        -0.688391782          3.98422604
+         -6.45226231          6.64199191         -5.82081853
+          4.78232691         -3.75588438          2.81320468
+          -1.9900476          1.30036752        -0.745197047
+         0.331889687       -0.0836743976
+
+      -0.00118218729        0.0101367487       -0.0724458952
+         0.448738854         -3.05099473          4.56820965
+          -4.4610406          3.90539156         -3.31936144
+           2.7425129         -2.17713359          1.64471514
+         -1.17010258         0.767276019        -0.440615144
+         0.196472261       -0.0495668871
+
+       0.00428926925       -0.0401305098          0.29455854
+         -2.38554246          3.18189253         -2.84555262
+          2.42060392         -2.08701657          1.79262076
+         -1.49772765          1.19826824        -0.909651705
+         0.649040603        -0.426319133         0.245054262
+        -0.109330045        0.0275905175
+
+       -0.0201151919         0.195036211          -1.9313462
+          2.22778824         -1.76436054          1.41060893
+         -1.19761292          1.04639055        -0.908178916
+         0.763690562        -0.613307399         0.466595812
+        -0.333329009         0.219097809        -0.125989412
+        0.0562217516       -0.0141897721
+
+        -0.119758727          1.62234318         -1.59251689
+          1.08951714        -0.791930103         0.638155443
+        -0.549265401         0.484068524        -0.422144012
+         0.355906352        -0.286229264         0.217930027
+         -0.15575347         0.102401614       -0.0588925147
+         0.026282198      -0.00663360517
+
+            1.365296         -1.15385885         0.675838683
+        -0.435240059         0.320761982        -0.261662536
+         0.226666037        -0.200394055         0.175034953
+        -0.147690536          0.11882757       -0.0904941404
+        0.0646838093       -0.0425298999        0.0244604149
+       -0.0109162669       0.00275528654
 
 Alpha Occupation
-1	0	0	0	0	0	0	0	0	0	0	
+1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	
 
 Beta Occupation
-1	0	0	0	0	0	0	0	0	0	0	
+1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	
 
 CI Coeffs
-1.000000000000000e+00	
+1
 
 &
-&Jastrow
-ParticleTypes:	Electron_up	Electron_down
-CorrelationFunctionType:	FixedCuspPade
-NumberOfParameterTypes:	2
-NumberOfParametersOfEachType:	0	1
-Parameters:	3
-NumberOfConstantTypes:	1
-NumberOfConstantsOfEachType:	1
-Constants:	5.000000000000000e-01
-
-ParticleTypes:	Electron_up	He
-CorrelationFunctionType:	FixedCuspPade
-NumberOfParameterTypes:	2
-NumberOfParametersOfEachType:	0	1
-Parameters:	100
-NumberOfConstantTypes:	1
-NumberOfConstantsOfEachType:	1
-Constants:	-2.000000000000000e+00
-
-ParticleTypes:	Electron_down	He
-CorrelationFunctionType:	FixedCuspPade
-NumberOfParameterTypes:	2
-NumberOfParametersOfEachType:	0	1
-Parameters:	100
-NumberOfConstantTypes:	1
-NumberOfConstantsOfEachType:	1
-Constants:	-2.000000000000000e+00
 
 &Jastrow
 
+ParticleTypes: Electron_Up Electron_Down
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 6.664107759064e-01
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: 0.5
 
+ParticleTypes: Electron_Up HE
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 3.317490192112e+02
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: -2.0
+
+ParticleTypes: Electron_Down HE
+CorrelationFunctionType: FixedCuspPade
+NumberOfParameterTypes: 2
+NumberOfParametersOfEachType: 0 1
+Parameters: 3.304590529984e+02
+NumberOfConstantTypes: 1
+NumberOfConstantsOfEachType: 1
+Constants: -2.0
+
+&Jastrow
