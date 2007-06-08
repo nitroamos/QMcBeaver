@@ -38,7 +38,8 @@ public:
   virtual Array1D<double> optimize(Array1D<double> & initialGuess,
 				   double value,
 				   Array1D<double> & gradient,
-				   Array2D<double> & hessian) = 0;
+				   Array2D<double> & hessian,
+				   double) = 0;
 };
 
 #endif

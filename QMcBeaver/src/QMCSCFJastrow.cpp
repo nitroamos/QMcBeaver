@@ -354,6 +354,8 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
         for (int j=0; j<nalpha; j++)
           for (int k=0; k<3; k++)
             wd->SCF_Grad_PsiRatio(j,k) += psiRatio*term_AlphaGrad[j][k];
+
+	wd->SCF_Laplacian_PsiRatio += psiRatio * (*alphaLaplacian)(i);
       }
 
       if (nbeta > 0)
@@ -363,10 +365,9 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
         for (int j=0; j<nbeta; j++)
           for (int k=0; k<3; k++)
             wd->SCF_Grad_PsiRatio(j+nalpha,k)+=psiRatio*term_BetaGrad[j][k];
-      }
 
-      wd->SCF_Laplacian_PsiRatio += psiRatio *
-	((*alphaLaplacian)(i) + (*betaLaplacian)(i));
+	wd->SCF_Laplacian_PsiRatio += psiRatio * (*betaLaplacian)(i);
+      }
     }
   }
   
@@ -438,7 +439,7 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
 	  double dPsiRatio_dci = (psiRatio - psiRatio * psiRatio) / Input->WF.CI_coeffs(ci);
 	  
 	  wd->rp_a(ai+shift)    = psiRatio / Input->WF.CI_coeffs(ci);
-	  
+
 	  for(int cj=0; cj<Input->WF.getNumberDeterminants(); cj++)
 	    {
 	      double dPsiRatio_dcj;
@@ -446,9 +447,11 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
 		dPsiRatio_dcj = -termPsi(cj) * psiRatio / SCF_sum / Input->WF.CI_coeffs(ci);
 	      else
 		dPsiRatio_dcj = dPsiRatio_dci;
-	      
-	      double** term_AlphaGrad = alphaGrad->array()[cj];
-	      double** term_BetaGrad = betaGrad->array()[cj];
+
+	      double** term_AlphaGrad = 0;
+	      double** term_BetaGrad = 0;
+	      if(nalpha > 0) term_AlphaGrad = alphaGrad->array()[cj];
+	      if(nbeta > 0)  term_BetaGrad = betaGrad->array()[cj];
 	      
 	      wd->p3_xxa(ai+shift)  += dPsiRatio_dcj * ((*alphaLaplacian)(cj) + (*betaLaplacian)(cj));
 	      

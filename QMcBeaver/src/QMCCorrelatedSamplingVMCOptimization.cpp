@@ -17,7 +17,8 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 						    int configsToSkip)
 {
   //put initial Jastrow parameters in as the guess
-  Array1D<double> Guess_parameters = globalInput.getParameters();
+  Array1D<double> orig_parameters = globalInput.getParameters();
+  Array1D<double> Guess_parameters;
 
   double value;
 
@@ -48,12 +49,42 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
       // get which optimization algorithm to use
       QMCOptimizationAlgorithm * optAlg = 
 	QMCOptimizationFactory::optimizationAlgorithmFactory(ObjFunk, input);
-      
-      Guess_parameters = 
-	optAlg->optimize(Guess_parameters,
-			 value,
-			 gradient,
-			 hessian);
+
+      bool acceptable = false;
+      int iter = 0;      
+      double a_diag_factor = 1.0;
+      do {
+	Guess_parameters = 
+	  optAlg->optimize(orig_parameters,
+			   value,
+			   gradient,
+			   hessian,
+			   a_diag_factor);
+
+	globalInput.setParameterVector(Guess_parameters);	
+	double penalty = globalInput.JP.calculate_penalty_function();
+	if(penalty >= 1e10)
+	  {
+	    clog << endl << endl << endl;
+	    clog << "Error: the Jastow's new guess parameters have bad poles (penalty = ";
+	    clog.width(20);
+	    clog.precision(10);
+	    clog << penalty << ")!" << endl;
+	    clog << "  Parameters are: " << globalInput.JP.getParameters();
+	    clog << "   its poles are: " << globalInput.JP.getPoles();
+
+	    /*
+	      This will help us take more delicate steps, although
+	      the optimziation will be slower
+	    */
+	    a_diag_factor *= 4.0;
+	    acceptable = false;
+	  } else {
+	    clog << "Notice: the new parameters have an acceptable singularity penalty = " << penalty << endl;
+	    acceptable = true;
+	  }
+	iter++;
+      } while( !acceptable && iter < 10);
       
       delete optAlg;
       optAlg = 0;
@@ -100,21 +131,13 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 
   globalInput.setParameterVector(Guess_parameters);
 
-  if(globalInput.flags.my_rank == 0)
+  double penalty = globalInput.JP.calculate_penalty_function();
+  if(penalty >= 1e10)
     {
-      double penalty = globalInput.JP.calculate_penalty_function();
-      if(penalty >= 1e10)
-	{
-	  clog << endl << endl << endl;
-	  clog << "Error: the Jastow's new guess parameters have bad poles (penalty = " << penalty << ")!" << endl;
-	  clog << "  Parameters are: " << globalInput.JP.getParameters();
-	  clog << "   its poles are: " << globalInput.JP.getPoles();
-	  clog << "  Either your guess for initial Jastrow parameters is bad or you need to change your "
-	       << "optimization choices." << endl;
-	  exit(0);
-	} else {
-	  clog << "Notice: the new parameters have an acceptable singularity penalty = " << penalty << endl;
-	}
+      clog << "Error: unable to produce acceptable parameters, quitting..." << endl;
+      clog << "  Either your guess for initial Jastrow parameters is bad or you need to change your "
+	   << "optimization choices." << endl;
+      exit(0);
     }
 }
 

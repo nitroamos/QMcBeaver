@@ -619,7 +619,19 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
   for(int i=0; i<NumberOfCorrelationFunctions; i++)
     {
       QMCCorrelationFunctionParameters CP;
-      CP.read( file , nucCuspReplacement);
+      bool ok = CP.read( file , nucCuspReplacement);
+
+      if(!ok)
+	{
+	  clog << "ERROR: there was a problem reading the correlation function." << endl;
+	  clog << "   NumberOfCorrelationFunctions = " << NumberOfCorrelationFunctions << endl;
+	  clog << "   NumberOfElectronsUp          = " << NumberOfElectronsUp << endl;
+	  clog << "   NumberOfElectronsDown        = " << NumberOfElectronsDown << endl;
+	  clog << "   CP #" << i << " = " << endl;
+	  clog << CP << endl << endl;
+	  clog << "It appears you haven't included enough correlation functions. Put some more in!" << endl;
+	  exit(0);
+	}
 
       if( CP.getParticle1Type() == "Electron_up" )
 	{

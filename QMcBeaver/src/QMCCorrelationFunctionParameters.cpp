@@ -39,7 +39,7 @@ void QMCCorrelationFunctionParameters::operator = (const
 
   ParticleTypes = rhs.ParticleTypes;
   CorrelationFunctionType = rhs.CorrelationFunctionType;
-  
+
   setCorrelationFunction();
   initializeCorrelationFunctionParameters();
 }
@@ -56,8 +56,9 @@ void QMCCorrelationFunctionParameters::operator = (const
  * Constants: 1.0 2.0 3.0 4.0 1.0 2.0 1.0
  */
 
-void QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacement)
+bool QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacement)
 {
+  bool ok = true;
   string temp;
   
   // Read the particle types
@@ -95,6 +96,7 @@ void QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
     {
       cerr << "ERROR: Two non-electron particles (" << pt1 << ", " << pt2 << ") in one correlation function!"
 	   << endl;
+      ok = false;
     }
   
   // Load the correlation function type
@@ -247,15 +249,15 @@ void QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
     }
 
   // set the correlation function
-  
   setCorrelationFunction();
   initializeCorrelationFunctionParameters();
 
-  return;
+  return ok;
 }
 
 QMCCorrelationFunctionParameters::QMCCorrelationFunctionParameters()
 {
+  CorrelationFunctionType = "None";
   CorrelationFunction = 0;
 }
 
@@ -310,7 +312,6 @@ void QMCCorrelationFunctionParameters::setCorrelationFunction()
       delete CorrelationFunction;
       CorrelationFunction = 0;
     }
-
   CorrelationFunction = QMCCorrelationFunctionFactory::
     correlationFunctionFactory(CorrelationFunctionType);
 }

@@ -178,7 +178,16 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
     } 
   
   rhs.Nelectrons = rhs.Nalpha + rhs.Nbeta;
+
   //rhs.scaleCoeffs(4.0);
+
+  strm >> temp_string;
+  if(temp_string != "&")
+    {
+      clog << "ERROR: there was some error in reading the wavefunction. WF = " << endl;
+      clog << rhs << endl;
+      exit(0);
+    }
 
   return strm;
 }

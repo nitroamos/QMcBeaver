@@ -1,3 +1,16 @@
+Thu, Jun 7, 2007 Amos Anderson
+1.  The optimization code crashed when nbeta = 0, so I patched
+    it up.
+2.  I added some better error reporting for when the input file
+    is read. I got tired of the code simply crashing with no explanation
+    when there was some problem with the Jastrow functions. Hopefully,
+    it will report a more helpful error.
+3.  I made the optimziation a bit more robust. For example, when choosing
+    a new set of parameters to try, previously it would simply quit
+    if the new parameters had a relevant singularity. Now, it will
+    modify the hessian so it takes a more careful step. See
+    QMCCorrelatedSamplingVMCOptimization.cpp for details.
+
 Wed, May 23, 2007 Amos Anderson
 1.  I added parameter derviatives. I'm using the formulas for
     variance minimization provided in PRL 94, 150201 (2005).

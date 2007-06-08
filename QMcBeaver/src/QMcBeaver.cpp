@@ -205,7 +205,7 @@ void qmcbeaver()
       TheMan.optimize();
       TheMan.zeroOut();
 
-      if((optloops+1) % 6 == 0 &&
+      if((optloops+1) % 10 == 0 &&
 	 globalInput.flags.optimize_Psi_method == "automatic")
 	{
 	  /*

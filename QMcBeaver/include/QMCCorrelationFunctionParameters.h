@@ -174,7 +174,7 @@ public:
     off any electron-nucleus jastrows from the input file
     */
   
-  void read(istream & strm, bool nucCuspReplacement);
+  bool read(istream & strm, bool nucCuspReplacement);
 
 
   /**

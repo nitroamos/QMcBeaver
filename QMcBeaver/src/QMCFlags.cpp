@@ -50,8 +50,8 @@ void QMCFlags::read_flags(string InFileName)
   correct_population_size_bias   = 1;
   population_control_parameter   = 1.0;
   old_walker_acceptance_parameter = 50;
-  warn_verbosity                 = 2;
-  rel_cutoff                     = 1.0;
+  warn_verbosity                 = 1;
+  rel_cutoff                     = 5.0;
   limit_branching                = 1;
 
   //Green's function parameters
@@ -1108,8 +1108,8 @@ bool QMCFlags::checkFlags()
 	{
 	  clog << "ERROR: attempting to optimize the wavefunction for"
 	       << " run_type = " << run_type << "!" << endl;
-	  clog << "Setting run_type = \"variational\"" << endl;
-	  run_type = "variational";
+	  //clog << "Setting run_type = \"variational\"" << endl;
+	  //run_type = "variational";
 	}
 
       /*

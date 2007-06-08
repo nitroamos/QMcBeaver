@@ -61,10 +61,13 @@ Array1D<double> QMCLineSearch::searchDirection()
 Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
 					double InitialValue,
 					Array1D<double> & InitialGradient,
-					Array2D<double> & InitialHessian)
+					Array2D<double> & InitialHessian,
+					double a_diag_factor)
 					
 {
-  optStep++;
+  if(fabs(a_diag_factor - 1.0) < 1.0e-10)
+    optStep++;
+
   cout << endl;
 
   dim = InitialGuess.dim1();
@@ -90,19 +93,20 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
 	  the approximate hessian, as well as for nonlinearities
 	  in the objective function.
 	*/
-	a_diag = 0.2;
+	a_diag = 0.1;
 	
 	//use Steepest_Descent for a couple iterations first
 	//useInitialHess = false;
       } else if(optStep < 12)
 	{
-	  a_diag = 0.02;
+	  a_diag = 0.01;
 	} else if(optStep < 23)
 	  {
 	    a_diag = 2.0e-7;
 	  }
 
   if( fabs(a_diag) > 0.0){
+    a_diag *= a_diag_factor;
     for(int d=0; d<dim; d++)
       InitialHessian(d,d) = InitialHessian(d,d) + a_diag;
     
@@ -230,7 +234,7 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
   cout << endl << "Ending Line Search Optimization... " << endl;
 
   cout << endl;
-  cout << setw(20) << "Best Objective Value:";
+  cout << setw(20) << "Best Objective Value (step = " << optStep << "):";
   cout.precision(12);
   cout.width(20);
   cout << f.back() << endl;

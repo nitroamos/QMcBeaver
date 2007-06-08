@@ -143,29 +143,42 @@ void QMCJastrowElectronElectron::evaluate(QMCJastrowParameters & JP,
   QMCCorrelationFunction *U_Function = 0;
 
   int index = 0;
-  int numP  = EupEdn->getTotalNumberOfParameters();
+  int numP  = 0;
 
   if(EupEdn != 0)
-    U_Function = EupEdn->getCorrelationFunction();
+    {
+      U_Function = EupEdn->getCorrelationFunction();
+      numP = EupEdn->getTotalNumberOfParameters();
+    }
   for(int Electron1=0; Electron1<nalpha; Electron1++)
     for(int Electron2=nalpha; Electron2<X.dim1(); Electron2++)
 	collectForPair(Electron1,Electron2,U_Function,X,index,numP);
 
   index += numP;
-  numP  = EupEup->getTotalNumberOfParameters();
 
   if(EupEup != 0)
-    U_Function = EupEup->getCorrelationFunction();
+    {
+      numP  = EupEup->getTotalNumberOfParameters();
+      U_Function = EupEup->getCorrelationFunction();
+    } else {
+      numP = 0;
+    }
+
   for(int Electron1=0; Electron1<nalpha; Electron1++)
     for(int Electron2=0; Electron2<Electron1; Electron2++)
 	collectForPair(Electron1,Electron2,U_Function,X,index,numP);
 
   if(Input->flags.link_Jastrow_parameters == 0)
     index += numP;
-  numP  = EdnEdn->getTotalNumberOfParameters();
+
 
   if(EdnEdn != 0)
-    U_Function = EdnEdn->getCorrelationFunction();
+    {
+      numP  = EdnEdn->getTotalNumberOfParameters();
+      U_Function = EdnEdn->getCorrelationFunction();
+    } else {
+      numP  = 0;
+    }
   for(int Electron1=nalpha; Electron1<X.dim1(); Electron1++)
     for(int Electron2=nalpha; Electron2<Electron1; Electron2++)
       collectForPair(Electron1,Electron2,U_Function,X,index,numP);

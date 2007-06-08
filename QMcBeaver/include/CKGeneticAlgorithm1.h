@@ -59,7 +59,8 @@ public:
   Array1D<double> optimize(Array1D<double> & initialGuess,
 			   double value,
 			   Array1D<double> & gradient,
-			   Array2D<double> & hessian);
+			   Array2D<double> & hessian,
+			   double);
 
 private:
   Stopwatch sw;
