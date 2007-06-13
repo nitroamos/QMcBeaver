@@ -845,7 +845,9 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "max_time_steps\n " << flags.max_time_steps << endl;
   strm << "max_time\n " << flags.max_time << endl;
   strm << "desired_convergence\n " << flags.desired_convergence << endl;
-
+  strm << "warn_verbosity\n " << flags.warn_verbosity << endl;
+  strm << "rel_cutoff\n " << flags.rel_cutoff << endl;
+  strm << "limit_branching\n " << flags.limit_branching << endl;
   strm << "\n# Parameters specific to the Green's function\n";
   strm << "sampling_method\n " << flags.sampling_method << endl;
   strm << "QF_modification_type\n " << flags.QF_modification_type << endl;
