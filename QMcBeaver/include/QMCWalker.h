@@ -59,7 +59,7 @@ public:
     from a stream.
     @param input data input to control the calculation.
   */
-  void initialize(QMCInput *input, int numAI);
+  void initialize(QMCInput *input);
 
   /**
     Initializes the electronic configuration for this walker using an

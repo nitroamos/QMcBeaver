@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCMolecule.h"
+#include <iomanip>
 
 QMCMolecule::QMCMolecule()
 {
@@ -143,16 +144,24 @@ void QMCMolecule::read(string runfile)
 
 ostream& operator <<(ostream& strm, QMCMolecule& rhs)
 {
- strm << "&geometry" << endl;
- for(int i=0; i<rhs.Natoms; i++)
- {
-  strm << rhs.Atom_Labels(i) << "\t";
-  strm << rhs.Z(i) << "\t";
-  for(int j=0; j<3; j++) strm << rhs.Atom_Positions(i,j) << "\t";
-  strm << endl;
- }
- strm << "&" << endl;
- return strm;
+  strm << "&geometry" << endl;
+  strm.unsetf(ios::fixed);
+  strm.unsetf(ios::scientific);
+  for(int i=0; i<rhs.Natoms; i++)
+    {
+      strm << setw(5) << left << rhs.Atom_Labels(i);
+      strm << setw(5) << rhs.Z(i);
+      for(int j=0; j<3; j++)
+	{
+	  if(rhs.Atom_Positions(i,j) < 0.0) strm << " -";
+	  else                              strm << "  ";
+	  strm << setw(20) << left << fabs(rhs.Atom_Positions(i,j));
+	}
+      strm << endl;
+    }
+  strm << "&" << endl;
+  strm << right;
+  return strm;
 }
 
 

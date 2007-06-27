@@ -17,7 +17,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 						    int configsToSkip)
 {
   //put initial Jastrow parameters in as the guess
-  Array1D<double> orig_parameters = globalInput.getParameters();
+  Array1D<double> orig_parameters = globalInput.getAIParameters();
   Array1D<double> Guess_parameters;
 
   double value;
@@ -61,7 +61,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 			   hessian,
 			   a_diag_factor);
 
-	globalInput.setParameterVector(Guess_parameters);	
+	globalInput.setAIParameters(Guess_parameters);	
 	double penalty = globalInput.JP.calculate_penalty_function();
 	if(penalty >= 1e10)
 	  {
@@ -70,7 +70,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 	    clog.width(20);
 	    clog.precision(10);
 	    clog << penalty << ")!" << endl;
-	    clog << "  Parameters are: " << globalInput.JP.getParameters();
+	    clog << "  Parameters are: " << globalInput.JP.getJWParameters();
 	    clog << "   its poles are: " << globalInput.JP.getPoles();
 
 	    /*
@@ -129,7 +129,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 
 #endif
 
-  globalInput.setParameterVector(Guess_parameters);
+  globalInput.setAIParameters(Guess_parameters);
 
   double penalty = globalInput.JP.calculate_penalty_function();
   if(penalty >= 1e10)

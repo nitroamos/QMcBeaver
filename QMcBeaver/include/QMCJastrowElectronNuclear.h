@@ -66,12 +66,6 @@ public:
   void evaluate( QMCJastrowParameters & JP, Array2D<double> & X);
 
   /**
-     The number of variable parameters the NE Jastrow functions
-     provide.
-  */
-  int getNumAI();
-
-  /**
      Partial derivative of the natural log of this function with 
      respect to parameter ai.
   */

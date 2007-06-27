@@ -121,12 +121,6 @@ public:
   */
   void operator=(const QMCSCFJastrow & rhs );
 
-  /**
-     The cumulative number of variable parameters in our
-     SCF-Jastrow wavefunction.
-  */
-  int getNumAI();
-
  private:
   QMCWalkerData * wd;
   Array2D<double> * x;

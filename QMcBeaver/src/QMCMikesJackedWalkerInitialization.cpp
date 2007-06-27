@@ -260,39 +260,33 @@ Array2D<double> QMCMikesJackedWalkerInitialization::initializeWalkerPosition()
 
 Array2D <double> QMCMikesJackedWalkerInitialization::electrons_and_radii()
 {
-    int Norbitals  = Input->flags.Norbitals;
-    int Nbasisfunc = Input->flags.Nbasisfunc;
+    int Norbitals  = Input->WF.getNumberOrbitals();
+    int Nbasisfunc = Input->WF.getNumberBasisFunctions();
 
-    Array2D<qmcfloat> AlphaScratch(Input->WF.AlphaCoeffs);
-    Array2D<qmcfloat> BetaScratch(Input->WF.BetaCoeffs);
-
+    Array2D<qmcfloat> OrbitalScratch(Input->WF.OrbitalCoeffs);
+    
     //Square MO coefficients
     for(int i=0; i<Norbitals; i++)
       for(int j=0; j<Nbasisfunc; j++)
         {
-	  AlphaScratch(i,j) = AlphaScratch(i,j)*AlphaScratch(i,j);
-	  BetaScratch(i,j) = BetaScratch(i,j)*BetaScratch(i,j);
+	  OrbitalScratch(i,j) = OrbitalScratch(i,j)*OrbitalScratch(i,j);
         }
     
     //"Normalize" MO by summing the squared coeffs and dividing
 
-    double AlphaSum;
-    double BetaSum;
+    double OrbitalSum;
 
     for(int i=0; i<Norbitals; i++)
       {
-        AlphaSum = 0;
-	BetaSum = 0;
+        OrbitalSum = 0;
         for(int j=0; j<Nbasisfunc; j++) 
 	  {
-	    AlphaSum += AlphaScratch(i,j);
-	    BetaSum += BetaScratch(i,j);
+	    OrbitalSum += OrbitalScratch(i,j);
 	  }
         
         for(int j=0; j<Nbasisfunc; j++)
 	  {
-            AlphaScratch(i,j) = AlphaScratch(i,j)/AlphaSum;
-	    BetaScratch(i,j) = BetaScratch(i,j)/BetaSum;
+            OrbitalScratch(i,j) = OrbitalScratch(i,j)/OrbitalSum;
 	  }
       }
     
@@ -323,14 +317,14 @@ Array2D <double> QMCMikesJackedWalkerInitialization::electrons_and_radii()
     double sum;
     for(int i=0; i<Norbitals; i++)
       {
-	if (Input->WF.AlphaOccupation(0,i) == 1)
+	if (Input->WF.AlphaOccupation(0,i) != Input->WF.getUnusedIndicator())
 	  {
 	    sum = 0.0;
             rv = ran.unidev();
             
             for(int j=0; j<Nbasisfunc; j++)
 	      {
-                sum += AlphaScratch(i,j);
+                sum += OrbitalScratch(i,j);
                 if (sum >= rv) 
 		  { 
 		    EandR(OrbPos(j),0) += 1; 
@@ -339,14 +333,14 @@ Array2D <double> QMCMikesJackedWalkerInitialization::electrons_and_radii()
 	      }
 	  }
 	
-	if (Input->WF.BetaOccupation(0,i) == 1)
+	if (Input->WF.BetaOccupation(0,i) != Input->WF.getUnusedIndicator())
 	  {
 	    sum = 0.0;
 	    rv = ran.unidev();
 
 	    for (int k=0; k<Nbasisfunc; k++)
 	      {
-		sum += BetaScratch(i,k);
+		sum += OrbitalScratch(i,k);
 		if (sum >= rv)
 		  {
 		    EandR(OrbPos(k),0) += 1;

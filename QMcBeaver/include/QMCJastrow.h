@@ -120,12 +120,6 @@ public:
   double getJastrow(int which);
 
   /**
-     The cumulative number of parameters we can take partial derivatives
-     with respect to.
-  */
-  int getNumAI();
-
-  /**
      The partial derivative of this function with repspect to parameter
      ai.
    */

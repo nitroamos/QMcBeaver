@@ -83,8 +83,7 @@ public:
     @param startEl first particle in this determinant.
     @param stopEl last particle in this determinant.
   */
-  void initialize(QMCInput *input, int startEl, int stopEl, Array2D<int> *occ, 
-		  Array2D<qmcfloat> *coeffs);
+  void initialize(QMCInput *input, int startEl, int stopEl, bool isAlpha);
 
   /**
     Evaluates the Slater determinants and their first two derivatives at X.
@@ -155,6 +154,33 @@ public:
     @param i of which walker we are requesting the information
   */
   Array1D<double>* getLaplacianPsiRatio(int i);
+  
+  /**
+     Partial derivatives of the Slater determinants with respect to
+     orbital coefficients.
+  */
+  Array2D<double> * get_p_a(int walker, int ci)
+    {
+      return  & (p_a(walker))(ci);
+    }
+  
+  /**
+     Partial derivative once with respect to orbital coefficient,
+     and once with respect to position.
+  */  
+  Array2D<double> * get_p2_xa(int walker, int ci, int el, int xyz)
+    {
+      return & (p2_xa(walker))(ci,el,xyz);
+    }
+
+  /**
+     Partial derivative once with respect to orbital coefficient,
+     and twice with respect to position.
+  */    
+  Array2D<double> * get_p3_xxa(int walker, int ci)
+    {
+      return & (p3_xxa(walker))(ci);
+    }
 
   /**
     Gets an array of the densities for the basis functions for the last 
@@ -181,6 +207,12 @@ public:
 #endif
 
  private:
+  /**
+     Whether this set of Slater determinants refers to
+     alpha for beta electrons.
+  */
+  bool isAlpha;
+
   QMCInput *Input;
   QMCBasisFunction *BF;
   QMCWavefunction  *WF;
@@ -193,11 +225,22 @@ public:
   Array1D< Array3D<double> > Grad_PsiRatio;
   Array1D< Array1D<double> > Chi_Density;
 
+  /**
+     Data structures to store the partial derivatives
+     with respect to orbital coefficients.
+  */
+  Array1D< Array1D< Array2D<double> > > p_a;
+  Array1D< Array3D< Array2D<double> > > p2_xa;
+  Array1D< Array1D< Array2D<double> > > p3_xxa;
+
   Array1D< Array1D<bool> > Singular;
 
+  /**
+     The starting and stopping indices in the position
+     array for the electrons this Slater is responsible for.
+  */
   int Start;
   int Stop;
-  Array2D<int> occupation;
 
   Array1D< QMCElectronNucleusCusp > ElectronNucleusCusp;
 
@@ -238,28 +281,29 @@ public:
   Array2D< Array2D<float>* > resultsCollector;
 #endif
 
-  // Scratch Space
-  Array2D<qmcfloat> Chi;
-  Array2D<qmcfloat> Chi_laplacian;
-  Array1D< Array2D<qmcfloat> > Chi_gradient;
+  /*
+    The first dimension is the number of determinants.
+    If we're optimizing orbitals, then we need to save all of these.
 
-  /** 
-    The dimensions of WF_coeffs is numDeterminants and then numOrb x nBasisFunc
+    If we are not optimizing, then they don't need to be kept after they're
+    used in matrix multiplication.
   */
-  Array1D< Array2D<qmcfloat> > WF_coeffs;
+  Array1D< Array2D<qmcfloat> > Chi;
+  Array1D< Array2D<qmcfloat> > Chi_laplacian;
+  Array1D< Array1D< Array2D<qmcfloat> > > Chi_gradient;
 
-  void allocate(int N);
+  void allocate();
 
   /**
-    Sets which region of the \f$3N\f$ dimensional electronic configuration 
-    corresponds to electrons in this Slater determinant.  It is assumed 
-    that all electrons in a determinant are grouped together in the 
-    configuration.  
-    
-    @param startEl first particle in this determinant.
-    @param stopEl last particle in this determinant.
+     Start and Stop are the indices in the electron coordinate
+     array that this Slater determinant will include. Therefore,
+     the number of electrons is Stop - Start + 1.
+     @return the number of electrons for this Slater determinant
   */
-  void setStartAndStopElectronPositions(int startEl, int stopEl); 
+  int getNumberElectrons()
+    {
+      return Stop-Start+1;
+    }
 
   template <class T>
   void calculate_DerivativeRatios(int walker, int start, Array2D< Array2D<T> > & inv, 

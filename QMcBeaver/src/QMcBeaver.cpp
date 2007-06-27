@@ -180,14 +180,13 @@ void qmcbeaver()
       TheMan.zeroOut();
     }
 
-  bool ok = TheMan.run(globalInput, true);
-
+  bool ok = TheMan.run(true);
+  TheMan.writeRestart();
+  
   if( globalInput.flags.my_rank == 0 )
     {
-      TheMan.writeRestart();
-
-      cout << "***************  Print Results (ok = " << ok << ")" << endl;
-      cout << TheMan;
+      clog << "***************  Print Results (ok = " << ok << ")" << endl;
+      clog << TheMan;
       *TheMan.getResultsOutputStream() << TheMan;
     }
 
@@ -196,54 +195,85 @@ void qmcbeaver()
          optloops < globalInput.flags.max_optimize_Psi_steps &&
 	 ok)
     {
-      if( globalInput.flags.my_rank == 0 )
-        {
-          cout << "***************  Optimize iteration: "  << (optloops+1) << ";" << endl;
-	  TheMan.writeRestart(); 
-        }
-
+      clog << "***************  Optimize iteration: "  << (optloops+1) << ";" << endl;
+      
       TheMan.optimize();
+      stringstream save_opt;
+      save_opt << globalInput.flags.checkout_file_name << "/"
+	       << globalInput.flags.base_file_name << ".step" << optloops << ".ckmf";
+      TheMan.writeRestart(save_opt.str());
       TheMan.zeroOut();
 
-      if((optloops+1) % 10 == 0 &&
-	 globalInput.flags.optimize_Psi_method == "automatic")
+      /*
+	The automatic proceedure is just a guide! There are no guarantees with
+	regards to how efficient it works.
+	You're responsible for making sure that it doesn't spin it's wheels.
+      */
+      if(globalInput.flags.optimize_Psi_method == "automatic")
 	{
-	  /*
-	    max_time_steps includes the equilibration steps. i'd rather
-	    set up the multiplicative factor to be independent of the
-	    number of equilibrtion steps
-	  */
-	  long ts = globalInput.flags.max_time_steps -
-	    globalInput.flags.equilibration_steps;
+	  if((optloops+1) % 10 == 0)
+	    {
+	      /*
+		Once the parameters are of a high enough quality, then
+		we'll just be optimizing against noise. To fight this,
+		we'll periodically increase the number of steps to increase
+		the "signal to noise" ratio.
 
-	  globalInput.flags.max_time_steps = ts*64 + globalInput.flags.equilibration_steps;
+		To start the optimization, you only need O(1000) steps.
 
-	  clog << "Notice: max_time_steps increased to " << globalInput.flags.max_time_steps
-	       << " for optStep = " << optloops << endl;
+		max_time_steps includes the equilibration steps. i'd rather
+		set up the multiplicative factor to be independent of the
+		number of equilibrtion steps
+	      */
+	      long ts = globalInput.flags.max_time_steps -
+		globalInput.flags.equilibration_steps;
+	      
+	      globalInput.flags.max_time_steps = ts*16 + globalInput.flags.equilibration_steps;
+	      
+	      clog << "Notice: max_time_steps increased to " << globalInput.flags.max_time_steps
+		   << " for optStep = " << optloops << endl;
+	    }
+
+	  if(optloops < 5)
+	    {
+	      /*
+		Let's make sure the Jastrows are in the right ballpark before
+		we start optimizing the CI and Orbital parameters.
+	      */
+	      globalInput.flags.optimize_EE_Jastrows = 1;
+	      globalInput.flags.optimize_EN_Jastrows = 1;
+	      globalInput.flags.optimize_CI          = 0;
+	      globalInput.flags.optimize_Orbitals    = 0;
+	    }
+	  else
+	    {
+	      globalInput.flags.optimize_EE_Jastrows = 1;
+	      globalInput.flags.optimize_EN_Jastrows = 1;
+	      globalInput.flags.optimize_CI          = 1;
+
+	      //I haven't propagated derivatives through the cusp replacements...
+	      if(globalInput.flags.replace_electron_nucleus_cusps == 0)
+		globalInput.flags.optimize_Orbitals    = 1;
+	      else
+		globalInput.flags.optimize_Orbitals    = 0;
+	    }
 	}
 
-      if(globalInput.flags.equilibrate_every_opt_step == 1)
-	ok = TheMan.run(globalInput, true);
-      else
-	ok = TheMan.run(globalInput, false);
+      ok = TheMan.run(globalInput.flags.equilibrate_every_opt_step == 1);
+      TheMan.writeRestart();
 
       if( globalInput.flags.my_rank == 0 )
         {
-          TheMan.writeRestart();
+	  clog << "***************  Print Results (ok = " << ok << ")" << endl;
 
-	  cout << "***************  Print Results (ok = " << ok << ")" << endl;
-
-          cout << TheMan;
+          clog << TheMan;
           *TheMan.getResultsOutputStream() << TheMan;
         }
 
       optloops++;
     }
 
-  if( globalInput.flags.my_rank == 0 )
-    {
-      cout << "***************  Finalize" << endl;
-    }
+  clog << "***************  Finalize" << endl;
   TheMan.finalize();
 
   timer.stop();
@@ -262,8 +292,8 @@ void qmcbeaver()
     
   if( globalInput.flags.my_rank == 0 )
     {
-      cout << "Run Time: " << timer << endl;
-      TheMan.writeTimingData(cout);
+      clog << "Run Time: " << timer << endl;
+      TheMan.writeTimingData(clog);
 
       *TheMan.getResultsOutputStream() << "RunTime: " << timer << endl;
       TheMan.writeTimingData( *TheMan.getResultsOutputStream() );
@@ -273,7 +303,7 @@ void qmcbeaver()
 void atExitCallback()
 {
 #if defined(_WIN32) && !defined(__CYGWIN__)
-  cout << "Press any key...\n";
+  clog << "Press any key...\n";
   getchar();
 #endif
 }

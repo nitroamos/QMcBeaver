@@ -56,35 +56,35 @@ void QMCManager::initialize( int argc, char **argv )
   string runfile = sendAllProcessorsInputFileName( argv );
   
   // Load the input data
-  Input = globalInput;
+  //Input = globalInput;
   //Input.read( runfile );
 
   initializeOutputs();
   
-  if ( Input.flags.calculate_bf_density == 1 )
+  if ( globalInput.flags.calculate_bf_density == 1 )
   {
     bool calcDensity = true;
     Properties_total.setCalcDensity( calcDensity,
-                                     Input.WF.getNumberBasisFunctions() );
+                                     globalInput.WF.getNumberBasisFunctions() );
   }
   
-  if(Input.flags.nuclear_derivatives != "none")
+  if(globalInput.flags.nuclear_derivatives != "none")
   {
-    if(Input.flags.nuclear_derivatives != "bin_force_density")
+    if(globalInput.flags.nuclear_derivatives != "bin_force_density")
       {
-	fwProperties_total.setCalcForces( true, Input.Molecule.getNumberAtoms(),3 );
+	fwProperties_total.setCalcForces( true, globalInput.Molecule.getNumberAtoms(),3 );
       } else {
 	fwProperties_total.setCalcForces( true, QMCNuclearForces::getNumBins(), 1 );
       }
   }
 
-  QMCnode.initialize( &Input );
+  QMCnode.initialize( &globalInput );
   
   done = false;  
   iteration = 0;
   
   // Initialize the calculation state
-  initializeCalculationState(Input.flags.iseed);
+  initializeCalculationState(globalInput.flags.iseed);
 }
 
 void QMCManager::initializeMPI()
@@ -106,23 +106,23 @@ void QMCManager::initializeMPI()
   }
   
 #else
-  Input.flags.nprocs = 1;
+  globalInput.flags.nprocs = 1;
   
-  Input.flags.my_rank = 0;
+  globalInput.flags.my_rank = 0;
   
 #endif
 }
 
 void QMCManager::initializeOutputs()
 {
-  Input.openConfigFile();
+  globalInput.openConfigFile();
 
-  if(  Input.flags.my_rank == 0 )
+  if(  globalInput.flags.my_rank == 0 )
   {
     QMCCopyright copyright;
     
     // Allocate result stream
-    qmcRslts = new ofstream( Input.flags.results_file_name.c_str() );
+    qmcRslts = new ofstream( globalInput.flags.results_file_name.c_str() );
     
     ( *qmcRslts ).setf( ios::fixed,ios::floatfield );
     
@@ -130,14 +130,14 @@ void QMCManager::initializeOutputs()
     
     if(  !( *qmcRslts )  )
     {
-      cerr << "ERROR opening " << Input.flags.results_file_name << endl;
+      cerr << "ERROR opening " << globalInput.flags.results_file_name << endl;
       exit( 0 );
     }
     
     *qmcRslts << copyright;
     
     // Allocate qmc output stream
-    qmcOut = new ofstream( Input.flags.output_file_name.c_str() );
+    qmcOut = new ofstream( globalInput.flags.output_file_name.c_str() );
     
     ( *qmcOut ).setf( ios::fixed,ios::floatfield );
     
@@ -145,7 +145,7 @@ void QMCManager::initializeOutputs()
     
     if(  !( *qmcOut )  )
     {
-      cerr << "ERROR opening " << Input.flags.output_file_name << endl;
+      cerr << "ERROR opening " << globalInput.flags.output_file_name << endl;
       exit( 0 );
     }
     
@@ -167,7 +167,7 @@ void QMCManager::initializeOutputs()
 
 void QMCManager::finalizeOutputs()
 {
-  if(  Input.flags.my_rank == 0 )
+  if(  globalInput.flags.my_rank == 0 )
   {
     // Close and deallocate the result stream
     ( *qmcRslts ).close();
@@ -186,7 +186,7 @@ void QMCManager::finalize()
   //stop timing and package up the timer data
   localTimers.stop();
   
-  if ( Input.flags.use_equilibration_array == 1 )
+  if ( globalInput.flags.use_equilibration_array == 1 )
   {
     QMCnode.stopTimers();
     *localTimers.getPropagationStopwatch()  =
@@ -211,19 +211,19 @@ void QMCManager::sendAllProcessorsACommand( int itag )
 #ifdef PARALLEL
   localTimers.getSendCommandStopwatch()->start();
   
-  MPI_Request *request = new MPI_Request[ Input.flags.nprocs-1 ];
+  MPI_Request *request = new MPI_Request[ globalInput.flags.nprocs-1 ];
   
   // Send the command integer to each processor
   
-  for( int i=1;i<Input.flags.nprocs;i++ )
+  for( int i=1;i<globalInput.flags.nprocs;i++ )
   {
     MPI_Isend( &itag,1,MPI_INT,i,itag,MPI_COMM_WORLD,&request[ i-1 ] );
   }
   
   // Wait for all of the sends to be completed
-  MPI_Status *status = new MPI_Status[ Input.flags.nprocs-1 ];
+  MPI_Status *status = new MPI_Status[ globalInput.flags.nprocs-1 ];
   
-  if(  MPI_Waitall( Input.flags.nprocs-1, request, status )  )
+  if(  MPI_Waitall( globalInput.flags.nprocs-1, request, status )  )
   {
     cerr << "ERROR: MPI_Waitall Error (QMCManager::MPI_command_send)"
     << endl;
@@ -309,13 +309,13 @@ void QMCManager::gatherDensities()
   Array1D<QMCProperty> localChiDensity = QMCnode.getProperties() ->chiDensity;
   
   MPI_Reduce( QMCnode.getProperties()->chiDensity.array(),
-              Properties_total.chiDensity.array(),Input.WF.getNumberBasisFunctions(),
+              Properties_total.chiDensity.array(),globalInput.WF.getNumberBasisFunctions(),
               QMCProperty::MPI_TYPE,QMCProperty::MPI_REDUCE,0,MPI_COMM_WORLD );
   
   localTimers.getGatherPropertiesStopwatch()->stop();
 #else
   
-  for ( int i=0; i<Input.WF.getNumberBasisFunctions(); i++ )
+  for ( int i=0; i<globalInput.WF.getNumberBasisFunctions(); i++ )
   {
     Properties_total.chiDensity(i)=QMCnode.getProperties()->chiDensity( i );
   }
@@ -348,9 +348,9 @@ void QMCManager::gatherForces()
 
 void QMCManager::gatherHistograms()
 {
-  int nalpha = Input.WF.getNumberAlphaElectrons();
-  int nbeta = Input.WF.getNumberBetaElectrons();
-  int nucleiTypes = Input.Molecule.NucleiTypes.dim1();
+  int nalpha = globalInput.WF.getNumberAlphaElectrons();
+  int nbeta = globalInput.WF.getNumberBetaElectrons();
+  int nucleiTypes = globalInput.Molecule.NucleiTypes.dim1();
   
 #ifdef PARALLEL
   localTimers.getGatherPropertiesStopwatch()->start();
@@ -363,7 +363,7 @@ void QMCManager::gatherHistograms()
       MPI_Reduce( QMCnode.getPllSpinHistogram()->array(),
      pllSpinHistogram_total.array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD );
     
-      if (Input.flags.my_rank != 0)
+      if (globalInput.flags.my_rank != 0)
 	pllSpinHistogram_total.deallocate();
     }
   
@@ -375,7 +375,7 @@ void QMCManager::gatherHistograms()
       MPI_Reduce( QMCnode.getOppSpinHistogram()->array(),
      oppSpinHistogram_total.array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD );
     
-      if (Input.flags.my_rank != 0)
+      if (globalInput.flags.my_rank != 0)
 	oppSpinHistogram_total.deallocate();
     }
   
@@ -388,10 +388,10 @@ void QMCManager::gatherHistograms()
 	  alphaHistograms_total(k) = 0.0;
 	  MPI_Reduce( (*QMCnode.getAlphaHistograms())(k).array(),
     alphaHistograms_total(k).array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-	  if (Input.flags.my_rank != 0)
+	  if (globalInput.flags.my_rank != 0)
 	    alphaHistograms_total(k).deallocate();
 	}
-      if (Input.flags.my_rank != 0)
+      if (globalInput.flags.my_rank != 0)
 	alphaHistograms_total.deallocate();
     }
   
@@ -404,16 +404,16 @@ void QMCManager::gatherHistograms()
 	  betaHistograms_total(k) = 0.0;
 	  MPI_Reduce( (*QMCnode.getBetaHistograms())(k).array(),
      betaHistograms_total(k).array(),5000,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-	  if (Input.flags.my_rank != 0)
+	  if (globalInput.flags.my_rank != 0)
 	    betaHistograms_total(k).deallocate();
 	}
-      if (Input.flags.my_rank != 0)
+      if (globalInput.flags.my_rank != 0)
 	betaHistograms_total.deallocate();
     }
   
   if (nalpha > 1 || nbeta > 1)
     {
-      if (Input.flags.writePllxCorrelationDiagram == 1)
+      if (globalInput.flags.writePllxCorrelationDiagram == 1)
 	{
 	  pllxCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
@@ -423,13 +423,13 @@ void QMCManager::gatherHistograms()
 	      MPI_Reduce( (*QMCnode.getPllxCorrelationDiagram())(i).array(),
              pllxCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
                                                                MPI_COMM_WORLD);
-	      if (Input.flags.my_rank != 0)
+	      if (globalInput.flags.my_rank != 0)
 		pllxCorrelationDiagram_total(i).deallocate();
 	    }
-	  if (Input.flags.my_rank != 0)
+	  if (globalInput.flags.my_rank != 0)
 	    pllxCorrelationDiagram_total.deallocate();
 	}
-      if (Input.flags.writePllyCorrelationDiagram == 1)
+      if (globalInput.flags.writePllyCorrelationDiagram == 1)
 	{
 	  pllyCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
@@ -439,13 +439,13 @@ void QMCManager::gatherHistograms()
 	      MPI_Reduce( (*QMCnode.getPllyCorrelationDiagram())(i).array(),
              pllyCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
                                                                MPI_COMM_WORLD);
-	      if (Input.flags.my_rank != 0)
+	      if (globalInput.flags.my_rank != 0)
 		pllyCorrelationDiagram_total(i).deallocate();
 	    }
-	  if (Input.flags.my_rank != 0)
+	  if (globalInput.flags.my_rank != 0)
 	    pllyCorrelationDiagram_total.deallocate();
 	}
-      if (Input.flags.writePllzCorrelationDiagram == 1)
+      if (globalInput.flags.writePllzCorrelationDiagram == 1)
 	{
 	  pllzCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
@@ -455,17 +455,17 @@ void QMCManager::gatherHistograms()
 	      MPI_Reduce( (*QMCnode.getPllzCorrelationDiagram())(i).array(),
              pllzCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
                                                                MPI_COMM_WORLD);
-	      if (Input.flags.my_rank != 0)
+	      if (globalInput.flags.my_rank != 0)
 		pllzCorrelationDiagram_total(i).deallocate();
 	    }
-	  if (Input.flags.my_rank != 0)
+	  if (globalInput.flags.my_rank != 0)
 	    pllzCorrelationDiagram_total.deallocate();
 	}
     }
 
   if (nalpha > 0 && nbeta > 0)
     {
-      if (Input.flags.writeOppxCorrelationDiagram == 1)
+      if (globalInput.flags.writeOppxCorrelationDiagram == 1)
 	{
 	  oppxCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
@@ -475,13 +475,13 @@ void QMCManager::gatherHistograms()
 	      MPI_Reduce( (*QMCnode.getOppxCorrelationDiagram())(i).array(),
              oppxCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
                                                                MPI_COMM_WORLD);
-	      if (Input.flags.my_rank != 0)
+	      if (globalInput.flags.my_rank != 0)
 		oppxCorrelationDiagram_total(i).deallocate();
 	    }
-	  if (Input.flags.my_rank != 0)
+	  if (globalInput.flags.my_rank != 0)
 	    oppxCorrelationDiagram_total.deallocate();
 	}
-      if (Input.flags.writeOppyCorrelationDiagram == 1)
+      if (globalInput.flags.writeOppyCorrelationDiagram == 1)
 	{
 	  oppyCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
@@ -491,13 +491,13 @@ void QMCManager::gatherHistograms()
 	      MPI_Reduce( (*QMCnode.getOppyCorrelationDiagram())(i).array(),
              oppyCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
                                                                MPI_COMM_WORLD);
-	      if (Input.flags.my_rank != 0)
+	      if (globalInput.flags.my_rank != 0)
 		oppyCorrelationDiagram_total(i).deallocate();
 	    }
-	  if (Input.flags.my_rank != 0)
+	  if (globalInput.flags.my_rank != 0)
 	    oppyCorrelationDiagram_total.deallocate();
 	}
-      if (Input.flags.writeOppzCorrelationDiagram == 1)
+      if (globalInput.flags.writeOppzCorrelationDiagram == 1)
 	{
 	  oppzCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
@@ -507,10 +507,10 @@ void QMCManager::gatherHistograms()
 	      MPI_Reduce( (*QMCnode.getOppzCorrelationDiagram())(i).array(),
              oppzCorrelationDiagram_total(i).array(),1000,MPI_DOUBLE,MPI_SUM,0,
                                                                MPI_COMM_WORLD);
-	      if (Input.flags.my_rank != 0)
+	      if (globalInput.flags.my_rank != 0)
 		oppzCorrelationDiagram_total(i).deallocate();
 	    }
-	  if (Input.flags.my_rank != 0)
+	  if (globalInput.flags.my_rank != 0)
 	    oppzCorrelationDiagram_total.deallocate();
 	}
     }
@@ -540,21 +540,21 @@ void QMCManager::gatherHistograms()
   
   if (nalpha > 1 || nbeta > 1)
     {
-      if (Input.flags.writePllxCorrelationDiagram == 1)
+      if (globalInput.flags.writePllxCorrelationDiagram == 1)
 	{
 	  pllxCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
 	    pllxCorrelationDiagram_total(i) = 
 	      (*QMCnode.getPllxCorrelationDiagram())(i);
 	}
-      if (Input.flags.writePllyCorrelationDiagram == 1)
+      if (globalInput.flags.writePllyCorrelationDiagram == 1)
 	{
 	  pllyCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
 	    pllyCorrelationDiagram_total(i) = 
 	      (*QMCnode.getPllyCorrelationDiagram())(i);
 	}
-      if (Input.flags.writePllzCorrelationDiagram == 1)
+      if (globalInput.flags.writePllzCorrelationDiagram == 1)
 	{
 	  pllzCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
@@ -565,21 +565,21 @@ void QMCManager::gatherHistograms()
 
   if (nalpha > 0 && nbeta > 0)
     {
-      if (Input.flags.writeOppxCorrelationDiagram == 1)
+      if (globalInput.flags.writeOppxCorrelationDiagram == 1)
 	{
 	  oppxCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
 	    oppxCorrelationDiagram_total(i) = 
 	      (*QMCnode.getOppxCorrelationDiagram())(i);
 	}
-      if (Input.flags.writeOppyCorrelationDiagram == 1)
+      if (globalInput.flags.writeOppyCorrelationDiagram == 1)
 	{
 	  oppyCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
 	    oppyCorrelationDiagram_total(i) = 
 	      (*QMCnode.getOppyCorrelationDiagram())(i);
 	}
-      if (Input.flags.writeOppzCorrelationDiagram == 1)
+      if (globalInput.flags.writeOppzCorrelationDiagram == 1)
 	{
 	  oppzCorrelationDiagram_total.allocate(1000);
 	  for (int i=0; i<1000; i++)
@@ -627,25 +627,53 @@ int QMCManager::pollForACommand()
 #endif
 }
 
-bool QMCManager::run(QMCInput & newInput, bool equilibrate)
+bool QMCManager::run(bool equilibrate)
 {
-  Input = newInput;
-
+  if(globalInput.flags.optimize_Psi == 1) 
+    {
+      int width = 10;
+      
+      int numAI = globalInput.getNumberAIParameters();
+      if(numAI != 0)
+	clog << "Notice: we are optimizing " << numAI << " parameters this step:" << endl;
+      else {
+	clog << "Error: you have " << numAI << " optimization parameters!" << endl;
+	exit(0);
+      }
+      
+      int numEE = globalInput.JP.getNumberEEParameters();
+      if(numEE != 0) clog << setw(width)  << numEE << " Electron-Electron Jastrow parameters" << endl;
+      
+      int numNE = globalInput.JP.getNumberNEParameters();
+      if(numNE != 0) clog << setw(width) << numNE << "  Nuclear-Electron Jastrow parameters" << endl;
+      
+      int numCI = globalInput.WF.getNumberCIParameters();
+      if(numCI != 0) clog << setw(width) << numCI << " CI parameters" << endl;
+      
+      int numOR = globalInput.WF.getNumberORParameters();
+      if(numOR != 0) clog << setw(width) << numOR << " orbital parameters" << endl;
+    }
+  
   int width = 16;
-  if( Input.flags.my_rank == 0 )
+  if( globalInput.flags.my_rank == 0 )
     {
       clog << "***************  TheMan.run();" << endl;
       clog << setw(10)    << "iteration"
 	   << setw(width) << "Eavg"
 	   << setw(width) << "Estd"
-	   << setw(width) << "Num. Walkers"
-	   << setw(width) << "Trial Energy"
-	   << setw(width) << "Eff. dt"
-	   << setw(width) << "Weights"
+	   << setw(width) << "Num. Walkers";
+
+      if( globalInput.flags.run_type == "diffusion" )
+	{
+	  clog << setw(width) << "Weights"
+	       << setw(width) << "Trial Energy";
+	}
+      
+      clog << setw(width) << "Eff. dt"
 	   << setw(width) << "Num. Samples"
 	   << endl;
-      clog.setf( ios::fixed,ios::floatfield );
     }
+
  
   equilibrationProperties.zeroOut();
   
@@ -655,25 +683,25 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
   if( equilibrate )
   {
     equilibrating = true;
-    Input.flags.dt = Input.flags.dt_equilibration;
+    globalInput.flags.dt = globalInput.flags.dt_equilibration;
   } else {
     equilibrating = false;
-    Input.flags.dt = Input.flags.dt_run;
+    globalInput.flags.dt = globalInput.flags.dt_run;
   }
   
   // Create the file to write all energies out to
   ofstream *energy_strm_out = 0;
   
-  if( Input.flags.write_all_energies_out == 1 )
+  if( globalInput.flags.write_all_energies_out == 1 )
   {
     // Create the file name
     char my_rank_str[ 32 ];
 #if defined(_WIN32) && !defined(__CYGWIN__)
-    _snprintf(  my_rank_str, 32, "%d", Input.flags.my_rank );
+    _snprintf(  my_rank_str, 32, "%d", globalInput.flags.my_rank );
 #else
-    snprintf( my_rank_str, 32, "%d", Input.flags.my_rank );
+    snprintf( my_rank_str, 32, "%d", globalInput.flags.my_rank );
 #endif
-    string filename = Input.flags.base_file_name + ".energy." +
+    string filename = globalInput.flags.base_file_name + ".energy." +
       my_rank_str;
     
     // Initilize and set the output formatting
@@ -682,16 +710,16 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
   }
   
   // Check to make sure a valid parallelization algorithm is chosen
-  if( Input.flags.parallelization_method == "pure_iterative" )
+  if( globalInput.flags.parallelization_method == "pure_iterative" )
   {
     cerr << "FIX Add back in PI parallel" << endl;
   }
-  else if( Input.flags.parallelization_method == "manager_worker" )
+  else if( globalInput.flags.parallelization_method == "manager_worker" )
   {}
   else
   {
     cerr << "ERROR: Not a valid form of parallelization (";
-    cerr << Input.flags.parallelization_method << ") in " << endl;
+    cerr << globalInput.flags.parallelization_method << ") in " << endl;
     cerr << "QMCManager::run()" << endl << "exiting now" << endl;
     exit( 1 );
   }
@@ -704,18 +732,18 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
     if( equilibrating )  localTimers.getEquilibrationStopwatch()->start();
     else
     {
-      if ( Input.flags.use_equilibration_array == 1 )  QMCnode.startTimers();
+      if ( globalInput.flags.use_equilibration_array == 1 )  QMCnode.startTimers();
       else localTimers.getPropagationStopwatch()->start();
     }
     
     bool writeConfigs = !equilibrating &&
-      Input.flags.print_configs == 1 &&
-      iteration%Input.flags.print_config_frequency == 0;
+      globalInput.flags.print_configs == 1 &&
+      iteration%globalInput.flags.print_config_frequency == 0;
     
-    while( !QMCnode.step( writeConfigs, iteration - Input.flags.equilibration_steps ) )
+    while( !QMCnode.step( writeConfigs, iteration - globalInput.flags.equilibration_steps ) )
       {
 	//Let's assume the worst; that all our data is trash.
-	cerr << "Error on node " << Input.flags.my_rank << 
+	cerr << "Error on node " << globalInput.flags.my_rank << 
 	  ": QMCManager is trashing data and starting calculation all over!" << endl;
 
 
@@ -727,24 +755,24 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 	if( equilibrating )  localTimers.getEquilibrationStopwatch()->stop();
 	else
 	  {
-	    if ( Input.flags.use_equilibration_array == 1 )  QMCnode.stopTimers();
+	    if ( globalInput.flags.use_equilibration_array == 1 )  QMCnode.stopTimers();
 	    else localTimers.getPropagationStopwatch()->stop();
 	  }
 
 	if( equilibrate )
 	  {
 	    equilibrating = true;
-	    Input.flags.dt = Input.flags.dt_equilibration;
+	    globalInput.flags.dt = globalInput.flags.dt_equilibration;
 	  } else {
 	    equilibrating = false;
-	    Input.flags.dt = Input.flags.dt_run;
+	    globalInput.flags.dt = globalInput.flags.dt_run;
 	  }
 
 	//Turn on whatever stopwatches need to be running
 	if( equilibrating )  localTimers.getEquilibrationStopwatch()->start();
 	else
 	  {
-	    if ( Input.flags.use_equilibration_array == 1 )  QMCnode.startTimers();
+	    if ( globalInput.flags.use_equilibration_array == 1 )  QMCnode.startTimers();
 	    else localTimers.getPropagationStopwatch()->start();
 	  }
 	
@@ -771,13 +799,13 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
       *QMCnode.getProperties();
       updateEffectiveTimeStep( &equilibrationProperties );
       
-      if( Input.flags.run_type == "diffusion" )
+      if( globalInput.flags.run_type == "diffusion" )
         updateTrialEnergy( QMCnode.getWeights(),
-                           Input.flags.number_of_walkers_initial );
+                           globalInput.flags.number_of_walkers_initial );
     }
-    else if( !equilibrating && Input.flags.run_type == "diffusion" )
+    else if( !equilibrating && globalInput.flags.run_type == "diffusion" )
     {
-      if( Input.flags.synchronize_dmc_ensemble == 1 )
+      if( globalInput.flags.synchronize_dmc_ensemble == 1 )
       {
         updateEstimatedEnergy( &Properties_total );
         updateEffectiveTimeStep( &Properties_total );
@@ -789,30 +817,30 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
       }
       
       updateTrialEnergy( QMCnode.getWeights(),
-                         Input.flags.number_of_walkers_initial );
+                         globalInput.flags.number_of_walkers_initial );
     }
     else
       // If this is a variational calculation, the estimated energy and the
       // trial energy aren't updated.
       updateEffectiveTimeStep( QMCnode.getProperties() );
     
-    if( Input.flags.checkpoint == 1 &&
-        iteration%Input.flags.checkpoint_interval == 0 )
+    if( globalInput.flags.checkpoint == 1 &&
+        iteration%globalInput.flags.checkpoint_interval == 0 )
     {
       writeCheckpoint();
     }
     
-    if( !equilibrating && Input.flags.write_all_energies_out == 1 )
+    if( !equilibrating && globalInput.flags.write_all_energies_out == 1 )
     {
       QMCnode.writeEnergies( *energy_strm_out );
     }
     
-    if( !equilibrating && Input.flags.write_electron_densities == 1 )
+    if( !equilibrating && globalInput.flags.write_electron_densities == 1 )
     {
       QMCnode.calculateElectronDensities();
     }
     
-    if( Input.flags.use_hf_potential == 1 )
+    if( globalInput.flags.use_hf_potential == 1 )
     {
       QMCnode.updateHFPotential();
     }
@@ -826,7 +854,7 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
     }
     else
     {
-      if ( Input.flags.use_equilibration_array == 1 )  QMCnode.stopTimers();
+      if ( globalInput.flags.use_equilibration_array == 1 )  QMCnode.stopTimers();
       else localTimers.getPropagationStopwatch() ->stop();
     }
     
@@ -840,7 +868,7 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 	if(!written)
 	  {
 	    if(QMCManager::PRINT_SIG_INFO)
-	      cout << "Rank " << Input.flags.my_rank << " received SIGNAL_SAYS_QUIT."<< endl;
+	      cout << "Rank " << globalInput.flags.my_rank << " received SIGNAL_SAYS_QUIT."<< endl;
 	    written = true;
 	  }
       }
@@ -850,15 +878,15 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 	  QMCManager::INCREASE_TIME = false; 
 	  if(QMCManager::PRINT_SIG_INFO)
 	    {
-	      cout << "Rank " << Input.flags.my_rank << " received INCREASE_TIME."<< endl;
-	      cout << "Max time changed from " << Input.flags.max_time_steps << " to ";
+	      cout << "Rank " << globalInput.flags.my_rank << " received INCREASE_TIME."<< endl;
+	      cout << "Max time changed from " << globalInput.flags.max_time_steps << " to ";
 	    }
-	  Input.flags.max_time_steps = (long)(Input.flags.max_time_steps*1.1);
+	  globalInput.flags.max_time_steps = (long)(globalInput.flags.max_time_steps*1.1);
 	  if(QMCManager::PRINT_SIG_INFO)
-	    cout << Input.flags.max_time_steps << endl;
+	    cout << globalInput.flags.max_time_steps << endl;
 	}
     
-    if( Input.flags.my_rank == 0 )
+    if( globalInput.flags.my_rank == 0 )
     {
       
       if( QMCManager::REDUCE_ALL_NOW )
@@ -879,17 +907,17 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 	  synchronizationBarrier();
 	  gatherProperties();
 	      
-	  if (Input.flags.write_electron_densities == 1)
+	  if (globalInput.flags.write_electron_densities == 1)
 	    {
 	      gatherHistograms();
-	      if( Input.flags.my_rank == 0 )
+	      if( globalInput.flags.my_rank == 0 )
 		writeElectronDensityHistograms();
 	    }
         
-	  if ( Input.flags.calculate_bf_density == 1 )
+	  if ( globalInput.flags.calculate_bf_density == 1 )
 	    gatherDensities();
 	  
-	  if(Input.flags.nuclear_derivatives != "none")
+	  if(globalInput.flags.nuclear_derivatives != "none")
 	    gatherForces();
 
 	  /*
@@ -903,17 +931,17 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 	  *getResultsOutputStream() << *this;
 	  writeTimingData( cout );
 
-	  if(Input.flags.checkpoint == 1)
+	  if(globalInput.flags.checkpoint == 1)
 	    writeCheckpoint();
 
 	  writeRestart();
 	}
 
-      if( iteration % Input.flags.mpireduce_interval == 0 )
+      if( iteration % globalInput.flags.mpireduce_interval == 0 )
 	{
 	  sendAllProcessorsACommand( QMC_REDUCE );
 	  gatherProperties();
-	  if ( Input.flags.write_electron_densities == 1)
+	  if ( globalInput.flags.write_electron_densities == 1)
 	    {
 	      gatherHistograms();
 	      writeElectronDensityHistograms();
@@ -921,9 +949,9 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 	  checkTerminationCriteria();
 	}
       
-      if( !equilibrating && Input.flags.run_type == "diffusion" &&
-          Input.flags.synchronize_dmc_ensemble == 1 &&
-          iteration % Input.flags.synchronize_dmc_ensemble_interval == 0 )
+      if( !equilibrating && globalInput.flags.run_type == "diffusion" &&
+          globalInput.flags.synchronize_dmc_ensemble == 1 &&
+          iteration % globalInput.flags.synchronize_dmc_ensemble_interval == 0 )
       {
         sendAllProcessorsACommand( QMC_SYNCHRONIZE );
         synchronizeDMCEnsemble();
@@ -937,26 +965,26 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
         
 	gatherProperties();
 	      
-	if (Input.flags.write_electron_densities == 1)
+	if (globalInput.flags.write_electron_densities == 1)
         {
           gatherHistograms();
           writeElectronDensityHistograms();
         }
         
-        if ( Input.flags.calculate_bf_density == 1 )
+        if ( globalInput.flags.calculate_bf_density == 1 )
           gatherDensities();
 
-        if(Input.flags.nuclear_derivatives != "none")
+        if(globalInput.flags.nuclear_derivatives != "none")
           gatherForces();
       }
       
-      if( Input.flags.print_transient_properties &&
-          iteration%Input.flags.print_transient_properties_interval == 0 )
+      if( globalInput.flags.print_transient_properties &&
+          iteration%globalInput.flags.print_transient_properties_interval == 0 )
       {
         writeTransientProperties( iteration );
       }
       
-      if( iteration%Input.flags.output_interval == 0 )
+      if( iteration%globalInput.flags.output_interval == 0 )
       {
         writeEnergyResultsSummary( cout );
         writeEnergyResultsSummary( *qmcOut );
@@ -968,7 +996,7 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
       int poll_result = QMC_WORK_STEP;
       do {
       
-	if( iteration%Input.flags.mpipoll_interval == 0
+	if( iteration%globalInput.flags.mpipoll_interval == 0
 	    || QMCManager::REDUCE_ALL_NOW
 	    || QMCManager::SIGNAL_SAYS_QUIT )
 	  {
@@ -979,7 +1007,7 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 	  {
 	  case QMC_REDUCE:
 	    gatherProperties();
-	    if ( Input.flags.write_electron_densities == 1)
+	    if ( globalInput.flags.write_electron_densities == 1)
 	      gatherHistograms();
 
 	    break;
@@ -993,13 +1021,13 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 	    
 	    gatherProperties();
 	    
-	    if (Input.flags.write_electron_densities == 1)
+	    if (globalInput.flags.write_electron_densities == 1)
 	      gatherHistograms();
 	    
-	    if ( Input.flags.calculate_bf_density == 1 )
+	    if ( globalInput.flags.calculate_bf_density == 1 )
 	      gatherDensities();
 	    
-	    if(Input.flags.nuclear_derivatives != "none")
+	    if(globalInput.flags.nuclear_derivatives != "none")
 	      gatherForces();
 
 	    break;	
@@ -1012,22 +1040,22 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 	      if the root node is not at MPI_Reduce...
 	    */
 	    if(QMCManager::REDUCE_ALL_NOW && QMCManager::PRINT_SIG_INFO)
-	      cout << "Rank " << Input.flags.my_rank << " received REDUCE_ALL_NOW."<< endl;
+	      cout << "Rank " << globalInput.flags.my_rank << " received REDUCE_ALL_NOW."<< endl;
 	    QMCManager::REDUCE_ALL_NOW = false;
 	    
 	    synchronizationBarrier();
 	    gatherProperties();
 	    
-	    if (Input.flags.write_electron_densities == 1)
+	    if (globalInput.flags.write_electron_densities == 1)
 	      gatherHistograms();
 	    
-	    if ( Input.flags.calculate_bf_density == 1 )
+	    if ( globalInput.flags.calculate_bf_density == 1 )
 	      gatherDensities();
 	    
-	    if(Input.flags.nuclear_derivatives != "none")
+	    if(globalInput.flags.nuclear_derivatives != "none")
 	      gatherForces();
 
-	    if(Input.flags.checkpoint == 1)
+	    if(globalInput.flags.checkpoint == 1)
 	      writeCheckpoint();
 
 	    break;
@@ -1049,18 +1077,18 @@ bool QMCManager::run(QMCInput & newInput, bool equilibrate)
 
     This may end up being redundant information...
    */
-  if( Input.flags.my_rank == 0 )
+  if( globalInput.flags.my_rank == 0 )
     {
       writeEnergyResultsSummary( cout );
       writeEnergyResultsSummary( *qmcOut );
     }
 
-  if( Input.flags.checkpoint == 1 )
+  if( globalInput.flags.checkpoint == 1 )
     {
       writeCheckpoint();
     }
   
-  if(  Input.flags.write_all_energies_out == 1 )
+  if(  globalInput.flags.write_all_energies_out == 1 )
   {
     ( *energy_strm_out ).close();
     delete energy_strm_out;
@@ -1088,26 +1116,26 @@ void QMCManager::optimize()
   
   int configsToSkip = 0;
   
-  if ( Input.flags.use_equilibration_array == 1 )
+  if ( globalInput.flags.use_equilibration_array == 1 )
     {
-      configsToSkip = 1 + (  iteration - Input.flags.equilibration_steps -
+      configsToSkip = 1 + (  iteration - globalInput.flags.equilibration_steps -
 			     QMCnode.getProperties() ->energy.getNumberSamples()  )  /
-	Input.flags.print_config_frequency;
+	globalInput.flags.print_config_frequency;
     }
   
-  if(  Input.flags.optimize_Psi )
+  if(  globalInput.flags.optimize_Psi )
   {
-    QMCCorrelatedSamplingVMCOptimization::optimize( &Input,Properties_total,configsToSkip );
+    QMCCorrelatedSamplingVMCOptimization::optimize( &globalInput,Properties_total,configsToSkip );
     
     // Print out the optimized parameters
     
-    if(  Input.flags.my_rank == 0 )
+    if(  globalInput.flags.my_rank == 0 )
     {
-      *qmcRslts << Input.JP << endl;
+      *qmcRslts << globalInput.JP << endl;
     }
 
     //reopen the config file
-    Input.openConfigFile();
+    globalInput.openConfigFile();
   }
   
   localTimers.getOptimizationStopwatch() ->stop();
@@ -1117,36 +1145,36 @@ void QMCManager::equilibration_step()
 {
   // adjust the time steps and zeros everything out during equilibration
   
-  if(  Input.flags.equilibration_function == "step" )
+  if(  globalInput.flags.equilibration_function == "step" )
   {
     // step function
     
-    if(  iteration >= Input.flags.equilibration_steps )
+    if(  iteration >= globalInput.flags.equilibration_steps )
     { 
       QMCnode.zeroOut();
       equilibrating = false;
-      Input.flags.dt = Input.flags.dt_run;
+      globalInput.flags.dt = globalInput.flags.dt_run;
     }
   }
-  else if(  Input.flags.equilibration_function == "ramp" )
+  else if(  globalInput.flags.equilibration_function == "ramp" )
   {
-    double ddt = ( Input.flags.dt_equilibration-Input.flags.dt_run ) /
-    ( Input.flags.equilibration_steps-1 );
+    double ddt = ( globalInput.flags.dt_equilibration-globalInput.flags.dt_run ) /
+    ( globalInput.flags.equilibration_steps-1 );
     // ramp function
-    Input.flags.dt -= ddt;
+    globalInput.flags.dt -= ddt;
 
-    if(  iteration >= Input.flags.equilibration_steps )
+    if(  iteration >= globalInput.flags.equilibration_steps )
     {
-      Input.flags.dt = Input.flags.dt_run;
+      globalInput.flags.dt = globalInput.flags.dt_run;
       
       QMCnode.zeroOut();
       equilibrating = false;
     }
   }
-  else if(  Input.flags.equilibration_function == "CKAnnealingEquilibration1" )
+  else if(  globalInput.flags.equilibration_function == "CKAnnealingEquilibration1" )
   {
-    if(  Input.flags.CKAnnealingEquilibration1_parameter >=
-         Input.flags.equilibration_steps )
+    if(  globalInput.flags.CKAnnealingEquilibration1_parameter >=
+         globalInput.flags.equilibration_steps )
     {
       cerr << "ERROR: For CKAnnealingEquilibration1, "
       << "CKAnnealingEquilbration1_parameter must be less than "
@@ -1155,23 +1183,23 @@ void QMCManager::equilibration_step()
     }
     
     // step function
-    if(  iteration >= Input.flags.equilibration_steps )
+    if(  iteration >= globalInput.flags.equilibration_steps )
     {
       QMCnode.zeroOut();
       equilibrating = false;
-      Input.flags.dt = Input.flags.dt_run;
+      globalInput.flags.dt = globalInput.flags.dt_run;
     }
     else
     {
       if(  iteration == 1 )
       {
-        Input.flags.old_walker_acceptance_parameter += -1000;
+        globalInput.flags.old_walker_acceptance_parameter += -1000;
       }
       else if(  iteration ==
-                Input.flags.CKAnnealingEquilibration1_parameter )
+                globalInput.flags.CKAnnealingEquilibration1_parameter )
       {
-        Input.flags.old_walker_acceptance_parameter -= -1000;
-        Input.flags.dt = Input.flags.dt_run;
+        globalInput.flags.old_walker_acceptance_parameter -= -1000;
+        globalInput.flags.dt = globalInput.flags.dt_run;
       }
     }
   }
@@ -1189,10 +1217,10 @@ void QMCManager::writeElectronDensityHistograms()
   
 #define PI 3.14159265359
   
-  int nalpha = Input.WF.getNumberAlphaElectrons();
-  int nbeta = Input.WF.getNumberBetaElectrons();
+  int nalpha = globalInput.WF.getNumberAlphaElectrons();
+  int nbeta = globalInput.WF.getNumberBetaElectrons();
   
-  string baseFileName = Input.flags.base_file_name;
+  string baseFileName = globalInput.flags.base_file_name;
   
   double rValue;
   double normalHist;
@@ -1259,13 +1287,13 @@ void QMCManager::writeElectronDensityHistograms()
   
   if (nalpha > 0 || nbeta > 0)
   {
-    int nucleiTypes = Input.Molecule.NucleiTypes.dim1();
+    int nucleiTypes = globalInput.Molecule.NucleiTypes.dim1();
     string nucleusType;
     
     // Write out one electron densities.
     for (int i=0; i<nucleiTypes; i++)
     {
-      nucleusType = Input.Molecule.NucleiTypes(i);
+      nucleusType = globalInput.Molecule.NucleiTypes(i);
       
       if (nalpha > 0)
       {
@@ -1334,7 +1362,7 @@ void QMCManager::writeElectronDensityHistograms()
 
   if (nalpha > 1 || nbeta > 1)
     {
-      if (Input.flags.writePllxCorrelationDiagram == 1)
+      if (globalInput.flags.writePllxCorrelationDiagram == 1)
 	{
 	  string pllxFile = baseFileName + ".pllx.CorrelationDiagram";
 	  ofstream * pllxStrm = new ofstream(pllxFile.c_str());
@@ -1342,8 +1370,8 @@ void QMCManager::writeElectronDensityHistograms()
 
 	  // We just print out the raw 2D histograms
 
-	  double min = Input.flags.pllxCorrelationDiagramMin;
-	  double max = Input.flags.pllxCorrelationDiagramMax;
+	  double min = globalInput.flags.pllxCorrelationDiagramMin;
+	  double max = globalInput.flags.pllxCorrelationDiagramMax;
 	  double dr = (max-min)/pllxCorrelationDiagram_total.dim1();
 	  double rvalue = min;
 
@@ -1367,7 +1395,7 @@ void QMCManager::writeElectronDensityHistograms()
 	  pllxStrm = 0;
 	  pllxCorrelationDiagram_total.deallocate();
 	}
-      if (Input.flags.writePllyCorrelationDiagram == 1)
+      if (globalInput.flags.writePllyCorrelationDiagram == 1)
 	{
 	  string pllyFile = baseFileName + ".plly.CorrelationDiagram";
 	  ofstream * pllyStrm = new ofstream(pllyFile.c_str());
@@ -1375,8 +1403,8 @@ void QMCManager::writeElectronDensityHistograms()
 
 	  // We just print out the raw 2D histograms
 
-	  double min = Input.flags.pllyCorrelationDiagramMin;
-	  double max = Input.flags.pllyCorrelationDiagramMax;
+	  double min = globalInput.flags.pllyCorrelationDiagramMin;
+	  double max = globalInput.flags.pllyCorrelationDiagramMax;
 	  double dr = (max-min)/pllyCorrelationDiagram_total.dim1();
 	  double rvalue = min;
 
@@ -1400,7 +1428,7 @@ void QMCManager::writeElectronDensityHistograms()
 	  pllyStrm = 0;
 	  pllyCorrelationDiagram_total.deallocate();
 	}
-      if (Input.flags.writePllzCorrelationDiagram == 1)
+      if (globalInput.flags.writePllzCorrelationDiagram == 1)
 	{
 	  string pllzFile = baseFileName + ".pllz.CorrelationDiagram";
 	  ofstream * pllzStrm = new ofstream(pllzFile.c_str());
@@ -1408,8 +1436,8 @@ void QMCManager::writeElectronDensityHistograms()
 
 	  // We just print out the raw 2D histograms
 
-	  double min = Input.flags.pllzCorrelationDiagramMin;
-	  double max = Input.flags.pllzCorrelationDiagramMax;
+	  double min = globalInput.flags.pllzCorrelationDiagramMin;
+	  double max = globalInput.flags.pllzCorrelationDiagramMax;
 	  double dr = (max-min)/pllzCorrelationDiagram_total.dim1();
 	  double rvalue = min;
 
@@ -1436,7 +1464,7 @@ void QMCManager::writeElectronDensityHistograms()
     }
   if (nalpha > 0 && nbeta > 0)
     {
-      if (Input.flags.writeOppxCorrelationDiagram == 1)
+      if (globalInput.flags.writeOppxCorrelationDiagram == 1)
 	{
 	  string oppxFile = baseFileName + ".oppx.CorrelationDiagram";
 	  ofstream * oppxStrm = new ofstream(oppxFile.c_str());
@@ -1444,8 +1472,8 @@ void QMCManager::writeElectronDensityHistograms()
 
 	  // We just print out the raw 2D histograms
 
-	  double min = Input.flags.oppxCorrelationDiagramMin;
-	  double max = Input.flags.oppxCorrelationDiagramMax;
+	  double min = globalInput.flags.oppxCorrelationDiagramMin;
+	  double max = globalInput.flags.oppxCorrelationDiagramMax;
 	  double dr = (max-min)/oppxCorrelationDiagram_total.dim1();
 	  double rvalue = min;
 
@@ -1469,7 +1497,7 @@ void QMCManager::writeElectronDensityHistograms()
 	  oppxStrm = 0;
 	  oppxCorrelationDiagram_total.deallocate();
 	}
-      if (Input.flags.writeOppyCorrelationDiagram == 1)
+      if (globalInput.flags.writeOppyCorrelationDiagram == 1)
 	{
 	  string oppyFile = baseFileName + ".oppy.CorrelationDiagram";
 	  ofstream * oppyStrm = new ofstream(oppyFile.c_str());
@@ -1477,8 +1505,8 @@ void QMCManager::writeElectronDensityHistograms()
 
 	  // We just print out the raw 2D histograms
 
-	  double min = Input.flags.oppyCorrelationDiagramMin;
-	  double max = Input.flags.oppyCorrelationDiagramMax;
+	  double min = globalInput.flags.oppyCorrelationDiagramMin;
+	  double max = globalInput.flags.oppyCorrelationDiagramMax;
 	  double dr = (max-min)/oppyCorrelationDiagram_total.dim1();
 	  double rvalue = min;
 
@@ -1502,7 +1530,7 @@ void QMCManager::writeElectronDensityHistograms()
 	  oppyStrm = 0;
 	  oppyCorrelationDiagram_total.deallocate();
 	}
-      if (Input.flags.writeOppzCorrelationDiagram == 1)
+      if (globalInput.flags.writeOppzCorrelationDiagram == 1)
 	{
 	  string oppzFile = baseFileName + ".oppz.CorrelationDiagram";
 	  ofstream * oppzStrm = new ofstream(oppzFile.c_str());
@@ -1510,8 +1538,8 @@ void QMCManager::writeElectronDensityHistograms()
 
 	  // We just print out the raw 2D histograms
 
-	  double min = Input.flags.oppzCorrelationDiagramMin;
-	  double max = Input.flags.oppzCorrelationDiagramMax;
+	  double min = globalInput.flags.oppzCorrelationDiagramMin;
+	  double max = globalInput.flags.oppzCorrelationDiagramMax;
 	  double dr = (max-min)/oppzCorrelationDiagram_total.dim1();
 	  double rvalue = min;
 
@@ -1560,19 +1588,35 @@ void QMCManager::writeEnergyResultsSummary( ostream & strm )
   long iter = iteration;
 
   if( equilibrating )
-    iter -= Input.flags.equilibration_steps;
+    iter -= globalInput.flags.equilibration_steps;
 
   strm << setw( 10 )  << iter << " ";
   
-  strm << setprecision( 10 );
-  
-  strm << setw(width)  << Eave << " " << setw(width)  << Estd << " ";
-  
+  int fixedPrec = 10;
+  int scienPrec = 7;
+
+  strm.setf(ios::fixed,ios::floatfield);
+  strm << setw(width) << setprecision(fixedPrec) << Eave << " ";
+
+  if( fabs(Estd - 99) < 1e-20)
+    {
+      strm << setw(width) << 0 << " ";
+    } else {
+      strm.setf(ios::scientific,ios::floatfield);  
+      strm << setw(width) << setprecision(scienPrec) << Estd << " ";
+    }
+
   strm << setw(width) << QMCnode.getNumberOfWalkers() << " ";
-  
-  strm << setw(width) << Input.flags.energy_trial << " " << setw(width)  << Input.flags.dt_effective << " ";
-  
-  strm << setw(width) << QMCnode.getWeights() << " ";
+
+  if( globalInput.flags.run_type == "diffusion" )
+    {
+      strm.setf(ios::fixed,ios::floatfield);  
+      strm << setw(width) << setprecision(fixedPrec) << QMCnode.getWeights() << " ";
+      strm << setw(width) << setprecision(fixedPrec) << globalInput.flags.energy_trial << " ";
+    }
+
+  strm.setf(ios::scientific,ios::floatfield);
+  strm << setw(width) << setprecision(scienPrec) << globalInput.flags.dt_effective << " ";
 
   /*
   strm << setw(width) << Properties_total.walkerAge.getAverage() << " ";
@@ -1588,7 +1632,7 @@ void QMCManager::writeEnergyResultsSummary( ostream & strm )
 void QMCManager::writeTransientProperties( int label )
 {
   // Create the properties file name
-  string filename = Input.flags.base_file_name + ".properties." +
+  string filename = globalInput.flags.base_file_name + ".properties." +
   StringManipulation::intToString( label );
   
   // Initilize and set the output formatting
@@ -1610,21 +1654,29 @@ void QMCManager::writeTimingData( ostream & strm )
 
 void QMCManager::writeRestart()
 {
-  ofstream restart( Input.flags.restart_file_name.c_str() );
+  writeRestart(globalInput.flags.restart_file_name);
+}
+
+void QMCManager::writeRestart(string filename)
+{
+  if(globalInput.flags.my_rank != 0)
+    return;
+
+  ofstream restart( filename.c_str() );
   restart.setf( ios::scientific,ios::floatfield );
   restart.precision( 15 );
   
-  restart << Input << endl;
+  restart << globalInput << endl;
   restart.close();
 }
 
 void QMCManager::writeBFDensity()
 {
-  ofstream density( Input.flags.density_file_name.c_str() );
+  ofstream density( globalInput.flags.density_file_name.c_str() );
   density.setf( ios::scientific,ios::floatfield );
   density.precision( 15 );
   
-  for ( int i=0; i<Input.WF.getNumberBasisFunctions(); i++ )
+  for ( int i=0; i<globalInput.WF.getNumberBasisFunctions(); i++ )
   {
     density << Properties_total.chiDensity( i )  << endl;
   }
@@ -1634,7 +1686,7 @@ void QMCManager::writeBFDensity()
 
 void QMCManager::writeForces()
 {
-  ofstream forces( Input.flags.force_file_name.c_str() );
+  ofstream forces( globalInput.flags.force_file_name.c_str() );
   forces.setf( ios::scientific,ios::floatfield );
   forces.precision( 15 );
   
@@ -1665,17 +1717,17 @@ void QMCManager::writeXML( ostream & strm )
 void QMCManager::writeCheckpoint()
 {
   // Create the checkpoint file name
-  string filename = Input.flags.checkout_file_name + ".checkpoint." +
-  StringManipulation::intToString( Input.flags.my_rank );
+  string filename = globalInput.flags.checkout_file_name + ".checkpoint." +
+  StringManipulation::intToString( globalInput.flags.my_rank );
 
   /*
     This is the OS dependent part of storing the checkpoint files
     in a subdirectory. Seems pretty safe... It can be commented out
     if it doesn't work.
    */
-  string command = "mkdir -p " + Input.flags.checkout_file_name;
+  string command = "mkdir -p " + globalInput.flags.checkout_file_name;
   if(!system(command.c_str()))
-     filename = Input.flags.checkout_file_name + "/" + filename;
+     filename = globalInput.flags.checkout_file_name + "/" + filename;
 
   // Initilize and set the output formatting
   ofstream QMCcheckpoint( filename.c_str() );
@@ -1706,7 +1758,7 @@ bool QMCManager::readXML( istream & strm )
 
   // Read in the number of walkers
   strm >> temp >> temp;
-  Input.flags.number_of_walkers = atoi( temp.c_str() );
+  globalInput.flags.number_of_walkers = atoi( temp.c_str() );
   strm >> temp;
   
   // Read in if the node is equilibrating
@@ -1720,8 +1772,8 @@ bool QMCManager::readXML( istream & strm )
 void QMCManager::initializeCalculationState(long int iseed)
 {
   // Create the checkpoint file name
-  string filename = Input.flags.checkin_file_name + ".checkpoint." +
-  StringManipulation::intToString( Input.flags.my_rank );
+  string filename = globalInput.flags.checkin_file_name + ".checkpoint." +
+  StringManipulation::intToString( globalInput.flags.my_rank );
   
   // open the input stream
   ifstream qmcCheckpoint( filename.c_str() );
@@ -1735,7 +1787,7 @@ void QMCManager::initializeCalculationState(long int iseed)
    */
   if(!qmcCheckpoint)
     {
-      filename = Input.flags.checkin_file_name + "/" + filename;
+      filename = globalInput.flags.checkin_file_name + "/" + filename;
       qmcCheckpoint.clear();
       qmcCheckpoint.open(filename.c_str());
     }
@@ -1743,7 +1795,7 @@ void QMCManager::initializeCalculationState(long int iseed)
   localTimers.getInitializationStopwatch()->start();
   
   bool ok = false;
-  if( qmcCheckpoint && Input.flags.use_available_checkpoints == 1 )
+  if( qmcCheckpoint && globalInput.flags.use_available_checkpoints == 1 )
     {
       // There is a checkpoint file
       clog << "Reading in checkpointed file " << filename << "..." << endl;
@@ -1753,7 +1805,7 @@ void QMCManager::initializeCalculationState(long int iseed)
 	{
 	  clog << "Checkpoint read successful." << endl;
 	  writeEnergyResultsSummary( clog );
-	  if(Input.flags.zero_out_checkpoint_statistics == 1)
+	  if(globalInput.flags.zero_out_checkpoint_statistics == 1)
 	    clog << "Will zero the checkpoint, preserving only the configurations." << endl;
 	} else {
 	  /*
@@ -1766,7 +1818,7 @@ void QMCManager::initializeCalculationState(long int iseed)
   if(!ok)
     {
       //Make sure we're not initalizing ran from the checkpoint
-      ran.initialize(iseed,Input.flags.my_rank);
+      ran.initialize(iseed,globalInput.flags.my_rank);
 
       /*
 	There is no checkpoint file, or checkpoint read failed.
@@ -1797,7 +1849,7 @@ void QMCManager::receiveSignal(signalType signal)
     break;
   case SIG_INCREASE:
     if(QMCManager::PRINT_SIG_INFO)
-      clog << "QMCManager procedure for SIG_INCREASE: increase Input.flags.max_time_steps by 10%." << endl;
+      clog << "QMCManager procedure for SIG_INCREASE: increase globalInput.flags.max_time_steps by 10%." << endl;
     QMCManager::INCREASE_TIME = true;
     break;
   case SIG_QUIT:
@@ -1822,9 +1874,9 @@ void QMCManager::checkTerminationCriteria()
 
 void QMCManager::checkMaxStepsTerminationCriteria()
 {
-  if(  Input.flags.max_time_steps == 0 )
+  if(  globalInput.flags.max_time_steps == 0 )
     return;
-  if(  iteration >= Input.flags.max_time_steps )
+  if(  iteration >= globalInput.flags.max_time_steps )
   {
     done = true;
   }
@@ -1832,10 +1884,10 @@ void QMCManager::checkMaxStepsTerminationCriteria()
 
 void QMCManager::checkMaxTimeTerminationCriteria()
 {
-  if(  Input.flags.max_time <= 0 )
+  if(  globalInput.flags.max_time <= 0 )
     return;
   static unsigned long total_time =
-    (unsigned long)(Input.flags.max_time / Input.flags.dt_run);
+    (unsigned long)(globalInput.flags.max_time / globalInput.flags.dt_run);
   
   if(  Properties_total.energy.getNumberSamples()  >=
        total_time )
@@ -1848,7 +1900,7 @@ void QMCManager::checkConvergenceBasedTerminationCriteria()
 {
   if( Properties_total.energy.getNumberSamples()  > 1 &&
       Properties_total.energy.getStandardDeviation()  <=
-      Input.flags.desired_convergence )
+      globalInput.flags.desired_convergence )
   {
     done = true;
   }
@@ -1860,7 +1912,7 @@ void QMCManager::updateEstimatedEnergy( QMCProperties* Properties )
 
   if(  !equilibrating && Properties->energy.getNumberSamples()  > 1 )
   {
-    Input.flags.energy_estimated = Properties->energy.getAverage();
+    globalInput.flags.energy_estimated = Properties->energy.getAverage();
   }
   else
   {
@@ -1893,14 +1945,14 @@ void QMCManager::updateTrialEnergy( double weights, int nwalkers_init )
      */
 
     //See formula 11 from UNR93
-    Input.flags.energy_trial = Input.flags.energy_estimated -
-      1.0 / Input.flags.dt_effective * logRatio;
+    globalInput.flags.energy_trial = globalInput.flags.energy_estimated -
+      1.0 / globalInput.flags.dt_effective * logRatio;
   }
   else
   {
-    if ( Input.flags.lock_trial_energy == 0 )
-    Input.flags.energy_trial = Input.flags.energy_estimated -
-      Input.flags.population_control_parameter * logRatio;
+    if ( globalInput.flags.lock_trial_energy == 0 )
+    globalInput.flags.energy_trial = globalInput.flags.energy_estimated -
+      globalInput.flags.population_control_parameter * logRatio;
   }
 }
 
@@ -1908,8 +1960,8 @@ void QMCManager::updateEffectiveTimeStep( QMCProperties* Properties )
 {
   // Update the dt_effective
   QMCDerivativeProperties derivativeProperties( Properties,
-  						&fwProperties_total, Input.flags.dt );
-  Input.flags.dt_effective = derivativeProperties.getEffectiveTimeStep();
+  						&fwProperties_total, globalInput.flags.dt );
+  globalInput.flags.dt_effective = derivativeProperties.getEffectiveTimeStep();
 }
 
 void QMCManager::synchronizationBarrier()
@@ -1928,7 +1980,7 @@ string QMCManager::sendAllProcessorsInputFileName( char **argv )
   const int maximum_filename_characters = 1024;
   char c_runfilename[ maximum_filename_characters ];
   
-  if(  Input.flags.my_rank == 0 )
+  if(  globalInput.flags.my_rank == 0 )
   {
     // Copy the runfile name from the command line of the root processor
     // to the char array that will be broadcast by MPI
@@ -1954,7 +2006,7 @@ string QMCManager::sendAllProcessorsInputFileName( char **argv )
 
 QMCInput * QMCManager::getInputData()
 {
-  return &Input;
+  return &globalInput;
 }
 
 ostream * QMCManager::getResultsOutputStream()
@@ -1978,7 +2030,7 @@ ostream&  operator<<( ostream & strm, QMCManager & rhs )
   strm << rhs.fwProperties_total;
 
   QMCDerivativeProperties derivativeProperties( &rhs.Properties_total,
-						&rhs.fwProperties_total, rhs.Input.flags.dt );
+						&rhs.fwProperties_total, globalInput.flags.dt );
   strm << derivativeProperties << endl;
   strm << "**************** End of Results *****************" << endl;
   return strm;

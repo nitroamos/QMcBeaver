@@ -236,7 +236,8 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRat
   // degree of freedom.
 
   temp_k = k * X.k;
-  if(fabs(temp_k) > 1e200 || fabs(temp_k) < 1e-200)
+  if( (fabs(temp_k) > 1e200 || fabs(temp_k) < 1e-200) &&
+      (fabs(k) > 1e-300 && fabs(X.k) > 1e-300) )
     {
       if (fabs(k) < 1e-100)
 	c += log(fabs(k)*1e100) + log(1e-100);

@@ -444,38 +444,32 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 
 Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 {
-  int Norbitals  = Input->flags.Norbitals;
-  int Nbasisfunc = Input->flags.Nbasisfunc;
+  int Norbitals  = Input->WF.getNumberOrbitals();
+  int Nbasisfunc = Input->WF.getNumberBasisFunctions();
 
-  Array2D<qmcfloat> AlphaScratch(Input->WF.AlphaCoeffs);
-  Array2D<qmcfloat> BetaScratch(Input->WF.BetaCoeffs);
+  Array2D<qmcfloat> OrbitalScratch(Input->WF.OrbitalCoeffs);
 
   // Square MO coefficients.
 
   for (int i=0; i<Norbitals; i++)
     for (int j=0; j<Nbasisfunc; j++)
       {
-	AlphaScratch(i,j) = AlphaScratch(i,j)*AlphaScratch(i,j);
-	BetaScratch(i,j) = BetaScratch(i,j)*BetaScratch(i,j);
+	OrbitalScratch(i,j) = OrbitalScratch(i,j)*OrbitalScratch(i,j);
       }
   //"Normalize" MO by summing the squared coeffs and dividing
 
-  double AlphaSum;
-  double BetaSum;
+  double OrbitalSum;
 
   for (int i=0; i<Norbitals; i++)
     {
-      AlphaSum = 0.0;
-      BetaSum = 0.0;
+      OrbitalSum = 0.0;
       for(int j=0; j<Nbasisfunc; j++)
 	{ 
-	  AlphaSum += AlphaScratch(i,j);
-	  BetaSum += BetaScratch(i,j);
+	  OrbitalSum += OrbitalScratch(i,j);
 	}
       for(int j=0; j<Nbasisfunc; j++)
 	{
-	  AlphaScratch(i,j) = AlphaScratch(i,j)/AlphaSum;
-	  BetaScratch(i,j) = BetaScratch(i,j)/BetaSum;
+	  OrbitalScratch(i,j) = OrbitalScratch(i,j)/OrbitalSum;
 	}
     }
 
@@ -518,14 +512,14 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 
   for (int i=0; i<Norbitals; i++)
     {
-      if (Input->WF.AlphaOccupation(determinant_index,i) == 1)
+      if (Input->WF.AlphaOccupation(determinant_index,i) != Input->WF.getUnusedIndicator())
 	{
           sum = 0.0;
           rv = ran.unidev();
 
           for (int j=0; j<Nbasisfunc; j++)
             {
-              sum += AlphaScratch(i,j);
+              sum += OrbitalScratch(i,j);
               if (sum >= rv) 
 		{
 		  atom_occ(OrbPos(j),0) += 1;
@@ -535,14 +529,14 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 	    }
 	}
 
-      if (Input->WF.BetaOccupation(determinant_index,i) == 1)
+      if (Input->WF.BetaOccupation(determinant_index,i) != Input->WF.getUnusedIndicator())
 	{
 	  sum = 0.0;
           rv = ran.unidev();
 
 	  for (int k=0; k<Nbasisfunc; k++)
 	    {
-	      sum += BetaScratch(i,k);
+	      sum += OrbitalScratch(i,k);
 	      if (sum >= rv)
 		{
 		  atom_occ(OrbPos(k),0) += 1;

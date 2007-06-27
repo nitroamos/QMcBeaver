@@ -15,8 +15,7 @@ QMCNuclearForces::~QMCNuclearForces()
   waveValuesHFSpline.deallocate();
   numPolyBasisF.deallocate();
   nucleusContributions.deallocate();
-  alphaOrbitals.deallocate();
-  betaOrbitals.deallocate();
+  orbitals.deallocate();
   
   for(int i=0; i<radialPoints.dim1(); i++)
     radialPoints(i).deallocate();
@@ -548,8 +547,7 @@ void QMCNuclearForces::waveMemorization(int whichNucleus, int numKnots, double r
   center.deallocate();
   cube.deallocate();
   densities.deallocate();
-  alphaOrbitals.deallocate();
-  betaOrbitals.deallocate();
+  orbitals.deallocate();
   Chi.deallocate();
 }
 
@@ -561,31 +559,29 @@ void QMCNuclearForces::getDensities(Array2D<double> & X, Array1D<qmcfloat> & den
   //Make sure that we still have the right amount of memory allocated
   densities.allocate(X.dim1());
   Chi.allocate(X.dim1(),nBasisFun);
-  alphaOrbitals.allocate(X.dim1(),nOrbitals);
-  betaOrbitals.allocate(X.dim1(),nOrbitals);  
+  orbitals.allocate(X.dim1(),nOrbitals);
   
   BF->evaluateBasisFunctions(X,Chi);
-
+  
   //This is not really N^3 since X is only a few electronic positions
-  Chi.gemm(Input->WF.AlphaCoeffs,alphaOrbitals,true);
-  Chi.gemm(Input->WF.BetaCoeffs,betaOrbitals,true);
-
+  Chi.gemm(Input->WF.OrbitalCoeffs,orbitals,true);
+  
   densities = 0;
   for(int i=0; i<X.dim1(); i++)
-  {
-    for(int j=0; j<WF->getNumberDeterminants(); j++)
     {
-      double detSum = 0.0;
-      for(int k=0; k<nOrbitals; k++)
-      {
-        if(Input->WF.AlphaOccupation(j,k) == 1)
-          detSum += alphaOrbitals(i,k)*alphaOrbitals(i,k);
-        if(Input->WF.BetaOccupation(j,k) == 1)
-          detSum += betaOrbitals(i,k)*betaOrbitals(i,k);
-      }
-      densities(i) += detSum*WF->CI_coeffs(j);
+      for(int j=0; j<WF->getNumberDeterminants(); j++)
+	{
+	  double detSum = 0.0;
+	  for(int k=0; k<nOrbitals; k++)
+	    {
+	      if(Input->WF.AlphaOccupation(j,k) != Input->WF.getUnusedIndicator())
+		detSum += orbitals(i,k)*orbitals(i,k);
+	      if(Input->WF.BetaOccupation(j,k) != Input->WF.getUnusedIndicator())
+		detSum += orbitals(i,k)*orbitals(i,k);
+	    }
+	  densities(i) += detSum*WF->CI_coeffs(j);
+	}
     }
-  }
 }
 
 void QMCNuclearForces::printPoints(Array2D<double> & points)

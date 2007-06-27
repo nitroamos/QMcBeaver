@@ -65,14 +65,15 @@ void QMCSCFJastrow::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
   nalpha = Input->WF.getNumberAlphaElectrons();
   nbeta  = Input->WF.getNumberBetaElectrons();
 
-  if (nalpha > 0)
-    Alpha.initialize(Input,0,Input->WF.getNumberAlphaElectrons()-1,
-                     &Input->WF.AlphaOccupation,&Input->WF.AlphaCoeffs);
-
-  if (nbeta > 0)
-    Beta.initialize(Input,Input->WF.getNumberAlphaElectrons(),
-                    Input->WF.getNumberElectrons()-1,&Input->WF.BetaOccupation,
-                    &Input->WF.BetaCoeffs);
+  Alpha.initialize(Input,
+		   0,
+		   Input->WF.getNumberAlphaElectrons()-1,
+		   true);
+  
+  Beta.initialize(Input,
+		  Input->WF.getNumberAlphaElectrons(),
+		  Input->WF.getNumberElectrons()-1,
+		  false);
 
   PE.initialize(Input,HF);
   Jastrow.initialize(Input);
@@ -113,10 +114,8 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
 
 #ifdef QMC_GPU
   //These are pure GPU routines
-  if (nalpha > 0)
-    Alpha.gpuEvaluate(xData,gpp);
-  if (nbeta > 0)
-    Beta.gpuEvaluate(xData,gpp);
+  Alpha.gpuEvaluate(xData,gpp);
+  Beta.gpuEvaluate(xData,gpp);
   Jastrow.setUpGPU(Alpha.gpuBF.getElectronicTexture(),
                    Beta.gpuBF.getElectronicTexture(), gpp);
 #endif
@@ -127,10 +126,8 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
   */
   //These are pure CPU routines
   Jastrow.evaluate(xData,num-gpp,gpp);
-  if (nalpha > 0)
-    Alpha.evaluate(xData,num-gpp,gpp);
-  if (nbeta > 0)
-    Beta.evaluate(xData,num-gpp,gpp);
+  Alpha.evaluate(xData,num-gpp,gpp);
+  Beta.evaluate(xData,num-gpp,gpp);
 
   PE.evaluate(xData,num);
 
@@ -151,10 +148,8 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
 #endif
 
   //These are CPU if no GPU, otherwise mixed CPU/GPU
-  if (nalpha > 0)
-    Alpha.update_Ds();
-  if (nbeta > 0)
-    Beta.update_Ds();
+  Alpha.update_Ds();
+  Beta.update_Ds();
 #ifdef QMC_GPU
 
   Jastrow.gpuEvaluate(xData,gpp);
@@ -210,22 +205,16 @@ void QMCSCFJastrow::evaluate(Array2D<double> &X, QMCWalkerData & data)
 
 #ifdef QMC_GPU
   //These are pure GPU
-  if (nalpha > 0)
-    Alpha.gpuEvaluate(temp,1);
-  if (nbeta > 0)
-    Beta.gpuEvaluate(temp,1);
+  Alpha.gpuEvaluate(temp,1);
+  Beta.gpuEvaluate(temp,1);
 #else
   //These are pure CPU
-  if (nalpha > 0)
-    Alpha.evaluate(temp,1,0);
-  if (nbeta > 0)
-    Beta.evaluate(temp,1,0);
+  Alpha.evaluate(temp,1,0);
+  Beta.evaluate(temp,1,0);
 #endif
 
-  if (nalpha > 0)
-    Alpha.update_Ds();
-  if (nbeta > 0)
-    Beta.update_Ds();
+  Alpha.update_Ds();
+  Beta.update_Ds();
   //We just let the CPU initialize the Jastrow
   Jastrow.evaluate(temp,1,0);
   PE.evaluate(temp,1);
@@ -248,139 +237,76 @@ void QMCSCFJastrow::evaluate(Array2D<double> &X, QMCWalkerData & data)
   data.psi = getPsi();
 }
 
-//  We end up doing a division with SCF_sum. Therefore, it seems to be critical
+//  We end up doing a division with SCF_Psi. Therefore, it seems to be critical
 //  to make sure we aren't dividing by too small a number
 void QMCSCFJastrow::calculate_Psi_quantities(int walker)
 {
-  QMCGreensRatioComponent SCF_sum = 0.0;
-  Laplacian_PsiRatio = 0.0;
-  //double PsuedoForce2_PsiRatio = 0;
-
-  wd->SCF_Laplacian_PsiRatio = 0.0;
-  wd->SCF_Grad_PsiRatio      = 0.0;
-  wd->gradPsiRatio           = 0.0;
-
-  Array1D<QMCGreensRatioComponent> termPsi;
-  termPsi.allocate(Input->WF.getNumberDeterminants());
-
-  Array1D<double>* alphaPsi = 0;
-  Array1D<double>* alphaLaplacian = 0;
-  Array3D<double>* alphaGrad = 0;
-
-  Array1D<double> tempPsi;
-  Array1D<double> tempLaplacian;
-
-  if (nalpha > 0)
-  {
-    alphaPsi       = Alpha.getPsi(walker);
-    alphaLaplacian = Alpha.getLaplacianPsiRatio(walker);
-    alphaGrad      = Alpha.getGradPsiRatio(walker);
-  }
-  else
-  {
-    tempPsi.allocate(Input->WF.getNumberDeterminants());
-    tempPsi = 1.0;
-    alphaPsi = &tempPsi;
-
-    tempLaplacian.allocate(Input->WF.getNumberDeterminants());
-    tempLaplacian = 0.0;
-    alphaLaplacian = &tempLaplacian;
-  }
-
-  Array1D<double>* betaPsi = 0;
-  Array1D<double>* betaLaplacian = 0;
-  Array3D<double>* betaGrad = 0;
-
-  if (nbeta > 0)
-  {
-    betaPsi       = Beta.getPsi(walker);
-    betaLaplacian = Beta.getLaplacianPsiRatio(walker);
-    betaGrad      = Beta.getGradPsiRatio(walker);
-  }
-  else
-  {
-    tempPsi.allocate(Input->WF.getNumberDeterminants());
-    tempPsi = 1.0;
-    betaPsi = &tempPsi;
-
-    tempLaplacian.allocate(Input->WF.getNumberDeterminants());
-    tempLaplacian = 0.0;
-    betaLaplacian = &tempLaplacian;
-  }
-
-  double tempAlphaPsi = 0.0;
-  double tempBetaPsi = 0.0;
-
-  for (int i=0; i<Input->WF.getNumberDeterminants(); i++)
-  {
-    // If a determinant is NaN we exclude it from the sum.
-    termPsi(i) = Input->WF.CI_coeffs(i);
-
-    tempAlphaPsi = (*alphaPsi)(i);
-    if (IeeeMath::isNaN(tempAlphaPsi))
-      termPsi(i).multiplyBy(0.0);
-    else
-      termPsi(i).multiplyBy(tempAlphaPsi);
-
-    tempBetaPsi = (*betaPsi)(i);
-    if (IeeeMath::isNaN(tempBetaPsi))
-      termPsi(i).multiplyBy(0.0);
-    else
-      termPsi(i).multiplyBy(tempBetaPsi);
-
-    SCF_sum += termPsi(i);
-  }
-
-  double psiRatio = 0.0;
-
-  for (int i=0; i<Input->WF.getNumberDeterminants(); i++)
-  {
-    tempAlphaPsi = (*alphaPsi)(i);
-    tempBetaPsi = (*betaPsi)(i);
-
-    if (IeeeMath::isNaN(tempBetaPsi) || IeeeMath::isNaN(tempAlphaPsi))
+  if(Alpha.isSingular(walker) || Beta.isSingular(walker))
     {
-      // If a determinant is NaN we exclude it from the gradient and
-      // laplacian sums as well.
+      /*
+	Although maybe not all of the determinants are singular
+	let's just assume that we don't want to actually
+	salvage anything.
+      */
+      wd->isSingular = true;
+      return;
     }
-    else
-    {
-      psiRatio = termPsi(i)/SCF_sum;
+  Array1D<QMCGreensRatioComponent> termPsiRatio;
+  termPsiRatio.allocate(Input->WF.getNumberDeterminants());
+  double** term_AlphaGrad = 0;
+  double** term_BetaGrad  = 0;
 
-      if (nalpha > 0)
-      {
-        double** term_AlphaGrad = alphaGrad->array()[i];
-
-        for (int j=0; j<nalpha; j++)
-          for (int k=0; k<3; k++)
-            wd->SCF_Grad_PsiRatio(j,k) += psiRatio*term_AlphaGrad[j][k];
-
-	wd->SCF_Laplacian_PsiRatio += psiRatio * (*alphaLaplacian)(i);
-      }
-
-      if (nbeta > 0)
-      {
-        double** term_BetaGrad = betaGrad->array()[i];
-
-        for (int j=0; j<nbeta; j++)
-          for (int k=0; k<3; k++)
-            wd->SCF_Grad_PsiRatio(j+nalpha,k)+=psiRatio*term_BetaGrad[j][k];
-
-	wd->SCF_Laplacian_PsiRatio += psiRatio * (*betaLaplacian)(i);
-      }
-    }
-  }
+  Array1D<double>* alphaPsi       = Alpha.getPsi(walker);
+  Array3D<double>* alphaGrad      = Alpha.getGradPsiRatio(walker);
+  Array1D<double>* alphaLaplacian = Alpha.getLaplacianPsiRatio(walker);
   
-  QMCGreensRatioComponent jastrowValue =
+  Array1D<double>* betaPsi        = Beta.getPsi(walker);
+  Array3D<double>* betaGrad       = Beta.getGradPsiRatio(walker);
+  Array1D<double>* betaLaplacian  = Beta.getLaplacianPsiRatio(walker);
+
+  Array2D<double>* JastrowGrad    = Jastrow.getGradientLnJastrow(walker);
+  
+  QMCGreensRatioComponent Jastrow_Psi =
     QMCGreensRatioComponent(1.0,1.0,0.0,Jastrow.getLnJastrow(walker));
+
+  QMCGreensRatioComponent SCF_Psi = 0.0;
+
+  for (int ci=0; ci<Input->WF.getNumberDeterminants(); ci++)
+    {
+      termPsiRatio(ci) = Input->WF.CI_coeffs(ci);
+      termPsiRatio(ci).multiplyBy((*alphaPsi)(ci));
+      termPsiRatio(ci).multiplyBy((*betaPsi)(ci));
+      SCF_Psi += termPsiRatio(ci);
+    }
+
+  termPsiRatio /= SCF_Psi;
+
+  wd->SCF_Laplacian_PsiRatio = 0.0;  
+  wd->SCF_Grad_PsiRatio      = 0.0;
+  for (int ci=0; ci<Input->WF.getNumberDeterminants(); ci++)
+    {
+      if(alphaGrad) term_AlphaGrad = alphaGrad->array()[ci];
+      if(betaGrad)   term_BetaGrad =  betaGrad->array()[ci];
+      
+      for (int j=0; j<nalpha; j++)
+	for (int k=0; k<3; k++)
+	  wd->SCF_Grad_PsiRatio(j,k) += termPsiRatio(ci)*term_AlphaGrad[j][k];
+
+      for (int j=0; j<nbeta; j++)
+	for (int k=0; k<3; k++)
+	  wd->SCF_Grad_PsiRatio(j+nalpha,k) += termPsiRatio(ci)*term_BetaGrad[j][k];
+      
+      wd->SCF_Laplacian_PsiRatio += termPsiRatio(ci) * (*alphaLaplacian)(ci);
+      wd->SCF_Laplacian_PsiRatio += termPsiRatio(ci) * (*betaLaplacian)(ci);
+    }
   
-  Psi = SCF_sum * jastrowValue;
+  Psi = SCF_Psi * Jastrow_Psi;
   
   Laplacian_PsiRatio = wd->SCF_Laplacian_PsiRatio +
     Jastrow.getLaplacianLnJastrow(walker);
 
-  Array2D<double>* JastrowGrad = Jastrow.getGradientLnJastrow(walker);
-
+  //double PsuedoForce2_PsiRatio = 0;
+  wd->gradPsiRatio           = 0.0;
   for (int i=0; i<Input->WF.getNumberElectrons(); i++)
     for (int j=0; j<3; j++)
       {
@@ -410,67 +336,184 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
 
   if(Input->flags.calculate_Derivatives == 1)
     {
-      wd->p3_xxa = 0.0;  
-      for(int ai=0; ai<Jastrow.getNumAI(); ai++)
+      int numAI = Input->getNumberAIParameters();
+      
+      if(wd->rp_a.dim1() != numAI)
 	{
-	  //we never need dPsi/dai by itself, we only need the ratio. So this
-	  //is dPsi/dai/Psi.
-	  wd->rp_a(ai)    = Jastrow.get_p_a_ln(walker,ai);
-	  wd->p3_xxa(ai)  = Jastrow.get_p3_xxa_ln(walker,ai);
+	  wd->rp_a.allocate(numAI);
+	  wd->p3_xxa.allocate(numAI);
+	}
+
+      wd->p3_xxa = 0.0;
+      
+      int ai = 0;
+      for(int ji=0; ji<Input->JP.getNumberJWParameters(); ji++)
+	{
+	  wd->rp_a(ai)    = Jastrow.get_p_a_ln(walker,ji);
+	  wd->p3_xxa(ai)  = Jastrow.get_p3_xxa_ln(walker,ji);
 	  
-	  Array2D<double>* j_p_xa = Jastrow.get_p2_xa_ln(walker,ai);
+	  Array2D<double>* j_p_xa = Jastrow.get_p2_xa_ln(walker,ji);
 	  
 	  for (int i=0; i<Input->WF.getNumberElectrons(); i++)
-	    {
-	      for (int j=0; j<3; j++)
-		{
-		  wd->p3_xxa(ai) += 2 * (*j_p_xa)(i,j) * wd->SCF_Grad_PsiRatio(i,j);
-		  wd->p3_xxa(ai) += 2 * (*j_p_xa)(i,j) * (*JastrowGrad)(i,j);
-		}
-	    }
-	  wd->p3_xxa(ai) = -0.5*wd->p3_xxa(ai);
+	    for (int j=0; j<3; j++)
+	      {
+		wd->p3_xxa(ai) += 2.0 * (*j_p_xa)(i,j) * wd->SCF_Grad_PsiRatio(i,j);
+		wd->p3_xxa(ai) += 2.0 * (*j_p_xa)(i,j) * (*JastrowGrad)(i,j);
+	      }
+	  ai++;
 	}
       
-      int shift = Jastrow.getNumAI();
-      for(int ai=0; ai<Input->WF.getNumberDeterminants()-1; ai++)
+      for(int ci=1; ci<=Input->WF.getNumberCIParameters(); ci++)
 	{
-	  int ci = ai+1;
-	  psiRatio = termPsi(ci)/SCF_sum;
-	  double dPsiRatio_dci = (psiRatio - psiRatio * psiRatio) / Input->WF.CI_coeffs(ci);
+	  wd->rp_a(ai) = termPsiRatio(ci) / Input->WF.CI_coeffs(ci);
 	  
-	  wd->rp_a(ai+shift)    = psiRatio / Input->WF.CI_coeffs(ci);
-
 	  for(int cj=0; cj<Input->WF.getNumberDeterminants(); cj++)
 	    {
-	      double dPsiRatio_dcj;
+	      double dtermPsiRatio_ci_dcj;
 	      if(cj != ci)
-		dPsiRatio_dcj = -termPsi(cj) * psiRatio / SCF_sum / Input->WF.CI_coeffs(ci);
+		dtermPsiRatio_ci_dcj = -termPsiRatio(ci) * termPsiRatio(cj);
 	      else
-		dPsiRatio_dcj = dPsiRatio_dci;
+		dtermPsiRatio_ci_dcj = -termPsiRatio(ci) * termPsiRatio(ci) + termPsiRatio(ci);
+	      dtermPsiRatio_ci_dcj /= Input->WF.CI_coeffs(ci);
+	      
+	      wd->p3_xxa(ai)  += dtermPsiRatio_ci_dcj * ((*alphaLaplacian)(cj) + (*betaLaplacian)(cj));
 
-	      double** term_AlphaGrad = 0;
-	      double** term_BetaGrad = 0;
-	      if(nalpha > 0) term_AlphaGrad = alphaGrad->array()[cj];
-	      if(nbeta > 0)  term_BetaGrad = betaGrad->array()[cj];
+	      if(alphaGrad) term_AlphaGrad = alphaGrad->array()[cj];
+	      if(betaGrad)   term_BetaGrad =  betaGrad->array()[cj];
 	      
-	      wd->p3_xxa(ai+shift)  += dPsiRatio_dcj * ((*alphaLaplacian)(cj) + (*betaLaplacian)(cj));
-	      
-	      for (int i=0; i<nalpha; i++)
-		for (int j=0; j<3; j++)
-		  wd->p3_xxa(ai+shift) += 2 * (*JastrowGrad)(i,j) * term_AlphaGrad[i][j] * dPsiRatio_dcj;
-	      for (int i=0; i<nbeta; i++)
-		for (int j=0; j<3; j++)
-		  wd->p3_xxa(ai+shift) += 2 * (*JastrowGrad)(i+nalpha,j) * term_BetaGrad[i][j] * dPsiRatio_dcj;
+	      for(int i=0; i<nalpha; i++)
+		for(int j=0; j<3; j++)
+		  wd->p3_xxa(ai) += 2.0 * dtermPsiRatio_ci_dcj * term_AlphaGrad[i][j] * (*JastrowGrad)(i,j);
+	      for(int i=0; i<nbeta; i++)
+		for(int j=0; j<3; j++)
+		  wd->p3_xxa(ai) += 2.0 * dtermPsiRatio_ci_dcj * term_BetaGrad[i][j]  * (*JastrowGrad)(i+nalpha,j);
 	    }
-	  wd->p3_xxa(ai+shift) = -0.5*wd->p3_xxa(ai+shift);
+	  ai++;
 	}
 
-      //This is how you hand check the derivatives
+      int numDet = Input->WF.getNumberDeterminants();
+      int unusedIndicator = Input->WF.getUnusedIndicator();
+      Array1D<double> dtermPsi_dai(numDet);
+      if(ai < numAI)
+      for(int o=0; o<Input->WF.getNumberOrbitals(); o++)
+	{
+	  bool used = false;
+	  for(int ci=0; ci<Input->WF.getNumberDeterminants(); ci++)
+	    {
+	      if(Input->WF.AlphaOccupation(ci,o) != unusedIndicator ||
+		 Input->WF.BetaOccupation(ci,o) != unusedIndicator)
+		{
+		  used = true;
+		  break;
+		}
+	    }
+
+	  //The orbital might not be used at all
+	  if(!used) continue;
+
+	  //If it is used, then we can add the BF to the loop
+	  for(int bf=0; bf<Input->WF.getNumberBasisFunctions(); bf++)
+	    {
+	      dtermPsi_dai = 0.0;
+	      double dSCF_Psi_dai = 0.0;
+
+	      for(int ci=0; ci<numDet; ci++)
+		{
+		  int oa = Input->WF.AlphaOccupation(ci,o);
+		  int ob = Input->WF.BetaOccupation(ci,o);
+
+		  double dtermPsi_a = 0.0;
+		  if(oa != unusedIndicator)
+		    dtermPsi_a += Alpha.get_p_a(walker,ci)->get(oa,bf) * (*betaPsi)(ci);
+		  if(ob != unusedIndicator)
+		    dtermPsi_a += Beta.get_p_a(walker,ci)->get(ob,bf) * (*alphaPsi)(ci);
+
+		  //This determinant might not depend upon this orbital
+		  if(dtermPsi_a == 0) continue;
+
+		  dtermPsi_a *= Input->WF.CI_coeffs(ci);
+		  dtermPsi_dai(ci) = dtermPsi_a;
+		  dSCF_Psi_dai += dtermPsi_a;
+		}
+
+	      wd->rp_a(ai) = dSCF_Psi_dai / SCF_Psi;
+
+	      for(int ci=0; ci<numDet; ci++)
+		{
+		  int oa = Input->WF.AlphaOccupation(ci,o);
+		  int ob = Input->WF.BetaOccupation(ci,o);
+
+		  // d (N/D) = dN / D - N dD / D^2 ; N = termPsiRatio(ci), D = SCF_Psi
+		  double dtermPsiRatio_dai;
+		  dtermPsiRatio_dai = (dtermPsi_dai(ci) - termPsiRatio(ci) * dSCF_Psi_dai) / SCF_Psi;
+
+		  // d ( N * (A + B) ) = dN * (A + B) + N * (dA + dB)
+		  wd->p3_xxa(ai) += dtermPsiRatio_dai * ((*alphaLaplacian)(ci) + (*betaLaplacian)(ci));
+		  if(oa != unusedIndicator)
+		    wd->p3_xxa(ai) += termPsiRatio(ci) * Alpha.get_p3_xxa(walker,ci)->get(oa,bf);
+		  if(ob != unusedIndicator)
+		    wd->p3_xxa(ai) += termPsiRatio(ci) * Beta.get_p3_xxa(walker,ci)->get(ob,bf);
+
+		  //And now add in the terms from the gradient
+		  double Term_dSlater_a = 0.0;
+		  if(oa != unusedIndicator)
+		    for(int i=0; i<nalpha; i++)
+		      for(int j=0; j<3; j++)
+			Term_dSlater_a += Alpha.get_p2_xa(walker,ci,i,j)->get(oa,bf) * (*JastrowGrad)(i,j);
+		  if(ob != unusedIndicator)
+		    for(int i=0; i<nbeta; i++)
+		      for(int j=0; j<3; j++)
+			Term_dSlater_a += Beta.get_p2_xa(walker,ci,i,j)->get(ob,bf) * (*JastrowGrad)(i+nalpha,j);
+		  Term_dSlater_a *= 2.0 * termPsiRatio(ci);
+
+		  if(alphaGrad) term_AlphaGrad = alphaGrad->array()[ci];
+		  if(betaGrad)   term_BetaGrad =  betaGrad->array()[ci];
+
+		  double Slater_dTerm_a = 0.0;
+		  for(int i=0; i<nalpha; i++)
+		    for(int j=0; j<3; j++)
+		      Slater_dTerm_a += term_AlphaGrad[i][j] * (*JastrowGrad)(i,j);
+		  for(int i=0; i<nbeta; i++)
+		    for(int j=0; j<3; j++)
+		      Slater_dTerm_a += term_BetaGrad[i][j]  * (*JastrowGrad)(i+nalpha,j);
+		  Slater_dTerm_a *= 2.0 * dtermPsiRatio_dai;
+		  
+		  wd->p3_xxa(ai) += Slater_dTerm_a + Term_dSlater_a;
+		}
+	      ai++;
+	    }
+	}
+
+      if(ai != numAI)
+	{
+	  clog << "Error: our parameter counting went bad...\n"
+	       << "    ai = " << ai << endl
+	       << " numAI = " << numAI << endl;
+	  exit(0);
+	}
+
+      //Convert the derivative wrt to the laplacian into
+      //the derivative wrt the kinetic energy
+      wd->p3_xxa *= -0.5;
+      
+      //Make sure that the derivative = (f(x + h) - f(x))/h
+      //as h -> 0 by editing a ckmf file
       /*
-	printf("actual P=%25.15f  XX=%25.15f\n",(double)Psi,-0.5*Laplacian_PsiRatio);
-	for(int ai=0; ai<wd->p3_xxa.dim1(); ai++)
-	printf("ai=%2i RP=%25.15f XXA=%25.15f\n",ai,(double)(Psi * wd->rp_a(ai)),wd->p3_xxa(ai));
-	exit(0);
+      //int aStart = Input->getNumberAIParameters() - Input->WF.getNumberORParameters();
+      int aStart = 0;
+      int aStop  = Input->getNumberAIParameters();
+      Array1D<double> params = Input->getAIParameters();
+      printf("function %23c p   %25.15e p2_xx  %25.15e\n",
+	     ' ',
+	     (double)Psi,
+	     -0.5*Laplacian_PsiRatio);
+      for(int ai=aStart; ai<aStop; ai++)
+	printf("ai %3i %25.15e p_a %25.15e p3_xxa %25.15e\n",
+	       ai,
+	       params(ai),
+	       (double)(Psi) * wd->rp_a(ai),
+	       wd->p3_xxa(ai));
+       exit(0);
       //*/
     }
 
@@ -484,7 +527,7 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
       wd->chiDensity = wd->chiDensity + *(Beta.getChiDensity(walker));
   }
 
-  termPsi.deallocate();
+  termPsiRatio.deallocate();
 }
 
 void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio()
@@ -660,28 +703,11 @@ double QMCSCFJastrow::getEnergyNE(int i)
 
 bool QMCSCFJastrow::isSingular(int walker)
 {
-  if (nalpha > 0 && Alpha.isSingular(walker))
-    return true;
-  else if (nbeta > 0 && Beta.isSingular(walker))
+  if(Alpha.isSingular(walker) ||
+     Beta.isSingular(walker))
     return true;
   else
     return false;
 }
-
-int QMCSCFJastrow::getNumAI()
-{
-  /*
-    Since the wavefunction is invariant to normalization,
-    there are only N-1 independent CI coefficients.
-  */
-  int numAI = Input->WF.getNumberDeterminants() - 1;
-
-  if(Input->flags.calculate_Derivatives == 1)
-    numAI += Jastrow.getNumAI();
-  else
-    numAI = 0;
-  return numAI;
-}
-
 
 

@@ -22,7 +22,6 @@ using namespace std;
 */
 QMCWalkerData::QMCWalkerData()
 {
-
 }
 
 QMCWalkerData::~QMCWalkerData()
@@ -36,8 +35,7 @@ QMCWalkerData::~QMCWalkerData()
 }
 
 void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
-			       int numNucForceDim1, int numNucForceDim2,
-			       int numAI)
+			       int numNucForceDim1, int numNucForceDim2)
 {
   Input = INPUT;
   int numElectrons  = Input->WF.getNumberElectrons();
@@ -46,6 +44,7 @@ void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
   modifiedGradPsiRatio.allocate(numElectrons,numDimensions);
   SCF_Grad_PsiRatio.allocate(numElectrons,numDimensions);
 
+  int numAI = Input->getNumberAIParameters();
   rp_a.allocate(numAI);
   p3_xxa.allocate(numAI);
 

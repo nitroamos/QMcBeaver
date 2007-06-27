@@ -198,12 +198,7 @@ class QMCNuclearForces
   /**
      Temp variable used by getDensities
   */
-  Array2D<qmcfloat> alphaOrbitals;
-
-  /**
-     Temp variable used by getDensities
-  */
-  Array2D<qmcfloat> betaOrbitals;
+  Array2D<qmcfloat> orbitals;
 
   /**
      Temp variable used by getDensities

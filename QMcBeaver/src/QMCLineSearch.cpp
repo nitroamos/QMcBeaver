@@ -68,18 +68,28 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
   if(fabs(a_diag_factor - 1.0) < 1.0e-10)
     optStep++;
 
+  cout.setf(ios::scientific);
   cout << endl;
 
   dim = InitialGuess.dim1();
   bool useInitialHess = InitialHessian.dim1() == dim && InitialHessian.dim2() == dim;
   bool useInitialGrad = InitialGradient.dim1() == dim;
 
+  if( (!useInitialGrad && InitialGradient.dim1() > 0) ||
+      (!useInitialHess && InitialHessian.dim1() > 0))
+    {
+      clog << "Warning: were you intending to use InitialGradient/Hessian?" << endl
+	   << "    InitialGuess.dim1() == " << dim << endl
+	   << " InitialGradient.dim1() == " << InitialGradient.dim1() << endl
+	   << "  InitialHessian.dim1() == " << InitialHessian.dim1() << endl << endl;
+    }
+
   double a_diag = 0.0;
   if(globalInput.flags.optimize_Psi_method == "automatic")
     if(optStep < 6)
       {
 	/*
-	  rotate the hessian in the direction of steepest
+	  Rotate the hessian in the direction of steepest
 	  descent, described in PRL 94, 150201 (2005)
 	  supposed to make a_diag smaller as optimization progresses...
 	  
@@ -92,8 +102,12 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
 	  I think the point is compensating for deficiencies in
 	  the approximate hessian, as well as for nonlinearities
 	  in the objective function.
+
+
+	  Maybe we want to use a different factor for the different
+	  parameters?
 	*/
-	a_diag = 0.1;
+	a_diag = 0.01;
 	
 	//use Steepest_Descent for a couple iterations first
 	//useInitialHess = false;
@@ -110,8 +124,32 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
     for(int d=0; d<dim; d++)
       InitialHessian(d,d) = InitialHessian(d,d) + a_diag;
     
-    cout << "Adding a_diag = " << a_diag
+    cout << "Notice: Adding a_diag = " << a_diag
 	 << " to the diagonal elements of the hessian" << endl;
+
+    /*
+    int numJP = globalInput.JP.getNumberEEParameters() +
+      globalInput.JP.getNumberNEParameters();
+    int numCI = globalInput.WF.getNumberDeterminants() - 1;
+    if(globalInput.flags.optimize_Jastrows == 0)
+      {
+	cout << "Notice: we are not optimizing Jastrows this optimization step." << endl;
+	for(int ai=0; ai<numJP; ai++)
+	  {
+	    InitialHessian.setToIdentity(ai);
+	    InitialGradient(ai) = 0.0;
+	  }
+      }
+    if(globalInput.flags.optimize_CI == 0)
+      {
+	cout << "Notice: we are not optimizing CI coefficients this optimization step." << endl;
+	for(int ai=0; ai<numCI; ai++)
+	  {
+	    InitialHessian.setToIdentity(ai+numJP);
+	    InitialGradient(ai+numJP) = 0.0;
+	  }
+      }
+    */
   }
   
   // Allocate the point used in the search and initialize its value.
@@ -120,14 +158,18 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
   cout << "Beginning Line Search Optimization step " << optStep << " for " << dim
        << " parameters, max steps = " << maximumSteps << ", with: " << endl;
   cout << "        InitialValue = " << InitialValue << endl;
-  globalInput.printAIArray(cout,"InitialGuess",20,InitialGuess);
+  globalInput.printAIParameters(cout,"InitialGuess",20,InitialGuess,false);
   if(useInitialGrad)
-    globalInput.printAIArray(cout,"InitialGradient",20,InitialGradient);
+    globalInput.printAIParameters(cout,"InitialGradient",20,InitialGradient,true);
 
   if(useInitialHess)
     {
       double nsym = InitialHessian.nonSymmetry();
-      cout << "      InitialHessian   (non symmetry = " << nsym << ") =\n" << InitialHessian;
+      cout << "      InitialHessian   (non symmetry = " << nsym << ") =" << endl;
+      if(InitialHessian.dim1() < 20)
+	cout << InitialHessian;
+      else
+	cout << "<too large, not printed>" << endl;
     }
 
   bool ok = false;
@@ -205,9 +247,9 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
       cout.precision(12);
       cout.width(20);
       cout << f[i] << endl;
-      globalInput.printAIArray(cout,"Parameters:",20,x[i]);
-      globalInput.printAIArray(cout,"Gradient:",20,gradient[i]);
-      globalInput.printAIArray(cout,"Search Direction:",20,p_k);
+      globalInput.printAIParameters(cout,"Parameters:",20,x[i],false);
+      globalInput.printAIParameters(cout,"Gradient:",20,gradient[i],false);
+      globalInput.printAIParameters(cout,"Search Direction:",20,p_k,false);
       cout << setw(20) << "stepLength:";
       cout.precision(12);
       cout.width(20);
@@ -218,8 +260,11 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
 	  cout << "\t\tInverseHessian:   (identity matrix)\n";
 	} else {
 	  double nsym = inverseHessian.back().nonSymmetry();
-	  cout << "\t\tInverseHessian    (non symmetry = " << nsym << "):\n"
-	       << inverseHessian.back();
+	  cout << "\t\tInverseHessian    (non symmetry = " << nsym << "):" << endl;
+	  if(inverseHessian.back().dim1() < 20)
+	    cout << inverseHessian.back();
+	  else
+	    cout << "<too large, not printed>" << endl;
 	}
 
       // Calculate the next step
@@ -238,7 +283,7 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
   cout.precision(12);
   cout.width(20);
   cout << f.back() << endl;
-  globalInput.printAIArray(cout,"Best Parameters:",20,x.back());
+  globalInput.printAIParameters(cout,"Best Parameters:",20,x.back(),false);
   cout << endl << endl;
 
   /*

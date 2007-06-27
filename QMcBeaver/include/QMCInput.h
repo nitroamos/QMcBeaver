@@ -93,13 +93,19 @@ public:
  */
  void openConfigFile();
 
+ /**
+    The total number of parameters that we'll be optimizing
+    across all parts of the wavefunction.
+ */
+ int getNumberAIParameters();
+
   /**
     Gets the parameters describing the particle-particle interactions,
     and adds to them the CI coefficients.
 
     @return parameters for optimizing
   */
-  Array1D<double> getParameters();
+  Array1D<double> getAIParameters();
 
   /**
     Sets the parameters describing the particle-particle interactions,
@@ -107,13 +113,17 @@ public:
 
     @param params new set of parameters
   */
-  void setParameterVector(Array1D<double> & params);
+  void setAIParameters(Array1D<double> & params);
 
   /**
      Print an array, designating the order that the ai
      parameters are organized by.
   */
-  void printAIArray(ostream & strm, string name, int width, Array1D<double> & array);
+  void printAIParameters(ostream & strm,
+			 string name,
+			 int margin,
+			 Array1D<double> & array,
+			 bool forcePrintOrbitals);
 
   /**
      Write this object's state out to a stream. The same format is 

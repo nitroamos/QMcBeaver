@@ -55,9 +55,10 @@ void QMCJastrow::initialize(QMCInput * input)
   grad_sum_U.allocate(walkersPerPass);
   laplacian_sum_U.allocate(walkersPerPass);
 
-  p_a.allocate(walkersPerPass,getNumAI());
-  p2_xa.allocate(walkersPerPass,getNumAI());
-  p3_xxa.allocate(walkersPerPass,getNumAI());
+  int numJW = Input->JP.getNumberJWParameters();
+  p_a.allocate(walkersPerPass,numJW);
+  p2_xa.allocate(walkersPerPass,numJW);
+  p3_xxa.allocate(walkersPerPass,numJW);
 
   for(int i=0; i<p2_xa.dim1(); i++)
     for(int j=0; j<p2_xa.dim2(); j++)
@@ -72,12 +73,6 @@ void QMCJastrow::initialize(QMCInput * input)
 double QMCJastrow::getJastrow(int which)
 {
   return exp(sum_U(which));
-}
-
-int QMCJastrow::getNumAI()
-{
-  return JastrowElectronElectron.getNumAI() +
-    JastrowElectronNuclear.getNumAI();
 }
 
 double QMCJastrow::get_p_a(int which, int ai)
@@ -222,14 +217,16 @@ void QMCJastrow::evaluate(QMCJastrowParameters & JP, Array1D<Array2D<double>*> &
 
       if(Input->flags.calculate_Derivatives == 1)
 	{
-	  for(int ai=0; ai<JastrowElectronElectron.getNumAI(); ai++)
+	  int numEE = Input->JP.getNumberEEParameters();
+	  for(int ai=0; ai<numEE; ai++)
 	    {
 	      p_a(walker,ai)    = JastrowElectronElectron.get_p_a_ln(ai);
 	      p2_xa(walker,ai)  = *JastrowElectronElectron.get_p2_xa_ln(ai);
 	      p3_xxa(walker,ai) = JastrowElectronElectron.get_p3_xxa_ln(ai);
 	    }
-	  int shift = JastrowElectronElectron.getNumAI();
-	  for(int ai=0; ai<JastrowElectronNuclear.getNumAI(); ai++)
+	  int shift = numEE;
+	  int numNE = Input->JP.getNumberNEParameters();
+	  for(int ai=0; ai<numNE; ai++)
 	    {
 	      p_a(walker,ai+shift)    = JastrowElectronNuclear.get_p_a_ln(ai);
 	      p2_xa(walker,ai+shift)  = *JastrowElectronNuclear.get_p2_xa_ln(ai);

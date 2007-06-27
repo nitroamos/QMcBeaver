@@ -36,8 +36,7 @@ class QMCWalkerData {
   ~QMCWalkerData();
 
   void initialize(QMCInput * input, int numDimensions,
-		  int numNucForceDim1, int numNucForceDim2,
-		  int numAI);
+		  int numNucForceDim1, int numNucForceDim2);
 
   QMCInput * Input;
 
@@ -48,7 +47,20 @@ class QMCWalkerData {
   double lnJ;
   Array2D<double> SCF_Grad_PsiRatio;
 
+  /*
+    We never need dPsi_dai directly, we only collect
+    (1/Psi) * (dPsi_dai). Actually, it's easier
+    to calculate the ratio anyway.
+
+    So the data in this array is the derivative of Psi
+    with respect to parameter ai, divided by Psi.
+  */
   Array1D<double> rp_a;
+
+  /*
+    This will be the derivative of the kinetic
+    energy with respect to parameter ai.
+  */
   Array1D<double> p3_xxa;
   
   QMCGreensRatioComponent psi;

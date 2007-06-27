@@ -30,7 +30,7 @@ Array1D<QMCObjectiveFunctionResult> QMCObjectiveFunction::evaluate(
 
   for(int i=0;i<Params.dim1();i++)
     {
-      Input->setParameterVector(Params(i));
+      Input->setAIParameters(Params(i));
       Array1D<Complex> poles = Input->JP.getPoles();
 
       bool print = false;

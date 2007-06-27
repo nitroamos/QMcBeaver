@@ -248,7 +248,7 @@ bool QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
   bool ok = true;
   // Calculate the jastrow values
 
-  Input->setParameterVector( Params );
+  Input->setAIParameters( Params );
 
   //there is a much better way to do this...
   Array1D< Array2D<double>* > temp;

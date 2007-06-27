@@ -771,6 +771,16 @@ public:
     }
 #endif
 
+    void setToIdentity(int i)
+      {
+	for(int j=0; j<min(n_1,n_2); j++)
+	  {
+	    (*this)(i,j) = (T)(0.0);
+	    (*this)(j,i) = (T)(0.0);
+	  }
+	(*this)(i,i) = (T)(1.0);
+      }
+
     void setToIdentity()
       {
 	*this = (T)(0.0);

@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCBasisFunctionCoefficients.h"
+#include <iomanip>
 
 QMCBasisFunctionCoefficients::QMCBasisFunctionCoefficients() 
 {
@@ -120,18 +121,29 @@ void QMCBasisFunctionCoefficients::read(string runfile)
 
 ostream& operator <<(ostream& strm, QMCBasisFunctionCoefficients& rhs)
 {
- strm << rhs.Label << "\t" << rhs.N_Orbitals << "\t"
-      << rhs.Max_Gaussians << endl;
+  int width = 20;
+  strm << setw(3) << left << rhs.Label
+       << setw(5) << right << rhs.N_Orbitals
+       << setw(5) << rhs.Max_Gaussians << endl;
 
- for(int i=0; i<rhs.N_Orbitals; i++)
- {
-  strm << rhs.N_Gauss(i) << "\t" << rhs.Type(i) << endl;
-  for(int j=0; j<rhs.N_Gauss(i); j++)
-  {
-   strm << "\t" << rhs.Coeffs(i,j,0) << "\t"
-        << rhs.Coeffs(i,j,1) << endl;
-  }
- }
- return strm;
+  strm.unsetf(ios::fixed);
+  strm.unsetf(ios::scientific);
+
+  for(int i=0; i<rhs.N_Orbitals; i++)
+    {
+      strm << right;
+      strm << setw(3) << rhs.N_Gauss(i) << " "
+	   << setw(5) << left << rhs.Type(i) << endl;
+      for(int j=0; j<rhs.N_Gauss(i); j++)
+	{
+	  strm << setw(width) << right << rhs.Coeffs(i,j,0) << "  ";
+
+	  if(rhs.Coeffs(i,j,1) < 0.0) strm << " -";
+	  else                        strm << "  ";
+	  strm << setw(width) << left << fabs(rhs.Coeffs(i,j,1)) << endl;
+	}
+    }
+  strm << right;
+  return strm;
 }
 

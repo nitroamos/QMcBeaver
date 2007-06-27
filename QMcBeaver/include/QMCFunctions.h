@@ -80,11 +80,6 @@ public:
       nbeta = rhs.nbeta;
     }
 
-  virtual int getNumAI()
-    {
-      return 0;
-    }
-
  protected:
   QMCInput *Input; 
  

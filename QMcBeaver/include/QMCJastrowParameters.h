@@ -66,18 +66,45 @@ public:
     Sets the parameters describing the particle-particle interactions.
 
     @param params new set of parameters
+    @param shift the index of the first parameter
   */
-  void setParameterVector(Array1D<double> & params);
+  void setJWParameters(Array1D<double> & params, int shift);
 
   /**
     Gets the parameters describing the particle-particle interactions.
 
     @return parameters describing particle-particle interactions.
+    @param shift the index of the first parameter
   */
-  Array1D<double> getParameters();
+  void getJWParameters(Array1D<double> & params, int shift);
 
+  /**
+     Overloaded function to return an array of just the Jastrow
+     parameters.
+  */
+  Array1D<double> getJWParameters();
+
+  /**
+     Returns the total number of Jastrow parameters.
+  */
+  int getNumberJWParameters();
+
+  /**
+     Returns the total number of Electron-Electron
+     Jastrow parameters.
+  */
   int getNumberEEParameters();
+
+  /**
+     Returns the total number of Nuclear-Electron
+     Jastrow parameters.
+  */
   int getNumberNEParameters();
+
+  /**
+     The number of parameters used for Nuclear-Electron
+     parameters, where only alpha electrons are counted.
+  */
   int getNumberNEupParameters();
 
   /**

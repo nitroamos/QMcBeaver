@@ -81,7 +81,7 @@ class QMCManager
 
      @return whether the run was cut short (e.g. kill signal)
   */
-  bool run(QMCInput & Input, bool equilibrate);
+  bool run(bool equilibrate);
 
   /**
      Optimizes the parameters in a variational QMC (VMC) calculation using 
@@ -96,6 +96,14 @@ class QMCManager
 
   /**
      Writes the restart file for the calculation.
+     @param filename the name of the file to write the input into
+  */
+  void writeRestart(string filename);
+
+  /**
+     Writes the restart file for the calculation.
+     Uses the Input.flags.restart_file_name as
+     filename.
   */
   void writeRestart();
 
@@ -160,8 +168,9 @@ class QMCManager
 
   /**
      Input data for the calculation.
-  */
+
   QMCInput Input;
+  */
 
   /**
      Local code timers for this node.

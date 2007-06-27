@@ -35,9 +35,10 @@ void QMCJastrowElectronElectron::initialize(QMCInput * input)
 
   grad_sum_U.allocate(Input->WF.getNumberElectrons(),3);
 
-  p_a.allocate(getNumAI());
-  p2_xa.allocate(getNumAI());
-  p3_xxa.allocate(getNumAI());
+  int numEE = Input->JP.getNumberEEParameters();
+  p_a.allocate(numEE);
+  p2_xa.allocate(numEE);
+  p3_xxa.allocate(numEE);
 
   for(int i=0; i<p2_xa.dim1(); i++)
     p2_xa(i).allocate(Input->WF.getNumberElectrons(),3);
@@ -93,11 +94,6 @@ double QMCJastrowElectronElectron::getLnJastrow()
 double QMCJastrowElectronElectron::get_p_a_ln(int ai)
 {
   return p_a(ai);
-}
-
-int QMCJastrowElectronElectron::getNumAI()
-{
-  return Input->JP.getNumberEEParameters();
 }
 
 void QMCJastrowElectronElectron::evaluate(QMCJastrowParameters & JP,

@@ -73,12 +73,6 @@ public:
   double getLnJastrow();
 
   /**
-     The number of EE wavefunction parameters we can take a partial derivative
-     with respect to.
-  */
-  int getNumAI();
-
-  /**
      Partial derivative of the natural log of the function with respect to
      parameter ai.
   */

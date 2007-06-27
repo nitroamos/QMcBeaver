@@ -21,25 +21,6 @@ QMCProperties::QMCProperties()
   nBasisFunc   = 0;
   zeroOut();
 
-  int numAI = globalInput.getParameters().dim1();
-
-  if(globalInput.flags.calculate_Derivatives == 1)
-    {
-      //second parameter refers to the number of terms necessary
-      //to calculate derivatives of the optimization objective function
-      der.allocate(numAI,5);
-    } else {
-      der.deallocate();
-    }
-
-  if( globalInput.flags.optimize_Psi_method == "analytical_energy_variance" ||
-      globalInput.flags.optimize_Psi_method == "automatic" )
-    {
-      hess.allocate(numAI,numAI);
-    } else {
-      hess.deallocate();
-    }
-
 #ifdef PARALLEL
   if (!mpiTypeCreated)
     {
@@ -92,6 +73,25 @@ void QMCProperties::zeroOut()
   acceptanceProbability.zeroOut();
   distanceMovedAccepted.zeroOut();
   distanceMovedTrial.zeroOut();
+
+  int numAI = globalInput.getNumberAIParameters();
+
+  if(globalInput.flags.calculate_Derivatives == 1)
+    {
+      //second parameter refers to the number of terms necessary
+      //to calculate derivatives of the optimization objective function
+      der.allocate(numAI,5);
+    } else {
+      der.deallocate();
+    }
+
+  if( globalInput.flags.optimize_Psi_method == "analytical_energy_variance" ||
+      globalInput.flags.optimize_Psi_method == "automatic" )
+    {
+      hess.allocate(numAI,numAI);
+    } else {
+      hess.deallocate();
+    }
 
   for(int i=0; i<der.dim1(); i++)
     for(int j=0; j<der.dim2(); j++)
@@ -443,12 +443,15 @@ ostream& operator <<(ostream& strm, QMCProperties &rhs)
 	if(gradient.dim1() > 0)
 	  {
 	    strm << endl << "------ Objective Function Derivatives --------" << endl;
-	    globalInput.printAIArray(strm,"",5,gradient);
+	    globalInput.printAIParameters(strm,"",5,gradient,false);
 	  }
 	if(hessian.dim1() > 0)
 	  {
 	    strm << endl << "------ Objective Function Hessian --------" << endl;
-	    strm << hessian;
+	    if(hessian.dim1() < 20)
+	      strm << hessian;
+	    else
+	      strm << "<hessian.dim1() = " << hessian.dim1() << " is too large, not printing>" << endl;
 	  }
 	strm << endl;
     }

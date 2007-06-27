@@ -32,6 +32,7 @@ for more details.
 
 
 #include "QMCJastrowParameters.h"
+#include "QMCInput.h"
 
 void QMCJastrowParameters::operator=( const QMCJastrowParameters & rhs )
 {
@@ -49,7 +50,7 @@ void QMCJastrowParameters::operator=( const QMCJastrowParameters & rhs )
   NumberOfElectronsDown = rhs.NumberOfElectronsDown;
 }
 
-void QMCJastrowParameters::setParameterVector(Array1D<double> & params)
+void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
 {
   if( EquivalentElectronUpDownParams )
     {
@@ -67,7 +68,7 @@ void QMCJastrowParameters::setParameterVector(Array1D<double> & params)
 
 	  for(int i=0; i<temp.dim1(); i++)
 	    {
-	      temp(i) = params(Counter);
+	      temp(i) = params(Counter + shift);
 	      Counter++;
 	    }
 
@@ -84,7 +85,7 @@ void QMCJastrowParameters::setParameterVector(Array1D<double> & params)
 
 	  for(int i=0; i<temp.dim1(); i++)
 	    {
-	      temp(i) = params(Counter);
+	      temp(i) = params(Counter + shift);
 	      Counter++;
 	    }
 
@@ -102,7 +103,7 @@ void QMCJastrowParameters::setParameterVector(Array1D<double> & params)
 
 	  for(int j=0; j<temp.dim1(); j++)
 	    {
-	      temp(j) = params(Counter);
+	      temp(j) = params(Counter + shift);
 	      Counter++;
 	    }
 
@@ -144,7 +145,7 @@ void QMCJastrowParameters::setParameterVector(Array1D<double> & params)
 
 	  for(int i=0; i<temp.dim1(); i++)
 	    {  
-	      temp(i) = params(Counter);
+	      temp(i) = params(Counter + shift);
 	      Counter++;
 	    }
 
@@ -161,7 +162,7 @@ void QMCJastrowParameters::setParameterVector(Array1D<double> & params)
 	  
 	  for(int i=0; i<temp.dim1(); i++)
 	    {
-	      temp(i) = params(Counter);
+	      temp(i) = params(Counter + shift);
 	      Counter++;
 	    }
 
@@ -178,7 +179,7 @@ void QMCJastrowParameters::setParameterVector(Array1D<double> & params)
 
 	  for(int i=0; i<temp.dim1(); i++)
 	    {
-	      temp(i) = params(Counter);
+	      temp(i) = params(Counter + shift);
 	      Counter++;
 	    }
 
@@ -196,7 +197,7 @@ void QMCJastrowParameters::setParameterVector(Array1D<double> & params)
 
 	  for(int j=0; j<temp.dim1(); j++)
 	    {
-	      temp(j) = params(Counter);
+	      temp(j) = params(Counter + shift);
 	      Counter++;
 	    }
 
@@ -216,7 +217,7 @@ void QMCJastrowParameters::setParameterVector(Array1D<double> & params)
 	      
 	      for(int j=0; j<temp.dim1(); j++)
 		{
-		  temp(j) = params(Counter);
+		  temp(j) = params(Counter + shift);
 		  Counter++;
 		}
 
@@ -226,13 +227,22 @@ void QMCJastrowParameters::setParameterVector(Array1D<double> & params)
     }
 }
 
+int QMCJastrowParameters::getNumberJWParameters()
+{
+  return getNumberEEParameters() + getNumberNEParameters();
+}
+
 int QMCJastrowParameters::getNumberEEParameters()
 {
+  if(globalInput.flags.optimize_EE_Jastrows == 0)
+    return 0;
   return NumberOfEEParameters;
 }
 
 int QMCJastrowParameters::getNumberNEParameters()
 {
+  if(globalInput.flags.optimize_EN_Jastrows == 0)
+    return 0;
   return NumberOfNEParameters;
 }
 
@@ -241,32 +251,17 @@ int QMCJastrowParameters::getNumberNEupParameters()
   return NumberOfNEupParameters;
 }
 
-Array1D<double> QMCJastrowParameters::getParameters()
+Array1D<double> QMCJastrowParameters::getJWParameters()
 {
-  Array1D<double> ParamVect;
-  
+  Array1D<double> params(getNumberJWParameters());
+  getJWParameters(params,0);
+  return params;
+}
+
+void QMCJastrowParameters::getJWParameters(Array1D<double> & params, int shift)
+{ 
   if( EquivalentElectronUpDownParams )
     {
-      int TotalNumberOfParams = 0;
-      
-      if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
-	{
-	  TotalNumberOfParams += EupEdn.getTotalNumberOfParameters();
-	}
-      
-      if( NumberOfElectronsUp > 1 )
-	{
-	  TotalNumberOfParams += EupEup.getTotalNumberOfParameters();
-	}
-
-      for(int i=0; i<EupNuclear.dim1(); i++)
-	{
-	  TotalNumberOfParams += 
-	    EupNuclear(i).getTotalNumberOfParameters();
-	}
-
-      ParamVect.allocate( TotalNumberOfParams );
-
       int Counter = 0;
       Array1D<double> temp;
 
@@ -278,7 +273,7 @@ Array1D<double> QMCJastrowParameters::getParameters()
 
 	  for(int i=0; i<temp.dim1(); i++)
 	    {
-	      ParamVect(Counter) = temp(i);
+	      params(Counter + shift) = temp(i);
 	      Counter++;
 	    }
 	}
@@ -291,7 +286,7 @@ Array1D<double> QMCJastrowParameters::getParameters()
 
 	  for(int i=0; i<temp.dim1(); i++)
 	    {
-	      ParamVect(Counter) = temp(i);
+	      params(Counter + shift) = temp(i);
 	      Counter++;
 	    }
 	}
@@ -304,47 +299,13 @@ Array1D<double> QMCJastrowParameters::getParameters()
 
 	  for(int j=0; j<temp.dim1(); j++)
 	    {
-	      ParamVect(Counter) = temp(j);
+	      params(Counter + shift) = temp(j);
 	      Counter++;
 	    }
 	}
     }
   else
-    {
-      int TotalNumberOfParams = 0;
-
-      if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
-	{
-	  TotalNumberOfParams += EupEdn.getTotalNumberOfParameters();
-	}
-
-      if( NumberOfElectronsUp > 1 )
-	{
-	  TotalNumberOfParams += EupEup.getTotalNumberOfParameters();
-	}
-
-      if( NumberOfElectronsDown > 1 )
-	{
-	  TotalNumberOfParams += EdnEdn.getTotalNumberOfParameters();
-	}
-
-      for(int i=0; i<EupNuclear.dim1(); i++)
-	{
-	  TotalNumberOfParams += 
-	    EupNuclear(i).getTotalNumberOfParameters();
-	}
-      
-      if( NumberOfElectronsDown > 0 )
-	{
-	  for(int i=0; i<EdnNuclear.dim1(); i++)
-	    {
-	      TotalNumberOfParams += 
-		EdnNuclear(i).getTotalNumberOfParameters();
-	    }
-	}
-
-      ParamVect.allocate( TotalNumberOfParams );
-      
+    {      
       int Counter = 0;
       Array1D<double> temp;
       
@@ -356,7 +317,7 @@ Array1D<double> QMCJastrowParameters::getParameters()
 
 	  for(int i=0; i<temp.dim1(); i++)
 	    {
-	      ParamVect(Counter) = temp(i);
+	      params(Counter + shift) = temp(i);
 	      Counter++;
 	    }
 	}
@@ -369,7 +330,7 @@ Array1D<double> QMCJastrowParameters::getParameters()
 	  
 	  for(int i=0; i<temp.dim1(); i++)
 	    {
-	      ParamVect(Counter) = temp(i);
+	      params(Counter + shift) = temp(i);
 	      Counter++;
 	    }
 	}
@@ -382,7 +343,7 @@ Array1D<double> QMCJastrowParameters::getParameters()
 
 	  for(int i=0; i<temp.dim1(); i++)
 	    {
-	      ParamVect(Counter) = temp(i);
+	      params(Counter + shift) = temp(i);
 	      Counter++;
 	    }
 	}
@@ -395,7 +356,7 @@ Array1D<double> QMCJastrowParameters::getParameters()
 
 	  for(int j=0; j<temp.dim1(); j++)
 	    {
-	      ParamVect(Counter) = temp(j);
+	      params(Counter + shift) = temp(j);
 	      Counter++;
 	    }
 	}
@@ -410,14 +371,12 @@ Array1D<double> QMCJastrowParameters::getParameters()
 
 	      for(int j=0; j<temp.dim1(); j++)
 		{
-		  ParamVect(Counter) = temp(j);
+		  params(Counter + shift) = temp(j);
 		  Counter++;
 		}
 	    }
 	}
     }
-
-  return ParamVect;
 }
 
 Array1D<Complex> QMCJastrowParameters::getPoles()
@@ -744,15 +703,6 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 	  NumberOfNEParameters += 
 	    EdnNuclear(i).getTotalNumberOfParameters();
 	}
-    }
-
-  clog << "We loaded " << NumberOfEEParameters << " EE parameters" << endl;
-  if(EquivalentElectronUpDownParams)
-    {
-      clog << "          " << NumberOfNEParameters << " NE parameters" << endl;
-    } else {
-      clog << "          " << NumberOfNEupParameters << " N-Eup parameters" << endl;
-      clog << "          " << (NumberOfNEParameters-NumberOfNEupParameters) << " N-Edn parameters" << endl;
     }
 }
 

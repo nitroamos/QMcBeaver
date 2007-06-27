@@ -86,13 +86,34 @@ void QMCPsiPotential::UseWavefunction(int wfnum, int spin)
   // coeff0 to get coeff.
   int idx = 0;
 
+  int betaO = -1, alphaO = -1;
+  int orb = 0;
+  while(betaO < 0 || alphaO < 0)
+    {
+      if(alphaO < 0 && qmc_input->WF.AlphaOccupation(0,orb) == wfnum)
+	alphaO = orb;
+      if(betaO < 0 && qmc_input->WF.BetaOccupation(0,orb) == wfnum)
+	betaO = orb;
+      orb++;
+    }
+  cout << "alphaO = " << alphaO << endl;
+  cout << "betaO  = " << betaO << endl;
+
+  /*
+    I changed AlphaCoeffs and BetaCoeffs, and so I changed this function.
+    I'm pretty sure this is equivalent, but I'll let someone verify it.
+  */
+  assert(0);
+
   // loop over number of atoms
   for (int i = 0; i < qmc_basis->BFCoeffs.dim1(); i++)
   {
     // loop over number of orbitals
     for (int j = 0; j < qmc_basis->BFCoeffs(i).getNumberBasisFunctions(); j++)
     {
-      double factor = (spin == 0 ? qmc_input->WF.AlphaCoeffs(wfnum, j) : qmc_input->WF.BetaCoeffs(wfnum, j));
+      //AGA note: wfnum is the index of the electron
+      //          but here is used as orbital index... is this a bug?
+      double factor = (spin == 0 ? qmc_input->WF.OrbitalCoeffs(alphaO, j) : qmc_input->WF.OrbitalCoeffs(betaO, j));
       // loop over number of gaussians (1 for s, 3 for p, 5 for d, etc.)
       for (int k = 0; k < qmc_basis->BFCoeffs(i).N_Gauss(j); k++)
       {

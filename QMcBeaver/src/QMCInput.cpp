@@ -48,62 +48,128 @@ void QMCInput::openConfigFile()
     outputer.open(flags.config_file_name,true);
 }
 
-Array1D<double> QMCInput::getParameters()
+int QMCInput::getNumberAIParameters()
 {
-  Array1D<double> Guess_Jastrow_parameters = JP.getParameters();
-  int numJP = JP.getParameters().dim1();
-
-  //we never optimize the first CI coefficient
-  int numCI = WF.CI_coeffs.dim1() - 1;
-
-  Array1D<double> Guess_parameters(numJP + numCI);
-
-  for(int i=0; i<numJP; i++)
-    Guess_parameters(i) = Guess_Jastrow_parameters(i);
-  for(int i=0; i<numCI; i++)
-    Guess_parameters(i+numJP) = WF.CI_coeffs(i+1);
-  return Guess_parameters;
+  int numAI = 0;
+  numAI += JP.getNumberJWParameters();
+  numAI += WF.getNumberCIParameters();
+  numAI += WF.getNumberORParameters();
+  return numAI;
 }
 
-void QMCInput::setParameterVector(Array1D<double> & params)
+Array1D<double> QMCInput::getAIParameters()
 {
-  Array1D<double> Guess_Jastrow_parameters = JP.getParameters();
-  int numJP = JP.getParameters().dim1();
+  Array1D<double> params(getNumberAIParameters());
 
-  //we never optimize the first CI coefficient
-  int numCI = WF.CI_coeffs.dim1() - 1;
+  int shift = 0;
+  JP.getJWParameters(params,shift);
 
-  for(int i=0; i<numJP; i++)
-    Guess_Jastrow_parameters(i) = params(i);
-  for(int i=0; i<numCI; i++)
-    WF.CI_coeffs(i+1) = params(i+numJP);
+  shift += JP.getNumberJWParameters();
+  WF.getCIParameters(params,shift);
 
-  JP.setParameterVector(Guess_Jastrow_parameters);
+  shift += WF.getNumberCIParameters();
+  WF.getORParameters(params,shift);
+
+  return params;
 }
 
-void QMCInput::printAIArray(ostream & strm, string name, int width, Array1D<double> & array)
+void QMCInput::setAIParameters(Array1D<double> & params)
 {
-  int dim = array.dim1();
+  int shift = 0;
+  JP.setJWParameters(params,shift);
+
+  shift += JP.getNumberJWParameters();
+  WF.setCIParameters(params,shift);
+
+  shift += WF.getNumberCIParameters();
+  WF.setORParameters(params,shift);
+}
+
+void QMCInput::printAIParameters(ostream & strm, 
+				 string name, 
+				 int margin,
+				 Array1D<double> & array,
+				 bool forcePrintOrbitals)
+{
+  /*
+    This function assumes a particular ordering of the parameters
+    in the array.
+
+    There are obviously quite a few Orbital parameters, so we probably
+    don't want to print all of them.
+  */
+  int numAI = getNumberAIParameters();
+
+  int width = 20;
+  int prec  = 12;
+
+  int shift = 0;
   int numEE = JP.getNumberEEParameters();
-  int numNE = JP.getNumberNEParameters();
-
-  for(int ai=0; ai<dim; ai++)
+  if(numEE > 0)
     {
-      if(ai == 0)
+      strm << setw(margin) << name << " EE = ";
+      for(int ai=0; ai<numEE; ai++)
 	{
-	  strm << setw(width) << name << " EE = ";
-	} else if(ai == numEE && numNE > 0)
-	  {
-	    strm << endl << setw(width) << name << " NE = ";
-	  } else if(ai == (numEE + numNE))
-	    {
-	      strm << endl << setw(width) << name << " CI = ";
-	    }
-      strm.width(20);
-      strm.precision(12);
-      strm << array(ai);
+	  strm.width(width);
+	  strm.precision(prec);
+	  strm << array(ai + shift);
+	}
+      strm << endl;
     }
-  strm << endl;
+
+  shift += numEE;
+  int numNE = JP.getNumberNEParameters();
+  if(numNE > 0)
+    {
+      strm << setw(margin) << name << " NE = ";
+      for(int ai=0; ai<numNE; ai++)
+	{
+	  strm.width(width);
+	  strm.precision(prec);
+	  strm << array(ai + shift);
+	}
+      strm << endl;
+    }
+
+  shift += numNE;
+  int numCI = WF.getNumberCIParameters();
+  if(numCI > 0)
+    {
+      strm << setw(margin) << name << " CI = ";
+      for(int ai=0; ai<numCI; ai++)
+	{
+	  strm.width(width);
+	  strm.precision(prec);
+	  strm << array(ai + shift);
+	}
+      strm << endl;
+    }
+
+  shift += numCI;
+  int numOR = WF.getNumberORParameters();
+  if(numOR > 0)
+    {
+      if(forcePrintOrbitals || numOR < 10)
+	{
+	  int numBF = WF.getNumberBasisFunctions();
+	  strm << setw(margin) << name << " OR =\n";
+	  for(int ai=0; ai<numOR; ai++)
+	    {
+	      strm.width(width);
+	      strm.precision(prec);
+	      strm << array(ai + shift);
+	      if(ai%5 == 0 && ai%numBF != 0)
+		strm << endl;
+	      if(ai%numBF == 0)
+		strm << endl << endl;
+	    }
+	  strm << endl;
+	} else {
+	  strm << setw(margin) << name << " OR = ";
+	  strm << "<" << numOR << " parameters not printed>";
+	  strm << endl;
+	}
+    }
 }
 
 ostream& operator<<(ostream & strm, QMCInput & Input)

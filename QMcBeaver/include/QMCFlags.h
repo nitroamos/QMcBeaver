@@ -601,7 +601,25 @@ class QMCFlags
   */
   double optimize_Psi_barrier_parameter;
 
+  /**
+     This is an internal flag. Some flags will require us to
+     calculate the analytic wavefunction parameter derivatives,
+     others won't. QMCFlags will figure it out and set this parameter
+     accordingly.
+  */
   int calculate_Derivatives;
+
+  /*
+    These next flags control which part of the wavefunction
+    we're optimizing. If the optimization method is set to
+    automatic, then these parameters will automatically be changed.
+
+    For now, I won't add these to the input file.
+  */
+  int optimize_EE_Jastrows;
+  int optimize_EN_Jastrows;
+  int optimize_CI;
+  int optimize_Orbitals;
 
   /**
      Objective function to optimize when optimizing a VMC wavefunction.
@@ -614,9 +632,16 @@ class QMCFlags
 
      Notes: for QMC, if your wavefunction is an eigenfunction, your
      variance will be exactly zero. That's why you might want to minimize
-     your variance. However, this isn't necessarily the best proceedure...
+     your variance.
 
+     If you set this to "automatic", then the code will attempt to
+     select the parameter choices that probably work best. However,
+     you might want to tweek some stuff anyway. For example, the
+     a_diag parameter in QMCLineSearch.cpp
+     the run lengths in QMcBeaver.cpp
+     
      @see QMCOptimizationFactory
+     @see QMCLineSearch
   */
   string optimize_Psi_method;
 
@@ -683,6 +708,25 @@ class QMCFlags
      their electron-nucleus terms, and 0 otherwise.
   */
   int link_Jastrow_parameters;
+
+  /**
+     1 if up and down electrons use the same orbital parameters.
+     
+     Just because the input file used the same orbitals from the
+     ckmf file doesn't mean they can't be optimized independently.
+
+     The restart file will have more orbitals than the input file.
+  */
+  int link_Orbital_parameters;
+
+  /**
+     Just because the determinants shared orbitals when they
+     were defined using the input file, that doesn't mean we
+     can't optimize them independently.
+
+     The restart file will have more orbitals than the input file.
+  */
+  int link_Determinant_parameters;
 
   /**
      1 if Gaussian orbitals are to be replaced by exponentials that 

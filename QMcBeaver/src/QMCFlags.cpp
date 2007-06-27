@@ -66,7 +66,6 @@ void QMCFlags::read_flags(string InFileName)
   //Wavefunction parameters
   trial_function_type            = "restricted";
   Ndeterminants                  = 1;
-  link_Jastrow_parameters        = 0;
 
   //Other QMcBeaver improvements or added functionality
   replace_electron_nucleus_cusps = 1;
@@ -120,7 +119,7 @@ void QMCFlags::read_flags(string InFileName)
   calculate_Derivatives          = 0;
   optimize_Psi_criteria          = "analytical_energy_variance";
   optimize_Psi_method            = "automatic";
-  equilibrate_every_opt_step     = 0;
+  equilibrate_every_opt_step     = 1;
   equilibrate_first_opt_step     = 1;
   numerical_derivative_surface   = "umrigar88";
   line_search_step_length        = "None";
@@ -130,6 +129,14 @@ void QMCFlags::read_flags(string InFileName)
   ck_genetic_algorithm_1_mutation_rate = 0.2;
   ck_genetic_algorithm_1_initial_distribution_deviation = 1.0;
   singularity_penalty_function_parameter = 1.0e-6;
+
+  optimize_EE_Jastrows           = 1;
+  optimize_EN_Jastrows           = 1;
+  optimize_CI                    = 0;
+  optimize_Orbitals              = 0;
+  link_Jastrow_parameters        = 0;
+  link_Orbital_parameters        = 1;
+  link_Determinant_parameters    = 1;
 
   //Difficult to categorize
   programmersLongs.clear();
@@ -515,6 +522,16 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           link_Jastrow_parameters = atoi(temp_string.c_str());
         }
+      else if(temp_string == "link_Orbital_parameters")
+        {
+          input_file >> temp_string;
+          link_Orbital_parameters = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "link_Determinant_parameters")
+        {
+          input_file >> temp_string;
+          link_Determinant_parameters = atoi(temp_string.c_str());
+        }
       else if(temp_string == "replace_electron_nucleus_cusps")
 	{
 	  input_file >> temp_string;
@@ -755,8 +772,11 @@ void QMCFlags::set_filenames(string runfile)
     This may or may not work... The goal is to try to make
     the checkpoint directory before all the different processors
     all try to make it themselves at the same time.
+
+    We'll save the optimization step files in this directory
+    as well.
    */
-  if(checkpoint == 1)
+  if(checkpoint == 1 || optimize_Psi == 1)
     {
       string command = "mkdir -p " + checkout_file_name;
       system(command.c_str());
@@ -1018,6 +1038,10 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "ndeterminants\n " << flags.Ndeterminants << endl;
   strm << "link_Jastrow_parameters\n "
        << flags.link_Jastrow_parameters << endl;
+  strm << "link_Orbital_parameters\n "
+       << flags.link_Orbital_parameters << endl;
+  strm << "link_Determinant_parameters\n "
+       << flags.link_Determinant_parameters << endl;
   
   strm << "\n# Other parameters\n";
   strm << "chip_and_mike_are_cool\n " << flags.chip_and_mike_are_cool << endl;
@@ -1108,8 +1132,9 @@ bool QMCFlags::checkFlags()
     {
       if(run_type != "variational")
 	{
-	  clog << "ERROR: attempting to optimize the wavefunction for"
+	  clog << "Warning: attempting to optimize the wavefunction for"
 	       << " run_type = " << run_type << "!" << endl;
+	  //why not optimize using diffusion walkers?
 	  //clog << "Setting run_type = \"variational\"" << endl;
 	  //run_type = "variational";
 	}
@@ -1182,6 +1207,31 @@ bool QMCFlags::checkFlags()
 	      clog << "Warning: BFGSQuasiNewton needs optimization_max_iterations > " << optimization_max_iterations << endl;
 	      clog << "Setting optimization_max_iterations = 2" << endl;
 	      optimization_max_iterations = 2;
+	    }
+	}
+
+      if(replace_electron_nucleus_cusps == 1 &&
+	 optimize_Psi_method == "automatic")
+	{
+	  clog << "Notice: the we won't optimize the orbitals since we're using cusp replacement." << endl;
+	}
+
+      if(link_Orbital_parameters == 0)
+	{
+	  if(trial_function_type == "restricted")
+	    {
+	      clog << "Notice: optimization with link_Orbital_parameters == " << link_Orbital_parameters
+		   << " will convert your\n"
+		   << "   trial_function_type == \"" << trial_function_type << "\" into\n"
+		   << "   trial_function_type == \"unrestricted\"" << endl;
+	    }
+	} else {
+	  if(trial_function_type == "unrestricted")
+	    {
+	      clog << "Warning: link_Orbital_parameters == " << link_Orbital_parameters
+		   << " has no effect on a\n"
+		   << "   trial_function_type == \"" << trial_function_type << "\"\n";
+	      //Obviously you can't link the orbitals if they're unlinked to begin with
 	    }
 	}
 

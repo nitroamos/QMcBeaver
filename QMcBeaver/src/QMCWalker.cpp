@@ -1308,7 +1308,7 @@ void QMCWalker::createChildWalkers()
   TrialWalker = this;
 }
 
-void QMCWalker::initialize(QMCInput *INPUT, int numAI)
+void QMCWalker::initialize(QMCInput *INPUT)
 {
   Input = INPUT;
 
@@ -1347,8 +1347,7 @@ void QMCWalker::initialize(QMCInput *INPUT, int numAI)
   R.allocate(numElectrons,numDimensions);
 
   walkerData.initialize(Input,numDimensions,
-			numNucForceDim1,numNucForceDim2,
-			numAI);
+			numNucForceDim1,numNucForceDim2);
 
   numFWSteps.resize(numFW);
   
@@ -1363,16 +1362,6 @@ void QMCWalker::initialize(QMCInput *INPUT, int numAI)
   fwKineticEnergy_grad.allocate(numFW,2);
   fwPotentialEnergy.allocate(numFW,2);
   resetFutureWalking();
-
-  /*
-    If we want to know whether we are collecting parameter derivatives,
-    we just need to check whether the arrays have non zero dimensions.
-  */
-  if(walkerData.rp_a.dim1() > 0)
-    {
-      p3_xxa.allocate(walkerData.p3_xxa.dim1());
-      rp_a.allocate(walkerData.rp_a.dim1());
-    }
 
   //initialize acceptance probability
   setAcceptanceProbability(0.0);
@@ -1693,6 +1682,9 @@ void QMCWalker::calculateObservables()
   eeEnergy = p * TrialWalker->walkerData.eeEnergy + 
              q * OriginalWalker->walkerData.eeEnergy;
 
+
+  p3_xxa.allocate(TrialWalker->walkerData.p3_xxa.dim1());
+  rp_a.allocate(TrialWalker->walkerData.rp_a.dim1());
   for(int ai=0; ai<rp_a.dim1(); ai++)
     {
       p3_xxa(ai) = p * TrialWalker->walkerData.p3_xxa(ai) +
