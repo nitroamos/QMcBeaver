@@ -1,3 +1,30 @@
+Wed, Jun 27, 2007 Amos Anderson
+1.  The code can now optimize orbital coefficients. It can be a
+    bit expensive, but I'm not sure how much.
+2.  We can now selectively optimize different parts of the
+    wavefunction. For now, I'll leave it to the "automatic"
+    optimization method to decide how to exploit this. I changed
+    several function names to make it clear how optimizable parameters
+    are related.
+3.  I changed all references in QMCManager of Input to
+    globalInput. Eventually, all the code should use this
+    global variable because we don't want to change something
+    in globalInput that some parts of the code can't see because
+    they are looking at their local copy.
+4.  QMCSlater and QMCSCFJastrow are cleaned up a bit. For example,
+    QMCSlater doesn't hold wavefunction coefficients anymore.
+    Several of the function calls now return useful data even when
+    it has 0 electrons, so QMCSCFJastrow doesn't have to check.
+5.  I cleaned out the formatting for writing restart files, as well
+    as formatting the writeEnergyResultsSummary. I think they are
+    a lot easier to read by humans now.
+6.  I changed a number of things about QMCWavefunction. For example,
+    I merged the previous AlphaCoeffs and BetaCoeffs into OrbitalCoeffs,
+    a single data structure to store the orbitals. I added several functions
+    in QMCWavefunction to manipulate the data structures to facilitate
+    different ways to optimize orbital coefficients, related to how the
+    orbitals are linked together.
+
 Thu, Jun 7, 2007 Amos Anderson
 1.  The optimization code crashed when nbeta = 0, so I patched
     it up.
