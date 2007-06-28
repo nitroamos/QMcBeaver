@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCWalker.h"
+#include "QMCSurfer.h"
 
 const double QMCWalker::maxFWAsymp = 1.0;
 long int QMCWalker::nextID = 0;
@@ -152,6 +153,18 @@ void QMCWalker::initializePropagation(QMCWalkerData * &data,
 
 void QMCWalker::processPropagation(QMCFunctions & QMF, bool writeConfigs)
 {
+  if(globalInput.flags.use_surfer == 1)
+    {
+      static int iteration_to_stop = iteration;
+
+      if(iteration == iteration_to_stop)
+	{
+	  static QMCSurfer s;
+	  cout << "\n**** Surfing walker " << ID();
+	  iteration_to_stop = s.mainMenu(&QMF, iteration, R);
+	}
+    }
+
   QMCGreensRatioComponent reverseGreensFunction =
     calculateReverseGreensFunction();
   double GreensFunctionRatio =
@@ -1683,15 +1696,18 @@ void QMCWalker::calculateObservables()
              q * OriginalWalker->walkerData.eeEnergy;
 
 
-  p3_xxa.allocate(TrialWalker->walkerData.p3_xxa.dim1());
-  rp_a.allocate(TrialWalker->walkerData.rp_a.dim1());
-  for(int ai=0; ai<rp_a.dim1(); ai++)
+  if(globalInput.flags.calculate_Derivatives == 1)
     {
-      p3_xxa(ai) = p * TrialWalker->walkerData.p3_xxa(ai) +
-	           q * OriginalWalker->walkerData.p3_xxa(ai);
-      
-      rp_a(ai) = p * TrialWalker->walkerData.rp_a(ai) +
-	         q * OriginalWalker->walkerData.rp_a(ai);
+      p3_xxa.allocate(TrialWalker->walkerData.p3_xxa.dim1());
+      rp_a.allocate(TrialWalker->walkerData.rp_a.dim1());
+      for(int ai=0; ai<rp_a.dim1(); ai++)
+	{
+	  p3_xxa(ai) = p * TrialWalker->walkerData.p3_xxa(ai) +
+	    q * OriginalWalker->walkerData.p3_xxa(ai);
+	  
+	  rp_a(ai) = p * TrialWalker->walkerData.rp_a(ai) +
+	    q * OriginalWalker->walkerData.rp_a(ai);
+	}
     }
 
   // Calculate the DistanceMovedAccepted this is the average distance
