@@ -32,6 +32,7 @@ void QMCFlags::read_flags(string InFileName)
   max_time_steps                 = 1000000;
   max_time                       = 0.0;
   number_of_walkers              = 1;
+  use_surfer                     = 0;
 
   //Initialization parameters
   walker_initialization_method   = "dans_walker_initialization";
@@ -168,6 +169,11 @@ void QMCFlags::read_flags(string InFileName)
       if(temp_string == "run_type")
         {
           input_file >> run_type;
+        }
+      else if(temp_string == "use_surfer")
+        {
+          input_file >> temp_string;
+	  use_surfer = atoi(temp_string.c_str());
         }
       else if(temp_string == "temp_dir")
         {

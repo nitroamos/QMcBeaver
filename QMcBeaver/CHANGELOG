@@ -1,4 +1,9 @@
 Wed, Jun 27, 2007 Amos Anderson
+1.  I fixed a minor bug that I added in QMCWalker.cpp. It was
+    a seg fault whenever running w/o optimization.
+2.  I added my QMCSurfer code.
+
+Wed, Jun 27, 2007 Amos Anderson
 1.  The code can now optimize orbital coefficients. It can be a
     bit expensive, but I'm not sure how much.
 2.  We can now selectively optimize different parts of the

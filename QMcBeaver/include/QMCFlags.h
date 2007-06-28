@@ -134,6 +134,12 @@ class QMCFlags
   string run_type;
 
   /**
+     Using QMCSurfer instead of QMCWalker. This will let you "surf"
+     the wavefunction.
+  */
+  int use_surfer;
+
+  /**
      Scratch directory for the calculation.  Temporary files which will
      not be needed later will be written here.
   */
