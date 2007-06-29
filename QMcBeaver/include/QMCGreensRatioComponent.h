@@ -131,6 +131,11 @@ class QMCGreensRatioComponent
   */
   void toXML(ostream & strm);
   
+  /*
+    Formats the object
+  */
+  friend ostream& operator << (ostream& strm, const QMCGreensRatioComponent & rhs);
+
   /**
      Gets the overall value of the object.
      @return total value of this object.

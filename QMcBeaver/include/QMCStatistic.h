@@ -56,28 +56,28 @@ public:
     Gets the number of data samples entered into the object.
     */
 
-  unsigned long getNumberSamples();
+  unsigned long getNumberSamples() const;
 
 
   /**
     Gets the average of the data entered into the object.
     */
 
-  double getAverage();
+  double getAverage() const;
 
 
   /**
     Gets the variance of the data entered into the object.
     */
 
-  double getVariance();
+  double getVariance() const;
 
 
   /**
-    Gets the standard deviation of the data entered into the object.
-    */
+     Gets the standard deviation of the data entered into the object.
+  */
 
-  double getStandardDeviation();
+  double getStandardDeviation() const;
 
 
   /**
@@ -87,7 +87,7 @@ public:
     @param weight statistical weight of the sample
     */
 
-  void newSample(double s, double weight);
+  void newSample(long double s, long double weight);
 
   /**
      Sets two object equal.
@@ -128,7 +128,7 @@ public:
   /**
     Formats and prints the statistic to a stream.
     */
-  friend ostream& operator <<(ostream& strm, QMCStatistic &rhs);
+  friend ostream& operator << (ostream& strm, const QMCStatistic & rhs);
 
 
 #ifdef PARALLEL

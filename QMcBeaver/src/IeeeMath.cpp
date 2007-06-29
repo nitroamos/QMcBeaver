@@ -34,6 +34,13 @@ for more details.
 template <class T>
 bool IeeeMath::isNaN(T x)
 {
+  /*
+    There is a decent probability that x is zero,
+    so just in case the isfinite functions are "expensive",
+    we'll take a shortcut here.
+  */
+  if(x == (T)(0)) return false;
+  
   /**
     It seems difficult to get a portable version of this function.
     your mileage may vary!

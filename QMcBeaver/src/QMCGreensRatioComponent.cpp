@@ -1,4 +1,5 @@
 #include "QMCGreensRatioComponent.h"
+#include <iomanip>
 
 QMCGreensRatioComponent::QMCGreensRatioComponent()
 {
@@ -38,6 +39,17 @@ void QMCGreensRatioComponent::initialize()
   a = 1.0;
   b = 0.0;
   c = 0.0;
+}
+
+ostream& operator << (ostream& strm, const QMCGreensRatioComponent &rhs)
+{
+  int w = 15;
+  strm.setf(ios::scientific);
+  strm << "k: " << setw(w) << rhs.k;
+  strm << " a: " << setw(w) << rhs.a;
+  strm << " b: " << setw(w) << rhs.b;
+  strm << " c: " << setw(w) << rhs.c;
+  return strm;
 }
 
 void QMCGreensRatioComponent::toXML(ostream & strm)
@@ -144,18 +156,14 @@ double QMCGreensRatioComponent::getValue() const
       cerr << "c:\t" << c << endl;
       exit(1);
     }      
-  if (IeeeMath::isNaN(k) || IeeeMath::isNaN(a) || IeeeMath::isNaN(b) || IeeeMath::isNaN(c) )
-    {
-      cerr << "Error in QMCGreensRatioComponent::getValue():" << endl;
-      cerr << "k:\t" << k << endl;
-      cerr << "a:\t" << a << endl;
-      cerr << "b:\t" << b << endl;
-      cerr << "c:\t" << c << endl;
-      exit(1);
-    }      
-  if(c>500.0)
-    return k*pow(a,b)*1e250;
-  return k*pow(a,b)*exp(c);
+  double t1 = 1.0;
+  double t2 = 1.0;
+
+  if(b != 0.0) t1 = pow(a,b);
+  if(c > 500)  t2 = 1e250;
+  else if(c != 0.0) t2 = exp(c);
+
+  return k*t1*t2;
 }
 
 QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatioComponent & denom)
@@ -195,33 +203,24 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatio
       b = 0.0;
     }
 
+  if (IeeeMath::isNaN(k) || IeeeMath::isNaN(a) || IeeeMath::isNaN(b) || IeeeMath::isNaN(c) )
+    {
+      cerr << "Error in QMCGreensRatioComponent::divideBy():" << endl;
+      cerr << *this;
+      exit(1);
+    }      
+
   return *this;
 }
 
 QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRatioComponent &X)
 {
-  if (IeeeMath::isNaN(k) || IeeeMath::isNaN(a) || IeeeMath::isNaN(b) || IeeeMath::isNaN(c))
-    {
-      cerr << "Error in QMCGreensRatioComponent::multiplyBy():" << endl;
-      cerr << "k:\t" << k << "\ta:\t" << a << "\tb:\t" << b << "\tc:\t" << c;
-      cerr << endl;
-      exit(1);
-    }
-
-  if (IeeeMath::isNaN(X.k) || IeeeMath::isNaN(X.a) || IeeeMath::isNaN(X.b) || IeeeMath::isNaN(X.c))
-    {
-      cerr << "Error in QMCGreensRatioComponent::multiplyBy():" << endl;
-      cerr << "X.k:\t" << X.k << "\tX.a:\t" << X.a << "\tX.b:\t" << X.b;
-      cerr << "\tX.c:\t" << X.c << endl;
-      exit(1);
-    }
-
   if (a < 0.0 || X.a < 0.0)
     {
       cerr << "Error in QMCGreensRatioComponent::multiplyBy():" << endl;
       cerr << "Attempting to take a power of a negative number." << endl;
-      cerr << "a:\t" << a << "\tb:\t" << b << endl;
-      cerr << "X.a\t" << X.a << "\tX.b:\t" << X.b << endl;
+      cerr << "*this = " << *this << endl;
+      cerr << "    X = " << X << endl;
       exit(1);
     }
 
@@ -355,6 +354,15 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRat
       b = 0.0;
     }
 
+  if (IeeeMath::isNaN(k) || IeeeMath::isNaN(a) || IeeeMath::isNaN(b) || IeeeMath::isNaN(c) ||
+      IeeeMath::isNaN(X.k) || IeeeMath::isNaN(X.a) || IeeeMath::isNaN(X.b) || IeeeMath::isNaN(X.c))
+    {
+      cerr << "Error in QMCGreensRatioComponent::multiplyBy():" << endl;
+      cerr << *this << endl;
+      cerr << X << endl;
+      exit(1);
+    }
+  
   return *this;
 }
 

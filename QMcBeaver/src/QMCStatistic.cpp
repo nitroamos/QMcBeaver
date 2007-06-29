@@ -35,29 +35,29 @@ void QMCStatistic::zeroOut()
   nsamples = 0;
 }
 
-unsigned long QMCStatistic::getNumberSamples()
+unsigned long QMCStatistic::getNumberSamples() const
 {
   return nsamples;
 }
 
-double QMCStatistic::getAverage()
+double QMCStatistic::getAverage() const
 {
   if( nsamples == 0) return 0;
   return (sum/weights);
 }
 
-double QMCStatistic::getVariance()
+double QMCStatistic::getVariance() const
 {
   if( nsamples == 0) return 0;
   return (sum2/weights-getAverage()*getAverage());
 }
 
-double QMCStatistic::getStandardDeviation()
+double QMCStatistic::getStandardDeviation() const
 {
   return sqrt(getVariance());
 }
 
-void QMCStatistic::newSample(double s, double weight)
+void QMCStatistic::newSample(long double s, long double weight)
 {
   if(nsamples == 0)
     {
@@ -166,7 +166,7 @@ void QMCStatistic::readXML(istream& strm)
   strm >> temp;
 }
 
-ostream& operator <<(ostream& strm, QMCStatistic &rhs)
+ostream& operator << (ostream& strm, const QMCStatistic &rhs)
 {
   strm.precision(12);
   strm.width(20);
