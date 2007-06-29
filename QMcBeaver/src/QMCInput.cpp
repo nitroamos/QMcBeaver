@@ -152,18 +152,19 @@ void QMCInput::printAIParameters(ostream & strm,
       if(forcePrintOrbitals || numOR < 10)
 	{
 	  int numBF = WF.getNumberBasisFunctions();
-	  strm << setw(margin) << name << " OR =\n";
+	  strm << setw(margin) << name << " OR =";
 	  for(int ai=0; ai<numOR; ai++)
 	    {
-	      strm.width(width);
-	      strm.precision(prec);
-	      strm << array(ai + shift);
 	      if(ai%5 == 0 && ai%numBF != 0)
 		strm << endl;
 	      if(ai%numBF == 0)
 		strm << endl << endl;
+
+	      strm.width(width);
+	      strm.precision(prec);
+	      strm << array(ai + shift);
 	    }
-	  strm << endl;
+	  strm << endl << endl << endl;
 	} else {
 	  strm << setw(margin) << name << " OR = ";
 	  strm << "<" << numOR << " parameters not printed>";

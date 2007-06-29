@@ -168,7 +168,17 @@ void QMCStatistic::readXML(istream& strm)
 
 ostream& operator <<(ostream& strm, QMCStatistic &rhs)
 {
-  strm << rhs.getAverage() << " +/- " << rhs.getStandardDeviation();
+  strm.precision(12);
+  strm.width(20);
+  strm << scientific << rhs.getAverage() << " +/- ";
+  if( fabs(rhs.getStandardDeviation()) > 1e-300 )
+    if( log( fabs( rhs.getStandardDeviation() )) > 10.0)
+      strm << scientific;
+  strm.precision(12);
+  strm.width(20);
+  strm << scientific << rhs.getStandardDeviation() << " (" << rhs.getNumberSamples() << " samples)" << endl;
+  
+  //strm << rhs.getAverage() << " +/- " << rhs.getStandardDeviation();
   return strm;
 }
 
