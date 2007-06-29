@@ -151,7 +151,7 @@ Array2D<double> QMCDerivativeProperties::getParameterHessian()
   
   for(int ai=0; ai<numAI; ai++)
     {
-      for(int aj=0; aj<=numAI; aj++)
+      for(int aj=0; aj<=ai; aj++)
 	{
 	  // < E_{L,i} E_{L,j} >
 	  double h1 = fwProperties->hess(ai,aj).getAverage();
