@@ -1,3 +1,17 @@
+Thu, Jun 27, 2007 Amos Anderson
+1.  There was a problem in orbital optimization when there were
+    many orbitals. Mainly, the hessian was unnecessarily stored
+    in QMCEquilibrationArray, which stores 30 copies of QMCProperties,
+    causing the code to request ~ gigabytes of memory.
+    To fix this, I moved the der and hess variables over to
+    QMCFutureWalkingProperties, along with chiDensity, so that
+    all the vector properties are in one place. This eliminates
+    the weird MPI reduction bug relating to vector properties being
+    inside of QMCProperties. QMCFutureWalkingProperties should be renamed
+    something like "QMCArrayProperties".
+    Additionally, for the derivatives, the data is now stored as
+    sizeof(QMCStatistic) = 32 instead of sizeof(QMCProperty) = 1560.
+
 Wed, Jun 27, 2007 Amos Anderson
 1.  I fixed a minor bug that I added in QMCWalker.cpp. It was
     a seg fault whenever running w/o optimization.
