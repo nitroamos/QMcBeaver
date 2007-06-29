@@ -25,7 +25,10 @@ void QMCEquilibrationArray::setCalcDensity(bool calcDensity,
   nBasisFunc = nbasisfunctions;
 
   for (int i=0; i<EQ; i++)
-    Eq_Array[i].getProperties()->setCalcDensity(calcDensity, nbasisfunctions);
+    {
+      assert(0);
+      //Eq_Array[i].getProperties()->setCalcDensity(calcDensity, nbasisfunctions);
+    }
 }
 
 void QMCEquilibrationArray::setCalcForces(bool calcForces, int dim1, int dim2)

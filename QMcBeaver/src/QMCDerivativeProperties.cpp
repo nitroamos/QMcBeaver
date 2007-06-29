@@ -88,23 +88,23 @@ double QMCDerivativeProperties::getVirialRatioStandardDeviation(int whichFW)
 Array1D<double> QMCDerivativeProperties::getParameterGradient()
 {
   Array1D<double> gradient;
-  if(properties->der.dim1() == 0 ||
-     properties->der.dim2() == 0)
+  if(fwProperties->der.dim1() == 0 ||
+     fwProperties->der.dim2() == 0)
     {
-      //clog << "Error: the parameter gradients are not available in this QMCProperties object.\n";
+      //clog << "Error: the parameter gradients are not available in this QMCFwProperties object.\n";
       return gradient;
     }
 
-  int numCI = properties->der.dim1();
+  int numCI = fwProperties->der.dim1();
 
   gradient.allocate(numCI);
   for(int ci=0; ci<numCI; ci++)
     {
-      double t1 = properties->der(ci,0).getAverage();  // < \frac{ \Psi_i }{ \Psi } >
-      double t2 = properties->der(ci,1).getAverage();  // < \frac{ \Psi_i }{ \Psi } E_L>
-      double t3 = properties->der(ci,2).getAverage();  // < \frac{ \Psi_i }{ \Psi } E_L^2>
-      double t4 = properties->der(ci,3).getAverage();  // < E_{L,i} > (= 0 in limit)
-      double t5 = properties->der(ci,4).getAverage();  // < E_{L,i} E_L >
+      double t1 = fwProperties->der(ci,0).getAverage();  // < \frac{ \Psi_i }{ \Psi } >
+      double t2 = fwProperties->der(ci,1).getAverage();  // < \frac{ \Psi_i }{ \Psi } E_L>
+      double t3 = fwProperties->der(ci,2).getAverage();  // < \frac{ \Psi_i }{ \Psi } E_L^2>
+      double t4 = fwProperties->der(ci,3).getAverage();  // < E_{L,i} > (= 0 in limit)
+      double t5 = fwProperties->der(ci,4).getAverage();  // < E_{L,i} E_L >
       double t6 = properties->energy.getAverage();     // < E_L >
       double t7 = properties->energy2.getAverage();    // < E_L^2 >
       
@@ -139,27 +139,29 @@ Array1D<double> QMCDerivativeProperties::getParameterGradient()
 Array2D<double> QMCDerivativeProperties::getParameterHessian()
 {
   Array2D<double> hessian;
-  if(properties->hess.dim1() == 0 ||
-     properties->hess.dim2() == 0)
+  if(fwProperties->hess.dim1() == 0 ||
+     fwProperties->hess.dim2() == 0)
     {
-      //clog << "Error: the parameter hessian is not available in this QMCProperties object.\n";
+      //clog << "Error: the parameter hessian is not available in this QMCFwProperties object.\n";
       return hessian;
     }
   
-  int numCI = properties->der.dim1();
-  hessian.allocate(numCI,numCI);
+  int numAI = fwProperties->der.dim1();
+  hessian.allocate(numAI,numAI);
   
-  for(int ci=0; ci<numCI; ci++)
+  for(int ai=0; ai<numAI; ai++)
     {
-      for(int cj=0; cj<numCI; cj++)
+      for(int aj=0; aj<=numAI; aj++)
 	{
 	  // < E_{L,i} E_{L,j} >
-	  double h1 = properties->hess(ci,cj).getAverage();
+	  double h1 = fwProperties->hess(ai,aj).getAverage();
 	  // < E_{L,i} > < E_{L,j} >
-	  double h2 = properties->der(ci,3).getAverage()
-	            * properties->der(cj,3).getAverage();
+	  double h2 = fwProperties->der(ai,3).getAverage()
+	            * fwProperties->der(aj,3).getAverage();
 	  
-	  hessian(ci,cj) = 2.0 * (h1 - h2);
+	  double h3 = 2.0 * (h1 - h2);
+	  hessian(ai,aj) = h3;
+	  hessian(aj,ai) = h3;
 	}
     }
   return hessian;

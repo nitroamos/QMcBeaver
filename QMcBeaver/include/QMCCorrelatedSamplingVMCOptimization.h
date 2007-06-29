@@ -35,7 +35,10 @@ class QMCCorrelatedSamplingVMCOptimization
 
      @param input data input to control the calculation.
   */
-  static void optimize(QMCInput * input, QMCProperties & lastRun, int configsToSkip);
+  static void optimize(QMCInput * input,
+		       QMCProperties & lastRun,
+		       QMCFutureWalkingProperties & fwLastRun,
+		       int configsToSkip);
 };
 
 #endif

@@ -64,8 +64,8 @@ void QMCManager::initialize( int argc, char **argv )
   if ( globalInput.flags.calculate_bf_density == 1 )
   {
     bool calcDensity = true;
-    Properties_total.setCalcDensity( calcDensity,
-                                     globalInput.WF.getNumberBasisFunctions() );
+    fwProperties_total.setCalcDensity( calcDensity,
+				       globalInput.WF.getNumberBasisFunctions() );
   }
   
   if(globalInput.flags.nuclear_derivatives != "none")
@@ -246,18 +246,18 @@ void QMCManager::gatherProperties()
   MPI_Reduce( QMCnode.getProperties(), &Properties_total, 1,
               QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, 0, MPI_COMM_WORLD );
 	  
-  MPI_Reduce( QMCnode.getProperties()->der.array(),
-              Properties_total.der.array(),
-	      Properties_total.der.dim1()*Properties_total.der.dim2(),
-              QMCProperty::MPI_TYPE,
-	      QMCProperty::MPI_REDUCE,
+  MPI_Reduce( QMCnode.getFWProperties()->der.array(),
+              fwProperties_total.der.array(),
+	      fwProperties_total.der.dim1()*fwProperties_total.der.dim2(),
+              QMCStatistic::MPI_TYPE,
+	      QMCStatistic::MPI_REDUCE,
 	      0,MPI_COMM_WORLD );
-
-  MPI_Reduce( QMCnode.getProperties()->hess.array(),
-              Properties_total.hess.array(),
-	      Properties_total.hess.dim1()*Properties_total.hess.dim2(),
-              QMCProperty::MPI_TYPE,
-	      QMCProperty::MPI_REDUCE,
+  
+  MPI_Reduce( QMCnode.getFWProperties()->hess.array(),
+              fwProperties_total.hess.array(),
+	      fwProperties_total.hess.dim1()*fwProperties_total.hess.dim2(),
+              QMCStatistic::MPI_TYPE,
+	      QMCStatistic::MPI_REDUCE,
 	      0,MPI_COMM_WORLD );
   
   //reduce over QMCFutureWalkingProperties
@@ -273,8 +273,6 @@ void QMCManager::gatherProperties()
   localTimers.getGatherPropertiesStopwatch()->stop();
 #else
   Properties_total = *QMCnode.getProperties();
-  Properties_total.der = QMCnode.getProperties()->der;
-  Properties_total.hess = QMCnode.getProperties()->hess;
   fwProperties_total = *QMCnode.getFWProperties();
 #endif
 
@@ -306,10 +304,10 @@ void QMCManager::gatherDensities()
 #ifdef PARALLEL
   localTimers.getGatherPropertiesStopwatch()->start();
   
-  Array1D<QMCProperty> localChiDensity = QMCnode.getProperties() ->chiDensity;
+  Array1D<QMCProperty> localChiDensity = QMCnode.getFWProperties()->chiDensity;
   
-  MPI_Reduce( QMCnode.getProperties()->chiDensity.array(),
-              Properties_total.chiDensity.array(),globalInput.WF.getNumberBasisFunctions(),
+  MPI_Reduce( QMCnode.getFWProperties()->chiDensity.array(),
+              fwProperties_total.chiDensity.array(),globalInput.WF.getNumberBasisFunctions(),
               QMCProperty::MPI_TYPE,QMCProperty::MPI_REDUCE,0,MPI_COMM_WORLD );
   
   localTimers.getGatherPropertiesStopwatch()->stop();
@@ -317,7 +315,7 @@ void QMCManager::gatherDensities()
   
   for ( int i=0; i<globalInput.WF.getNumberBasisFunctions(); i++ )
   {
-    Properties_total.chiDensity(i)=QMCnode.getProperties()->chiDensity( i );
+    fwProperties_total.chiDensity(i)=QMCnode.getFWProperties()->chiDensity( i );
   }
   
 #endif
@@ -1125,7 +1123,10 @@ void QMCManager::optimize()
   
   if(  globalInput.flags.optimize_Psi )
   {
-    QMCCorrelatedSamplingVMCOptimization::optimize( &globalInput,Properties_total,configsToSkip );
+    QMCCorrelatedSamplingVMCOptimization::optimize( &globalInput,
+						    Properties_total,
+						    fwProperties_total,
+						    configsToSkip );
     
     // Print out the optimized parameters
     
@@ -1678,7 +1679,7 @@ void QMCManager::writeBFDensity()
   
   for ( int i=0; i<globalInput.WF.getNumberBasisFunctions(); i++ )
   {
-    density << Properties_total.chiDensity( i )  << endl;
+    density << fwProperties_total.chiDensity( i )  << endl;
   }
   
   density.close();

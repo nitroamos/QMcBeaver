@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCFutureWalkingProperties.h"
+#include "QMCDerivativeProperties.h"
 
 int QMCFutureWalkingProperties::numFutureWalking = -1;
 
@@ -70,7 +71,9 @@ QMCFutureWalkingProperties::QMCFutureWalkingProperties()
   props.allocate(NUM_PROPS);
   for(int i=0; i<props.size(); i++) 
     props(i).allocate(numFutureWalking);
-  
+
+  nBasisFunc   = 0;  
+  calc_density = false;
   calc_forces = false;
   zeroOut();
 }
@@ -87,6 +90,29 @@ QMCFutureWalkingProperties::~QMCFutureWalkingProperties()
   for(int i=0; i<props.size(); i++)
     props(i).deallocate();
   props.deallocate();
+
+  der.deallocate();
+  hess.deallocate();
+  chiDensity.deallocate();
+}
+
+void QMCFutureWalkingProperties::setCalcDensity(bool calcDensity, int nbasisfunctions)
+{
+  calc_density = calcDensity;
+
+  if(calc_density == true)
+    {
+      nBasisFunc   = nbasisfunctions;
+      chiDensity.allocate(nBasisFunc);
+
+      for (int i=0; i<nBasisFunc; i++)
+	chiDensity(i).zeroOut();
+    }
+  else
+    {
+      nBasisFunc = 0;
+      chiDensity.deallocate();
+    }
 }
 
 void QMCFutureWalkingProperties::setCalcForces(bool calcForces, int dim1, int dim2)
@@ -124,31 +150,86 @@ void QMCFutureWalkingProperties::zeroOut()
         for (int j=0; j<nuclearForces(fw).dim2(); j++)
           (nuclearForces(fw))(i,j).zeroOut();
   }
+
+  int numAI = globalInput.getNumberAIParameters();
+
+  if(globalInput.flags.calculate_Derivatives == 1)
+    {
+      //second parameter refers to the number of terms necessary
+      //to calculate derivatives of the optimization objective function
+      der.allocate(numAI,5);
+    } else {
+      der.deallocate();
+    }
+
+  if( globalInput.flags.optimize_Psi_method == "analytical_energy_variance" ||
+      globalInput.flags.optimize_Psi_method == "automatic" )
+    {
+      hess.allocate(numAI,numAI);
+    } else {
+      hess.deallocate();
+    }
+
+  for(int i=0; i<der.dim1(); i++)
+    for(int j=0; j<der.dim2(); j++)
+      der(i,j).zeroOut();
+
+  for(int i=0; i<hess.dim1(); i++)
+    for(int j=0; j<hess.dim2(); j++)
+      hess(i,j).zeroOut();
+
+  if (calc_density)
+    for (int i=0; i<nBasisFunc; i++)
+      chiDensity(i).zeroOut();
 }
 
 void QMCFutureWalkingProperties::newSample(QMCFutureWalkingProperties* newProperties, double weight, 
-			      int nwalkers)
+					   int nwalkers)
 {  
   for(int fw=0; fw<numFutureWalking; fw++)
-  {   
-    if (calc_forces && (newProperties->nuclearForces(fw))(0,0).getNumberSamples() > 0)
-      {
-	for (int i=0; i<nuclearForces(fw).dim1(); i++)
-	  for (int j=0; j<nuclearForces(fw).dim2(); j++)
-	    (nuclearForces(fw))(i,j).newSample((newProperties->nuclearForces(fw))(i,j).getAverage(), 
-					       weight);
-      }
-    
-    for(int i=0; i<props.size(); i++)
-      if((newProperties->props(i))(fw).getNumberSamples() > 0)
-	(props(i))(fw).newSample( (newProperties->props(i))(fw).getAverage(), weight);
-  }
+    {   
+      if (calc_forces && (newProperties->nuclearForces(fw))(0,0).getNumberSamples() > 0)
+	{
+	  for (int i=0; i<nuclearForces(fw).dim1(); i++)
+	    for (int j=0; j<nuclearForces(fw).dim2(); j++)
+	      (nuclearForces(fw))(i,j).newSample((newProperties->nuclearForces(fw))(i,j).getAverage(), 
+						 weight);
+	}
+      
+      for(int i=0; i<props.size(); i++)
+	if((newProperties->props(i))(fw).getNumberSamples() > 0)
+	  (props(i))(fw).newSample( (newProperties->props(i))(fw).getAverage(), weight);
+    }
+  
+  for (int i=0; i<der.dim1(); i++)
+    for (int j=0; j<der.dim2(); j++)
+      der(i,j).newSample(newProperties->der(i,j).getAverage(),weight);
+
+  for (int i=0; i<hess.dim1(); i++)
+    for (int j=0; j<=i; j++)
+      hess(i,j).newSample(newProperties->hess(i,j).getAverage(),weight);
+  
+  if (calc_density)
+    for (int i=0; i<nBasisFunc; i++)
+      chiDensity(i).newSample(newProperties->chiDensity(i).getAverage(),weight);
 }
 
 void QMCFutureWalkingProperties::matchParametersTo( const QMCFutureWalkingProperties &rhs )
 {
+  if(rhs.der.dim1() > 0 && rhs.der.dim2() > 0)
+    der.allocate(rhs.der.dim1(),rhs.der.dim2());
+  else
+    der.deallocate();
+  
+  if(rhs.hess.dim1() > 0 && rhs.hess.dim2() > 0)
+    hess.allocate(rhs.hess.dim1(),rhs.hess.dim2());
+  else
+    hess.deallocate();
+
   if(rhs.calc_forces)
     setCalcForces(rhs.calc_forces,rhs.nuclearForces.get(0).dim1(),rhs.nuclearForces.get(0).dim2());
+  if(rhs.calc_density)
+    setCalcDensity(rhs.calc_density,rhs.nBasisFunc);
 }
 
 void QMCFutureWalkingProperties::operator = ( const QMCFutureWalkingProperties &rhs )
@@ -159,9 +240,16 @@ void QMCFutureWalkingProperties::operator = ( const QMCFutureWalkingProperties &
   props = rhs.props;
 
   if (calc_forces)
-  {
-    nuclearForces = rhs.nuclearForces;
-  }
+    {
+      nuclearForces = rhs.nuclearForces;
+    }
+  if (calc_density)
+    {
+      chiDensity = rhs.chiDensity;
+    }
+
+  der = rhs.der;
+  hess = rhs.hess;
 }
 
 QMCFutureWalkingProperties QMCFutureWalkingProperties::operator + ( QMCFutureWalkingProperties &rhs )
@@ -193,6 +281,15 @@ void QMCFutureWalkingProperties::toXML(ostream& strm)
 {
   // Open XML
   strm << "<QMCFutureWalkingProperties>" << endl;
+
+  // Chi Density
+  if (calc_density)
+    {
+      strm << "<ChiDensity>" << endl;
+      for (int i=0; i<nBasisFunc; i++)
+        chiDensity(i).toXML(strm);
+      strm << "</ChiDensity>" << endl;
+    }
 
   // Nuclear forces
   if (calc_forces)
@@ -233,6 +330,15 @@ bool QMCFutureWalkingProperties::readXML(istream& strm)
 
   // Open XML
   strm >> temp;
+
+  // Chi Density
+  if (calc_density)
+    {
+      strm >> temp;
+      for (int i=0; i<nBasisFunc; i++)
+        chiDensity(i).readXML(strm);
+      strm >> temp;
+    }
     
   // Nuclear forces
   if (calc_forces)
@@ -274,6 +380,40 @@ ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs)
   int w1 = 10;
   int w2 = 10;
   int p1 = 2;
+
+  //We almost certainly don't need these printed out
+  //Just look for the derivative printout during the optimization step.
+  if(false)
+    {
+      if(rhs.der.dim1() > 0)
+	{
+	  strm << endl << "------ Objective Function Derivatives --------" << endl;
+	  for(int i=0; i<rhs.der.dim1(); i++)
+	  {
+	    for(int j=0; j<rhs.der.dim2(); j++)
+	      {
+		strm << "Param " << i << " term " << j << ": " << rhs.der(i,j);
+	      }
+	    strm << endl;
+	  }
+	}
+    }
+  
+  if(false)
+    {
+      if(rhs.hess.dim1() > 0)
+	{
+	  strm << endl << "------ Objective Function Hessian --------" << endl;
+	  for(int i=0; i<rhs.hess.dim1(); i++)
+	    {
+	      for(int j=0; j<=i; j++)
+		{
+		  strm << "i " << i << ", j " << j << ": " << rhs.hess(i,j);
+		}
+	      strm << endl;
+	    }
+	}
+    }
 
   if(rhs.numFutureWalking <= 1) return strm;
 

@@ -17,8 +17,6 @@
 
 QMCProperties::QMCProperties()
 {  
-  calc_density = false;
-  nBasisFunc   = 0;
   zeroOut();
 
 #ifdef PARALLEL
@@ -33,28 +31,6 @@ QMCProperties::QMCProperties()
 
 QMCProperties::~QMCProperties()
 {
-  der.deallocate();
-  hess.deallocate();
-  chiDensity.deallocate();
-}
-
-void QMCProperties::setCalcDensity(bool calcDensity, int nbasisfunctions)
-{
-  calc_density = calcDensity;
-
-  if(calc_density == true)
-    {
-      nBasisFunc   = nbasisfunctions;
-      chiDensity.allocate(nBasisFunc);
-
-      for (int i=0; i<nBasisFunc; i++)
-	chiDensity(i).zeroOut();
-    }
-  else
-    {
-      nBasisFunc = 0;
-      chiDensity.deallocate();
-    }
 }
 
 void QMCProperties::zeroOut()
@@ -73,37 +49,6 @@ void QMCProperties::zeroOut()
   acceptanceProbability.zeroOut();
   distanceMovedAccepted.zeroOut();
   distanceMovedTrial.zeroOut();
-
-  int numAI = globalInput.getNumberAIParameters();
-
-  if(globalInput.flags.calculate_Derivatives == 1)
-    {
-      //second parameter refers to the number of terms necessary
-      //to calculate derivatives of the optimization objective function
-      der.allocate(numAI,5);
-    } else {
-      der.deallocate();
-    }
-
-  if( globalInput.flags.optimize_Psi_method == "analytical_energy_variance" ||
-      globalInput.flags.optimize_Psi_method == "automatic" )
-    {
-      hess.allocate(numAI,numAI);
-    } else {
-      hess.deallocate();
-    }
-
-  for(int i=0; i<der.dim1(); i++)
-    for(int j=0; j<der.dim2(); j++)
-      der(i,j).zeroOut();
-
-  for(int i=0; i<hess.dim1(); i++)
-    for(int j=0; j<hess.dim2(); j++)
-      hess(i,j).zeroOut();
-
-  if (calc_density)
-    for (int i=0; i<nBasisFunc; i++)
-      chiDensity(i).zeroOut();
 }
 
 void QMCProperties::newSample(QMCProperties* newProperties, double weight, 
@@ -130,38 +75,10 @@ void QMCProperties::newSample(QMCProperties* newProperties, double weight,
   distanceMovedTrial.newSample(newProperties->distanceMovedTrial.getAverage(),
 			       weight);
   logWeights.newSample(newProperties->logWeights.getAverage(), nwalkers);
-  
-  for (int i=0; i<der.dim1(); i++)
-    for (int j=0; j<der.dim2(); j++)
-      der(i,j).newSample(newProperties->der(i,j).getAverage(),weight);
-  for (int i=0; i<hess.dim1(); i++)
-    for (int j=0; j<hess.dim2(); j++)
-      hess(i,j).newSample(newProperties->hess(i,j).getAverage(),weight);
-
-  if (calc_density)
-    for (int i=0; i<nBasisFunc; i++)
-      chiDensity(i).newSample(newProperties->chiDensity(i).getAverage(),weight);
-}
-
-void QMCProperties::matchParametersTo( const QMCProperties &rhs )
-{
-  setCalcDensity(rhs.calc_density,rhs.nBasisFunc);
-
-  if(rhs.der.dim1() > 0 && rhs.der.dim2() > 0)
-    der.allocate(rhs.der.dim1(),rhs.der.dim2());
-  else
-    der.deallocate();
-  
-  if(rhs.hess.dim1() > 0 && rhs.hess.dim2() > 0)
-    hess.allocate(rhs.hess.dim1(),rhs.hess.dim2());
-  else
-    hess.deallocate();
 }
 
 void QMCProperties::operator = ( const QMCProperties &rhs )
 {
-  matchParametersTo(rhs);
-
   walkerAge             = rhs.walkerAge;
   weightChange          = rhs.weightChange;
   growthRate            = rhs.growthRate;
@@ -181,10 +98,7 @@ void QMCProperties::operator = ( const QMCProperties &rhs )
 QMCProperties QMCProperties::operator + ( QMCProperties &rhs )
 {
   QMCProperties result;
-  
-  matchParametersTo(rhs);
-  result.matchParametersTo(rhs);
-  
+    
   result.weightChange          = weightChange + rhs.weightChange;
   result.walkerAge             = walkerAge + rhs.walkerAge;
   result.growthRate            = growthRate + rhs.growthRate;
@@ -267,15 +181,6 @@ void QMCProperties::toXML(ostream& strm)
   growthRate.toXML(strm);
   strm << "</growthRate>" << endl;
 
-  // Chi Density
-  if (calc_density)
-    {
-      strm << "<ChiDensity>" << endl;
-      for (int i=0; i<nBasisFunc; i++)
-        chiDensity(i).toXML(strm);
-      strm << "</ChiDensity>" << endl;
-    }
-
   // Close XML
   strm << "</QMCProperties>" << endl;
 }
@@ -343,15 +248,6 @@ bool QMCProperties::readXML(istream& strm)
   strm >> temp;
   growthRate.readXML(strm);
   strm >> temp;
-
-  // Chi Density
-  if (calc_density)
-    {
-      strm >> temp;
-      for (int i=0; i<nBasisFunc; i++)
-        chiDensity(i).readXML(strm);
-      strm >> temp;
-    }
     
   // Close XML
   strm >> temp;
@@ -404,57 +300,6 @@ ostream& operator <<(ostream& strm, QMCProperties &rhs)
 
   strm << endl << "----------------- Energy^2 -------------------" << endl;
   strm << rhs.energy2;
-
-  //We almost certainly don't need these printed out
-  if(false){
-    if(rhs.der.dim1() > 0)
-      {
-	strm << endl << "------ Objective Function Derivatives --------" << endl;
-	for(int i=0; i<rhs.der.dim1(); i++)
-	  {
-	    for(int j=0; j<rhs.der.dim2(); j++)
-	      {
-		strm << "Param " << i << " term " << j << ": " << rhs.der(i,j);
-	      }
-	    strm << endl;
-	  }
-      }
-    
-    if(rhs.hess.dim1() > 0)
-      {
-	strm << endl << "------ Objective Function Hessian --------" << endl;
-	for(int i=0; i<rhs.hess.dim1(); i++)
-	  {
-	    for(int j=0; j<rhs.hess.dim2(); j++)
-	      {
-		strm << "i " << i << ", j " << j << ": " << rhs.hess(i,j);
-	      }
-	    strm << endl;
-	  }
-      }
-  }
-
-  if(globalInput.flags.calculate_Derivatives == 1)
-    {
-        QMCDerivativeProperties dp(&rhs,0,0);
-
-	Array1D<double> gradient = dp.getParameterGradient();
-	Array2D<double> hessian = dp.getParameterHessian();
-	if(gradient.dim1() > 0)
-	  {
-	    strm << endl << "------ Objective Function Derivatives --------" << endl;
-	    globalInput.printAIParameters(strm,"",5,gradient,false);
-	  }
-	if(hessian.dim1() > 0)
-	  {
-	    strm << endl << "------ Objective Function Hessian --------" << endl;
-	    if(hessian.dim1() < 20)
-	      strm << hessian;
-	    else
-	      strm << "<hessian.dim1() = " << hessian.dim1() << " is too large, not printing>" << endl;
-	  }
-	strm << endl;
-    }
 
   return strm;
 }

@@ -14,6 +14,7 @@
 
 void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 						    QMCProperties & lastRun,
+						    QMCFutureWalkingProperties & fwLastRun,
 						    int configsToSkip)
 {
   //put initial Jastrow parameters in as the guess
@@ -22,7 +23,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 
   double value;
 
-  QMCDerivativeProperties dp(&lastRun,0,0);
+  QMCDerivativeProperties dp(&lastRun,&fwLastRun,0);
 
   Array1D<double> gradient;
   Array2D<double> hessian;

@@ -79,32 +79,7 @@ public:
   QMCProperty walkerAge;
   QMCProperty weightChange;
   QMCProperty growthRate;
-
-  /**
-     The first dimension will indicate which
-     parameter the derivative is respect to.
-     The second dimension will hold all the terms
-     necessary to do the average.
-  */
-  Array2D<QMCProperty> der;
-  //for variance minimization, the hessian only needs one additional term
-  Array2D<QMCProperty> hess;
-
- /**
-    Tells if basis function density is being calculated.
-  */
-  bool calc_density;
-  
-  /**
-    The number of basis functions.  Only has a value if calc_density is true.
-  */
-  int nBasisFunc;
-
-  /**
-     Densities for the basis functions.
-  */
-  Array1D<QMCProperty> chiDensity;
-   
+     
   /**
     Creates an instance of the class.
   */
@@ -116,12 +91,6 @@ public:
   */
   void zeroOut();
 
-  /**
-     This function will match array allocations to
-     rhs.
-     @param rhs the object who's allocations we want to match
-  */
-  void matchParametersTo( const QMCProperties &rhs );
   /**
     Sets two objects equal.
   */
@@ -142,14 +111,6 @@ public:
     @param nwalkers the number of walkers used to make this sample.
   */
   void newSample(QMCProperties* newProperties, double weight, int nwalkers);
-
-  /**
-    Tells the object if basis function densities are being calculated.
-
-    @param calcDensity- true if densities are being calculated.
-    @param nbasisfunctions- number of basis functions.
-  */
-  void setCalcDensity(bool calcDensity, int nbasisfunctions);
 
   /**
     Writes the state of this object to an XML stream.

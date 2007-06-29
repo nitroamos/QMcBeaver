@@ -70,6 +70,31 @@ public:
      Forces for each atom.
   */
   Array1D< Array2D<QMCProperty> > nuclearForces;
+
+  /**
+     The first dimension will indicate which
+     parameter the derivative is respect to.
+     The second dimension will hold all the terms
+     necessary to do the average.
+  */
+  Array2D<QMCStatistic> der;
+  //for variance minimization, the hessian only needs one additional term
+  Array2D<QMCStatistic> hess;
+
+ /**
+    Tells if basis function density is being calculated.
+  */
+  bool calc_density;
+  
+  /**
+    The number of basis functions.  Only has a value if calc_density is true.
+  */
+  int nBasisFunc;
+
+  /**
+     Densities for the basis functions.
+  */
+  Array1D<QMCProperty> chiDensity;
    
   /**
     Creates an instance of the class.
@@ -112,6 +137,14 @@ public:
     @param nbasisfunctions- number of basis functions.
   */
   void setCalcForces(bool calcForces, int dim1, int dim2);
+
+  /**
+    Tells the object if basis function densities are being calculated.
+
+    @param calcDensity- true if densities are being calculated.
+    @param nbasisfunctions- number of basis functions.
+  */
+  void setCalcDensity(bool calcDensity, int nbasisfunctions);
 
   /**
     Writes the state of this object to an XML stream.

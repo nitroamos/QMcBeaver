@@ -125,14 +125,14 @@ void QMCRun::initialize(QMCInput *INPUT)
   if (Input->flags.calculate_bf_density == 1)
     {
       bool calcDensity = true;
-      timeStepProperties.setCalcDensity(calcDensity,
-                                        Input->WF.getNumberBasisFunctions());
+      fwTimeStepProperties.setCalcDensity(calcDensity,
+					  Input->WF.getNumberBasisFunctions());
       if (Input->flags.use_equilibration_array == 1)
         EquilibrationArray.setCalcDensity(calcDensity,
                                           Input->WF.getNumberBasisFunctions());
       else
-        Properties.setCalcDensity(calcDensity,
-                                  Input->WF.getNumberBasisFunctions());
+        fwProperties.setCalcDensity(calcDensity,
+				    Input->WF.getNumberBasisFunctions());
     }
  
   if(Input->flags.nuclear_derivatives != "none")
@@ -445,9 +445,12 @@ void QMCRun::calculateObservables()
       EquilibrationArray.newSample(&timeStepProperties, totalWeights,
 				   getNumberOfWalkers());
     } else {
-      Properties.newSample(&timeStepProperties, totalWeights,
+      Properties.newSample(&timeStepProperties,
+			   totalWeights,
 			   getNumberOfWalkers());
-      fwProperties.newSample(&fwTimeStepProperties,totalWeights,getNumberOfWalkers());
+      fwProperties.newSample(&fwTimeStepProperties,
+			     totalWeights,
+			     getNumberOfWalkers());
     }
 }
 

@@ -1880,23 +1880,6 @@ void QMCWalker::calculateObservables( QMCProperties & props )
       // Calculate the ne and ee potential energy
       props.neEnergy.newSample( neEnergy, getWeight() );
       props.eeEnergy.newSample( eeEnergy, getWeight() );
-
-      for(int ai=0; ai<rp_a.dim1(); ai++)
-	{
-	  /*
-	    This isn't exactly the same since localEnergy is a weighted average
-	    of original and trial walkers...
-	  */
-	  double e2 = localEnergy * localEnergy;
-	  props.der(ai,0).newSample(rp_a(ai),                 getWeight());
-	  props.der(ai,1).newSample(rp_a(ai) * localEnergy,   getWeight());
-	  props.der(ai,2).newSample(rp_a(ai) * e2,            getWeight());
-	  props.der(ai,3).newSample(p3_xxa(ai),               getWeight());
-	  props.der(ai,4).newSample(p3_xxa(ai) * localEnergy, getWeight());
-
-	  for(int aj=0; aj<props.hess.dim2(); aj++)
-	    props.hess(ai,aj).newSample(p3_xxa(ai) * p3_xxa(aj), getWeight());
-	}
     }
   else
     {
@@ -1934,16 +1917,15 @@ void QMCWalker::calculateObservables( QMCProperties & props )
   
   // Calculate the log of the weight
   props.logWeights.newSample(getWeight(),1);
-
-  // Calculate the basis function densities
-  if (Input->flags.calculate_bf_density == 1)
-    for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
-      props.chiDensity(i).newSample( walkerData.chiDensity(i), getWeight() );
-
 }
 
 void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 {
+
+  double rel_diff = fabs( (localEnergy -
+			   Input->flags.energy_estimated_original)/
+			  Input->flags.energy_estimated_original);
+
   double fWeight = getWeight();
 
   // Add the data from this walker to the accumulating properties  
@@ -2031,6 +2013,32 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 	  
 	  resetFutureWalking(i,whichIsDone);
 	} 
+    }
+
+  if(rel_diff < Input->flags.rel_cutoff)
+    {
+      for(int ai=0; ai<rp_a.dim1(); ai++)
+	{
+	  /*
+	    This isn't exactly the same since localEnergy is a weighted average
+	    of original and trial walkers...
+	  */
+	  double e2 = localEnergy * localEnergy;
+	  fwProps.der(ai,0).newSample(rp_a(ai),                 getWeight());
+	  fwProps.der(ai,1).newSample(rp_a(ai) * localEnergy,   getWeight());
+	  fwProps.der(ai,2).newSample(rp_a(ai) * e2,            getWeight());
+	  fwProps.der(ai,3).newSample(p3_xxa(ai),               getWeight());
+	  fwProps.der(ai,4).newSample(p3_xxa(ai) * localEnergy, getWeight());
+	}
+      
+      for(int ai=0; ai<p3_xxa.dim1(); ai++)
+	for(int aj=0; aj<=ai; aj++)
+	  fwProps.hess(ai,aj).newSample(p3_xxa(ai) * p3_xxa(aj), getWeight());
+      
+      // Calculate the basis function densities
+      if (Input->flags.calculate_bf_density == 1)
+	for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
+	  fwProps.chiDensity(i).newSample( walkerData.chiDensity(i), getWeight() );
     }
 }
 
