@@ -492,9 +492,12 @@ void QMCWavefunction::read(int charge, int numberOrbitals, int numberBasisFuncti
 	       << Norbitals << endl;
 	  globalInput.flags.Norbitals = Norbitals;
 	}
+      sortOccupations(true);
     }
 
-  sortOccupations(true);
+  else
+    sortOccupations(false);
+
   makeCoefficients();
   /*
   cout << "AlphaOccupation\n" << AlphaOccupation << endl;
@@ -700,13 +703,13 @@ Array2D<qmcfloat> * QMCWavefunction::getCoeff(int ci, bool isAlpha)
 
 void QMCWavefunction::makeCoefficients()
 {
-  int unusedIndicator = getUnusedIndicator();
-
   AlphaCoeffs.allocate(Ndeterminants);
   BetaCoeffs.allocate(Ndeterminants);
 
   for(int ci=0; ci<Ndeterminants; ci++)
     {
+      int unusedIndicator = getUnusedIndicator();
+
       AlphaCoeffs(ci).allocate(Nalpha, Nbasisfunc);
       BetaCoeffs(ci).allocate(Nbeta, Nbasisfunc);
 

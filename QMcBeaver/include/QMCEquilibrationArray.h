@@ -135,8 +135,9 @@ class QMCEquilibrationArray
   /**
     Reads the state of the object from an XML stream.
     @param strm stream to read data from.
+    @return whether the read was successful
   */
-  void readXML(istream& strm);
+  bool readXML(istream& strm);
 
 };
 

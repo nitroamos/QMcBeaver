@@ -180,7 +180,7 @@ void qmcbeaver()
       TheMan.zeroOut();
     }
 
-  bool ok = TheMan.run(true);
+  bool ok = TheMan.run(false);
   TheMan.writeRestart();
   
   if( globalInput.flags.my_rank == 0 )
@@ -207,7 +207,7 @@ void qmcbeaver()
       /*
 	The automatic proceedure is just a guide! There are no guarantees with
 	regards to how efficient it works.
-	You're responsible for making sure that it doesn't spin it's wheels.
+	You're responsible for making sure that it doesn't spin its wheels.
       */
       if(globalInput.flags.optimize_Psi_method == "automatic")
 	{
@@ -259,7 +259,7 @@ void qmcbeaver()
 	    }
 	}
 
-      ok = TheMan.run(globalInput.flags.equilibrate_every_opt_step == 1);
+      ok = TheMan.run(globalInput.flags.equilibrate_every_opt_step);
       TheMan.writeRestart();
 
       if( globalInput.flags.my_rank == 0 )

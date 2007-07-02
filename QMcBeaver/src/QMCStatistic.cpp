@@ -131,39 +131,61 @@ void QMCStatistic::toXML(ostream& strm)
   strm << "</QMCStatistic>" << endl;
 }
 
-void QMCStatistic::readXML(istream& strm)
+bool QMCStatistic::readXML(istream& strm)
 {
   string temp;
 
   // Open XML
   strm >> temp;
-  
+  if (temp != "<QMCStatistic>")
+    return false;
+
   // sum
   strm >> temp;
+  if (temp != "<Sum>")
+    return false;
   strm >> temp;
   sum = atof(temp.c_str());
   strm >> temp;
+  if (temp != "</Sum>")
+    return false;
   
   // sum sq
   strm >> temp;
+  if (temp != "<SumSquared>")
+    return false;
   strm >> temp;
   sum2 = atof(temp.c_str());
   strm >> temp;
+  if (temp != "</SumSquared>")
+    return false;
 
   // weights
   strm >> temp;
+  if (temp != "<SumWeights>")
+    return false;
   strm >> temp;
   weights = atof(temp.c_str());
   strm >> temp;
+  if (temp != "</SumWeights>")
+    return false;
 
   // nsamples
   strm >> temp;
+  if (temp != "<NumberOfSamples>")
+    return false;
   strm >> temp;
   nsamples = atoi(temp.c_str());
   strm >> temp;
+  if (temp != "</NumberOfSamples>")
+    return false;
 
   // Close XML
   strm >> temp;
+  if (temp != "</QMCStatistic>")
+    return false;
+
+  return true;
 }
 
 ostream& operator << (ostream& strm, const QMCStatistic &rhs)

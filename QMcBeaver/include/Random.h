@@ -125,8 +125,9 @@ class Random
      Recover a checkpointed Random object.
 
      @param strm where the stream info is available to be read.
+     @return whether the read was successful
   */
-  void readXML(istream & strm);
+  bool readXML(istream & strm);
 
   /**
      This will generate a random integer with a uniform

@@ -211,8 +211,9 @@ public:
     be formatted exactly like the output from <code>toXML</code> because
     it is not intelligent.
     @param strm XML stream
+    @return whether the read was successful
   */
-  void readXML(istream& strm, QMCFunctions & QMF);
+  bool readXML(istream& strm, QMCFunctions & QMF);
 
   /**
     Gets the value of the local energy estimator for this walker.

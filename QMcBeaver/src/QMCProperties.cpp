@@ -191,72 +191,130 @@ bool QMCProperties::readXML(istream& strm)
 
   // Open XML
   strm >> temp;
+  if (temp != "<QMCProperties>")
+    return false;
 
   // Read energy
   strm >> temp;
-  energy.readXML(strm);
+  if (temp != "<Energy>")
+    return false;
+  if (!energy.readXML(strm))
+    return false;
   strm >> temp;
+  if (temp != "</Energy>")
+    return false;
 
   // Read kinetic energy
   strm >> temp;
-  kineticEnergy.readXML(strm);
+  if (temp != "<KineticEnergy>")
+    return false;
+  if (!kineticEnergy.readXML(strm))
+    return false;
   strm >> temp;
+  if (temp != "</KineticEnergy>")
+    return false;
 
   // Read potential energy
   strm >> temp;
-  potentialEnergy.readXML(strm);
+  if (temp != "<PotentialEnergy>")
+    return false;
+  if (!potentialEnergy.readXML(strm))
+    return false;
   strm >> temp;
+  if (temp != "</PotentialEnergy>")
+    return false;
 
   // Read nuc-elec energy
   strm >> temp;
-  neEnergy.readXML(strm);
+  if (temp != "<NucElecEnergy>")
+    return false;
+  if (!neEnergy.readXML(strm))
+    return false;
   strm >> temp;
+  if (temp != "</NucElecEnergy>")
+    return false;
 
   // Read elec-elec energy
   strm >> temp;
-  eeEnergy.readXML(strm);
+  if (temp != "<ElecElecEnergy>")
+    return false;
+  if (!eeEnergy.readXML(strm))
+    return false;
   strm >> temp;
+  if (temp != "</ElecElecEnergy>")
+    return false;
 
   // Read log weights
   strm >> temp;
-  logWeights.readXML(strm);
+  if (temp != "<LogWeights>")
+    return false;
+  if (!logWeights.readXML(strm))
+    return false;
   strm >> temp;
+  if (temp != "</LogWeights>")
+    return false;
 
   // Acceptance probability
   strm >> temp;
-  acceptanceProbability.readXML(strm);
+  if (temp != "<AcceptanceProbability>")
+    return false;
+  if (!acceptanceProbability.readXML(strm))
+    return false;
   strm >> temp;
+  if (temp != "</AcceptanceProbability>")
+    return false;
 
   // Distance Moved Accepted
   strm >> temp;
-  distanceMovedAccepted.readXML(strm);
+  if (temp != "<DistanceMovedAccepted>")
+    return false;
+  if (!distanceMovedAccepted.readXML(strm))
+    return false;
   strm >> temp;
+  if (temp != "</DistanceMovedAccepted>")
+    return false;
 
   // Distance Moved Trial
   strm >> temp;
-  distanceMovedTrial.readXML(strm);
+  if (temp != "<DistanceMovedTrial>")
+    return false;
+  if (!distanceMovedTrial.readXML(strm))
+    return false;
   strm >> temp;
+  if (temp != "</DistanceMovedTrial>")
+    return false;
 
   strm >> temp;
-  walkerAge.readXML(strm);
+  if (temp != "<walkerAge>")
+    return false;
+  if (!walkerAge.readXML(strm));
   strm >> temp;
+  if (temp != "</walkerAge>")
+    return false;
+  
+  strm >> temp;
+  if (temp != "<weightChange>")
+    return false;
+  if (!weightChange.readXML(strm))
+    return false;
+  strm >> temp;
+  if (temp != "</weightChange>")
+    return false;
 
   strm >> temp;
-  weightChange.readXML(strm);
+  if (temp != "<growthRate>")
+    return false;
+  if (!growthRate.readXML(strm))
+    return false;
   strm >> temp;
+  if (temp != "</growthRate>")
+    return false;
 
-  strm >> temp;
-  growthRate.readXML(strm);
-  strm >> temp;
-    
   // Close XML
   strm >> temp;
   if(temp != "</QMCProperties>")
-    {
-      clog << "Error: checkpoint read failed in QMCProperties. We expected a \"</QMCProperties>\"" <<
-	" tag, but found \"" << temp << "\"." << endl;
-      return false;
-    }
+    return false;
+
   return true;
 }
 

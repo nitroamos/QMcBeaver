@@ -1545,52 +1545,65 @@ void QMCWalker::toXML(ostream& strm)
     {
       strm << "\t\t";
       for(int j=0;j<R.dim2();j++)
-        {
-          strm << R(ep,j) << "    ";
-        }
+	strm << R(ep,j) << "\t";
       strm << endl;
     }
   strm << "\t</Position>" << endl;
+
   strm << "\t<Weight>\n\t\t" << getWeight() << "\n\t</Weight>" << endl;
   strm << "\t<Age>\n\t\t" << getAge() << "\n\t</Age>" << endl;
-  strm << "\t<Elocal> \n\t\t" << walkerData.psi
-  << "\n\t</Elocal>" <<endl;
   strm << "</QMCWalker>\n" << endl;
 }
 
-void QMCWalker::readXML(istream& strm, QMCFunctions & QMF)
+bool QMCWalker::readXML(istream& strm, QMCFunctions & QMF)
 {
   string temp;
   strm >> temp;
   
+  if (temp != "<QMCWalker>")
+    return false;
+
   // Read position
   strm >> temp;
+  if (temp != "<Position>")
+    return false;
   
   for(int ep=0; ep<R.dim1(); ep++)
-    {
-      for(int j=0;j<R.dim2();j++)
-        {
-          strm >> R(ep,j);
-        }
-    }
+    for(int j=0;j<R.dim2();j++)
+      strm >> R(ep,j);
     
   strm >> temp;
+  if (temp != "</Position>")
+    return false;
   
   // Read weight
-  strm >> temp >> temp;
+  strm >> temp;
+  if (temp != "<Weight>")
+    return false;
+  strm >> temp;
   weight = atof(temp.c_str());
   strm >> temp;
-  
-  
+  if (temp != "</Weight>")
+    return false;
+
   // Read age
-  strm >> temp >> temp;
+  strm >> temp;
+  if (temp != "<Age>")
+    return false;
+  strm >> temp;
   age = atoi(temp.c_str());
-  
-  // Read the energy and don't save it
-  strm >> temp >> temp >> temp >> temp >> temp;
-  
+  strm >> temp;
+  if (temp != "</Age>")
+    return false;
+
+  strm >> temp;
+  if (temp != "</QMCWalker>")
+    return false;
+
   QMF.evaluate(R,walkerData);
   newID();
+
+  return true;
 }
 
 void QMCWalker::initializeWalkerPosition(QMCFunctions & QMF)

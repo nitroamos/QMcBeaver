@@ -677,16 +677,27 @@ bool QMCManager::run(bool equilibrate)
   
   done      = false;
   iteration = 0;
+  int eq_steps = 0;
 
-  if( equilibrate )
-  {
+  // If this is the first time QMCManager::run() is being called, 
+  // initializeCalculationState() will decide if we are equilibrating.  If it
+  // is not the first time, we need to check if QMcBeaver called this function
+  // to equilibrate.
+
+  if (equilibrate == true)
     equilibrating = true;
-    globalInput.flags.dt = globalInput.flags.dt_equilibration;
-  } else {
-    equilibrating = false;
-    globalInput.flags.dt = globalInput.flags.dt_run;
-  }
-  
+
+  if( equilibrating )
+    {
+      globalInput.flags.dt = globalInput.flags.dt_equilibration;
+      eq_steps = globalInput.flags.equilibration_steps;
+    }
+  else
+    { 
+      globalInput.flags.dt = globalInput.flags.dt_run;
+      eq_steps = 0;
+    }
+
   // Create the file to write all energies out to
   ofstream *energy_strm_out = 0;
   
@@ -729,21 +740,21 @@ bool QMCManager::run(bool equilibrate)
 
     if( equilibrating )  localTimers.getEquilibrationStopwatch()->start();
     else
-    {
-      if ( globalInput.flags.use_equilibration_array == 1 )  QMCnode.startTimers();
-      else localTimers.getPropagationStopwatch()->start();
-    }
+      {
+	if ( globalInput.flags.use_equilibration_array == 1 )  
+	  QMCnode.startTimers();
+	else localTimers.getPropagationStopwatch()->start();
+      }
     
     bool writeConfigs = !equilibrating &&
       globalInput.flags.print_configs == 1 &&
       iteration%globalInput.flags.print_config_frequency == 0;
     
-    while( !QMCnode.step( writeConfigs, iteration - globalInput.flags.equilibration_steps ) )
+    while( !QMCnode.step( writeConfigs, iteration - eq_steps ) )
       {
 	//Let's assume the worst; that all our data is trash.
-	cerr << "Error on node " << globalInput.flags.my_rank << 
-	  ": QMCManager is trashing data and starting calculation all over!" << endl;
-
+	cerr << "Error on node " << globalInput.flags.my_rank << ": ";
+	cerr << "QMCManager is trashing data and restarting" << endl;
 
 	/*
 	  We're starting over here, so we need to reset everything
@@ -757,13 +768,17 @@ bool QMCManager::run(bool equilibrate)
 	    else localTimers.getPropagationStopwatch()->stop();
 	  }
 
-	if( equilibrate )
+	equilibrating = globalInput.flags.equilibrate_first_opt_step;
+
+	if (equilibrating)
 	  {
-	    equilibrating = true;
 	    globalInput.flags.dt = globalInput.flags.dt_equilibration;
-	  } else {
-	    equilibrating = false;
+	    eq_steps = globalInput.flags.equilibration_steps;
+	  } 
+	else 
+	  {
 	    globalInput.flags.dt = globalInput.flags.dt_run;
+	    eq_steps = 0;
 	  }
 
 	//Turn on whatever stopwatches need to be running
@@ -775,7 +790,6 @@ bool QMCManager::run(bool equilibrate)
 	  }
 	
 	done = false;
-	iteration = 0;
 	zeroOut();
       }
     
@@ -794,7 +808,7 @@ bool QMCManager::run(bool equilibrate)
     if( equilibrating )
     {
       equilibrationProperties = equilibrationProperties +
-      *QMCnode.getProperties();
+	*QMCnode.getProperties();
       updateEffectiveTimeStep( &equilibrationProperties );
       
       if( globalInput.flags.run_type == "diffusion" )
@@ -824,37 +838,37 @@ bool QMCManager::run(bool equilibrate)
     
     if( globalInput.flags.checkpoint == 1 &&
         iteration%globalInput.flags.checkpoint_interval == 0 )
-    {
-      writeCheckpoint();
-    }
+      {
+	writeCheckpoint();
+      }
     
     if( !equilibrating && globalInput.flags.write_all_energies_out == 1 )
-    {
-      QMCnode.writeEnergies( *energy_strm_out );
-    }
+      {
+	QMCnode.writeEnergies( *energy_strm_out );
+      }
     
     if( !equilibrating && globalInput.flags.write_electron_densities == 1 )
-    {
-      QMCnode.calculateElectronDensities();
-    }
+      {
+	QMCnode.calculateElectronDensities();
+      }
     
     if( globalInput.flags.use_hf_potential == 1 )
-    {
-      QMCnode.updateHFPotential();
-    }
+      {
+	QMCnode.updateHFPotential();
+      }
     
     if( equilibrating )
-    {
-      localTimers.getEquilibrationStopwatch() ->stop();
-      //We don't want to zero out here because there is some
-      //interesting info we want to print in writeEnergyResultsSummary
-      //QMCnode.zeroOut();
-    }
+      {
+	localTimers.getEquilibrationStopwatch() ->stop();
+	//We don't want to zero out here because there is some
+	//interesting info we want to print in writeEnergyResultsSummary
+	QMCnode.zeroOut();
+      }
     else
-    {
-      if ( globalInput.flags.use_equilibration_array == 1 )  QMCnode.stopTimers();
-      else localTimers.getPropagationStopwatch() ->stop();
-    }
+      {
+	if ( globalInput.flags.use_equilibration_array == 1 )  QMCnode.stopTimers();
+	else localTimers.getPropagationStopwatch() ->stop();
+      }
     
     //--------------------------------------------------
 
@@ -1054,7 +1068,7 @@ bool QMCManager::run(bool equilibrate)
 	      gatherForces();
 
 	    if(globalInput.flags.checkpoint == 1)
-	      writeCheckpoint();
+	      //	      writeCheckpoint();
 
 	    break;
 	  }	
@@ -1083,7 +1097,7 @@ bool QMCManager::run(bool equilibrate)
 
   if( globalInput.flags.checkpoint == 1 )
     {
-      writeCheckpoint();
+      //      writeCheckpoint();
     }
   
   if(  globalInput.flags.write_all_energies_out == 1 )
@@ -1146,21 +1160,20 @@ void QMCManager::equilibration_step()
 {
   // adjust the time steps and zeros everything out during equilibration
   
-  if(  globalInput.flags.equilibration_function == "step" )
+  if( globalInput.flags.equilibration_function == "step" )
   {
     // step function
     
-    if(  iteration >= globalInput.flags.equilibration_steps )
+    if( iteration >= globalInput.flags.equilibration_steps )
     { 
       QMCnode.zeroOut();
       equilibrating = false;
       globalInput.flags.dt = globalInput.flags.dt_run;
     }
   }
-  else if(  globalInput.flags.equilibration_function == "ramp" )
+  else if( globalInput.flags.equilibration_function == "ramp" )
   {
-    double ddt = ( globalInput.flags.dt_equilibration-globalInput.flags.dt_run ) /
-    ( globalInput.flags.equilibration_steps-1 );
+    double ddt = ( globalInput.flags.dt_equilibration-globalInput.flags.dt_run ) / ( globalInput.flags.equilibration_steps-1 );
     // ramp function
     globalInput.flags.dt -= ddt;
 
@@ -1192,7 +1205,7 @@ void QMCManager::equilibration_step()
     }
     else
     {
-      if(  iteration == 1 )
+      if(  iteration == -1*globalInput.flags.equilibration_steps + 1 )
       {
         globalInput.flags.old_walker_acceptance_parameter += -1000;
       }
@@ -1717,9 +1730,16 @@ void QMCManager::writeXML( ostream & strm )
 
 void QMCManager::writeCheckpoint()
 {
+  // What I want to do here is to write the checkpoint file to a local
+  // directory and then move it to the working directory after it is written.
+  // I think this may make the writing process faster and less prone to error.
+  // Reading the checkpoints is causing a lot of problems right now on QSC.
+
   // Create the checkpoint file name
   string filename = globalInput.flags.checkout_file_name + ".checkpoint." +
-  StringManipulation::intToString( globalInput.flags.my_rank );
+    StringManipulation::intToString( globalInput.flags.my_rank );
+
+  string temp_filename = "/tmp/" + filename;
 
   /*
     This is the OS dependent part of storing the checkpoint files
@@ -1731,108 +1751,191 @@ void QMCManager::writeCheckpoint()
      filename = globalInput.flags.checkout_file_name + "/" + filename;
 
   // Initilize and set the output formatting
-  ofstream QMCcheckpoint( filename.c_str() );
-  //  QMCcheckpoint.setf(ios::fixed,ios::floatfield);
-  QMCcheckpoint.precision( 15 );
-  
-  writeXML( QMCcheckpoint );
-  
-  QMCcheckpoint.close();
+  ofstream QMCcheckpoint( temp_filename.c_str() );
+
+  if (QMCcheckpoint)
+    {
+      // We have successfully opened the file in the temp directory
+      QMCcheckpoint.setf( ios::scientific,ios::floatfield );
+      QMCcheckpoint.precision(15);
+
+      writeXML(QMCcheckpoint);
+      QMCcheckpoint.close();
+      // We move the checkpoint from temp to the working directory
+      // There is a problem executing this command here.  The filename has some
+      // sort of weird delimiter that the OS doesn't like.
+
+      string move = "mv ";
+      string space1 = " ";
+      command = move + temp_filename + space1 + 
+        globalInput.flags.checkout_file_name;
+      system(command.c_str());
+    }
+
+  else
+    {
+      // If the temp directory won't work, we will use the working directory
+      QMCcheckpoint.clear();
+      QMCcheckpoint.open( filename.c_str() );
+      QMCcheckpoint.setf(ios::fixed,ios::floatfield);
+      QMCcheckpoint.precision( 15 );
+      writeXML( QMCcheckpoint );
+      QMCcheckpoint.close();
+    }
 }
 
 bool QMCManager::readXML( istream & strm )
 {
-  string temp;
-  
   // Read the random seed
-  // This is the first read from the checkpoint
-  strm >> temp;
-  if(temp != "<iseed>")
-    {
-      clog << "Error: checkpoint read failed in QMCManager."
-	   << " We expected to read a \"<iseed>\""
-	   << " tag, but found \"" << temp << "\"." << endl;
-      return false;
-    }
-  ran.readXML(strm);  
-  strm >> temp;
+  if (!ran.readXML(strm))
+    return false;
+
+  string temp;
 
   // Read in the number of walkers
-  strm >> temp >> temp;
+  strm >> temp;
+  if (temp != "<NumberOfWalkers>")
+    return false;
+  strm >> temp;
   globalInput.flags.number_of_walkers = atoi( temp.c_str() );
   strm >> temp;
+  if (temp != "</NumberOfWalkers>")
+    return false;
   
   // Read in if the node is equilibrating
-  strm >> temp >> temp;  
+  strm >> temp;
+  if (temp != "<Equilibrating>")
+    return false;
+  strm >> temp;  
   equilibrating = atoi( temp.c_str() );
   strm >> temp;
-  
-  return QMCnode.readXML( strm );
+  if (temp != "</Equilibrating>")
+    return false;
+
+  // Read the QMCRun state
+  if (!QMCnode.readXML( strm ))
+    return false;
+
+  return true;
 }
 
 void QMCManager::initializeCalculationState(long int iseed)
 {
-  // Create the checkpoint file name
-  string filename = globalInput.flags.checkin_file_name + ".checkpoint." +
-  StringManipulation::intToString( globalInput.flags.my_rank );
-  
-  // open the input stream
-  ifstream qmcCheckpoint( filename.c_str() );
-
-  /*
-    If no checkpoint file exists in the current directory,
-    then let's look in one particular subdirectory. During
-    parallel runs, each processor creates a checkpoint file,
-    cluttering the directory. This might be OS dependent a bit,
-    but it preserves sanity.
-   */
-  if(!qmcCheckpoint)
+  if (globalInput.flags.use_available_checkpoints == 0)
     {
-      filename = globalInput.flags.checkin_file_name + "/" + filename;
-      qmcCheckpoint.clear();
-      qmcCheckpoint.open(filename.c_str());
+      localTimers.getInitializationStopwatch()->start();
+      QMCnode.randomlyInitializeWalkers();
+      equilibrating = globalInput.flags.equilibrate_first_opt_step;
+      localTimers.getInitializationStopwatch()->stop();
     }
 
-  localTimers.getInitializationStopwatch()->start();
-  
-  bool ok = false;
-  if( qmcCheckpoint && globalInput.flags.use_available_checkpoints == 1 )
+  else
     {
-      // There is a checkpoint file
-      clog << "Reading in checkpointed file " << filename << "..." << endl;
-      ok = readXML( qmcCheckpoint );
-      qmcCheckpoint.close();
-      if(ok)
-	{
-	  clog << "Checkpoint read successful." << endl;
-	  writeEnergyResultsSummary( clog );
-	  if(globalInput.flags.zero_out_checkpoint_statistics == 1)
-	    clog << "Will zero the checkpoint, preserving only the configurations." << endl;
-	} else {
-	  /*
-	    We assume that a calculation from scratch is better than exiting.
-	  */
-	  clog << "Checkpoint read NOT successful, random initialization." << endl;
-	}
-    }
+      // Create the checkpoint file name
+      string filename = globalInput.flags.checkin_file_name + ".checkpoint." +
+        StringManipulation::intToString( globalInput.flags.my_rank );
 
-  if(!ok)
-    {
-      //Make sure we're not initalizing ran from the checkpoint
-      ran.initialize(iseed,globalInput.flags.my_rank);
+      string temp_filename = "/tmp/" + filename;
+  
+      // open the input stream
+      ifstream qmcCheckpoint;
+
+      // We use a test stream to find where the checkpoint file is.  For some
+      // reason, trying to open several files with the input stream was
+      // causing it to not read the file properly.
+      ifstream test_strm( filename.c_str() );
 
       /*
-	There is no checkpoint file, or checkpoint read failed.
-	If the read failed, then we want to be sure we remove everything
-	we read in from the checkpoint.
+        If no checkpoint file exists in the current directory, then let's look
+	in one particular subdirectory. During parallel runs, each processor 
+	creates a checkpoint file, cluttering the directory. This might be OS
+	dependent a bit, but it preserves sanity.
       */
-      QMCnode.randomlyInitializeWalkers();
+      if(!test_strm)
+        {
+          test_strm.clear();
+          filename = globalInput.flags.checkin_file_name + "/" + filename;
+          test_strm.open(filename.c_str());
+        }
 
-      // Make sure any checkpointed data is removed.
-      zeroOut();
+      if (test_strm)
+        {
+          test_strm.close();
+          // We move the checkpoint to a local directory to read it
+          string move = "mv ";
+          string space1 = " ";
+          string command = move + filename + space1 + temp_filename;      
+
+          if (!system(command.c_str()))
+            {
+              // We have successfully moved the checkpoint file from the
+              // working directory into a temp directory
+
+              localTimers.getInitializationStopwatch()->start();
+              qmcCheckpoint.open(temp_filename.c_str());
+              clog << "Reading in checkpoint file " << temp_filename << "...";
+              if (readXML(qmcCheckpoint))
+                {
+                  // We make sure the checkpoint file was read successfully
+                  clog << " successful" << endl;
+                  qmcCheckpoint.close();
+                  writeEnergyResultsSummary(clog);
+                  if (globalInput.flags.zero_out_checkpoint_statistics == 1)
+                    clog << "Will zero the checkpoint." << endl;
+                }
+              else
+                {
+                  clog << " unsuccessful.  Randomly initializing walkers.";
+                  clog << endl;
+                  qmcCheckpoint.close();
+                  QMCnode.zeroOut();
+                  ran.initialize(iseed,globalInput.flags.my_rank);
+                  QMCnode.randomlyInitializeWalkers();
+		  equilibrating = globalInput.flags.equilibrate_first_opt_step;
+                }
+              localTimers.getInitializationStopwatch()->stop();
+            }
+          else
+            {
+              // We couldn't move the checkpoint into the temp directory, so
+              // we will read it from the working directory.
+
+              qmcCheckpoint.open(filename.c_str());
+              localTimers.getInitializationStopwatch()->start();
+              clog << "Reading in checkpoint file " << filename << "...";
+              if (readXML(qmcCheckpoint))
+                {
+                  // We make sure the checkpoint was read successfully
+                  clog << " successful" << endl;
+                  qmcCheckpoint.close();
+                  writeEnergyResultsSummary(clog);
+                  if (globalInput.flags.zero_out_checkpoint_statistics == 1)
+                    clog << "Will zero the checkpoint." << endl;
+                }
+              else
+                {
+                  clog << " unsuccessful.  Randomly initializing walkers.";
+                  clog << endl;
+                  qmcCheckpoint.close();
+                  QMCnode.zeroOut();
+                  ran.initialize(iseed,globalInput.flags.my_rank);
+                  QMCnode.randomlyInitializeWalkers();
+		  equilibrating = globalInput.flags.equilibrate_first_opt_step;
+                }
+              localTimers.getInitializationStopwatch()->stop();
+            }
+        }
+      else
+        {
+          // We can't open the checkpoint file at all
+          localTimers.getInitializationStopwatch()->start();
+          QMCnode.zeroOut();
+          ran.initialize(iseed,globalInput.flags.my_rank);
+          QMCnode.randomlyInitializeWalkers();
+	  equilibrating = globalInput.flags.equilibrate_first_opt_step;
+          localTimers.getInitializationStopwatch()->stop();
+        }
     }
-
-  localTimers.getInitializationStopwatch() ->stop();
 }
 
 void QMCManager::receiveSignal(signalType signal)

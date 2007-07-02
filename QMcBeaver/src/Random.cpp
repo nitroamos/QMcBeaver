@@ -154,25 +154,44 @@ void Random::writeXML(ostream & strm)
 #endif
 }
 
-void Random::readXML(istream & strm)
+bool Random::readXML(istream & strm)
 {
 #ifdef USESPRNG
   clog << "readXML in Random.cpp needs to be debugged!\n";
   int size;
   strm >> size;
   char temp[size];
+
+  strm >> temp;  
+  if (temp != "<sprng>")
+    return false;
   strm >> temp;
-  
   if(! stream->unpack_sprng(temp) )
     {
       cerr << "Error: Unpacking SPRNG stream failed\n";
       exit(0);
     }
+  strm >> temp;
+  if (temp != "</sprng>")
+    return false;
+
+  return true;
+
 #else
+
   string temp;
+  strm >> temp;
+  if (temp != "<iseed>")
+    return false;
   strm >> temp;
   long iseed = atoi( temp.c_str() );
   initialize(iseed,0);
+  strm >> temp;
+  if (temp != "</iseed>")
+    return false;
+
+  return true;
+
 #endif
 }
 

@@ -52,8 +52,12 @@ void QMCEquilibrationArray::newSample(QMCProperties * timeStepProps,
     Eq_Array[i].getProperties()->newSample(timeStepProps, totalWeights, 
 					   nWalkers);
 
+  // I want to eliminate elements 1, 2, 3, 4, 5, and 6 from the array.  The
+  // reason is that element 7 has 128 equilibration steps, so the previous
+  // contain mostly redundant data. 
+
   // Activates the ith element on the 2^ith step.
-  unsigned long check = power(2,decorr_objects);
+  unsigned long check = power(2,decorr_objects+6);
 
   if (Eq_Array[0].getProperties()->energy.getNumberSamples() == check-1)
     {
@@ -84,29 +88,67 @@ int QMCEquilibrationArray::getDecorrObjectIndex()
 	}
     }
 
-  int nSamples_tot = Eq_Array[0].getProperties()->energy.getNumberSamples();
-  int nSamples_element = -1;
+  // If there are less than 256 samples, return object 0.
+  if (decorr_objects < 3) return 0;
 
-  double value = Eq_Array[0].getProperties()->energy.getAverage() + 50*
-    sqrt(Eq_Array[0].getProperties()->energy.getSeriallyCorrelatedVariance()/
-    (nSamples_tot-1));
+  // Here we look for the plateau in the objective function.
+  // To decide which objective function to use, we compare the expectation 
+  // value with 128 equilibration steps to the expectation value with none.
+  double sgn = Eq_Array[1].getProperties()->energy.getAverage() - 
+    Eq_Array[0].getProperties()->energy.getAverage();
 
-  obj = 0;
-
-  for (int i=1; i<decorr_objects; i++)
+  if (sgn < 0.0)
     {
-      nSamples_element = Eq_Array[i].getProperties()->energy.getNumberSamples();
-      double test = Eq_Array[i].getProperties()->energy.getAverage() +
-        50*nSamples_tot*sqrt(Eq_Array[i].getProperties()->energy.getSeriallyCorrelatedVariance()/(nSamples_element-1))/nSamples_element;
+      // If the expectation value decreases as the number of equilibration 
+      // steps increases, we add the standard deviation to the expectation 
+      // value for the objective function.
 
-      if (IeeeMath::isNaN(test)) continue;
-      if (test < value)
-	{
-	  value = test;
-          obj = i;
-	}
+      double value = Eq_Array[0].getProperties()->energy.getAverage() +
+        3*Eq_Array[0].getProperties()->energy.getBlockStandardDeviation(0) +
+        9*Eq_Array[0].getProperties()->energy.getBlockStandardDeviationStandardDeviation(0);
+
+      // The objective function will generally be decreasing, so the plateau 
+      // occurs when the value of object i is greater than the value of object 
+      // i-1.
+
+      for (int i=1; i<decorr_objects; i++)
+        {
+          double test = Eq_Array[i].getProperties()->energy.getAverage() + 
+            3*Eq_Array[i].getProperties()->energy.getBlockStandardDeviation(0)+
+            9*Eq_Array[i].getProperties()->energy.getBlockStandardDeviationStandardDeviation(0);
+
+          if (IeeeMath::isNaN(test)) continue;
+          if (test > value) 
+            return i-1;
+          else
+            value = test;
+        }
     }
-  return obj;
+
+  else if (sgn > 0.0)
+    {
+      // If the expectation value increases as the number of equilibration
+      // steps increases, we subtract the standard deviation from the 
+      // expectation value for the objective function.
+  
+      double value = Eq_Array[0].getProperties()->energy.getAverage() -
+        3*Eq_Array[0].getProperties()->energy.getBlockStandardDeviation(0) -
+        9*Eq_Array[0].getProperties()->energy.getBlockStandardDeviationStandardDeviation(0);
+
+      for (int i=1; i<decorr_objects; i++)
+        {
+          double test = Eq_Array[i].getProperties()->energy.getAverage() -
+            3*Eq_Array[i].getProperties()->energy.getBlockStandardDeviation(0)-
+            9*Eq_Array[i].getProperties()->energy.getBlockStandardDeviationStandardDeviation(0);
+
+          if (IeeeMath::isNaN(test)) continue;
+          if (test < value)
+            return i-1;
+          else
+            value = test;
+        }
+    }
+  return 0;
 }
 
 Stopwatch * QMCEquilibrationArray::getPropagationStopwatch()
@@ -150,32 +192,44 @@ void QMCEquilibrationArray::toXML(ostream& strm)
   strm << "</QMCEquilibrationArray>" << endl;
 }
 
-void QMCEquilibrationArray::readXML(istream& strm)
+bool QMCEquilibrationArray::readXML(istream& strm)
 {
   string temp;
 
   // Open XML
   strm >> temp;
-  strm >> temp;
-  strm >> temp;
+  if (temp != "<QMCEquilibrationArray>")
+    return false;
 
+  strm >> temp;
+  if (temp != "<decorr_objects>")
+    return false;
+  strm >> temp;
   decorr_objects = atoi(temp.c_str());
-
   strm >> temp;
+  if (temp != "</decorr_objects>")
+    return false;
 
   for (int i=0; i<decorr_objects; i++) 
-    Eq_Array[i].getProperties()->readXML(strm);
+    if (!Eq_Array[i].getProperties()->readXML(strm))
+      return false;
   
   strm >> temp;
+  if (temp != "</QMCEquilibrationArray>")
+    return false;
 
-  for (int i=0; i<decorr_objects; i++)
+  Eq_Array[0].setStartingStep(1);
+
+  for (int i=1; i<decorr_objects; i++)
     {
-      long step = power(2,i);
+      long step = power(2,i+6);
       Eq_Array[i].setStartingStep(step);
     }
 
   for (int i=decorr_objects; i<EQ; i++)
     Eq_Array[i].getProperties()->zeroOut();
+  
+  return true;
 }
 
 long QMCEquilibrationArray::power(int a, int b)

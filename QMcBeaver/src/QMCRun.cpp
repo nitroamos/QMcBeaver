@@ -833,42 +833,54 @@ void QMCRun::toXML(ostream& strm)
 bool QMCRun::readXML(istream& strm)
 {
   string temp;
-  bool ok = true;
 
   // read populationSizeBiasCorrectionFactor
-  strm >> temp >> temp;
+  strm >> temp;
+  if (temp != "<populationSizeBiasCorrectionFactor>")
+    return false;
+  strm >> temp;
   populationSizeBiasCorrectionFactor = atof(temp.c_str());
   strm >> temp;
+  if (temp != "</populationSizeBiasCorrectionFactor>")
+    return false;
   
   // read the properties
   if (Input->flags.use_equilibration_array == 1)
     {
-      EquilibrationArray.readXML(strm);
-    } else {
-      ok = Properties.readXML(strm);
-      if(!ok) return ok;
-      ok = fwProperties.readXML(strm);
-      if(!ok) return ok;
+      if (!EquilibrationArray.readXML(strm))
+	return false;
+    } 
+  else 
+    {
+      if (!Properties.readXML(strm))
+	return false;
+      if (!fwProperties.readXML(strm))
+	return false;
     }
   
   // read the walkers
   
   strm >> temp;
-
+  if (temp != "<walkers>")
+    return false;
   wlist.clear();
-  for(int i=0;i<Input->flags.number_of_walkers;i++)
+  for(int i=0; i<Input->flags.number_of_walkers; i++)
     {
       QMCWalker w;
       w.initialize(Input);
       
       // read a walker
-      w.readXML(strm,*QMF);
+      if (!w.readXML(strm,*QMF))
+        return false;
       
       wlist.push_back(w);
     }
     
   strm >> temp;
-  return ok;
+  if (temp != "</walkers>")
+    return false;
+
+  return true;
 }
 
 void QMCRun::startTimers()

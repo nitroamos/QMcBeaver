@@ -138,14 +138,14 @@ char StringManipulation::toLowerChar(char c)
 
 string StringManipulation::intToString(int i)
 {
-  ostringstream ostr;
-  ostr << i << ends;
-  return ostr.str();
+  //  ostringstream ostr;
+  //  ostr << i << ends;
+  //  return ostr.str();
 
-  //  char charArray[64];
-  //  snprintf(charArray,64,"%d",i);
-  //  string result(charArray);
-  //  return result;
+  char charArray[64];
+  snprintf(charArray,64,"%d",i);
+  string result(charArray);
+  return result;
 }
 
 string StringManipulation::intToHexString(int i)

@@ -1,3 +1,14 @@
+Sun, Jul 1, 2007 Daniel R Fisher
+1.  I changed the way that checkpoint files are written and read.
+    Restarting calculations from checkpoints has been a problem on
+    QSC, so I put in many checks to be sure the read is successful.
+    If it is not, the walkers are randomly initialized.
+2.  I changed the objective function in QMCEquilibrationArray.  This
+    is still subject to testing and will probably be changed again, but
+    this function gives much better results than the old one did.
+3.  I changed a few things about equilibration in QMCManger so that
+    calculations can be restarted from checkpoint files.
+
 Thu, Jun 27, 2007 Amos Anderson
 1.  There was a problem in orbital optimization when there were
     many orbitals. Mainly, the hessian was unnecessarily stored
