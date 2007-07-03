@@ -87,6 +87,12 @@ public:
   double getVirialRatioStandardDeviation(int whichFW);
 
   /**
+     The current value of the objective function
+     we are minimizing.
+  */
+  double getParameterValue();
+
+  /**
      Convert the der terms collected in QMCProperties
      into the actual gradient.
   */

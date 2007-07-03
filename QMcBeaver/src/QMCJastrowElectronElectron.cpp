@@ -223,7 +223,8 @@ inline void QMCJastrowElectronElectron::collectForPair(int Electron1,
     These are for calculating the derivative of the energy
     with respect to parameter ai.
   */
-  if(Input->flags.calculate_Derivatives == 1)
+  if(globalInput.flags.calculate_Derivatives == 1 &&
+     globalInput.flags.optimize_EE_Jastrows == 1)
     {
       for(int ai=0; ai<numP; ai++)
 	{

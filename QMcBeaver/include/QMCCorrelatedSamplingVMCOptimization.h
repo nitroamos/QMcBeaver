@@ -28,11 +28,13 @@
 
 class QMCCorrelatedSamplingVMCOptimization
 {
+  static int optStep;
+
  public:
   /**
      Optimizes the parameters in a variational QMC (VMC) calculation using
      the correlated sampling method.
-
+     
      @param input data input to control the calculation.
   */
   static void optimize(QMCInput * input,

@@ -12,6 +12,8 @@
 
 #include "QMCCorrelatedSamplingVMCOptimization.h"
 
+int QMCCorrelatedSamplingVMCOptimization::optStep = 0;
+
 void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 						    QMCProperties & lastRun,
 						    QMCFutureWalkingProperties & fwLastRun,
@@ -21,24 +23,17 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
   Array1D<double> orig_parameters = globalInput.getAIParameters();
   Array1D<double> Guess_parameters;
 
-  double value;
-
   QMCDerivativeProperties dp(&lastRun,&fwLastRun,0);
 
-  Array1D<double> gradient;
-  Array2D<double> hessian;
+  double value             = dp.getParameterValue();
+  Array1D<double> gradient = dp.getParameterGradient();
+  Array2D<double> hessian  = dp.getParameterHessian();
 
-  value = lastRun.energy.getSeriallyCorrelatedVariance();
-
-  if( globalInput.flags.optimize_Psi_criteria == "analytical_energy_variance" )
+  if(optStep == 0)
     {
-      gradient = dp.getParameterGradient();
-    }
-
-  if( globalInput.flags.optimize_Psi_method == "analytical_energy_variance" ||
-      globalInput.flags.optimize_Psi_method == "automatic" )
-    {
-      hessian  = dp.getParameterHessian();
+      clog << "Notice: the CI coefficients have norm = " << globalInput.WF.getCINorm() << endl;
+      globalInput.printAIParameters(cout,"Best parameters:",20,orig_parameters,false);
+      cout << endl << endl;
     }
 
   if( globalInput.flags.my_rank == 0 )
@@ -54,16 +49,21 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
       bool acceptable = false;
       int iter = 0;      
       double a_diag_factor = 1.0;
+      double penalty, norm;
       do {
 	Guess_parameters = 
 	  optAlg->optimize(orig_parameters,
 			   value,
 			   gradient,
 			   hessian,
-			   a_diag_factor);
+			   a_diag_factor,
+			   optStep);
 
 	globalInput.setAIParameters(Guess_parameters);	
-	double penalty = globalInput.JP.calculate_penalty_function();
+	penalty = globalInput.JP.calculate_penalty_function();
+	norm = globalInput.WF.getCINorm();
+	acceptable = true;
+
 	if(penalty >= 1e10)
 	  {
 	    clog << endl << endl << endl;
@@ -80,12 +80,16 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 	    */
 	    a_diag_factor *= 4.0;
 	    acceptable = false;
-	  } else {
-	    clog << "Notice: the new parameters have an acceptable singularity penalty = " << penalty << endl;
-	    acceptable = true;
 	  }
+
 	iter++;
       } while( !acceptable && iter < 10);
+
+      if(acceptable)
+	{
+	  clog << "Notice: the CI coefficients have norm = " << globalInput.WF.getCINorm() << endl;
+	  clog << "Notice: the new parameters have an acceptable singularity penalty = " << penalty << endl;
+	}
       
       delete optAlg;
       optAlg = 0;
@@ -132,6 +136,13 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 
   globalInput.setAIParameters(Guess_parameters);
 
+  cout << setw(20) << "Best objective value (step = " << optStep << "):";
+  cout.precision(12);
+  cout.width(20);
+  cout << value << endl;
+  globalInput.printAIParameters(cout,"Best parameters:",20,Guess_parameters,false);
+  cout << endl << endl;
+
   double penalty = globalInput.JP.calculate_penalty_function();
   if(penalty >= 1e10)
     {
@@ -140,6 +151,8 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 	   << "optimization choices." << endl;
       exit(0);
     }
+
+  optStep++;
 }
 
 

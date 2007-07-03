@@ -85,11 +85,17 @@ double QMCDerivativeProperties::getVirialRatioStandardDeviation(int whichFW)
   return sqrt( getVirialRatioVariance(whichFW) );
 }
 
+double QMCDerivativeProperties::getParameterValue()
+{
+  return properties->energy.getSeriallyCorrelatedVariance();
+}
+
 Array1D<double> QMCDerivativeProperties::getParameterGradient()
 {
   Array1D<double> gradient;
   if(fwProperties->der.dim1() == 0 ||
-     fwProperties->der.dim2() == 0)
+     fwProperties->der.dim2() == 0 ||
+     globalInput.flags.optimize_Psi_criteria != "analytical_energy_variance")
     {
       //clog << "Error: the parameter gradients are not available in this QMCFwProperties object.\n";
       return gradient;
@@ -145,7 +151,11 @@ Array2D<double> QMCDerivativeProperties::getParameterHessian()
       //clog << "Error: the parameter hessian is not available in this QMCFwProperties object.\n";
       return hessian;
     }
-  
+
+  if(globalInput.flags.optimize_Psi_criteria != "analytical_energy_variance" &&
+     globalInput.flags.optimize_Psi_criteria != "automatic")
+    return hessian;
+
   int numAI = fwProperties->der.dim1();
   hessian.allocate(numAI,numAI);
   

@@ -120,6 +120,7 @@ void QMCFlags::read_flags(string InFileName)
   calculate_Derivatives          = 0;
   optimize_Psi_criteria          = "analytical_energy_variance";
   optimize_Psi_method            = "automatic";
+  a_diag                         = 0.1;
   equilibrate_every_opt_step     = 1;
   equilibrate_first_opt_step     = 1;
   numerical_derivative_surface   = "umrigar88";
@@ -303,6 +304,7 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
           max_time_steps = atol(temp_string.c_str());
+	  original_max_time_steps = max_time_steps;
         }
       else if(temp_string == "max_time")
         {
@@ -465,6 +467,26 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           optimize_Psi = atoi(temp_string.c_str());
         }
+      else if(temp_string == "optimize_EE_Jastrows")
+        {
+          input_file >> temp_string;
+          optimize_EE_Jastrows = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "optimize_EN_Jastrows")
+        {
+          input_file >> temp_string;
+          optimize_EN_Jastrows = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "optimize_CI")
+        {
+          input_file >> temp_string;
+          optimize_CI = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "optimize_Orbitals")
+        {
+          input_file >> temp_string;
+          optimize_Orbitals = atoi(temp_string.c_str());
+        }
       else if(temp_string == "optimize_Psi_barrier_parameter")
         {
           input_file >> temp_string;
@@ -482,6 +504,11 @@ void QMCFlags::read_flags(string InFileName)
       else if(temp_string == "optimize_Psi_method")
         {
           input_file >> optimize_Psi_method;
+        }
+      else if(temp_string == "a_diag")
+        {
+          input_file >> temp_string;
+	  a_diag = atof(temp_string.c_str());
         }
       else if(temp_string == "singularity_penalty_function_parameter")
         {
@@ -868,7 +895,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "run_type\n " << flags.run_type << endl;
   strm << "dt\n " << flags.dt_run << endl;
   strm << "number_of_walkers\n " << flags.number_of_walkers_initial<< endl;
-  strm << "max_time_steps\n " << flags.max_time_steps << endl;
+  strm << "max_time_steps\n " << flags.original_max_time_steps << endl;
   strm << "max_time\n " << flags.max_time << endl;
   strm << "desired_convergence\n " << flags.desired_convergence << endl;
   strm << "warn_verbosity\n " << flags.warn_verbosity << endl;
@@ -993,8 +1020,11 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
 
   strm << "\n# Parameters for wavefunction optimization\n";
   strm << "optimize_Psi\n " << flags.optimize_Psi << endl;
+  strm << "optimize_CI\n " << flags.optimize_CI << endl;
+  strm << "optimize_Orbitals\n " << flags.optimize_Orbitals << endl;
   strm << "optimize_Psi_method\n " << flags.optimize_Psi_method << endl;
   strm << "optimize_Psi_criteria\n " << flags.optimize_Psi_criteria << endl;
+  strm << "a_diag\n " << flags.a_diag << endl;
   strm << "max_optimize_Psi_steps\n " << flags.max_optimize_Psi_steps << endl;
   strm << "equilibrate_first_opt_step\n "
        << flags.equilibrate_first_opt_step << endl;

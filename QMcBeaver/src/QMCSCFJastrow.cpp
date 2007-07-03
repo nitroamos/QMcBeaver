@@ -368,7 +368,7 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
 	  ai++;
 	}
       
-      for(int ci=1; ci<=Input->WF.getNumberCIParameters(); ci++)
+      for(int ci=0; ci<Input->WF.getNumberCIParameters(); ci++)
 	{
 	  wd->rp_a(ai) = termPR(ci) / Input->WF.CI_coeffs(ci);
 	  

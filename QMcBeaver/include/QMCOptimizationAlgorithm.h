@@ -39,7 +39,7 @@ public:
 				   double value,
 				   Array1D<double> & gradient,
 				   Array2D<double> & hessian,
-				   double) = 0;
+				   double, int) = 0;
 };
 
 #endif

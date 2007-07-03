@@ -14,8 +14,6 @@
 #include "QMCInput.h"
 #include <iomanip>
 
-int QMCLineSearch::optStep = -1;
-
 QMCLineSearch::QMCLineSearch(QMCObjectiveFunction *function, 
 			     QMCLineSearchStepLengthSelectionAlgorithm * stepAlg,
 			     int MaxSteps, 
@@ -62,12 +60,10 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
 					double InitialValue,
 					Array1D<double> & InitialGradient,
 					Array2D<double> & InitialHessian,
-					double a_diag_factor)
+					double a_diag_factor,
+					int optStep)
 					
 {
-  if(fabs(a_diag_factor - 1.0) < 1.0e-10)
-    optStep++;
-
   cout.setf(ios::scientific);
   cout << endl;
 
@@ -84,9 +80,10 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
 	   << "  InitialHessian.dim1() == " << InitialHessian.dim1() << endl << endl;
     }
 
-  double a_diag = 0.0;
+  static double a_diag = globalInput.flags.a_diag;
+
   if(globalInput.flags.optimize_Psi_method == "automatic")
-    if(optStep < 6)
+    if(optStep == 6)
       {
 	/*
 	  Rotate the hessian in the direction of steepest
@@ -107,49 +104,24 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
 	  Maybe we want to use a different factor for the different
 	  parameters?
 	*/
-	a_diag = 0.01;
+	a_diag *= 1;
 	
 	//use Steepest_Descent for a couple iterations first
 	//useInitialHess = false;
-      } else if(optStep < 12)
+      } else if(optStep == 12)
 	{
-	  a_diag = 0.01;
-	} else if(optStep < 23)
+	  a_diag *= 0.01;
+	} else if(optStep == 23)
 	  {
-	    a_diag = 2.0e-7;
+	    a_diag *= 1e-5;
 	  }
 
   if( fabs(a_diag) > 0.0){
-    a_diag *= a_diag_factor;
     for(int d=0; d<dim; d++)
-      InitialHessian(d,d) = InitialHessian(d,d) + a_diag;
+      InitialHessian(d,d) = InitialHessian(d,d) + a_diag * a_diag_factor;
     
-    cout << "Notice: Adding a_diag = " << a_diag
+    cout << "Notice: Adding a_diag = " << (a_diag * a_diag_factor)
 	 << " to the diagonal elements of the hessian" << endl;
-
-    /*
-    int numJP = globalInput.JP.getNumberEEParameters() +
-      globalInput.JP.getNumberNEParameters();
-    int numCI = globalInput.WF.getNumberDeterminants() - 1;
-    if(globalInput.flags.optimize_Jastrows == 0)
-      {
-	cout << "Notice: we are not optimizing Jastrows this optimization step." << endl;
-	for(int ai=0; ai<numJP; ai++)
-	  {
-	    InitialHessian.setToIdentity(ai);
-	    InitialGradient(ai) = 0.0;
-	  }
-      }
-    if(globalInput.flags.optimize_CI == 0)
-      {
-	cout << "Notice: we are not optimizing CI coefficients this optimization step." << endl;
-	for(int ai=0; ai<numCI; ai++)
-	  {
-	    InitialHessian.setToIdentity(ai+numJP);
-	    InitialGradient(ai+numJP) = 0.0;
-	  }
-      }
-    */
   }
   
   // Allocate the point used in the search and initialize its value.
@@ -279,12 +251,6 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
   cout << endl << "Ending Line Search Optimization... " << endl;
 
   cout << endl;
-  cout << setw(20) << "Best Objective Value (step = " << optStep << "):";
-  cout.precision(12);
-  cout.width(20);
-  cout << f.back() << endl;
-  globalInput.printAIParameters(cout,"Best Parameters:",20,x.back(),false);
-  cout << endl << endl;
 
   /*
   for(unsigned int i=0; i<x.size(); i++)

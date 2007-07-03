@@ -51,7 +51,8 @@ public:
 			   double value,
 			   Array1D<double> & gradient,
 			   Array2D<double> & hessian,
-			   double a_diag_factor);
+			   double a_diag_factor,
+			   int optStep);
 
 protected:
 
@@ -67,8 +68,6 @@ protected:
   vector< Array2D<double> > inverseHessian;
 
 private:
-  static int optStep;
-
   Array1D<double> searchDirection();
 
   /**

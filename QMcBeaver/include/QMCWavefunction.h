@@ -282,6 +282,20 @@ class QMCWavefunction
   void setCIParameters(Array1D<double> & params, int shift);
 
   /**
+     The sum of the squares of the CI coefficients.
+  */
+  double getCINorm();
+
+  /**
+     Normalize the CI coefficients so that the
+     sum of the squares of the CI coefficients = 1.0.
+
+     This affects nothing, except it helps humans
+     examine the coefficients.
+  */
+  void normalizeCI();
+    
+  /**
      Replace the current orbital parameters with our new values.
      The shift variable tells us where in the array to look.
   */

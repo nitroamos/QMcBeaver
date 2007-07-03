@@ -228,27 +228,19 @@ void qmcbeaver()
 	      long ts = globalInput.flags.max_time_steps -
 		globalInput.flags.equilibration_steps;
 	      
-	      globalInput.flags.max_time_steps = ts*16 + globalInput.flags.equilibration_steps;
+	      globalInput.flags.max_time_steps = ts*8 + globalInput.flags.equilibration_steps;
 	      
 	      clog << "Notice: max_time_steps increased to " << globalInput.flags.max_time_steps
 		   << " for optStep = " << optloops << endl;
 	    }
 
-	  if(optloops < 5)
+	  if(optloops == 5)
 	    {
-	      /*
-		Let's make sure the Jastrows are in the right ballpark before
-		we start optimizing the CI and Orbital parameters.
-	      */
-	      globalInput.flags.optimize_EE_Jastrows = 1;
-	      globalInput.flags.optimize_EN_Jastrows = 1;
 	      globalInput.flags.optimize_CI          = 0;
 	      globalInput.flags.optimize_Orbitals    = 0;
 	    }
-	  else
+	  if(optloops == 20)
 	    {
-	      globalInput.flags.optimize_EE_Jastrows = 1;
-	      globalInput.flags.optimize_EN_Jastrows = 1;
 	      globalInput.flags.optimize_CI          = 1;
 
 	      //I haven't propagated derivatives through the cusp replacements...

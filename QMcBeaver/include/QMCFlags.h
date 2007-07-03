@@ -300,6 +300,7 @@ class QMCFlags
      criteria.
   */
   unsigned long max_time_steps;
+  unsigned long original_max_time_steps;
 
   /**
      Maximum amount of time the calculation will run for. The number
@@ -626,6 +627,16 @@ class QMCFlags
   int optimize_EN_Jastrows;
   int optimize_CI;
   int optimize_Orbitals;
+
+  /*
+    This controls the initial value used by QMCLineSearch for
+    modifying the hessian. If this is large, then the optimization
+    will be more like steepest descent, which is slower but more
+    stable.
+
+    If it's smaller, then optimization should happen faster.
+  */
+  double a_diag;
 
   /**
      Objective function to optimize when optimizing a VMC wavefunction.

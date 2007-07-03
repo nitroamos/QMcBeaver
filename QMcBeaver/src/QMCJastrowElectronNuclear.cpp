@@ -215,7 +215,8 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
               grad_sum_U(Electron,i) += firstDeriv * unitVector[i];
             }
 
-	  if(Input->flags.calculate_Derivatives == 1)
+	  if(globalInput.flags.calculate_Derivatives == 1 &&
+	     globalInput.flags.optimize_EN_Jastrows == 1)
 	    {
 	      for(int ai=0; ai<numP; ai++)
 		{

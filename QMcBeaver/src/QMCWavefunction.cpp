@@ -596,19 +596,34 @@ int QMCWavefunction::getNumberCIParameters()
     Since the wavefunction is invariant to normalization,
     there are only N-1 independent CI coefficients.
   */
-  return getNumberDeterminants() - 1;
+  return getNumberDeterminants();
 }
 
 void QMCWavefunction::getCIParameters(Array1D<double> & params, int shift)
 {
   for(int i=0; i<getNumberCIParameters(); i++)
-    params(i + shift) = CI_coeffs(i+1);
+    params(i + shift) = CI_coeffs(i);
 }
 
 void QMCWavefunction::setCIParameters(Array1D<double> & params, int shift)
 {
   for(int i=0; i<getNumberCIParameters(); i++)
-    CI_coeffs(i+1) = params(i + shift);
+    CI_coeffs(i) = params(i + shift);
+}
+
+double QMCWavefunction::getCINorm()
+{
+  double norm = 0;
+  for(int ci=0; ci<Ndeterminants; ci++)
+    norm += CI_coeffs(ci)*CI_coeffs(ci);
+  return norm;
+}
+
+void QMCWavefunction::normalizeCI()
+{
+  double norm = getCINorm();
+  for(int ci=0; ci<Ndeterminants; ci++)
+    CI_coeffs(ci) = CI_coeffs(ci)/norm;
 }
 
 int QMCWavefunction::getNumberORParameters()
