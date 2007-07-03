@@ -21,7 +21,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 {
   //put initial Jastrow parameters in as the guess
   Array1D<double> orig_parameters = globalInput.getAIParameters();
-  Array1D<double> Guess_parameters;
+  Array1D<double> Guess_parameters(orig_parameters.dim1());
 
   QMCDerivativeProperties dp(&lastRun,&fwLastRun,0);
 
@@ -32,8 +32,8 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
   if(optStep == 0)
     {
       clog << "Notice: the CI coefficients have norm = " << globalInput.WF.getCINorm() << endl;
-      globalInput.printAIParameters(cout,"Best parameters:",20,orig_parameters,false);
-      cout << endl << endl;
+      globalInput.printAIParameters(clog,"Best parameters:",20,orig_parameters,false);
+      clog << endl << endl;
     }
 
   if( globalInput.flags.my_rank == 0 )
@@ -136,12 +136,12 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 
   globalInput.setAIParameters(Guess_parameters);
 
-  cout << setw(20) << "Best objective value (step = " << optStep << "):";
-  cout.precision(12);
-  cout.width(20);
-  cout << value << endl;
-  globalInput.printAIParameters(cout,"Best parameters:",20,Guess_parameters,false);
-  cout << endl << endl;
+  clog << setw(20) << "Best objective value (step = " << optStep << "):";
+  clog.precision(12);
+  clog.width(20);
+  clog << value << endl;
+  globalInput.printAIParameters(clog,"Best parameters:",20,Guess_parameters,false);
+  clog << endl << endl;
 
   double penalty = globalInput.JP.calculate_penalty_function();
   if(penalty >= 1e10)
