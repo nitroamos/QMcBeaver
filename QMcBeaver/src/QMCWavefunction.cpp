@@ -24,6 +24,7 @@ QMCWavefunction::QMCWavefunction()
   Nelectrons = 0;
   Ndeterminants = 0;
   factor = 1.0;
+  unusedIndicator = 0;
   trialFunctionType = "restricted";
 }
 
@@ -34,7 +35,6 @@ int QMCWavefunction::getNumberOrbitals()
 
 int QMCWavefunction::getNumberActiveOrbitals()
 {
-  int unusedIndicator = getUnusedIndicator();
   int Nactiveorbs  = 0;
   for(int o=0; o<Norbitals; o++)
     {
@@ -54,7 +54,6 @@ int QMCWavefunction::getNumberActiveOrbitals()
 
 int QMCWavefunction::getNumberActiveAlphaOrbitals()
 {
-  int unusedIndicator = getUnusedIndicator();
   int NactiveorbsA = 0;
   for(int o=0; o<Norbitals; o++)
     {
@@ -71,7 +70,6 @@ int QMCWavefunction::getNumberActiveAlphaOrbitals()
 
 int QMCWavefunction::getNumberActiveBetaOrbitals()
 {
-  int unusedIndicator = getUnusedIndicator();
   int NactiveorbsB = 0;
   for(int o=0; o<Norbitals; o++)
     {
@@ -119,19 +117,14 @@ void QMCWavefunction::scaleCoeffs(double scaleFactor)
 
 int QMCWavefunction::getUnusedIndicator()
 {
-  for(int ci=0; ci<Ndeterminants; ci++)
-    for(int o=0; o<Norbitals; o++)
-      if(AlphaOccupation(ci,o) == -1 ||
-	 BetaOccupation(ci,o)  == -1)
-	return -1;
-  return 0;
+  return unusedIndicator;
 }
 
 void QMCWavefunction::sortOccupations(bool ordered)
 {
   int currentUnusedIndicator = getUnusedIndicator();
 
-  int unusedIndicator = 0;
+  unusedIndicator = 0;
   if(ordered) unusedIndicator = -1;
 
   for(int ci=0; ci<Ndeterminants; ci++)
@@ -161,8 +154,6 @@ void QMCWavefunction::sortOccupations(bool ordered)
 
 void QMCWavefunction::unlinkOrbitals()
 {
-  int unusedIndicator = getUnusedIndicator();
-
   /*
     First we need to figure out how many and which
     orbitals will need to be duplicated.
@@ -230,9 +221,7 @@ void QMCWavefunction::unlinkOrbitals()
 }
 
 void QMCWavefunction::unlinkDeterminants()
-{
-  int unusedIndicator = getUnusedIndicator();
-  
+{ 
   int finalNorbitals = 0;
   vector<int> unusedOrbitals;
   for(int o=0; o<Norbitals; o++)
@@ -641,7 +630,6 @@ void QMCWavefunction::getORParameters(Array1D<double> & params, int shift)
   if(globalInput.flags.optimize_Orbitals == 0)
     return;
 
-  int unusedIndicator = getUnusedIndicator();
   int numOR = getNumberOrbitals();
   int numBF = getNumberBasisFunctions();
   int numCI = getNumberDeterminants();
@@ -675,7 +663,6 @@ void QMCWavefunction::setORParameters(Array1D<double> & params, int shift)
   if(globalInput.flags.optimize_Orbitals == 0)
     return;
 
-  int unusedIndicator = getUnusedIndicator();
   int numOR = getNumberOrbitals();
   int numBF = getNumberBasisFunctions();
   int numCI = getNumberDeterminants();
@@ -723,8 +710,6 @@ void QMCWavefunction::makeCoefficients()
 
   for(int ci=0; ci<Ndeterminants; ci++)
     {
-      int unusedIndicator = getUnusedIndicator();
-
       AlphaCoeffs(ci).allocate(Nalpha, Nbasisfunc);
       BetaCoeffs(ci).allocate(Nbeta, Nbasisfunc);
 
@@ -747,11 +732,12 @@ void QMCWavefunction::makeCoefficients()
       if(idxa != Nalpha || idxb != Nbeta)
 	{
 	  clog << "Error: we failed to make the coefficient matrices\n"
-	       << "     ci = " << ci << endl
-	       << " Nalpha = " << Nalpha << endl
-	       << "   idxa = " << idxa << endl
-	       << "  Nbeta = " << Nbeta << endl
-	       << "   idxb = " << idxb << endl;
+	       << "        ci = " << ci << endl
+	       << " Norbitals = " << Norbitals << endl
+	       << "    Nalpha = " << Nalpha << endl
+	       << "      idxa = " << idxa << endl
+	       << "     Nbeta = " << Nbeta << endl
+	       << "      idxb = " << idxb << endl;
 	  exit(0);
 	}
     }

@@ -42,6 +42,8 @@ class QMCWavefunction
   double factor;
   string trialFunctionType;
 
+  int unusedIndicator;
+
   /**
      For the matrix multiplications, we'll want to have
      the coefficients separated into matrices, one for
