@@ -1,3 +1,13 @@
+Tue, Jul 3, 2007 Amos Anderson
+1.  I uploaded the version of gamess2qmcbeaver.py that i've been
+    keeping in my private stash. Basically, it can get GVB wavefunctions,
+    write some interesting info into the ckmf files, and use ckmft files.
+
+    A ckmft file is a ckmf template file. When you run the gamess2qmcbeaver.py
+    script, it will look for any .ckmft files and use one of them for the
+    parameters. I loaded an example, optimize.ckmft representing the parameters
+    that I currently think work best for optimization.
+
 Sun, Jul 1, 2007 Daniel R Fisher
 1.  I changed the way that checkpoint files are written and read.
     Restarting calculations from checkpoints has been a problem on

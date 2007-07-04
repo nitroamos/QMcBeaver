@@ -673,7 +673,7 @@ elif (ci_type != "ALDET"):
 my_path, my_name = os.path.split(__file__)
 
 #A couple default placed to look for "ckmft" files
-templatedir = [".","..","/ul/amosa/qmc_setup/ckmf_creation",my_path]
+templatedir = [".","..","../examples","/ul/amosa/qmc_setup/ckmf_creation",my_path]
 
 templates = []
 for dir in templatedir:

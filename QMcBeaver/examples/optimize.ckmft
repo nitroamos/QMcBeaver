@@ -1,0 +1,178 @@
+&flags
+# Parameters for QMC
+run_type
+ variational
+dt
+ 0.001
+number_of_walkers
+ 100
+max_time_steps
+ 10000
+max_time
+ -1
+desired_convergence
+ 0
+warn_verbosity
+ 0
+rel_cutoff
+ 5.0
+limit_branching
+ 1
+
+# Parameters specific to the Green's function
+sampling_method
+ umrigar93_importance_sampling
+QF_modification_type
+ umrigar93_unequalelectrons
+umrigar93_equalelectrons_parameter
+ 0.5
+energy_modification_type
+ umrigar93
+lock_trial_energy
+ 0
+synchronize_dmc_ensemble
+ 0
+synchronize_dmc_ensemble_interval
+ 1000
+
+# Parameters specific to weights, branching, and fusion
+walker_reweighting_method
+ umrigar93_probability_weighted
+branching_method
+ nonunit_weight_branching
+branching_threshold
+ 2
+fusion_threshold
+ 0.45
+population_control_parameter
+ 1
+correct_population_size_bias
+ 1
+old_walker_acceptance_parameter
+ 30
+
+# Parameters for initialization
+dt_equilibration
+ -0.005
+use_equilibration_array
+ 0
+equilibration_steps
+ 1000
+equilibration_function
+ ramp
+CKAnnealingEquilibration1_parameter
+ 500
+walker_initialization_method
+ dans_walker_initialization
+walker_initialization_combinations
+ 3
+
+# Parameters for added functionality/improvements
+calculate_bf_density
+ 0
+use_hf_potential
+ 0
+hf_num_average
+ 100
+replace_electron_nucleus_cusps
+ 1
+nuclear_derivatives
+ none
+future_walking
+ 0
+
+# Parameters relating to output
+output_interval
+ 1000
+checkpoint
+ 0
+checkpoint_interval
+ 100000
+use_available_checkpoints
+ 0
+zero_out_checkpoint_statistics
+ 1
+print_configs
+ 0
+print_config_frequency
+ 50
+temp_dir
+ /temp2/amosa/
+write_electron_densities
+ 0
+max_pair_distance
+ -1
+print_transient_properties
+ 0
+print_transient_properties_interval
+ 10000
+
+# Parameters for wavefunction optimization
+optimize_Psi
+ 1
+optimize_EE_Jastrows
+ 1
+optimize_EN_Jastrows
+ 1
+optimize_CI
+ 0
+optimize_Orbitals
+ 0
+a_diag
+ 1e-7
+optimize_Psi_method
+ analytical_energy_variance
+optimize_Psi_criteria
+ analytical_energy_variance
+max_optimize_Psi_steps
+ 30
+equilibrate_first_opt_step
+ 1
+equilibrate_every_opt_step
+ 1
+optimization_max_iterations
+ 1
+optimization_error_tolerance
+ 0.001
+singularity_penalty_function_parameter
+ 1e-06
+optimize_Psi_barrier_parameter
+ 1
+numerical_derivative_surface
+ umrigar88
+line_search_step_length
+ None
+ck_genetic_algorithm_1_population_size
+ 1000
+ck_genetic_algorithm_1_mutation_rate
+ 0.2
+ck_genetic_algorithm_1_initial_distribution_deviation
+ 1
+
+# Parameters for computation/MPI
+iseed
+ 0
+parallelization_method
+ manager_worker
+mpireduce_interval
+ 1000
+mpipoll_interval
+ 10
+walkers_per_pass
+ 1
+use_basis_function_interpolation
+ 0
+number_basis_function_interpolation_grid_points
+ 1000
+basis_function_interpolation_first_point
+ 1e-10
+
+# Other parameters
+chip_and_mike_are_cool
+ Yea_Baby!
+
+# Parameters for the molecule and wavefunction
+trial_function_type
+ restricted
+link_Jastrow_parameters
+ 1
