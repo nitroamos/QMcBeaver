@@ -79,50 +79,6 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
 	   << " InitialGradient.dim1() == " << InitialGradient.dim1() << endl
 	   << "  InitialHessian.dim1() == " << InitialHessian.dim1() << endl << endl;
     }
-
-  static double a_diag = globalInput.flags.a_diag;
-
-  if(globalInput.flags.optimize_Psi_method == "automatic")
-    if(optStep == 6)
-      {
-	/*
-	  Rotate the hessian in the direction of steepest
-	  descent, described in PRL 94, 150201 (2005)
-	  supposed to make a_diag smaller as optimization progresses...
-	  
-	  If the hessian is the identity matrix, then we have
-	  the steepest descent method. Linear convergence?
-	  
-	  If the hessian is the second derivatives, then
-	  conjugate gradient. Quadratic convergence?
-	  
-	  I think the point is compensating for deficiencies in
-	  the approximate hessian, as well as for nonlinearities
-	  in the objective function.
-
-
-	  Maybe we want to use a different factor for the different
-	  parameters?
-	*/
-	a_diag *= 1;
-	
-	//use Steepest_Descent for a couple iterations first
-	//useInitialHess = false;
-      } else if(optStep == 12)
-	{
-	  a_diag *= 0.01;
-	} else if(optStep == 23)
-	  {
-	    a_diag *= 1e-5;
-	  }
-
-  if( fabs(a_diag) > 0.0){
-    for(int d=0; d<dim; d++)
-      InitialHessian(d,d) = InitialHessian(d,d) + a_diag * a_diag_factor;
-    
-    cout << "Notice: Adding a_diag = " << (a_diag * a_diag_factor)
-	 << " to the diagonal elements of the hessian" << endl;
-  }
   
   // Allocate the point used in the search and initialize its value.
   x.push_back(InitialGuess);
@@ -136,12 +92,69 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
 
   if(useInitialHess)
     {
+      static double a_diag = globalInput.flags.a_diag;
+      
+      if(globalInput.flags.optimize_Psi_method == "automatic")
+	if(optStep == 6)
+	  {
+	    /*
+	      Rotate the hessian in the direction of steepest
+	      descent, described in PRL 94, 150201 (2005)
+	      supposed to make a_diag smaller as optimization progresses...
+	      
+	      If the hessian is the identity matrix, then we have
+	      the steepest descent method. Linear convergence?
+	      
+	      If the hessian is the second derivatives, then
+	      conjugate gradient. Quadratic convergence?
+	      
+	      I think the point is compensating for deficiencies in
+	      the approximate hessian, as well as for nonlinearities
+	      in the objective function.
+	      
+	      
+	      Maybe we want to use a different factor for the different
+	      parameters?
+	    */
+	    a_diag *= 1;
+	    
+	    //use Steepest_Descent for a couple iterations first
+	    //useInitialHess = false;
+	  } else if(optStep == 12)
+	    {
+	      a_diag *= 0.01;
+	    } else if(optStep == 23)
+	      {
+		a_diag *= 1e-5;
+	      }
+      
+      if( fabs(a_diag) > 0.0){
+	for(int d=0; d<dim; d++)
+	  InitialHessian(d,d) = InitialHessian(d,d) + a_diag * a_diag_factor;
+	
+	cout << "Notice: Adding a_diag = " << (a_diag * a_diag_factor)
+	     << " to the diagonal elements of the hessian" << endl;
+      }
+      
+      Array1D<double> eig = InitialHessian.eigenvaluesRS();
       double nsym = InitialHessian.nonSymmetry();
       cout << "      InitialHessian   (non symmetry = " << nsym << ") =" << endl;
       if(InitialHessian.dim1() < 20)
-	cout << InitialHessian;
+	InitialHessian.printArray2D(cout,4,7,-1,' ',true);
       else
 	cout << "<too large, not printed>" << endl;
+      cout << "Eigenvalues of hessian are: " << endl;
+      for(int ei=0; ei<eig.dim1(); ei++)
+	cout << "   " << eig(ei) << endl;
+      
+      if(eig.dim1() > 0 && eig(0) < 0.0)
+	{
+	  for(int d=0; d<dim; d++)
+	    InitialHessian(d,d) = InitialHessian(d,d) - eig(0);
+	  
+	  cout << "Notice: Adding eigenvalue = " << ( - eig(0) )
+	       << " to the diagonal elements of the hessian" << endl;	  
+	}
     }
 
   bool ok = false;
@@ -234,7 +247,7 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
 	  double nsym = inverseHessian.back().nonSymmetry();
 	  cout << "\t\tInverseHessian    (non symmetry = " << nsym << "):" << endl;
 	  if(inverseHessian.back().dim1() < 20)
-	    cout << inverseHessian.back();
+	    inverseHessian.back().printArray2D(cout,4,7,-1,' ',true);
 	  else
 	    cout << "<too large, not printed>" << endl;
 	}
