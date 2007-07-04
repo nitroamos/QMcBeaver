@@ -1824,6 +1824,7 @@ void QMCManager::initializeCalculationState(long int iseed)
   if (globalInput.flags.use_available_checkpoints == 0)
     {
       localTimers.getInitializationStopwatch()->start();
+      ran.initialize(iseed,globalInput.flags.my_rank);
       QMCnode.randomlyInitializeWalkers();
       equilibrating = globalInput.flags.equilibrate_first_opt_step;
       localTimers.getInitializationStopwatch()->stop();
