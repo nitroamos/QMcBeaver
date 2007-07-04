@@ -1,7 +1,43 @@
-#!usr/bin/env python
+#!/usr/bin/env python
+
+# Get the SCF type, run type, and CI type of the calculation.  Usable run types
+# are ENERGY and OPTIMIZE.    Usable SCF types are RHF, UHF, ROHF, and NONE.
+
+#This script requires 1 argument, which is the output from a gamess run
+#due to this script's method of searching for the rest of the files, the
+#extension of the script needs to be .inp.out (7 characters)
+
+#MCSCF notes:
+#This script chooses the number of determinants that it will use based on
+#the number of determinants chosen with the tolerance PRTTOL in the $DET section
+#A QMC wavefunction does not have to be normalized, so the coefficients used
+#do not need to be normalized.
+
+# To make a multideterminant trial function, do a MCSCF calculation, then do a
+# calculation with SCFTYP=NONE and CITYP=ALDET with the natural orbitals of the
+# MCSCF as the read in $VEC.  This will provide the right CI expansion
+# coefficients for the MCSCF wavefunction.
+
+#to come up with an MCSCF input file that is based on a molecular minimum:
+#1) run gamess with some method like mp2 to generate an initial guess wavefunction
+# this is necessary since any CI method will require a $VEC section.
+#
+#2) using the new $VEC and minimized geometry, make a new gamess input file
+# to use the CI parameters of your choice. Run an MCSCF calculation. This calculation
+# will not provide the expansion coefficients.
+#
+#3) make a 3rd gamess input file with a $VEC section from the natural orbitals
+# and minimized geometry of the previous run. Specify SCFTYPE=NONE and CITYP=ALDET
+# meaning that this will be a single point calculation, using the provided wavefunction.
 
 import sys
 import string
+import time
+import os
+
+if len(sys.argv) < 2: 
+    print "gamess2qmcbeaver.py <filename>[.log, .inp.out] [detcutoff]"
+    sys.exit(0)
 
 PI = 3.14159265359
 
@@ -72,25 +108,31 @@ IN = open(Infile,'r')
 gamess_output = IN.readlines()
 IN.close()
 
-Datafile = sys.argv[1][0:len(sys.argv[1])-7] + "dat"
+filebase = ""
+if string.find(Infile,'.inp.out') != -1:
+	filebase = sys.argv[1][0:len(sys.argv[1])-7]
+elif string.find(Infile,'.log') != -1:
+	filebase = sys.argv[1][0:len(sys.argv[1])-3]
+else:
+	print "The file ", Infile, " is not recognized as a GAMESS log file!"
+	sys.exit(0)
+	
+Datafile = filebase + "dat"	
 IN2 = open(Datafile,'r')
 gamess_data = IN2.readlines()
 IN2.close()
                        
-Outfile = sys.argv[1][0:len(sys.argv[1])-7] + "ckmf"
+Outfile = filebase + "ckmf"
 OUT = open(Outfile,'w')
-
-# Get the SCF type, run type, and CI type of the calculation.  Usable run types
-# are ENERGY and OPTIMIZE.    Usable SCF types are RHF, UHF, ROHF, and NONE.
-# To make a multideterminant trial function, do a MCSCF calculation, then do a
-# calculation with SCFTYP=NONE and CITYP=ALDET with the natural orbitals of the
-# MCSCF as the read in $VEC.  This will provide the right CI expansion
-# coefficients for the MCSCF wavefunction.
 
 run_type = "ENERGY"
 scf_type = "RHF"
 ci_type  = "NONE"
 
+detcutoff = 0
+if len(sys.argv) == 3:
+	detcutoff = string.atof(sys.argv[2])
+	
 # Get run type and scf type
 
 for line in gamess_output:
@@ -122,7 +164,7 @@ elif run_type == "OPTIMIZE":
             start_geometry = i
             for j in range(i,len(gamess_output)):
                 if string.find(gamess_output[j],'INTERNUCLEAR DISTANCES') !=-1:
-                    end_geometry = j-3
+                    end_geometry = j-1
                     break
                 elif string.find(gamess_output[j],'INTERNAL COORDINATES') !=-1:
                     end_geometry = j-3
@@ -244,10 +286,13 @@ for line in gamess_output:
 # Find where the wavefunction is in the .dat file.
 
 energy_line = -1
+start_wavefunction = -1
 
 if scf_type == "RHF":
     for i in range(len(gamess_data)):
         if string.find(gamess_data[i],'E(RHF)=') != -1:
+            energy_line = i
+        elif string.find(gamess_data[i],'E(R-B3LYP)=') != -1:
             energy_line = i
     energy_data = string.split(gamess_data[energy_line])
     for j in range(len(energy_data)):
@@ -255,10 +300,19 @@ if scf_type == "RHF":
             energy = energy_data[j+1]
             energy = energy[0:len(energy)-1]
             break
-    for i in range(energy_line,len(gamess_data)):
-        if string.find(gamess_data[i],'$VEC') != -1:
-            start_wavefunction = i+1
+        elif (energy_data[j] == "E(R-B3LYP)="):
+            energy = energy_data[j+1]
+            energy = energy[0:len(energy)-1]
             break
+    for i in range(energy_line,len(gamess_data)):
+        if string.find(gamess_data[i],'LOCALIZED') != -1:
+            start_wavefunction = i+2
+            break
+    if start_wavefunction == -1:
+        for i in range(energy_line,len(gamess_data)):
+	    if string.find(gamess_data[i],'$VEC') != -1:
+	        start_wavefunction = i+1
+		break
     for j in range(start_wavefunction,len(gamess_data)):
         if string.find(gamess_data[j],'$END') != -1:
             end_wavefunction = j
@@ -302,6 +356,33 @@ elif scf_type == "UHF":
             end_wavefunction = j
             break
 
+elif scf_type == "GVB":
+    #the CI Coefficients in the dat file are more precise, so we want them
+    #this might have a problem if too many GVB pairs are used
+    for i in range(len(gamess_data)):
+        if string.find(gamess_data[i],'CICOEF') != -1:
+	    line = gamess_data[i]
+	    line = string.replace(line,',',' ')
+            cicoef = string.split(line)
+
+    for i in range(len(gamess_data)):
+        if string.find(gamess_data[i],'E(GVB)=') != -1:
+            energy_line = i
+    energy_data = string.split(gamess_data[energy_line])
+    for j in range(len(energy_data)):
+        if (energy_data[j] == "E(GVB)="):
+            energy = energy_data[j+1]
+            energy = energy[0:len(energy)-1]
+            break
+    for i in range(energy_line,len(gamess_data)):
+        if string.find(gamess_data[i],'$VEC') != -1:
+            start_wavefunction = i+1
+            break
+    for j in range(start_wavefunction,len(gamess_data)):
+        if string.find(gamess_data[j],'$END') != -1:
+            end_wavefunction = j
+            break
+
 elif scf_type == "NONE" and ci_type == "ALDET":
 
     for i in range(len(gamess_data)):
@@ -323,6 +404,7 @@ elif scf_type == "NONE" and ci_type == "ALDET":
 
 else:
     print "SCFTYP", scf_type, "is not supported."
+    sys.exit(0) 
 
 # Get the wavefunction parameters from the .dat file.
 
@@ -351,7 +433,7 @@ if scf_type != "UHF":
     temp_coeffs = orbital_coeffs[0]
     while 1:
         wavefunction_line = string.split(gamess_data[m])
-        if string.atoi(wavefunction_line[0]) == current_index:
+        if string.atoi(wavefunction_line[0]) == current_index % 100:
             temp_coeffs = temp_coeffs + orbital_coeffs[m-start_wavefunction]
         else:
             wavefunction.append(temp_coeffs)
@@ -416,7 +498,7 @@ elif scf_type == "UHF":
 # Get the occupation and CI coefficents.
 
 # RHF, ROHF, and UHF have one determinant.
-if ci_type != "ALDET":
+if ci_type != "ALDET" and scf_type != "GVB":
     AlphaOccupation = [0]
     BetaOccupation = [0]
     AlphaOccupation[0] = range(norbitals)
@@ -435,6 +517,64 @@ if ci_type != "ALDET":
     ndeterminants = 1
     CI_coeffs = [1]
 
+elif scf_type == "GVB":
+    core_line_number = -1
+    for i in range(len(gamess_output)):
+        if string.find(gamess_output[i],'ROHF-GVB INPUT PARAMETERS') != -1:
+            core_line_number = i+3
+            core_line = string.split(gamess_output[core_line_number])
+            ncore = string.atoi(core_line[5])
+            break
+		
+    for j in range(core_line_number,len(gamess_output)):
+        if string.find(gamess_output[j],'CI COEFFICIENTS') != -1:
+            start_ci = j+2
+            break
+    
+    for i in range(start_ci,len(gamess_output)):
+	ci_line = string.split(gamess_output[i])
+	if len(ci_line) != 9:
+	    end_ci = i
+	    break
+	
+    ndeterminants = 2*(end_ci - start_ci)
+    
+    AlphaOccupation = range(ndeterminants)
+    BetaOccupation = range(ndeterminants)
+    CI_coeffs = range(ndeterminants)
+
+    for i in range(ndeterminants):
+        AlphaOccupation[i] = range(norbitals)
+        BetaOccupation[i] = range(norbitals)
+
+    for i in range(ndeterminants):
+        for j in range(norbitals):
+	    if j < ncore:
+		AlphaOccupation[i][j] = 1
+		BetaOccupation[i][j]  = 1
+	    else:
+		AlphaOccupation[i][j] = 0
+		BetaOccupation[i][j]  = 0
+		
+
+    idet = 0
+    for i in range(start_ci,end_ci):
+        ci_line = string.split(gamess_output[i])
+        CI_coeffs[idet]   = ci_line[3]
+	CI_coeffs[idet+1] = ci_line[4]
+
+	orb1 = string.atoi(ci_line[1]) - 1
+	orb2 = string.atoi(ci_line[2]) - 1
+	
+	AlphaOccupation[  idet][orb1] = 1
+	BetaOccupation[   idet][orb1] = 1
+	AlphaOccupation[idet+1][orb2] = 1
+	BetaOccupation[ idet+1][orb2] = 1
+
+    for i in range(ndeterminants):
+	print "Replacing coefficient ", CI_coeffs[i], " with ", cicoef[i+3], " from the .dat file"
+	CI_coeffs[i] = cicoef[i+3]
+	
 elif scf_type == "NONE" and ci_type == "ALDET":
     core_line_number = -1
     for i in range(len(gamess_output)):
@@ -455,9 +595,20 @@ elif scf_type == "NONE" and ci_type == "ALDET":
             break
     
     for i in range(start_ci,len(gamess_output)):
-        if string.find(gamess_output[i],'DONE WITH DETERMINANT CI') != -1:
-            end_ci = i
-            break
+	    try:
+		    ci_line = string.split(gamess_output[i])
+		    coeffs = string.atof(ci_line[4])
+		    if abs(coeffs) < detcutoff:
+			    end_ci = i
+			    break
+	    except:
+		    print "i        = ", i
+		    print "start_ci = ", start_ci
+		    print "line     = ", gamess_output[i]
+		    raise
+	    if string.find(gamess_output[i+1],'DONE WITH DETERMINANT CI') != -1:
+		    end_ci = i
+		    break
 
     ndeterminants = end_ci - start_ci
 
@@ -491,18 +642,12 @@ elif scf_type == "NONE" and ci_type == "ALDET":
 
 total_orbitals = norbitals
 
-if (ci_type != "ALDET"):
-    if (nalpha >= nbeta):
-        norbitals = nalpha
-    elif (nbeta > nalpha):
-        norbitals = nbeta
-
-elif (ci_type == "ALDET"):
+if (ci_type == "ALDET" or scf_type == "GVB"):
     total_orbitals = norbitals
     for i in range(total_orbitals):
         index = total_orbitals-i-1
         keep_this_orbital = 0
-        for j in range(ndeterminants):
+        for j in range(len(AlphaOccupation)):
             if (AlphaOccupation[j][index] == 1):
                 keep_this_orbital = 1
                 break
@@ -513,19 +658,73 @@ elif (ci_type == "ALDET"):
             norbitals = norbitals-1
         elif (keep_this_orbital == 1):
             break
+elif (ci_type != "ALDET"):
+    if (nalpha >= nbeta):
+        norbitals = nalpha
+    elif (nbeta > nalpha):
+        norbitals = nbeta
 
 ##################  PRINT FLAGS: BEGIN    ########################
+#
+# We'll use ckmf template files (extension ckmft) to help make
+# our ckmf file. The reason is to save us from having to go through
+# and manually choose all our parameters. These template files are meant
+# to be pretty close to what we'll end up wanting.
+my_path, my_name = os.path.split(__file__)
 
-OUT.write('&flags\n')
+#A couple default placed to look for "ckmft" files
+templatedir = [".","..","/ul/amosa/qmc_setup/ckmf_creation",my_path]
+
+templates = []
+for dir in templatedir:
+    if os.path.exists(dir):
+	for file in os.listdir(dir):
+	    if file[-5:] == "ckmft":
+		templates.append(dir+"/"+file)
+
+print "\nAvailable ckmf templates:"
+for i in range(len(templates)):
+    print " %3i : " % i, templates[i]
+
+try:
+    choice = string.atoi(raw_input("Your choice [0]:"))
+except:
+    choice = 0
+
+print "You chose ckmf template: ", templates[choice]
+myStandardFlags=open(templates[choice],'r')
+
+OUT.write('#Created on %s'%(time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime())))
+OUT.write(' by '+my_name+' using %s\n'%Infile);
+
+#let's save some of the important info from a GAMESS calculation
+for i in range(len(gamess_output)):
+    line = -1;
+    if string.find(gamess_output[i],'RUN TITLE') != -1:
+	    line = i+2
+    if string.find(gamess_output[i],'REFERENCE ENERGY:') != -1:
+	    line = i
+    if string.find(gamess_output[i],' STATE') != -1 and string.find(gamess_output[i],'ENERGY') != -1:
+	    line = i
+    if string.find(gamess_output[i],'CCSD(T) ENERGY:') != -1:
+	    line = i
+    if string.find(gamess_output[i],'FINAL') != -1:
+	    line = i
+    if line > 0:
+	    OUT.write('#%s' % gamess_output[line])
+	    print '#%s' % gamess_output[line],
+
+	    
+OUT.write("\n")
+OUT.write(myStandardFlags.read());
+myStandardFlags.close()
+
 OUT.write('atoms\n %i\n'%atoms)
 OUT.write('charge\n %i\n'%charge)
 OUT.write('energy\n %s\n'%energy)
 OUT.write('norbitals\n %i\n'%norbitals)
 OUT.write('nbasisfunc\n %i\n'%nbasisfunc)
 OUT.write('ndeterminants\n %i\n'%ndeterminants)
-OUT.write('trial_function_type\n %s\n'%trialFunctionType)
-OUT.write('run_type\n variational\n')
-OUT.write('chip_and_mike_are_cool\n Yea_Baby!\n')
 OUT.write('&\n')
 
 ##################  PRINT FLAGS: END      #######################
@@ -676,12 +875,18 @@ OUT.write('&\n')
 ##################  PRINT WAVEFUNCTION: BEGIN ###################
 
 OUT.write('&wavefunction\n\n')
+print "norbitals  = %d\nnbasisfunc = %d\n" % (norbitals,nbasisfunc)
 
 if scf_type != "UHF":
 
     for i in range(norbitals):
         for j in range(nbasisfunc):
-            OUT.write('\t%s'%wavefunction[i][j])
+	    try:
+	        OUT.write('%20s'%wavefunction[i][j])
+	    except:
+	        print "Error:\nnorbitals = %d\nnbasisfunc = %d\ni = %d\nj = %d\n" % (norbitals,nbasisfunc,i,j)
+		print "wavefunction is %d by %d\n" % (len(wavefunction),len(wavefunction[i]))
+		sys.exit(1)
             if (j+1)%3 == 0:
                 OUT.write('\n')
         OUT.write('\n\n')
@@ -691,7 +896,7 @@ elif scf_type == "UHF":
     OUT.write("Alpha Molecular Orbitals\n\n")
     for i in range(norbitals):
         for j in range(nbasisfunc):
-            OUT.write('\t%s'%alpha_orbitals[i][j])
+            OUT.write('%20s'%alpha_orbitals[i][j])
             if (j+1)%3 == 0:
                 OUT.write('\n')
         OUT.write('\n\n')
@@ -700,7 +905,7 @@ elif scf_type == "UHF":
         OUT.write("Beta Molecular Orbitals\n\n")
         for i in range(norbitals):
             for j in range(nbasisfunc):
-                OUT.write('\t%s'%beta_orbitals[i][j])
+                OUT.write('%20s'%beta_orbitals[i][j])
                 if (j+1)%3 == 0:
                     OUT.write('\n')
             OUT.write('\n\n')
@@ -709,7 +914,7 @@ elif scf_type == "UHF":
         OUT.write("Beta Molecular Orbitals\n\n")
         for i in range(norbitals):
             for j in range(nbasisfunc):
-                OUT.write('\t%s'%alpha_orbitals[i][j])
+                OUT.write('%20s'%alpha_orbitals[i][j])
                 if (j+1)%3 == 0:
                     OUT.write('\n')
             OUT.write('\n\n')        
@@ -732,6 +937,14 @@ OUT.write("CI Coeffs\n")
 for i in range(ndeterminants):
     OUT.write('%s\n'%CI_coeffs[i])
 OUT.write('\n')
+
+print str(ndeterminants) + " CI determinant(s) used, with coefficients:"
+cum = 0
+for i in range(ndeterminants):
+    ci = string.atof(CI_coeffs[i])
+    cum += ci*ci
+    print "%3i) %15.7f has percentage %15.10e, cumulative remaining %15.10e" % (i+1,ci,ci*ci,1.0-cum)
+
 
 OUT.write('&\n')
 
@@ -760,7 +973,7 @@ if nalpha > 0 and nbeta > 0:
     OUT.write('CorrelationFunctionType: FixedCuspPade\n')
     OUT.write('NumberOfParameterTypes: 2\n')
     OUT.write('NumberOfParametersOfEachType: 0 1\n')
-    OUT.write('Parameters: 3.0\n')
+    OUT.write('Parameters: 2.0\n')
     OUT.write('NumberOfConstantTypes: 1\n')
     OUT.write('NumberOfConstantsOfEachType: 1\n')
     OUT.write('Constants: 0.5\n')
@@ -772,7 +985,7 @@ if nalpha > 1:
     OUT.write('CorrelationFunctionType: FixedCuspPade\n')
     OUT.write('NumberOfParameterTypes: 2\n')
     OUT.write('NumberOfParametersOfEachType: 0 1\n')
-    OUT.write('Parameters: 100.0\n')
+    OUT.write('Parameters: 2.0\n')
     OUT.write('NumberOfConstantTypes: 1\n')
     OUT.write('NumberOfConstantsOfEachType: 1\n')
     OUT.write('Constants: 0.25\n')
@@ -784,7 +997,7 @@ if nbeta > 1:
     OUT.write('CorrelationFunctionType: FixedCuspPade\n')
     OUT.write('NumberOfParameterTypes: 2\n')
     OUT.write('NumberOfParametersOfEachType: 0 1\n')
-    OUT.write('Parameters: 100.0\n')
+    OUT.write('Parameters: 2.0\n')
     OUT.write('NumberOfConstantTypes: 1\n')
     OUT.write('NumberOfConstantsOfEachType: 1\n')
     OUT.write('Constants: 0.25\n')
