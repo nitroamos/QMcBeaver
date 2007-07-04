@@ -45,6 +45,7 @@ for more details.
 
 #include <assert.h>
 #include "Array1D.h"
+#include "fastfunctions.h"
 
 //Array2D is included in all the classes where this change is relevant
 #if defined SINGLEPRECISION || defined QMC_GPU
@@ -403,6 +404,362 @@ public:
         TEMP = 0;
         gemm(rhs,TEMP,false);
         return TEMP;
+    }
+
+    void setToIdentity(int i)
+      {
+	for(int j=0; j<min(n_1,n_2); j++)
+	  {
+	    (*this)(i,j) = (T)(0.0);
+	    (*this)(j,i) = (T)(0.0);
+	  }
+	(*this)(i,i) = (T)(1.0);
+      }
+
+    void setToIdentity()
+      {
+	*this = (T)(0.0);
+	for(int i=0; i<min(n_1,n_2); i++)
+	  (*this)(i,i) = (T)(1.0);
+      }
+
+    bool isIdentity()
+      {
+	for(int i=0; i<n_1; i++)
+	  for(int j=0; j<n_2; j++)
+	    {
+	      T val       = (*this)(i,j);
+	      if(i == j) val -= 1.0;
+	      if(fabs(val) > REALLYTINY) return false;
+	    }
+	return true;
+      }
+
+    void transpose()
+      {
+	if(n_1 != n_2)
+	  {
+	    cerr << "Array2D::transpose just handles square matrices right now\n";
+	    return;
+	  }
+	for(int i=0; i<n_1; i++)
+	  for(int j=0; j<i; j++)
+	    {
+	      T temp       = (*this)(i,j);
+	      (*this)(i,j) = (*this)(j,i);
+	      (*this)(j,i) = temp;
+	    }
+      }
+
+    double nonSymmetry()
+      {
+	if(n_1 != n_2)
+	  {
+	    cerr << "Array2D::symmetric just handles square matrices right now\n";
+	    return -1.0;
+	  }
+
+	if(n_1 < 2)
+	  return 0.0;
+
+	double diff = 0;
+	for(int i=0; i<n_1; i++)
+	  for(int j=0; j<i; j++)
+	    {
+	      double term = 0;
+	      if(fabs((*this)(i,j)) > REALLYTINY)
+		term = ((*this)(i,j) - (*this)(j,i))/(*this)(i,j);
+	      diff += term * term;
+	    }
+
+	//relative error per pair
+	diff = 2.0*diff/(n_1 * n_2 - n_1);
+
+	//if the matrix is symmetric, it should return zero
+	//otherwize, this measurement of symmetry.
+	return diff;
+      }
+
+    /**
+    Sets two arrays equal. memcpy would probably break if T is a class. is this a problem?
+    if you want to set to Array2D's containing a class equal, then use the (i,j) operator.
+    */
+    void operator=(const Array2D & rhs)
+    {
+        if(n_1 != rhs.n_1 || n_2 != rhs.n_2) allocate(rhs.n_1,rhs.n_2);
+        memcpy(pArray, rhs.pArray, sizeof(T)*n_1*n_2);
+    }
+
+    /**
+    Sets all of the elements in an array equal to the same value. There's an obvious shortcut if
+    the constant happens to be 0. in retrospect, while memset works well for doubles, floats, etc,
+    using this operator would probably crash the program if T was a class.
+    */
+    void operator=(const T C)
+    {
+        if(n_1 < 1 || n_2 < 1)
+        {
+            cerr << "Error: can not set Array2D with dims " << n_1 << " and " << n_2 << endl;
+            exit(1);
+        }
+
+        if(C == 0)
+        {
+            memset(pArray,0,sizeof(T)*n_1*n_2);
+            return;
+        }
+
+        for(int i=0; i<n_1*n_2; i++)
+            pArray[i] = C;
+    }
+
+    /**
+       Returns the product of an array and a scalar.
+    */
+    Array2D operator*(const T C)
+    {
+        Array2D<T> TEMP(n_1,n_2);
+        for(int i=0; i<n_1*n_2; i++)
+            TEMP.pArray[i] = C*pArray[i];
+        return TEMP;
+    }
+
+    /**
+       Returns the difference between two Array2Ds
+    */
+    Array2D<T> operator-(const Array2D<T> & rhs) const
+    {
+        Array2D<T> TEMP(n_1,n_2);
+        for(int i=0; i<n_1*n_2; i++)
+            TEMP.pArray[i] = pArray[i] - rhs.pArray[i];
+        return TEMP;
+    }
+
+    /**
+       Returns the sum of two Array2Ds
+    */
+    Array2D<T> operator+(const Array2D<T> & rhs) const
+    {
+        Array2D<T> TEMP(n_1,n_2);
+        for(int i=0; i<n_1*n_2; i++)
+            TEMP.pArray[i] = pArray[i] + rhs.pArray[i];
+        return TEMP;
+    }
+
+    /**
+    Sets this array equal to itself times a scalar value.
+    */
+    void operator*=(const T C)
+    {
+        for(int i=0; i<n_1*n_2; i++)
+            pArray[i] *= C;
+    }
+
+
+    /**
+    Sets this array equal to itself divided by a scalar value.
+    */
+
+    void operator/=(const T C)
+    {
+        T inv = 1.0/C;
+        operator*=(inv);
+    }
+
+
+    /**
+    Creates an array.
+    */
+    Array2D()
+    {
+        pArray = 0; n_1 = 0; n_2 = 0;
+    }
+
+
+    /**
+    Creates an array and allocates memory.
+
+    @param i size of the array's first dimension.
+    @param j size of the array's second dimension.
+    */
+    Array2D(int i, int j)
+    {
+        pArray = 0;
+        n_1 = 0; n_2 = 0;
+        allocate(i,j);
+    }
+
+
+    /**
+    Creates an array and sets it equal to another array.
+
+    @param rhs array to set this array equal to.
+    */
+    Array2D( const Array2D<T> & rhs)
+    {
+        n_1 = 0;
+        n_2 = 0;
+        pArray = 0;
+        allocate(rhs.n_1,rhs.n_2);
+        operator=(rhs);
+    }
+
+    /**
+    This function makes it easy to replace a row with an Array1D
+    */
+    void setRow(int whichRow, Array1D<T> & rhs)
+    {
+        if(whichRow >= n_1)  cerr << "Error: invalid row index\n";
+        if(rhs.dim1() > n_2) cerr << "Error: rhs length is incorrect\n";
+        memcpy(pArray + n_2*whichRow, rhs.array(), sizeof(T)*n_2);
+    }
+
+    /**
+    This function takes advantage of the row-major format of the matricies
+    to copy numRows worth of data from one Array2D to another
+    */
+    void setRows(int to, int from, int numRows, const Array2D<T> & rhs)
+    {
+        memcpy(pArray + n_2*to, rhs.pArray + n_2*from, sizeof(T)*n_2*numRows);
+    }
+
+    /**
+    Copies a column from one Array2D to another
+    */
+    void setColumn(int to, int from, const Array2D<T> & rhs)
+    {
+        for(int i=0; i<n_1; i++)
+            pArray[map(i,to)] = rhs.pArray[rhs.map(i,from)];
+    }
+
+    /**
+    Destroy's the array and cleans up the memory.
+    */
+    ~Array2D()
+    {
+        deallocate();
+    }
+
+    /**
+    This particular choice indicates row-major format.
+    */
+    inline int map(int i, int j) const
+    {
+        return n_2*i + j;
+    }
+
+    /*
+      A pointer to a row.
+    */
+    T* operator[](int row)
+      {
+	return & pArray[n_2 * row];
+      }
+
+    /**
+       Accesses element <code>(i,j)</code> of the array.
+    */
+    T& operator()(int i,int j)
+      {
+        assert(pArray != 0);
+        return pArray[map(i,j)];
+      }
+    
+    /**
+       Accesses element <code>(i,j)</code> of the array, except this prevents
+       modification of that element.
+    */
+    T get(int i, int j) const
+      {
+	assert(pArray != 0);
+	return pArray[map(i,j)];
+      }
+    
+    double frobeniusNorm()
+      {
+        double sum = 0;
+        for(int i=0; i<n_1*n_2; i++)
+	  sum += pArray[i]*pArray[i];
+        return sqrt(sum);
+      }
+    
+    double pInfNorm()
+    {
+        double norm = 0;
+        double sum = 0;
+        for(int i=0; i<n_1; i++){
+            for(int j=0; j<n_2; j++){
+                sum += fabs( get(i,j) );
+            }
+            norm = max(sum,norm);
+            sum = 0;
+        }
+        return norm;
+    }
+
+    double p1Norm()
+    {
+        double norm = 0;
+        double sum = 0;
+        for(int j=0; j<n_2; j++){
+            for(int i=0; i<n_1; i++){
+                sum += fabs( get(i,j) );
+            }
+            norm = max(sum,norm);
+            sum = 0;
+        }
+        return norm;
+    }
+
+    /**
+    Prints the array to a stream.
+    printf("%11.3e",pix[index +1]);
+    printf("   ");
+    */
+    friend ostream& operator<<(ostream & strm, const Array2D<T> & rhs)
+    {
+        strm.precision(4);
+        strm.setf(ios_base::scientific);
+        int maxJ = 45;
+        for(int i=0; i<rhs.n_1;i++)
+        {
+            for(int j=0; j<rhs.n_2 && j<maxJ; j++)
+            {
+                strm.width(20);
+                strm.precision(12);
+                strm << rhs.pArray[rhs.map(i,j)];
+            }
+            strm << endl;
+        }
+        return strm;
+    }
+
+    /**
+       This makes it easier to print out the Array2D
+       for input into Mathematica. In Mathematica, you will
+       still have to replace all the scientific notational "e" with "*^".
+    */
+    void printArray2D(ostream & strm, int numSigFig, int columnSpace, int maxJ, char sep, bool sci)
+    {
+        strm.precision(4);
+	if(maxJ < 0) maxJ = n_2;
+	strm << "{";
+        for(int i=0; i<n_1;i++)
+	  {
+	    if(i==0) strm <<  "{";
+	    else     strm << " {";
+            for(int j=0; j<n_2 && j<maxJ; j++)
+            {
+		if(sci) strm << scientific;
+                strm << setprecision(numSigFig)
+		     << setw(numSigFig+columnSpace)
+		     << pArray[map(i,j)];
+		if(j<n_2-1) strm << sep;
+            }
+	    if(i<n_1-1)  strm << "},";
+	    else         strm << "}}";
+            strm << endl;
+        }
     }
 
     /**
@@ -771,350 +1128,247 @@ public:
     }
 #endif
 
-    void setToIdentity(int i)
-      {
-	for(int j=0; j<min(n_1,n_2); j++)
-	  {
-	    (*this)(i,j) = (T)(0.0);
-	    (*this)(j,i) = (T)(0.0);
-	  }
-	(*this)(i,i) = (T)(1.0);
-      }
+    /**
+       Find the eigenvalues for a real, symmetric matrix.
 
-    void setToIdentity()
+       I found this routine at:
+       http://www3.telus.net/thothworks/EigRSvaloCPP0.html
+    */
+    Array1D<double> eigenvaluesRS()
       {
-	*this = (T)(0.0);
-	for(int i=0; i<min(n_1,n_2); i++)
-	  (*this)(i,i) = (T)(1.0);
-      }
-
-    bool isIdentity()
-      {
-	for(int i=0; i<n_1; i++)
-	  for(int j=0; j<n_2; j++)
-	    {
-	      T val       = (*this)(i,j);
-	      if(i == j) val -= 1.0;
-	      if(fabs(val) > REALLYTINY) return false;
-	    }
-	return true;
-      }
-
-    void transpose()
-      {
+	Array1D<double> wr;
+	
 	if(n_1 != n_2)
 	  {
-	    cerr << "Array2D::transpose just handles square matrices right now\n";
-	    return;
+	    cout << "Error: no eigenvalues for non square matrix!" << endl
+		 << " n_1 = " << n_1 << endl
+		 << " n_2 = " << n_2 << endl
+		 << endl;
+	    return wr;
 	  }
-	for(int i=0; i<n_1; i++)
-	  for(int j=0; j<i; j++)
-	    {
-	      T temp       = (*this)(i,j);
-	      (*this)(i,j) = (*this)(j,i);
-	      (*this)(j,i) = temp;
-	    }
-      }
-
-    double nonSymmetry()
-      {
-	if(n_1 != n_2)
+	
+	double check = nonSymmetry();
+	if(check > 1e-5)
 	  {
-	    cerr << "Array2D::symmetric just handles square matrices right now\n";
-	    return -1.0;
+	    cout << "Error: eigenvaluesRS only works with symmetric matrices" << endl
+		 << " nonSymmetry = " << check << endl;
+	    return wr;
 	  }
 
-	double diff = 0;
-	for(int i=0; i<n_1; i++)
-	  for(int j=0; j<i; j++)
-	    {
-	      double term = 0;
-	      if(fabs((*this)(i,j)) > REALLYTINY)
-		term = ((*this)(i,j) - (*this)(j,i))/(*this)(i,j);
-	      diff += term * term;
-	    }
+	wr.allocate(n_1);
+	wr = 0.0;
 
-	//relative error per pair
-	diff = 2.0*diff/(n_1 * n_2 - n_1);
+	Array1D<double> fv1;
+	fv1.allocate(n_1);
 
-	//if the matrix is symmetric, it should return zero
-	//otherwize, this measurement of symmetry.
-	return diff;
+	Array2D<double> A = *this;
+
+	int i, ii, ierr = -1, j, k, l, l1, l2;
+	double c, c2, c3, dl1, el1, f, g, h, p, r, s, s2, scale, tst1, tst2;
+	// ======BEGINNING OF TRED1 ===================================
+	
+	ii = n_1 - 1;
+	for (i = 0; i < ii; i++){
+	  wr[i] = A[ii][i];
+	  A[ii][i] = A[i][i];
+	}//End for i
+	wr[ii] = A[ii][ii]; // Take last assignment out of loop
+	
+	for (i = (n_1 - 1); i >= 0; i--){
+	  
+	  l = i - 1;
+	  scale = h = 0.0;
+	  
+	  if (l < 0){
+	    fv1[i] = 0.0;
+	    continue;
+	  } // End if (l < 0)
+	  
+	  for (j = 0; j <= l; j++)
+	    scale += fabs(wr[j]);
+	  
+	  if (scale == 0.0){
+	    for (j = 0; j <= l; j++){
+	      wr[j] = A[l][j];
+	      A[l][j] = A[i][j];
+	      A[i][j] = 0.0;
+	    }//End for j
+	    
+	    fv1[i] = 0.0;
+	    continue;
+	  } // End if (scale == 0.0)
+	  
+	  for (j = 0; j <= l; j++){
+	    wr[j] /= scale;
+	    h += wr[j]*wr[j];
+	  }//End for j
+	  
+	  f = wr[l];
+	  g = ((f >= 0) ? -sqrt(h) : sqrt(h));
+	  fv1[i] = g*scale;
+	  h -= f*g;
+	  wr[l] = f - g;
+	  
+	  if (l != 0){
+	    
+	    for (j = 0; j <= l; j++)
+	      fv1[j] = 0.0;
+	    
+	    for (j = 0; j <= l; j++){
+	      f = wr[j];
+	      g = fv1[j] + f*A[j][j];
+	      for (ii = (j + 1); ii <= l; ii++){
+                g += wr[ii]*A[ii][j];
+                fv1[ii] += f*A[ii][j];
+	      } // End for ii
+	      fv1[j] = g;
+	    }//End for j
+	    
+	    // Form p
+	    
+	    f = 0.0;
+	    for (j = 0; j <= l; j++){
+	      fv1[j] /= h;
+	      f += fv1[j]*wr[j];
+	    }//End for j
+	    
+	    h = f/(h*2);
+	    
+	    // Form q
+	    
+	    for (j = 0; j <= l; j++)
+	      fv1[j] -= h*wr[j];
+	    
+	    // Form reduced A
+	    
+	    for (j = 0; j <= l; j++){
+	      f = wr[j];
+	      g = fv1[j];
+	      
+	      for (ii = j; ii <= l; ii++)
+                A[ii][j] -= f*fv1[ii] + g*wr[ii];
+	      
+	    }//End for j
+	    
+	  } // End if (l != 0)
+	  
+	  for (j = 0; j <= l; j++){
+	    f = wr[j];
+	    wr[j] = A[l][j];
+	    A[l][j] = A[i][j];
+	    A[i][j] = f*scale;
+	  }//End for j
+	  
+	}//End for i
+	
+	// ======END OF TRED1 =========================================
+	
+	// ======BEGINNING OF TQL1 ===================================
+	
+	for (i = 1; i < n_1; i++)
+	  fv1[i - 1] = fv1[i];
+	
+	fv1[n_1 - 1] = tst1 = f = 0.0;
+	
+	for (l = 0; l < n_1; l++){
+	  
+	  j = 0;
+	  h = fabs(wr[l]) + fabs(fv1[l]);
+	  
+	  tst1 = ((tst1 < h) ? h : tst1);
+	  
+	  // Look for small sub-diagonal element
+	  
+	  for (k = l; k < n_1; k++){
+	    tst2 = tst1 + fabs(fv1[k]);
+	    if (tst2 == tst1) break; // fv1[n_1-1] is always 0, so there is no exit through the bottom of the loop
+	  }//End for k
+	  
+	  if (k != l){
+	    
+	    do {
+	      
+	      if (j == 30){
+                ierr = l;
+                break;
+	      } // End if (j == 30)
+	      
+	      j++;
+	      
+	      // Form shift
+	      
+	      l1 = l + 1;
+	      l2 = l1 + 1;
+	      g = wr[l];
+	      p = (wr[l1] - g)/(2.0*fv1[l]);
+	      r = pythag(p, 1.0);
+	      scale = ((p >= 0) ? r : -r); // Use scale as a dummy variable
+	      scale += p;
+	      wr[l] = fv1[l]/scale;
+	      dl1 = wr[l1] = fv1[l]*scale;
+	      h = g - wr[l];
+	      
+	      for (i = l2; i < n_1; i++)
+                wr[i] -= h;
+	      
+	      f += h;
+	      
+	      // q1 transformation
+	      
+	      p = wr[k];
+	      c2 = c = 1.0;
+	      el1 = fv1[l1];
+	      s = 0.0;
+	      c3 = 99.9;
+	      s2 = 99.9;
+	      // Look for i = k - 1 until l in steps of -1
+	      
+	      for (i = (k - 1); i >= l; i--){
+                c3 = c2;
+                c2 = c;
+                s2 = s;
+                g = c*fv1[i];
+                h = c*p;
+                r = pythag(p, fv1[i]);
+                fv1[i + 1] = s*r;
+                s = fv1[i]/r;
+                c = p/r;
+                p = c*wr[i] - s*g;
+                wr[i + 1] = h + s*(c*g + s*wr[i]);
+	      }//End for i
+	      
+	      p = -s*s2*c3*el1*fv1[l]/dl1;
+	      fv1[l] = s*p;
+	      wr[l] = c*p;
+	      tst2 = tst1 + fabs(fv1[l]);
+	    } while (tst2 > tst1); // End do-while loop
+	    
+	  } // End if (k != l)
+	  
+	  if (ierr >= 0) //This check required to ensure we break out of for loop too, not just do-while loop
+	    break;
+	  
+	  p = wr[l] + f;
+	  
+	  // Order eigenvalues
+	  
+	  // For i = l to 1, in steps of -1
+	  for (i = l; i >= 1; i--){
+	    if (p >= wr[i - 1])
+	      break;
+	    wr[i] = wr[i - 1];
+	  }//End for i
+	  
+	  wr[i] = p;
+	  
+	}//End for l
+	
+	// ======END OF TQL1 =========================================
+
+	A.deallocate();
+	fv1.deallocate();
+	return wr;
       }
-
-    /**
-    Sets two arrays equal. memcpy would probably break if T is a class. is this a problem?
-    if you want to set to Array2D's containing a class equal, then use the (i,j) operator.
-    */
-    void operator=(const Array2D & rhs)
-    {
-        if(n_1 != rhs.n_1 || n_2 != rhs.n_2) allocate(rhs.n_1,rhs.n_2);
-        memcpy(pArray, rhs.pArray, sizeof(T)*n_1*n_2);
-    }
-
-    /**
-    Sets all of the elements in an array equal to the same value. There's an obvious shortcut if
-    the constant happens to be 0. in retrospect, while memset works well for doubles, floats, etc,
-    using this operator would probably crash the program if T was a class.
-    */
-    void operator=(const T C)
-    {
-        if(n_1 < 1 || n_2 < 1)
-        {
-            cerr << "Error: can not set Array2D with dims " << n_1 << " and " << n_2 << endl;
-            exit(1);
-        }
-
-        if(C == 0)
-        {
-            memset(pArray,0,sizeof(T)*n_1*n_2);
-            return;
-        }
-
-        for(int i=0; i<n_1*n_2; i++)
-            pArray[i] = C;
-    }
-
-    /**
-       Returns the product of an array and a scalar.
-    */
-    Array2D operator*(const T C)
-    {
-        Array2D<T> TEMP(n_1,n_2);
-        for(int i=0; i<n_1*n_2; i++)
-            TEMP.pArray[i] = C*pArray[i];
-        return TEMP;
-    }
-
-    /**
-       Returns the difference between two Array2Ds
-    */
-    Array2D<T> operator-(const Array2D<T> & rhs) const
-    {
-        Array2D<T> TEMP(n_1,n_2);
-        for(int i=0; i<n_1*n_2; i++)
-            TEMP.pArray[i] = pArray[i] - rhs.pArray[i];
-        return TEMP;
-    }
-
-    /**
-       Returns the sum of two Array2Ds
-    */
-    Array2D<T> operator+(const Array2D<T> & rhs) const
-    {
-        Array2D<T> TEMP(n_1,n_2);
-        for(int i=0; i<n_1*n_2; i++)
-            TEMP.pArray[i] = pArray[i] + rhs.pArray[i];
-        return TEMP;
-    }
-
-    /**
-    Sets this array equal to itself times a scalar value.
-    */
-    void operator*=(const T C)
-    {
-        for(int i=0; i<n_1*n_2; i++)
-            pArray[i] *= C;
-    }
-
-
-    /**
-    Sets this array equal to itself divided by a scalar value.
-    */
-
-    void operator/=(const T C)
-    {
-        T inv = 1.0/C;
-        operator*=(inv);
-    }
-
-
-    /**
-    Creates an array.
-    */
-    Array2D()
-    {
-        pArray = 0; n_1 = 0; n_2 = 0;
-    }
-
-
-    /**
-    Creates an array and allocates memory.
-
-    @param i size of the array's first dimension.
-    @param j size of the array's second dimension.
-    */
-    Array2D(int i, int j)
-    {
-        pArray = 0;
-        n_1 = 0; n_2 = 0;
-        allocate(i,j);
-    }
-
-
-    /**
-    Creates an array and sets it equal to another array.
-
-    @param rhs array to set this array equal to.
-    */
-    Array2D( const Array2D<T> & rhs)
-    {
-        n_1 = 0;
-        n_2 = 0;
-        pArray = 0;
-        allocate(rhs.n_1,rhs.n_2);
-        operator=(rhs);
-    }
-
-    /**
-    This function makes it easy to replace a row with an Array1D
-    */
-    void setRow(int whichRow, Array1D<T> & rhs)
-    {
-        if(whichRow >= n_1)  cerr << "Error: invalid row index\n";
-        if(rhs.dim1() > n_2) cerr << "Error: rhs length is incorrect\n";
-        memcpy(pArray + n_2*whichRow, rhs.array(), sizeof(T)*n_2);
-    }
-
-    /**
-    This function takes advantage of the row-major format of the matricies
-    to copy numRows worth of data from one Array2D to another
-    */
-    void setRows(int to, int from, int numRows, const Array2D<T> & rhs)
-    {
-        memcpy(pArray + n_2*to, rhs.pArray + n_2*from, sizeof(T)*n_2*numRows);
-    }
-
-    /**
-    Copies a column from one Array2D to another
-    */
-    void setColumn(int to, int from, const Array2D<T> & rhs)
-    {
-        for(int i=0; i<n_1; i++)
-            pArray[map(i,to)] = rhs.pArray[rhs.map(i,from)];
-    }
-
-    /**
-    Destroy's the array and cleans up the memory.
-    */
-    ~Array2D()
-    {
-        deallocate();
-    }
-
-    /**
-    This particular choice indicates row-major format.
-    */
-    inline int map(int i, int j) const
-    {
-        return n_2*i + j;
-    }
-
-    /**
-    Accesses element <code>(i,j)</code> of the array.
-    */
-    T& operator()(int i,int j)
-    {
-        assert(pArray != 0);
-        return pArray[map(i,j)];
-    }
-
-    /**
-    Accesses element <code>(i,j)</code> of the array, except this prevents
-    modification of that element.
-    */
-    T get(int i, int j) const
-        {
-            assert(pArray != 0);
-            return pArray[map(i,j)];
-        }
-
-    double frobeniusNorm()
-    {
-        double sum = 0;
-        for(int i=0; i<n_1*n_2; i++)
-            sum += pArray[i]*pArray[i];
-        return sqrt(sum);
-    }
-
-    double pInfNorm()
-    {
-        double norm = 0;
-        double sum = 0;
-        for(int i=0; i<n_1; i++){
-            for(int j=0; j<n_2; j++){
-                sum += fabs( get(i,j) );
-            }
-            norm = max(sum,norm);
-            sum = 0;
-        }
-        return norm;
-    }
-
-    double p1Norm()
-    {
-        double norm = 0;
-        double sum = 0;
-        for(int j=0; j<n_2; j++){
-            for(int i=0; i<n_1; i++){
-                sum += fabs( get(i,j) );
-            }
-            norm = max(sum,norm);
-            sum = 0;
-        }
-        return norm;
-    }
-
-    /**
-    Prints the array to a stream.
-    printf("%11.3e",pix[index +1]);
-    printf("   ");
-    */
-    friend ostream& operator<<(ostream & strm, const Array2D<T> & rhs)
-    {
-        strm.precision(4);
-        strm.setf(ios_base::scientific);
-        int maxJ = 45;
-        for(int i=0; i<rhs.n_1;i++)
-        {
-            for(int j=0; j<rhs.n_2 && j<maxJ; j++)
-            {
-                strm.width(20);
-                strm.precision(12);
-                strm << rhs.pArray[rhs.map(i,j)];
-            }
-            strm << endl;
-        }
-        return strm;
-    }
-
-    /**
-       This makes it easier to print out the Array2D
-       for input into Mathematica. In Mathematica, you will
-       still have to replace all the scientific notational "e" with "*^".
-    */
-    void printArray2D(ostream & strm, int numSigFig, int columnSpace, int maxJ, char sep, bool sci)
-    {
-        strm.precision(4);
-	if(maxJ < 0) maxJ = n_2;
-	strm << "{";
-        for(int i=0; i<n_1;i++)
-	  {
-	    if(i==0) strm <<  "{";
-	    else     strm << " {";
-            for(int j=0; j<n_2 && j<maxJ; j++)
-            {
-                strm.width(numSigFig+columnSpace);
-                strm.precision(numSigFig);
-		if(sci) strm << scientific;
-                strm << pArray[map(i,j)];
-		if(j<n_2-1) strm << sep;
-            }
-	    if(i<n_1-1)  strm << "},";
-	    else         strm << "}}";
-            strm << endl;
-        }
-    }
 };
 
 #endif

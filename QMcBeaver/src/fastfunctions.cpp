@@ -38,3 +38,40 @@ double fastPower(double x, int n)
       return pow(x,n);
     }
 }
+
+double pythag(double a, double b)
+{
+  /*
+    I copied this routine from:
+    http://www3.telus.net/thothworks/EigRSvaloCPP0.html
+
+    Thanks!
+  */
+
+  // Returns the square root of (a*a + b*b)
+  // without overflow or destructive underflow
+
+  double p, r, s, t, u;
+
+  t = fabs(a);
+  u = fabs(b);
+
+  p = ((t >= u) ? t : u);
+  if (p > 0){
+    r = ((t <= u) ? t : u);
+    r /= p;
+    r *= r;
+    t = 4.0 + r;
+
+    while (t > 4.0){
+      s = r/t;
+      u = 1.0 + 2.0*s;
+      p = u*p;
+      t = s/u;
+      r *= t*t;
+      t = 4.0 + r;
+    } // while (t > 4.0);
+  } // End if (p > 0)
+
+  return p;
+} // End pythag

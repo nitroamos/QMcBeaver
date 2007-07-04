@@ -31,4 +31,12 @@
   */
 double fastPower(double x, int n); 
 
+/**
+   A safe implementation of pythagoran's
+   theorem.
+
+   It shouldn't under or over flow.
+*/
+double pythag(double a, double b);
+
 #endif
