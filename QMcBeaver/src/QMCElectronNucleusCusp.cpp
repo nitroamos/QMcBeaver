@@ -568,7 +568,7 @@ QMCElectronNucleusCuspParameters QMCElectronNucleusCusp::fitOrbitalParameters()
 
 void QMCElectronNucleusCusp::replaceCusps(Array2D<double>& X, 
       Array2D<qmcfloat>& D, Array2D<qmcfloat>& GradX, Array2D<qmcfloat>& GradY,
-                       Array2D<qmcfloat> GradZ, Array2D<qmcfloat>& Laplacian_D)
+                      Array2D<qmcfloat>& GradZ, Array2D<qmcfloat>& Laplacian_D)
 {
   // For each nucleus, for each electron, calculates x,y,z,r.
   // For each orbital, checks if r<rc.  If so, replaces the appropriate element

@@ -1,3 +1,8 @@
+Tue, Jul 17, 2007 Daniel R Fisher
+1.  Fixed a bug that Amos found in QMCElectronNucleusCusp.  The z component
+    of the gradient was not passed by reference, which means its values may 
+    not have been replaced by the cusp replacement procedure.
+
 Tue, Jul 3, 2007 Amos Anderson
 1.  I uploaded the version of gamess2qmcbeaver.py that i've been
     keeping in my private stash. Basically, it can get GVB wavefunctions,

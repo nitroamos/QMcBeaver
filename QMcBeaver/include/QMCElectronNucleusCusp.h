@@ -160,7 +160,7 @@ class QMCElectronNucleusCusp
     @param Laplacian_D the laplacian matrix
   */
   void replaceCusps(Array2D<double>& X, Array2D<qmcfloat>& D, 
-   Array2D<qmcfloat>& GradX, Array2D<qmcfloat>& GradY, Array2D<qmcfloat> GradZ,
+  Array2D<qmcfloat>& GradX, Array2D<qmcfloat>& GradY, Array2D<qmcfloat>& GradZ,
                                                Array2D<qmcfloat>& Laplacian_D);
 
   /**
