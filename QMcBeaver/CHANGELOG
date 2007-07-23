@@ -1,3 +1,41 @@
+Mon, Jul 23, 2007 Amos Anderson
+1.  I added an option, one_e_per_iter, which will allow you to move
+    one electron at a time. I'm not completely sure I'm handling the
+    green's function, reweighting, branching, etc correctly, but it
+    might be ok.
+
+2.  I added the energy minimization criteria, "generalized_eigenvector".
+    It's a bit unstable at the moment (the optimization might be slow), but
+    it's expected to be fairly efficient. That is, with the "Linearize"
+    step length, it might converge your parameters in 1 or 2 optimization steps.
+
+3.  In order to move one electron at a time, I programmed Array2D.h to use the
+    special inverse update algorithm.
+
+4.  Array2D.h is programmed to use the fortran bindings in LAPACK instead of
+    the ATLAS bindings. This should make it more portable. This includes the
+    generalized eigenvalue solver. Eventually, perhaps I'll use fortran bindings
+    for BLAS as well, which will facilitate the use of alternative machines where
+    compiling ATLAS is tough.
+
+    Along these lines, Array2D's determinant_and_inverse will no longer calculate the
+    **transpose** of the inverse, but the inverse directly. I changed all the places in the
+    code which took the transposition into account.
+
+5.  I reorganized a lot of QMCSlater.cpp in order to move one electron at a time.
+    I think it looks a lot cleaner now. The GPU code was not changed, so I expect minor
+    adjustements to be necessary when moving all electrons at once, and major adjustments
+    when moving one electron at a time.
+
+6.  I fixed a bug preventing the user from during off the "limit_branching" option.
+
+7.  I changed the default for "rel_cutoff" to 100. The previous default value of 5 was too
+    small. It turns out that the distribution outside of the 5 range is still asymetric.
+
+    Using rel_cutoff is equivalent to marking a configuration as singular, so it won't be added
+    to the average. A lower rel_cutoff will lower your variance significantly. However, you
+    can't make it so small that the data not included is asymetric wrt the average value.
+
 Tue, Jul 17, 2007 Daniel R Fisher
 1.  Fixed a bug that Amos found in QMCElectronNucleusCusp.  The z component
     of the gradient was not passed by reference, which means its values may 
