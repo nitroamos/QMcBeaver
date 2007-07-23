@@ -38,11 +38,11 @@ for more details.
 #include "Array2D.h"
 #include "Array3D.h"
 #include "Array4D.h"
-#include "LU.h"
 #include "QMCInput.h"
 #include "Stopwatch.h"
 #include "QMCElectronNucleusCusp.h"
 #include "svdcmp.h"
+#include "QMCWalkerData.h"
 
 #ifdef QMC_GPU
 #include "GPUQMCMatrix.h"
@@ -95,27 +95,49 @@ public:
     @param num how many configurations to process in the X array.
     @param start which index in X to start at
     @param X the array of electronic positions indexed by their walker
+    @param whichE the index of the electron to move (-1 if all)
   */
-  void evaluate(Array1D<Array2D<double>*> &X, int num, int start);
+  void evaluate(Array1D<Array2D<double>*> & X,
+		int num, int start, int whichE);
 
   /**
     Calling this function will wrap up the evaluation by unloading results
     from the GPU (if used) and then calculating the inverse.
+    
+    The new idea here is to split all the work that the evaluate function used
+    to do.  This enables QMCSCFJastrow to control when the multiplication
+    happens relative to the inverse.
   */
-  void update_Ds();
+  void update_Ds(Array1D<QMCWalkerData *> & walkerData);
 
   /**
-    This method will have the inverse and derivative ratios calculated. This function
-    was templated to allow flexibility in allowing both double and float without recompiling.
+    This method will have the inverse and derivative ratios calculated. 
 
-    @param start useful to indicate whether the GPU results have been filled in yet or not
-    @param inv, grad, psi, lap: these are the collections of data
+    @param ci which determinant we are working on
+    @param row if moving one electron per iteration, this is the row
+    the current electron belongs to
+    
+    @param psi (input) Slater matrix
+    @param inv (output) inverse of psi
+    @param lap (input) laplacian of Slater
+    @param grad (input) gradient of Slater
+    @param det (output) determinant of psi
+    @param gradPR (output) gradient of psi ratio
+    @param lapPR (output) laplacian of psi ratio
+    @return whether the matrix was invertible
   */
   template <class T>
-  void processInverse(int start,
-      Array2D< Array2D<T> > & psi, Array2D< Array2D<T> > & inv, 
-      Array2D< Array2D<T> > & lap, Array3D< Array2D<T> > & grad);
-
+    bool calculate_DerivativeRatios(int ci, int row,
+				    Array2D<double> & psi,
+				    Array2D<double> & inv,
+				    Array2D<T> & lap,
+				    Array2D<T> & gradx,
+				    Array2D<T> & grady,
+				    Array2D<T> & gradz,
+				    Array1D<double> & det,
+				    Array3D<double> & gradPR,
+				    Array1D<double> & lapPR);    
+  
 #ifdef QMC_GPU
   /*
     This function is pure GPU calculations. 
@@ -217,13 +239,46 @@ public:
   QMCBasisFunction *BF;
   QMCWavefunction  *WF;
   
-  /** 
-    The dimensions of these arrays are numWalkers x numDeterminants
+  /**
+     These arrays are the local storage data that
+     we use when we update all electrons at once.
   */
   Array1D< Array1D<double> > Psi;
   Array1D< Array1D<double> > Laplacian_PsiRatio;
   Array1D< Array3D<double> > Grad_PsiRatio;
   Array1D< Array1D<double> > Chi_Density;
+  Array1D< Array1D<bool> >   Singular;
+
+  /**
+     These arrays are where we store the basis functions
+     and their derivatives, evaluated for a particular
+     electronic configuration.
+  */
+  Array1D<          Array2D<qmcfloat>   > Chi;
+  Array1D<          Array2D<qmcfloat>   > Chi_laplacian;
+  Array1D< Array1D< Array2D<qmcfloat> > > Chi_gradient;
+
+  /**
+    If we are updating one electron at a time, then
+    these pointers need to be set to the data stored
+    in the associated QMCWalkerData.
+
+    If we are updating all together, then these pointers
+    will be set to our local QMCSlater data.
+
+    The reason we have two choices for storage location is
+    because it will change how much memory we need. If we
+    update all at once, then we don't need to save
+    intermediate data between iterations, so we can just
+    save everything right in QMCSlater, a class for which
+    there are only 2 instances for the entire calculation.
+
+    If we only update one at a time, then we need a
+    per walker storage location.
+  */
+  Array1D< Array1D<double> * > pointer_det;
+  Array1D< Array1D<double> * > pointer_lapPR;
+  Array1D< Array3D<double> * > pointer_gradPR;
 
   /**
      Data structures to store the partial derivatives
@@ -232,8 +287,6 @@ public:
   Array1D< Array1D< Array2D<double> > > p_a;
   Array1D< Array3D< Array2D<double> > > p2_xa;
   Array1D< Array1D< Array2D<double> > > p3_xxa;
-
-  Array1D< Array1D<bool> > Singular;
 
   /**
      The starting and stopping indices in the position
@@ -244,20 +297,20 @@ public:
 
   Array1D< QMCElectronNucleusCusp > ElectronNucleusCusp;
 
-  double PsiRatio_1electron;
-
   /** 
     The dimensions of these data are numWalkers x numDeterminants then 
     numElec x numOrb
 
     These data: D, D_inv, Laplacian_D, and Grad_D are meant to hold
     only the results that were calculated on the CPU
-  */
 
+    D_inv is the only one that can be in double since we'll explicitly
+    typecast D before inversion.
+  */
   Array2D< Array2D<qmcfloat> > D;
-  Array2D< Array2D<qmcfloat> > D_inv;
-  Array2D< Array2D<qmcfloat> > Laplacian_D;
   Array3D< Array2D<qmcfloat> > Grad_D;
+  Array2D< Array2D<qmcfloat> > Laplacian_D;
+  Array2D< Array2D<double>   > D_inv;
 
 #ifdef QMC_GPU
   /** 
@@ -282,15 +335,16 @@ public:
 #endif
 
   /*
-    The first dimension is the number of determinants.
-    If we're optimizing orbitals, then we need to save all of these.
+    This function will make sure that
+    all the data structures have the right dimensions
+    for either matrix-matrix multiplication or
+    vector-matrix multiplication.
 
-    If we are not optimizing, then they don't need to be kept after they're
-    used in matrix multiplication.
+    @param whichE the whichE index provided to evaluate
+    @param start will be assigned which electron to start the update
+    @param stop will be assigned which electron to stop the update
   */
-  Array1D< Array2D<qmcfloat> > Chi;
-  Array1D< Array2D<qmcfloat> > Chi_laplacian;
-  Array1D< Array1D< Array2D<qmcfloat> > > Chi_gradient;
+  void allocateIteration(int whichE, int & start, int & stop);
 
   void allocate();
 
@@ -304,10 +358,6 @@ public:
     {
       return Stop-Start+1;
     }
-
-  template <class T>
-  void calculate_DerivativeRatios(int walker, int start, Array2D< Array2D<T> > & inv, 
-      Array2D< Array2D<T> > & lap, Array3D< Array2D<T> > & grad);
 };
 
 #endif

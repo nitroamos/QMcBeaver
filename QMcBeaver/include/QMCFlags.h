@@ -134,6 +134,27 @@ class QMCFlags
   string run_type;
 
   /**
+     Whether to update one electron at a time (1) or all at once (0).
+
+     The discussions that I've found on the issue are 
+     pg 97, pgs 273-278 of the Hammond, Lester, Reynolds QMC book
+     They say acceptance probability is "reduced considerably" if all
+     electrons are moved at once.
+
+     pg 144 of the Umrigar "VMC basics and applications to atoms and molecules" 
+     from the NATO series, 1998...
+     He also recommends moving one electron at a time.
+
+     On the other hand, if we move one electron per iteration,
+     then the amount of system memory required scales with the
+     number of walkers.
+
+     You will want to link LAPACK if you move all at once. If you
+     move one at a time, we use a different method to update the inverse.
+  */
+  int one_e_per_iter;
+
+  /**
      Using QMCSurfer instead of QMCWalker. This will let you "surf"
      the wavefunction.
   */

@@ -35,6 +35,7 @@ public:
 		    Array1D<double> & position,
 		    Array1D<double> & searchDirection,
 		    Array1D<double> & gradient,
+		    Array2D<double> & unused,
 		    double functionValue);
 
 private:

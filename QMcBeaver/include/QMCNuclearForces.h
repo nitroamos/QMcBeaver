@@ -12,7 +12,6 @@
 
 #include "Array1D.h"
 #include "Array2D.h"
-#include "LU.h"
 #include "QMCInput.h"
 #include "Random.h"
 #include "CubicSpline.h"

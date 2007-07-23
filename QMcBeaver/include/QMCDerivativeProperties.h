@@ -89,20 +89,36 @@ public:
   /**
      The current value of the objective function
      we are minimizing.
+     
+     This function is comparable with
+     QMCObjectiveFunctionResult::set_score
   */
   double getParameterValue();
 
   /**
-     Convert the der terms collected in QMCProperties
+     Convert the der terms collected in QMCFutureWalkingProperties
      into the actual gradient.
   */
   Array1D<double> getParameterGradient();
 
   /**
-     Convert the hess terms collected in QMCProperties
+     Convert the hess terms collected in QMCFutureWalkingProperties
      into the actual hessian.
   */
   Array2D<double> getParameterHessian();
+
+  /**
+     Convert the hess terms collected in QMCFutureWalkingProperties
+     into a hamiltonian matrix.
+  */
+  Array2D<double> getParameterHamiltonian();
+
+  /**
+     Convert the hess terms collected in QMCFutureWalkingProperties
+     into an overlap matrix.
+  */
+  Array2D<double> getParameterOverlap();
+
 
   /**
     Formats and prints the properties to a stream in human readable fromat.

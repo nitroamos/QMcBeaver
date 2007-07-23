@@ -48,9 +48,7 @@ public:
   virtual ~QMCLineSearch(){};
 
   Array1D<double> optimize(Array1D<double> & initialGuess,
-			   double value,
-			   Array1D<double> & gradient,
-			   Array2D<double> & hessian,
+			   QMCDerivativeProperties & dp,
 			   double a_diag_factor,
 			   int optStep);
 

@@ -352,6 +352,8 @@ private:
   /**
     Randomly moves the electrons to their new locations and returns the 
     Green's function for the forward move.
+    @param whichE -1 to move all electrons, otherwise the index of the one
+    electron to move.
     @return Greens's function for the forward move of the electrons.
   */
   QMCGreensRatioComponent moveElectrons();
@@ -359,6 +361,8 @@ private:
   /**
     Randomly moves the electrons to their new locations without using
     importance sampling.
+    @param whichE -1 to move all electrons, otherwise the index of the one
+    electron to move.
     @return Greens's function for the forward move of the electrons.
   */
   QMCGreensRatioComponent moveElectronsNoImportanceSampling();
@@ -366,6 +370,8 @@ private:
   /**
     Randomly moves the electrons to their new locations using
     importance sampling.
+    @param whichE -1 to move all electrons, otherwise the index of the one
+    electron to move.
     @return Greens's function for the forward move of the electrons.
   */
   QMCGreensRatioComponent moveElectronsImportanceSampling();
@@ -373,6 +379,8 @@ private:
   /**
     Randomly moves the electrons to their new locations using
     importance sampling and the accelerated Metropolis algorithm.
+    @param whichE -1 to move all electrons, otherwise the index of the one
+    electron to move.
     @return Greens's function for the forward move of the electrons.
   */
   QMCGreensRatioComponent moveElectronsUmrigar93ImportanceSampling();

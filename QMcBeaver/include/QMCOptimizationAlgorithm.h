@@ -15,6 +15,7 @@
 
 #include "Array1D.h"
 #include "Array2D.h"
+#include "QMCDerivativeProperties.h"
 
 /**
   Interface for numerical optimization algorithms.
@@ -36,9 +37,7 @@ public:
     @return optimized parameters.
     */
   virtual Array1D<double> optimize(Array1D<double> & initialGuess,
-				   double value,
-				   Array1D<double> & gradient,
-				   Array2D<double> & hessian,
+				   QMCDerivativeProperties & dp,
 				   double, int) = 0;
 };
 

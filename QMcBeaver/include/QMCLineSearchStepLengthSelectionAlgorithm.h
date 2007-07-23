@@ -29,20 +29,18 @@ public:
   virtual ~QMCLineSearchStepLengthSelectionAlgorithm(){}
 
   /**
-    Calculates the step length to use when performing a line search 
-    optimization.
-
-    @param function objective function being optimized.
-    @param position current location of the optimization.
-    @param searchDirection direction to optimize along.
-    @param gradient current gradient value.
-    @param functionValue current function value.
-    */
+     Calculates the step length to use when performing a line search 
+     optimization.
+    
+     You will have to look at the individual algorithms to
+     see how the input parameters are defined.
+  */
   virtual double stepLength(QMCObjectiveFunction *function, 
-			    Array1D<double> & position,
-			    Array1D<double> & searchDirection,
-			    Array1D<double> & gradient,
-			    double functionValue) = 0;
+			    Array1D<double> & array1,
+			    Array1D<double> & array2,
+			    Array1D<double> & array3,
+			    Array2D<double> & matrix1,
+			    double scalar1) = 0;
 
 };
 

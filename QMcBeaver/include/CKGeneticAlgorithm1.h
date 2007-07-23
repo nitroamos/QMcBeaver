@@ -57,9 +57,7 @@ public:
 		      double distributionwidth);
 
   Array1D<double> optimize(Array1D<double> & initialGuess,
-			   double value,
-			   Array1D<double> & gradient,
-			   Array2D<double> & hessian,
+			   QMCDerivativeProperties & dp,
 			   double,int);
 
 private:

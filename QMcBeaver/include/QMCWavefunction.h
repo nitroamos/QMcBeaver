@@ -179,7 +179,7 @@ class QMCWavefunction
      Since we broke apart the matrices, this is
      how we request them.
   */
-  Array2D<double> * getCoeff(int ci, bool isAlpha);
+  Array2D<qmcfloat> * getCoeff(int ci, bool isAlpha);
 
   /**
      This scales all the values in the orbitals by a constant factor.

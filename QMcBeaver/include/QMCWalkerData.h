@@ -40,6 +40,20 @@ class QMCWalkerData {
 
   QMCInput * Input;
 
+  int whichE;
+  Array1D< Array2D<double> >             D_invA;
+  Array1D< Array2D<double> >             D_invB;
+  Array1D< Array2D<qmcfloat> >           Laplacian_DA;
+  Array1D< Array2D<qmcfloat> >           Laplacian_DB;
+  Array1D< Array1D< Array2D<qmcfloat> > > Grad_DA;
+  Array1D< Array1D< Array2D<qmcfloat> > > Grad_DB;
+
+  Array1D<double> PsiA, PsiB;
+  Array1D<double> Laplacian_PsiRatioA, Laplacian_PsiRatioB;
+  Array3D<double> Grad_PsiRatioA, Grad_PsiRatioB;
+
+  Array1D<double> Chi_DensityA, Chi_DensityB;
+
   double localEnergy, kineticEnergy, potentialEnergy;
   double neEnergy, eeEnergy;
 

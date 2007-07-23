@@ -19,9 +19,10 @@ public:
     }
   
   double stepLength(QMCObjectiveFunction *function, 
-		    Array1D<double> & position,
-		    Array1D<double> & searchDirection,
-		    Array1D<double> & gradient,
+		    Array1D<double> & unused1,
+		    Array1D<double> & unused2,
+		    Array1D<double> & unused3,
+		    Array2D<double> & unused4,
 		    double functionValue)
     {
       return value;

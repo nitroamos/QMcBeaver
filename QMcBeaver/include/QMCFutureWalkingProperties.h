@@ -78,8 +78,11 @@ public:
      necessary to do the average.
   */
   Array2D<QMCStatistic> der;
+
   //for variance minimization, the hessian only needs one additional term
-  Array2D<QMCStatistic> hess;
+  //for energy minimization, we need several
+  bool hessIsSymmetric;
+  Array1D< Array2D<QMCStatistic> > hess;
 
  /**
     Tells if basis function density is being calculated.

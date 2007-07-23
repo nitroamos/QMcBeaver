@@ -80,11 +80,6 @@ class QMCElectronNucleusCusp
   */
   int Z;
 
-  /**
-    Start and Stop define the region the electrons that this part of the 
-    wavefunction pertains to.
-  */
-  int Start,Stop,nelectrons;
   int norbitals,natoms;
 
   /**
@@ -147,8 +142,7 @@ class QMCElectronNucleusCusp
 
   QMCElectronNucleusCusp();
 
-  void initialize(QMCInput* input, int startEl, int stopEl,
-		  const Array2D<qmcfloat>& WFCoeffs);
+  void initialize(QMCInput* input, const Array2D<qmcfloat>& WFCoeffs);
   
   /**
     Replaces the entries in the Slater, gradient, and laplacian matrices 
@@ -159,9 +153,13 @@ class QMCElectronNucleusCusp
     @param Grad_D the gradient matrix
     @param Laplacian_D the laplacian matrix
   */
-  void replaceCusps(Array2D<double>& X, Array2D<qmcfloat>& D, 
-  Array2D<qmcfloat>& GradX, Array2D<qmcfloat>& GradY, Array2D<qmcfloat>& GradZ,
-                                               Array2D<qmcfloat>& Laplacian_D);
+  void replaceCusps(Array2D<double> & X,
+		    int Start, int Stop,
+		    Array2D<qmcfloat> & D, 
+		    Array2D<qmcfloat> & GradX,
+		    Array2D<qmcfloat> & GradY,
+		    Array2D<qmcfloat> & GradZ,
+		    Array2D<qmcfloat> & Laplacian_D);
 
   /**
     Fits exponential functions for each orbital in the region of each nucleus.

@@ -31,7 +31,6 @@
 #include "QMCStatistic.h"
 #include "Array1D.h"
 #include "Array2D.h"
-#include "LU.h"
 
 using namespace std;
 

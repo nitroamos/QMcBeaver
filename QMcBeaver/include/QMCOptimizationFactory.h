@@ -17,11 +17,6 @@
 #include "QMCObjectiveFunction.h"
 #include "QMCInput.h"
 
-#include "QMCLineSearchStepLengthSelectionFactory.h"
-#include "QMCSteepestDescent.h"
-#include "QMCBFGSQuasiNewtonLineSearch.h"
-#include "CKGeneticAlgorithm1.h"
-
 /**
   Object factory which returns the correct QMCOptimizationAlgorithm
   specified in the calculation input data.  Optimization assumed to mean
