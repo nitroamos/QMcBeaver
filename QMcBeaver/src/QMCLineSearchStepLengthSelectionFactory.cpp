@@ -11,6 +11,10 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCLineSearchStepLengthSelectionFactory.h"
+#include "QMCMikesBracketingStepLengthSelector.h"
+#include "QMCWolfeStepLengthSelector.h"
+#include "QMCValueStepLength.h"
+#include "QMCLinearizeStepLength.h"
 
 QMCLineSearchStepLengthSelectionAlgorithm * 
   QMCLineSearchStepLengthSelectionFactory::factory(string & Type)
@@ -30,6 +34,10 @@ QMCLineSearchStepLengthSelectionAlgorithm *
   else if( Type == "Wolfe" )
     {
       algorithm = new QMCWolfeStepLengthSelector();
+    }
+  else if( Type == "Linearize" )
+    {
+      algorithm = new QMCLinearizeStepLength();
     }
   else if( Type == "None" )
     {

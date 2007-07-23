@@ -11,13 +11,18 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCOptimizationFactory.h"
+#include "QMCLineSearchStepLengthSelectionFactory.h"
+#include "QMCSteepestDescent.h"
+#include "QMCBFGSQuasiNewtonLineSearch.h"
+#include "CKGeneticAlgorithm1.h"
+#include "QMCEigenSearch.h"
 
 QMCOptimizationAlgorithm * QMCOptimizationFactory::
     optimizationAlgorithmFactory(QMCObjectiveFunction &objFunc, 
 				 QMCInput * input)
 {
   QMCOptimizationAlgorithm * optAlg = 0;
-
+  
   if( input->flags.optimize_Psi_method == "Steepest_Descent" )
     {
       /*
@@ -35,8 +40,7 @@ QMCOptimizationAlgorithm * QMCOptimizationFactory::
 			 input->flags.optimization_error_tolerance);
 
     }  
-  else if( input->flags.optimize_Psi_method == "analytical_energy_variance" ||
-	   input->flags.optimize_Psi_method == "automatic")
+  else if( input->flags.optimize_Psi_criteria == "analytical_energy_variance")
     {
       /*
 	The analytical_energy_variance method will evaluate a hessian. See the
@@ -73,6 +77,27 @@ QMCOptimizationAlgorithm * QMCOptimizationFactory::
 				       input->flags.line_search_step_length);
 
       optAlg = new QMCBFGSQuasiNewtonLineSearch(&objFunc, stepAlg, 
+			 input->flags.optimization_max_iterations, 
+			 input->flags.optimization_error_tolerance);
+
+    }
+  else if( input->flags.optimize_Psi_criteria == "generalized_eigenvector" )
+    {
+      /*
+	You'll need to look at the 2007 Umrigar optimization paper for
+	a description of what's going on here.
+
+	JCP 126 084102 (2007)
+
+	Basically, this method will optimize a wavefunction for energy
+	minimization. It's recommended to use the "Linearize" step length
+	selection.
+      */
+      QMCLineSearchStepLengthSelectionAlgorithm *stepAlg =
+	QMCLineSearchStepLengthSelectionFactory::factory(
+				       input->flags.line_search_step_length);
+
+      optAlg = new QMCEigenSearch(&objFunc, stepAlg, 
 			 input->flags.optimization_max_iterations, 
 			 input->flags.optimization_error_tolerance);
 

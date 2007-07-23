@@ -245,20 +245,22 @@ void QMCManager::gatherProperties()
 
   MPI_Reduce( QMCnode.getProperties(), &Properties_total, 1,
               QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, 0, MPI_COMM_WORLD );
-	  
+
+  int numAI = fwProperties_total.der.dim1();
   MPI_Reduce( QMCnode.getFWProperties()->der.array(),
               fwProperties_total.der.array(),
-	      fwProperties_total.der.dim1()*fwProperties_total.der.dim2(),
+	      numAI*fwProperties_total.der.dim2(),
               QMCStatistic::MPI_TYPE,
 	      QMCStatistic::MPI_REDUCE,
 	      0,MPI_COMM_WORLD );
-  
-  MPI_Reduce( QMCnode.getFWProperties()->hess.array(),
-              fwProperties_total.hess.array(),
-	      fwProperties_total.hess.dim1()*fwProperties_total.hess.dim2(),
-              QMCStatistic::MPI_TYPE,
-	      QMCStatistic::MPI_REDUCE,
-	      0,MPI_COMM_WORLD );
+
+  for(int i=0; i<fwProperties_total.hess.dim1(); i++)  
+    MPI_Reduce( QMCnode.getFWProperties()->hess(i).array(),
+		fwProperties_total.hess(i).array(),
+		numAI * numAI,
+		QMCStatistic::MPI_TYPE,
+		QMCStatistic::MPI_REDUCE,
+		0,MPI_COMM_WORLD );
   
   //reduce over QMCFutureWalkingProperties
   //maybe this doesn't have to happen so often...
@@ -862,7 +864,7 @@ bool QMCManager::run(bool equilibrate)
 	localTimers.getEquilibrationStopwatch() ->stop();
 	//We don't want to zero out here because there is some
 	//interesting info we want to print in writeEnergyResultsSummary
-	QMCnode.zeroOut();
+	//QMCnode.zeroOut();
       }
     else
       {
@@ -964,43 +966,43 @@ bool QMCManager::run(bool equilibrate)
       if( !equilibrating && globalInput.flags.run_type == "diffusion" &&
           globalInput.flags.synchronize_dmc_ensemble == 1 &&
           iteration % globalInput.flags.synchronize_dmc_ensemble_interval == 0 )
-      {
-        sendAllProcessorsACommand( QMC_SYNCHRONIZE );
-        synchronizeDMCEnsemble();
-        checkTerminationCriteria();
-      }
+	{
+	  sendAllProcessorsACommand( QMC_SYNCHRONIZE );
+	  synchronizeDMCEnsemble();
+	  checkTerminationCriteria();
+	}
       
       if( done || QMCManager::SIGNAL_SAYS_QUIT )
-      {
-	done = true;
-	sendAllProcessorsACommand( QMC_TERMINATE );
-        
-	gatherProperties();
-	      
-	if (globalInput.flags.write_electron_densities == 1)
-        {
-          gatherHistograms();
-          writeElectronDensityHistograms();
-        }
-        
-        if ( globalInput.flags.calculate_bf_density == 1 )
-          gatherDensities();
-
-        if(globalInput.flags.nuclear_derivatives != "none")
-          gatherForces();
-      }
+	{
+	  done = true;
+	  sendAllProcessorsACommand( QMC_TERMINATE );
+	  
+	  gatherProperties();
+	  
+	  if (globalInput.flags.write_electron_densities == 1)
+	    {
+	      gatherHistograms();
+	      writeElectronDensityHistograms();
+	    }
+	  
+	  if ( globalInput.flags.calculate_bf_density == 1 )
+	    gatherDensities();
+	  
+	  if(globalInput.flags.nuclear_derivatives != "none")
+	    gatherForces();
+	}
       
       if( globalInput.flags.print_transient_properties &&
           iteration%globalInput.flags.print_transient_properties_interval == 0 )
-      {
-        writeTransientProperties( iteration );
-      }
+	{
+	  writeTransientProperties( iteration );
+	}
       
       if( iteration%globalInput.flags.output_interval == 0 )
-      {
-        writeEnergyResultsSummary( cout );
-        writeEnergyResultsSummary( *qmcOut );
-      }
+	{
+	  writeEnergyResultsSummary( cout );
+	  writeEnergyResultsSummary( *qmcOut );
+	}
     }
     else//else this is a worker node
     {
@@ -2064,8 +2066,23 @@ void QMCManager::updateTrialEnergy( double weights, int nwalkers_init )
 void QMCManager::updateEffectiveTimeStep( QMCProperties* Properties )
 {
   // Update the dt_effective
+  /*
+    According to Umrigar, Nightingale, Runge 93 (DMC w/ small errors)
+    The effective time step is not something that we're supposed to
+    update in the middle of a run....
+
+    see paragraph on pg 2871, left side 1/2 down
+
+    Umrigar et al recommends performing several short equilibrium runs to
+    converge our value for teff.
+
+    According to the HLR QMC book, pg 97, they have a teff for each walker
+    that is calculated after all electrons have moved. They recommend a
+    constant teff if all electrons are moved together.
+  */
   QMCDerivativeProperties derivativeProperties( Properties,
-  						&fwProperties_total, globalInput.flags.dt );
+  						&fwProperties_total,
+						globalInput.flags.dt );
   globalInput.flags.dt_effective = derivativeProperties.getEffectiveTimeStep();
 }
 

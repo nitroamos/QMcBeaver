@@ -596,6 +596,8 @@ class MakeConfigBuilder:
             text += ' -DSINGLEPRECISION'
         if self._inputs.gpu:
             text += ' -DQMC_GPU'
+	if self._inputs.debug:
+	    text += ' -DQMC_DEBUG'
         text += '\n'
         text += 'DIROBJ = obj_$(LABEL)\n'
         text += 'MAKE = ' + self._inputs.MAKE + '\n'
@@ -613,7 +615,10 @@ class MakeConfigBuilder:
         if self._inputs.sprng:
             text += ' -lsprng'
         if self._inputs.lapack:
-            text += ' -llapack -lcblas -latlas'
+	    #fortran LAPACK, Array2D.h is set to use this
+            text += ' -llapack -lf77blas -lcblas -latlas -lg2c'
+	    #ATLAS LAPACK
+	    #text += ' -llapack -lcblas -latlas'
         if self._inputs.atlas and not self._inputs.lapack:
             text += ' -lcblas -latlas'
         if self._inputs.gpu:

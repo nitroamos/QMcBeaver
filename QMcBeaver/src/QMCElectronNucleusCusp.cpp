@@ -22,10 +22,6 @@ void QMCElectronNucleusCusp::operator=(const QMCElectronNucleusCusp& rhs)
   Molecule = rhs.Molecule;
   BF = rhs.BF;
 
-  Start = rhs.Start;
-  Stop = rhs.Stop;
-  nelectrons = rhs.nelectrons;
-
   ORWF_coeffs = rhs.ORWF_coeffs;
 
   natoms = rhs.natoms;
@@ -34,17 +30,11 @@ void QMCElectronNucleusCusp::operator=(const QMCElectronNucleusCusp& rhs)
   ORParams = rhs.ORParams;
 }
 
-void QMCElectronNucleusCusp::initialize(QMCInput* input, int StartEl, 
-				 int StopEl, const Array2D<qmcfloat>& WFCoeffs)
+void QMCElectronNucleusCusp::initialize(QMCInput* input, const Array2D<qmcfloat>& WFCoeffs)
 {
   Input = input;
   Molecule = &Input->Molecule;
   BF = &Input->BF;
-
-  Start = StartEl;
-  Stop = StopEl;
-  nelectrons = Stop-Start+1;
-
   ORWF_coeffs = WFCoeffs;
 
   natoms = Molecule->getNumberAtoms();
@@ -566,9 +556,13 @@ QMCElectronNucleusCuspParameters QMCElectronNucleusCusp::fitOrbitalParameters()
   return midParams;
 }
 
-void QMCElectronNucleusCusp::replaceCusps(Array2D<double>& X, 
-      Array2D<qmcfloat>& D, Array2D<qmcfloat>& GradX, Array2D<qmcfloat>& GradY,
-                      Array2D<qmcfloat>& GradZ, Array2D<qmcfloat>& Laplacian_D)
+void QMCElectronNucleusCusp::replaceCusps(Array2D<double> & X, 
+					  int Start, int Stop,
+					  Array2D<qmcfloat> & D,
+					  Array2D<qmcfloat> & GradX,
+					  Array2D<qmcfloat> & GradY,
+					  Array2D<qmcfloat> & GradZ,
+					  Array2D<qmcfloat> & Laplacian_D)
 {
   // For each nucleus, for each electron, calculates x,y,z,r.
   // For each orbital, checks if r<rc.  If so, replaces the appropriate element
@@ -577,6 +571,14 @@ void QMCElectronNucleusCusp::replaceCusps(Array2D<double>& X,
   double xrel,yrel,zrel,rrel;
   double temp_value,temp_gradx,temp_grady,temp_gradz,temp_lap;
   int counter = 0;
+
+  if(Stop - Start + 1 != D.dim1())
+    {
+      cout << "Warning: dimensions don't match in QMCElectronNucleusCusp." << endl;  
+      cout << " Start = " << Start << endl;
+      cout << "  Stop = " << Stop << endl;
+      cout << "D.dim1 = " << D.dim1() << endl;
+    }
 
   for (int i=0; i<natoms; i++)
     {

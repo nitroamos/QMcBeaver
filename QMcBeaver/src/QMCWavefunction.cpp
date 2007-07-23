@@ -186,9 +186,9 @@ void QMCWavefunction::unlinkOrbitals()
   if(finalNorbitals == Norbitals)
     return;
 
-  Array2D<double> newOrbitalCoeffs(finalNorbitals,Nbasisfunc);
-  Array2D<int>  newAlphaOccupation(Ndeterminants, finalNorbitals);
-  Array2D<int>   newBetaOccupation(Ndeterminants, finalNorbitals);
+  Array2D<qmcfloat> newOrbitalCoeffs(finalNorbitals,Nbasisfunc);
+  Array2D<int>      newAlphaOccupation(Ndeterminants, finalNorbitals);
+  Array2D<int>      newBetaOccupation(Ndeterminants, finalNorbitals);
 
   int newIndex = Norbitals;
   for(int o=0; o<Norbitals; o++)
@@ -248,9 +248,9 @@ void QMCWavefunction::unlinkDeterminants()
   if(finalNorbitals == Norbitals)
     return;
 
-  Array2D<double> newOrbitalCoeffs(finalNorbitals,Nbasisfunc);
-  Array2D<int>  newAlphaOccupation(Ndeterminants, finalNorbitals);
-  Array2D<int>   newBetaOccupation(Ndeterminants, finalNorbitals);
+  Array2D<qmcfloat> newOrbitalCoeffs(finalNorbitals,Nbasisfunc);
+  Array2D<int>      newAlphaOccupation(Ndeterminants, finalNorbitals);
+  Array2D<int>      newBetaOccupation(Ndeterminants, finalNorbitals);
 
   newAlphaOccupation = unusedIndicator;
   newBetaOccupation  = unusedIndicator;

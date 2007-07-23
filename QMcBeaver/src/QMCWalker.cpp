@@ -21,10 +21,11 @@ QMCWalker::QMCWalker()
   TrialWalker    = 0;
   OriginalWalker = 0;
 
+  dW       = 1.0;
   weight   = 1.0;
   age      = 0;
   dR2      = 0.0;
-  ageMoved = -1;
+  ageMoved =-1;
 }
 
 void QMCWalker::branchID()
@@ -146,6 +147,16 @@ void QMCWalker::initializePropagation(QMCWalkerData * &data,
 {
   this->iteration = iteration;
   createChildWalkers();
+
+  int step = iteration + Input->flags.equilibration_steps - 1;
+
+  int whichE = -1;
+  if(globalInput.flags.one_e_per_iter != 0)
+    whichE = step % R.dim1();
+
+  TrialWalker->walkerData.whichE = whichE;
+  OriginalWalker->walkerData.whichE = whichE;
+
   forwardGreensFunction = TrialWalker->moveElectrons();
   data = & TrialWalker->walkerData;
   rToCalc = & TrialWalker->R;
@@ -176,7 +187,10 @@ void QMCWalker::processPropagation(QMCFunctions & QMF, bool writeConfigs)
     calculateMoveAcceptanceProbability(GreensFunctionRatio);
   
   acceptOrRejectMove();
-  reweight_walker();
+
+  if(walkerData.whichE == -1 ||
+     walkerData.whichE == 0)
+    reweight_walker();
 
   if(getWeight() == 0)
     return;
@@ -246,7 +260,7 @@ QMCGreensRatioComponent QMCWalker::moveElectrons()
 	   << Input->flags.sampling_method << ")!" << endl;
       exit(0);
     }
-    
+
   // should never reach this
   QMCGreensRatioComponent TRASH = QMCGreensRatioComponent();
   return TRASH;
@@ -254,6 +268,8 @@ QMCGreensRatioComponent QMCWalker::moveElectrons()
 
 QMCGreensRatioComponent QMCWalker::moveElectronsNoImportanceSampling()
 {
+  int whichE = walkerData.whichE;
+
   // Move the electrons of this walker
   double sigma = sqrt(Input->flags.dt);
   dR2 = 0;  
@@ -261,6 +277,9 @@ QMCGreensRatioComponent QMCWalker::moveElectronsNoImportanceSampling()
   // Don't use the QF  =>  R' = R + gauss_rn
   for(int i=0; i<R.dim1(); i++)
     {
+      if(whichE != -1 && i != whichE)
+	continue;
+
       for(int j=0; j<R.dim2(); j++)
 	{
 	  // Add the randomness to the displacement
@@ -283,6 +302,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
   double tau    = Input->flags.dt;
   double sigma  = sqrt(tau);
   double greens = 0.0;
+  bool toMove;
   
   // Use the QF => R' = R + dt * QF + gauss_rn
   // We have already counted for the factor of 2.0
@@ -291,23 +311,36 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
   dR2 = 0.0;  
   for(int i=0; i<R.dim1(); i++)
     {
-      for(int j=0; j<R.dim2(); j++)
+      toMove = true;
+      if(walkerData.whichE != -1 && i != walkerData.whichE)
+	toMove = false;
+
+      if(toMove)
 	{
-	  // Add the randomness to the displacement
-	  double drift = sigma*ran.gasdev();
-
-	  // Add the randomness to the displacement
-	  Displacement(i,j) += drift;
-
-	  // Calculate the square of the magnitude of the displacement
-	  dR2 += Displacement(i,j) * Displacement(i,j);
-
-	  // Now update the R
-	  R(i,j) += Displacement(i,j);
-
-	  // Calculate the Green's function for the forward move
-	  // The 'Quantum Force' term cancels out
-	  greens += drift*drift;
+	  for(int j=0; j<R.dim2(); j++)
+	    {
+	      // Add the randomness to the displacement
+	      double drift = sigma*ran.gasdev();
+	      
+	      // Add the randomness to the displacement
+	      Displacement(i,j) += drift;
+	      
+	      // Calculate the square of the magnitude of the displacement
+	      dR2 += Displacement(i,j) * Displacement(i,j);
+	      
+	      // Now update the R
+	      R(i,j) += Displacement(i,j);
+	      
+	      // Calculate the Green's function for the forward move
+	      // The 'Quantum Force' term cancels out
+	      greens += drift*drift;
+	    }
+	} 
+      else
+	{
+	  for(int j=0; j<R.dim2(); j++)
+	    //If we're not moving the electron, then the quantum force doesn't cancel
+	    greens += Displacement(i,j) * Displacement(i,j);      
 	}
     }
     
@@ -322,7 +355,9 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
 
 QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 {
+  int whichE = walkerData.whichE;
   double tau = Input->flags.dt;
+  bool toMove;
 
   dR2 = 0.0;
   Array2D<double> & Displacement = walkerData.modifiedGradPsiRatio;
@@ -338,6 +373,10 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
     {
+      toMove = true;
+      if(whichE != -1 && electron != whichE)
+	toMove = false;
+
       // Find the nearest nucleus to this electron
       int nearestNucleus = Input->Molecule.findClosestNucleusIndex(R,electron);
       double distanceFromNucleus = 0.0;
@@ -413,37 +452,45 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       double probabilityGaussianTypeMove = 1.0 - probabilitySlaterTypeMove;
       // Randomly decide which electron moving method to use
       
-      if( probabilityGaussianTypeMove > ran.unidev() )
-        {
-          // Gaussian Type Move
-          
-          // Particle is moved in the direction
-          // Rnuc + radialCoordinate * radialUnitVector +
-          //   zCoordinate * zUnitVector +
-          //   gaussian random number with standard deviation sqrt(tau)
-          for(int i=0; i<3; i++)
-	    newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i)
-	      + radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) +
-	      sqrt(tau)*ran.gasdev();
-            }
-      else
-        {
-          // Slater Type Move
-          
-          for(int i=0; i<3; i++)
-	    newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i);
-            
-          // add random part
-          
-          double r = ran.randomDistribution1()/(2.0*expParam);
-          double phi = 2*3.14159265359*ran.unidev();
-          double theta = ran.sindev();
-          
-          newPosition(0) += r*sin(theta)*cos(phi);
-          newPosition(1) += r*sin(theta)*sin(phi);
-          newPosition(2) += r*cos(theta);
-        }
-        
+      if(toMove)
+	{
+	  if( probabilityGaussianTypeMove > ran.unidev() )
+	    {
+	      // Gaussian Type Move
+	      
+	      // Particle is moved in the direction
+	      // Rnuc + radialCoordinate * radialUnitVector +
+	      //   zCoordinate * zUnitVector +
+	      //   gaussian random number with standard deviation sqrt(tau)
+	      for(int i=0; i<3; i++)
+		newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i)
+		  + radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) +
+		  sqrt(tau)*ran.gasdev();
+	    }
+	  else
+	    {
+	      // Slater Type Move
+	      
+	      for(int i=0; i<3; i++)
+		newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i);
+	      
+	      // add random part
+	      
+	      double r = ran.randomDistribution1()/(2.0*expParam);
+	      double phi = 2*3.14159265359*ran.unidev();
+	      double theta = ran.sindev();
+	      
+	      newPosition(0) += r*sin(theta)*cos(phi);
+	      newPosition(1) += r*sin(theta)*sin(phi);
+	      newPosition(2) += r*cos(theta);
+	    }
+	} else {
+	  //We aren't moving this electron
+	  //So set it to be the original position
+	  for(int i=0; i<3; i++)
+	    newPosition(i) = R(electron,i);
+	}
+
       // Update the greens function
       double distance1Sq = 0.0;
       double temp;
@@ -451,12 +498,12 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       for(int i=0; i<3; i++)
         {
           temp = newPosition(i) -
-                        ( Input->Molecule.Atom_Positions(nearestNucleus,i) +
-       radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) );
-                          
+	    ( Input->Molecule.Atom_Positions(nearestNucleus,i) +
+	      radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) );
+	  
           distance1Sq += temp*temp;
         }
-        
+      
       double ga = 2*3.14159265359*tau;
       double gb = -1.5;
       double gc = -distance1Sq/(2*tau);
@@ -468,11 +515,11 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       for(int i=0; i<3; i++)
         {
           temp = newPosition(i) -
-                              Input->Molecule.Atom_Positions(nearestNucleus,i);
-                        
+	    Input->Molecule.Atom_Positions(nearestNucleus,i);
+	  
           distance2Sq += temp*temp;
         }
-        
+      
       double sk = probabilitySlaterTypeMove/3.14159265359;
       double sa = expParam;
       double sb = 3.0;
@@ -487,7 +534,6 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       GF *= OneE;
       
       // Update the distance attempted to move squared and move the electron.
-      
       for(int i=0; i<3; i++)
         {
           temp = newPosition(i) - R(electron,i);
@@ -537,9 +583,9 @@ QMCWalker::calculateReverseGreensFunctionImportanceSampling()
 {
   double tau = Input->flags.dt;  
   double greens = 0.0;
-  
+
   for(int i=0; i<R.dim1(); i++)
-    {
+    {      
       for(int j=0; j<R.dim2(); j++)
 	{
 	  double temp = OriginalWalker->R(i,j) - TrialWalker->R(i,j) -
@@ -571,7 +617,7 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
   QMCGreensRatioComponent OneE;
 
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
-    {
+    {      
       // Find the nearest nucleus to this electron
       int nearestNucleus =
         Input->Molecule.findClosestNucleusIndex(TrialWalker->R,electron);
@@ -851,12 +897,13 @@ void QMCWalker::reweight_walker()
         }
     }
 
-
   // now set the weight of the walker
   setWeight( getWeight() * dW );
 
   if(getWeight() <= 0.0 || Input->flags.run_type == "variational")
     return;
+
+  return;
 
   double rel_diff;
   if(move_accepted)
@@ -1027,6 +1074,9 @@ void QMCWalker::reweight_walker()
 
 bool QMCWalker::branchRecommended()
 {
+  if(globalInput.flags.limit_branching == 0)
+    return true;
+
   /*
     This function will be queried before a branch, meaning the walker is a
     candidate for branching. Since branching is purely an
@@ -1186,7 +1236,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
   // This tells us the probability of accepting or rejecting a proposed move
   
   double PsiRatio = TrialWalker->walkerData.psi/OriginalWalker->walkerData.psi;
-  
+
   // calculate the probability of accepting the trial move
   double p = PsiRatio * PsiRatio * GreensRatio;
   
@@ -1256,7 +1306,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
     {
       p = 1.0;
     }
-    
+
   // Set the probabilities of taking the trial move or keeping the current
   // move
   TrialWalker->setAcceptanceProbability(p);
@@ -1693,7 +1743,7 @@ void QMCWalker::calculateObservables()
   // Calculate the Energy ...
   localEnergy = p * TrialWalker->walkerData.localEnergy +
                 q * OriginalWalker->walkerData.localEnergy;
-  
+
   // Calculate the kinetic energy...
   kineticEnergy = p * TrialWalker->walkerData.kineticEnergy +
                   q * OriginalWalker->walkerData.kineticEnergy;
@@ -1858,6 +1908,21 @@ void QMCWalker::calculateObservables( QMCProperties & props )
   if(getWeight() <= 0.0)
     return;
 
+  if(walkerData.whichE != -1 &&
+     walkerData.whichE != 0)
+    {
+      /*
+	If we're moving electrons individually, we still only want
+	to collect statistics once all electrons have moved.
+
+	Is this necessary? If we are able to calculate serial
+	correlation effectively, does it really matter? Or is there
+	another issue?
+      */
+      return;
+    }
+
+
   // Add the data from this walker to the accumulating properties
   
   /*
@@ -1905,8 +1970,7 @@ void QMCWalker::calculateObservables( QMCProperties & props )
 	    case 1: if(rel_diff > 5.0) shouldWarn = true; break;
 	    case 2: if(rel_diff > 2.0) shouldWarn = true; break;
 	    case 3: if(rel_diff > 1.0) shouldWarn = true; break;
-	    case 4: shouldWarn = true; break;
-	    default: break;
+	    default:shouldWarn = true; break;
 	    }
 
 	  if(shouldWarn && iteration + Input->flags.equilibration_steps > 5){
@@ -2030,7 +2094,8 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 
   if(rel_diff < Input->flags.rel_cutoff)
     {
-      for(int ai=0; ai<rp_a.dim1(); ai++)
+      int numAI = rp_a.dim1();
+      for(int ai=0; ai<numAI; ai++)
 	{
 	  /*
 	    This isn't exactly the same since localEnergy is a weighted average
@@ -2044,10 +2109,23 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 	  fwProps.der(ai,4).newSample(p3_xxa(ai) * localEnergy, getWeight());
 	}
       
-      for(int ai=0; ai<p3_xxa.dim1(); ai++)
-	for(int aj=0; aj<=ai; aj++)
-	  fwProps.hess(ai,aj).newSample(p3_xxa(ai) * p3_xxa(aj), getWeight());
-      
+      if(globalInput.flags.optimize_Psi_criteria == "analytical_energy_variance")
+	{
+
+	  for(int ai=0; ai<numAI; ai++)
+	    for(int aj=0; aj<=ai; aj++)
+	      (fwProps.hess(0))(ai,aj).newSample(p3_xxa(ai) * p3_xxa(aj), getWeight());
+
+	} else if(globalInput.flags.optimize_Psi_criteria == "generalized_eigenvector") {
+	  for(int ai=0; ai<numAI; ai++)
+	    for(int aj=0; aj<numAI; aj++)
+	      {
+		(fwProps.hess(0))(ai,aj).newSample(rp_a(ai) * rp_a(aj) * localEnergy, getWeight());
+		(fwProps.hess(1))(ai,aj).newSample(rp_a(ai) * rp_a(aj),               getWeight());
+		(fwProps.hess(2))(ai,aj).newSample(rp_a(ai) * p3_xxa(aj),             getWeight());
+	      }
+	}
+
       // Calculate the basis function densities
       if (Input->flags.calculate_bf_density == 1)
 	for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)

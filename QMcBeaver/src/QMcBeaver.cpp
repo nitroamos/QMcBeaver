@@ -234,6 +234,7 @@ void qmcbeaver()
 		   << " for optStep = " << optloops << endl;
 	    }
 
+	  /*
 	  if(optloops == 5)
 	    {
 	      globalInput.flags.optimize_CI          = 0;
@@ -249,6 +250,7 @@ void qmcbeaver()
 	      else
 		globalInput.flags.optimize_Orbitals    = 0;
 	    }
+	  */
 	}
 
       ok = TheMan.run(globalInput.flags.equilibrate_every_opt_step);

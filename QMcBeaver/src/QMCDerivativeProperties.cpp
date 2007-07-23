@@ -87,6 +87,11 @@ double QMCDerivativeProperties::getVirialRatioStandardDeviation(int whichFW)
 
 double QMCDerivativeProperties::getParameterValue()
 {
+  if(globalInput.flags.optimize_Psi_criteria == "generalized_eigenvector" ||
+     globalInput.flags.optimize_Psi_criteria == "energy_average")
+    {
+      return properties->energy.getAverage();
+    }
   return properties->energy.getSeriallyCorrelatedVariance();
 }
 
@@ -94,8 +99,7 @@ Array1D<double> QMCDerivativeProperties::getParameterGradient()
 {
   Array1D<double> gradient;
   if(fwProperties->der.dim1() == 0 ||
-     fwProperties->der.dim2() == 0 ||
-     globalInput.flags.optimize_Psi_criteria != "analytical_energy_variance")
+     fwProperties->der.dim2() == 0)
     {
       //clog << "Error: the parameter gradients are not available in this QMCFwProperties object.\n";
       return gradient;
@@ -106,37 +110,50 @@ Array1D<double> QMCDerivativeProperties::getParameterGradient()
   gradient.allocate(numCI);
   for(int ci=0; ci<numCI; ci++)
     {
-      double t1 = fwProperties->der(ci,0).getAverage();  // < \frac{ \Psi_i }{ \Psi } >
-      double t2 = fwProperties->der(ci,1).getAverage();  // < \frac{ \Psi_i }{ \Psi } E_L>
-      double t3 = fwProperties->der(ci,2).getAverage();  // < \frac{ \Psi_i }{ \Psi } E_L^2>
-      double t4 = fwProperties->der(ci,3).getAverage();  // < E_{L,i} > (= 0 in limit)
-      double t5 = fwProperties->der(ci,4).getAverage();  // < E_{L,i} E_L >
-      double t6 = properties->energy.getAverage();     // < E_L >
-      double t7 = properties->energy2.getAverage();    // < E_L^2 >
-      
-      if(!true)
-	{
-	  t1 = 0;
-	  t2 = 0;
-	  t3 = 0;
-	}
+      double pi    = fwProperties->der(ci,0).getAverage();  // < \frac{ \Psi_i }{ \Psi } >
+      double pi_e  = fwProperties->der(ci,1).getAverage();  // < \frac{ \Psi_i }{ \Psi } E_L>
+      double pi_e2 = fwProperties->der(ci,2).getAverage();  // < \frac{ \Psi_i }{ \Psi } E_L^2>
+      double ei    = fwProperties->der(ci,3).getAverage();  // < E_{L,i} > (= 0 in limit)
+      double ei_e  = fwProperties->der(ci,4).getAverage();  // < E_{L,i} E_L >
+      double e     = properties->energy.getAverage();       // < E_L >
+      double e2    = properties->energy2.getAverage();      // < E_L^2 >
+
+      //References are from:
+      //PRL 94, 150201 (2005)
       double der;
 
-      //Looking at the PRL 94, 150201 (2005) paper, formula 2
-      // < E_{L,i} ( E_L - < E_L> ) >
-      der  = t5 - t4*t6;
+      if(globalInput.flags.optimize_Psi_criteria == "generalized_eigenvector") 
+	{
+	  //Energy Minimization
 
-      // < \frac{ \Psi_i }{ \Psi } E_L^2>
-      der += t3;
+	  //Formula 6
+	  der = pi_e - pi*e;
 
-      // < \frac{ \Psi_i }{ \Psi } > < E_L^2 >
-      der -= t1*t7;
+	} else {
+	  //Variance Minimization
 
-      // 2 < E_L > < \frac{ \Psi_i }{ \Psi } ( E_L - < E_L> ) > 
-      der -= 2.0*t6*(t2 - t1*t6);
-
+	  if(!true)
+	    {
+	      //Formula 3
+	      pi    = 0;
+	      pi_e  = 0;
+	      pi_e2 = 0;
+	    }
+	  
+	  // < E_{L,i} ( E_L - < E_L> ) >
+	  der  = ei_e - ei*e;
+	  
+	  // < \frac{ \Psi_i }{ \Psi } E_L^2>
+	  der += pi_e2;
+	  
+	  // < \frac{ \Psi_i }{ \Psi } > < E_L^2 >
+	  der -= pi*e2;
+	  
+	  // 2 < E_L > < \frac{ \Psi_i }{ \Psi } ( E_L - < E_L> ) > 
+	  der -= 2.0*e*(pi_e - pi*e);
+	}
+	  
       der *= 2.0;
-
       gradient(ci) = der;
     }
   return gradient;
@@ -146,35 +163,142 @@ Array2D<double> QMCDerivativeProperties::getParameterHessian()
 {
   Array2D<double> hessian;
   if(fwProperties->hess.dim1() == 0 ||
-     fwProperties->hess.dim2() == 0)
+     fwProperties->hess(0).dim1() == 0 ||
+     fwProperties->hess(0).dim2() == 0)
     {
       //clog << "Error: the parameter hessian is not available in this QMCFwProperties object.\n";
       return hessian;
     }
 
-  if(globalInput.flags.optimize_Psi_criteria != "analytical_energy_variance" &&
-     globalInput.flags.optimize_Psi_criteria != "automatic")
+  if(globalInput.flags.optimize_Psi_criteria != "analytical_energy_variance")
     return hessian;
 
   int numAI = fwProperties->der.dim1();
   hessian.allocate(numAI,numAI);
-  
+
   for(int ai=0; ai<numAI; ai++)
     {
       for(int aj=0; aj<=ai; aj++)
 	{
 	  // < E_{L,i} E_{L,j} >
-	  double h1 = fwProperties->hess(ai,aj).getAverage();
+	  double h1 = (fwProperties->hess(0))(ai,aj).getAverage();
 	  // < E_{L,i} > < E_{L,j} >
 	  double h2 = fwProperties->der(ai,3).getAverage()
 	            * fwProperties->der(aj,3).getAverage();
-	  
+
 	  double h3 = 2.0 * (h1 - h2);
 	  hessian(ai,aj) = h3;
 	  hessian(aj,ai) = h3;
 	}
     }
+
   return hessian;
+}
+
+Array2D<double> QMCDerivativeProperties::getParameterHamiltonian()
+{
+  Array2D<double> hamiltonian;
+  if(fwProperties->hess.dim1() == 0 ||
+     fwProperties->hess(0).dim1() == 0 ||
+     fwProperties->hess(0).dim2() == 0)
+    {
+      clog << "Error: the parameter hamiltonian is not available in this QMCFwProperties object.\n";
+      return hamiltonian;
+    }
+
+  if(globalInput.flags.optimize_Psi_criteria != "generalized_eigenvector")
+    return hamiltonian;
+
+  int numAI = fwProperties->der.dim1();
+  hamiltonian.allocate(numAI+1,numAI+1);
+  hamiltonian = 0.0;
+
+  // < E_L >
+  double e   = properties->energy.getAverage();
+
+  hamiltonian(0,0) = e;
+
+  for(int ai=0; ai<numAI; ai++)
+    {
+      // < \frac{ \Psi_i }{ \Psi } E_L >
+      double pi_e = fwProperties->der(ai,1).getAverage();
+      // < \frac{ \Psi_i }{ \Psi } >
+      double pi  = fwProperties->der(ai,0).getAverage();
+      // < E_{L,i} > (= 0 in limit)
+      double ei  = fwProperties->der(ai,3).getAverage();
+      
+      hamiltonian(ai+1,0) = pi_e - pi*e;
+      hamiltonian(0,ai+1) = pi_e - pi*e + ei;
+
+      for(int aj=0; aj<numAI; aj++)
+	{
+	  // < \frac{ \Psi_i }{ \Psi } \frac{ \Psi_j }{ \Psi } E_L >
+	  double ppe  = (fwProperties->hess(0))(ai,aj).getAverage();
+
+	  // < \frac{ \Psi_i }{ \Psi } E_{L,j} >
+	  double pi_ej = (fwProperties->hess(2))(ai,aj).getAverage();
+
+	  // < \frac{ \Psi_j }{ \Psi } E_L >
+	  double pj_e = fwProperties->der(aj,1).getAverage();
+
+	  // < \frac{ \Psi_j }{ \Psi } >
+	  double pj  = fwProperties->der(aj,0).getAverage();
+
+	  // < E_{L,j} > (= 0 in limit) 
+	  double ej  = fwProperties->der(aj,3).getAverage();
+	  
+	  double val = ppe - pi*pj_e - pj*pi_e + pi*pj*e;
+	  val += pi_ej - pi*ej;
+
+	  hamiltonian(ai+1,aj+1) = val;
+	}
+    }
+
+  return hamiltonian;
+}
+
+Array2D<double> QMCDerivativeProperties::getParameterOverlap()
+{
+  Array2D<double> overlap;
+  if(fwProperties->hess.dim1() == 0 ||
+     fwProperties->hess(0).dim1() == 0 ||
+     fwProperties->hess(0).dim2() == 0)
+    {
+      //clog << "Error: the parameter overlap is not available in this QMCFwProperties object.\n";
+      return overlap;
+    }
+  
+  if(globalInput.flags.optimize_Psi_criteria != "generalized_eigenvector")
+    return overlap;
+
+  int numAI = fwProperties->der.dim1();
+  overlap.allocate(numAI+1,numAI+1);
+  overlap = 0.0;
+
+  overlap(0,0) = 1.0;
+
+  for(int ai=0; ai<numAI; ai++)
+    {
+      overlap(0,ai+1) = 0.0;
+      overlap(ai+1,0) = 0.0;
+
+      for(int aj=0; aj<=ai; aj++)
+	{
+	  // < \frac{ \Psi_i }{ \Psi } \frac{ \Psi_j }{ \Psi } >
+	  double pi_pj = (fwProperties->hess(1))(ai,aj).getAverage();
+
+	  // < \frac{ \Psi_i }{ \Psi } >
+	  double pi  = fwProperties->der(ai,0).getAverage();
+	  // < \frac{ \Psi_j }{ \Psi } >
+	  double pj  = fwProperties->der(aj,0).getAverage();
+
+	  double val = pi_pj - pi*pj;
+	  overlap(ai+1,aj+1) = val;
+	  overlap(aj+1,ai+1) = val;
+	}
+    }
+
+  return overlap;
 }
 
 ostream& operator <<(ostream& strm, QMCDerivativeProperties &rhs)

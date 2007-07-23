@@ -61,20 +61,23 @@ void QMCProperties::newSample(QMCProperties* newProperties, double weight,
   if(newProperties->growthRate.getNumberSamples() > 0)
     growthRate.newSample(newProperties->growthRate.getAverage(), 1.0);
 
-  energy.newSample(newProperties->energy.getAverage(), weight);
-  energy2.newSample(newProperties->energy2.getAverage(), weight);
-  kineticEnergy.newSample(newProperties->kineticEnergy.getAverage(), weight);
-  potentialEnergy.newSample(newProperties->potentialEnergy.getAverage(),
-			    weight);
-  neEnergy.newSample(newProperties->neEnergy.getAverage(), weight);
-  eeEnergy.newSample(newProperties->eeEnergy.getAverage(), weight);
-  acceptanceProbability.newSample
-    (newProperties->acceptanceProbability.getAverage(), weight);
-  distanceMovedAccepted.newSample
-    (newProperties->distanceMovedAccepted.getAverage(), weight);
-  distanceMovedTrial.newSample(newProperties->distanceMovedTrial.getAverage(),
-			       weight);
-  logWeights.newSample(newProperties->logWeights.getAverage(), nwalkers);
+  if(newProperties->energy.getNumberSamples() > 0)
+    {
+      energy.newSample(newProperties->energy.getAverage(), weight);
+      energy2.newSample(newProperties->energy2.getAverage(), weight);
+      kineticEnergy.newSample(newProperties->kineticEnergy.getAverage(), weight);
+      potentialEnergy.newSample(newProperties->potentialEnergy.getAverage(),
+				weight);
+      neEnergy.newSample(newProperties->neEnergy.getAverage(), weight);
+      eeEnergy.newSample(newProperties->eeEnergy.getAverage(), weight);
+      acceptanceProbability.newSample
+	(newProperties->acceptanceProbability.getAverage(), weight);
+      distanceMovedAccepted.newSample
+	(newProperties->distanceMovedAccepted.getAverage(), weight);
+      distanceMovedTrial.newSample(newProperties->distanceMovedTrial.getAverage(),
+				   weight);
+      logWeights.newSample(newProperties->logWeights.getAverage(), nwalkers);
+    }
 }
 
 void QMCProperties::operator = ( const QMCProperties &rhs )
@@ -322,6 +325,11 @@ ostream& operator <<(ostream& strm, QMCProperties &rhs)
 {
   strm << endl << "------------------- Energy -------------------" << endl;
   strm << rhs.energy;
+
+  strm << "STAT StdVar   = " << rhs.energy.getSeriallyCorrelatedVariance() << endl;
+  double e = rhs.energy.getAverage();
+  double e2 = rhs.energy2.getAverage();
+  strm << "STAT StdVar   = " << (e2 - e*e) << endl;
 
   strm << endl << "--------------- Kinetic Energy ---------------" << endl;
   strm << rhs.kineticEnergy;

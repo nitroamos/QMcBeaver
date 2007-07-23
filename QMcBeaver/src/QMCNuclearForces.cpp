@@ -438,8 +438,7 @@ void QMCNuclearForces::calcCoefficients(int whichNucleus)
         }
       }
 
-      //because the Hilbert matrix is symmetric, it doesn't matter whether
-      //this calculates the transpose or not
+      //because the Hilbert matrix is symmetric
       hilbertMatrix.determinant_and_inverse(inverseMatrix,det,&isOK);
       
       if(!isOK)

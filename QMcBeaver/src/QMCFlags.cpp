@@ -32,6 +32,7 @@ void QMCFlags::read_flags(string InFileName)
   max_time_steps                 = 1000000;
   max_time                       = 0.0;
   number_of_walkers              = 1;
+  one_e_per_iter                 = 0;
   use_surfer                     = 0;
 
   //Initialization parameters
@@ -52,7 +53,7 @@ void QMCFlags::read_flags(string InFileName)
   population_control_parameter   = 1.0;
   old_walker_acceptance_parameter = 50;
   warn_verbosity                 = 1;
-  rel_cutoff                     = 5.0;
+  rel_cutoff                     = 100.0;
   limit_branching                = 1;
 
   //Green's function parameters
@@ -175,6 +176,11 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
 	  use_surfer = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "one_e_per_iter")
+        {
+          input_file >> temp_string;
+	  one_e_per_iter = atoi(temp_string.c_str());
         }
       else if(temp_string == "temp_dir")
         {
@@ -897,6 +903,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "number_of_walkers\n " << flags.number_of_walkers_initial<< endl;
   strm << "max_time_steps\n " << flags.original_max_time_steps << endl;
   strm << "max_time\n " << flags.max_time << endl;
+  strm << "one_e_per_iter\n" << flags.one_e_per_iter << endl;
   strm << "desired_convergence\n " << flags.desired_convergence << endl;
   strm << "warn_verbosity\n " << flags.warn_verbosity << endl;
   strm << "rel_cutoff\n " << flags.rel_cutoff << endl;
@@ -1187,7 +1194,8 @@ bool QMCFlags::checkFlags()
 	{
 	  needPrintedConfigs = false;
 
-	  if(optimize_Psi_criteria != "analytical_energy_variance")
+	  if(optimize_Psi_criteria != "analytical_energy_variance" &&
+	     optimize_Psi_criteria != "generalized_eigenvector")
 	    {
 	      /*
 		Using analytical_energy_variance for method currently means we have
@@ -1204,20 +1212,6 @@ bool QMCFlags::checkFlags()
 	      optimize_Psi_criteria = "analytical_energy_variance";
 	    }
 
-	  if(optimization_max_iterations != 1)
-	    {
-	      /*
-		Since we don't have any configs in the file, then
-		we have no source of information for more than one
-		iteration. Allowing more than one iteration would requiring the
-		specification of another parameters to take over once we've used the
-		data provided by the recently completed run.
-	      */
-	      clog << "Warning: you probably want optimization_max_iterations = 1!" << endl;
-	      clog << "Setting optimization_max_iterations = 1" << endl;
-	      optimization_max_iterations = 1;
-	    }
-
 	  if(line_search_step_length == "Wolfe" ||
 	     line_search_step_length == "MikesBracketing")
 	    {
@@ -1226,8 +1220,7 @@ bool QMCFlags::checkFlags()
 	      */
 	      clog << "Warning: you probably want \"None\" as your line_search_step_length!" << endl;
 	      needPrintedConfigs = true;
-	    }
-	  
+	    }	  
 	}
       else
 	{

@@ -92,7 +92,10 @@ QMCFutureWalkingProperties::~QMCFutureWalkingProperties()
   props.deallocate();
 
   der.deallocate();
+  for(int i=0; i<hess.dim1(); i++)
+    hess(i).deallocate();
   hess.deallocate();
+
   chiDensity.deallocate();
 }
 
@@ -104,9 +107,6 @@ void QMCFutureWalkingProperties::setCalcDensity(bool calcDensity, int nbasisfunc
     {
       nBasisFunc   = nbasisfunctions;
       chiDensity.allocate(nBasisFunc);
-
-      for (int i=0; i<nBasisFunc; i++)
-	chiDensity(i).zeroOut();
     }
   else
     {
@@ -123,12 +123,7 @@ void QMCFutureWalkingProperties::setCalcForces(bool calcForces, int dim1, int di
     {
       nuclearForces.allocate(numFutureWalking);
       for (int fw=0; fw<nuclearForces.dim1(); fw++)
-	{
-	  nuclearForces(fw).allocate(dim1,dim2);
-	  for(int i=0; i<nuclearForces(fw).dim1(); i++)
-	    for(int j=0; j<nuclearForces(fw).dim2(); j++)
-	      (nuclearForces(fw))(i,j).zeroOut();
-	}
+	nuclearForces(fw).allocate(dim1,dim2);
     }
   else
     {
@@ -161,22 +156,32 @@ void QMCFutureWalkingProperties::zeroOut()
     } else {
       der.deallocate();
     }
-
-  if( globalInput.flags.optimize_Psi_method == "analytical_energy_variance" ||
-      globalInput.flags.optimize_Psi_method == "automatic" )
+  
+  if( globalInput.flags.optimize_Psi_criteria == "analytical_energy_variance")
     {
-      hess.allocate(numAI,numAI);
-    } else {
-      hess.deallocate();
-    }
+      hessIsSymmetric = true;
+      hess.allocate(1);
+      hess(0).allocate(numAI,numAI);
+    } else if(globalInput.flags.optimize_Psi_criteria == "generalized_eigenvector")
+      {
+	hessIsSymmetric = false;
+	hess.allocate(3);
+	for(int i=0; i<hess.dim1(); i++)
+	  hess(i).allocate(numAI,numAI);	
+      } else {
+	for(int i=0; i<hess.dim1(); i++)
+	  hess(i).deallocate();
+	hess.deallocate();
+      }
 
   for(int i=0; i<der.dim1(); i++)
     for(int j=0; j<der.dim2(); j++)
       der(i,j).zeroOut();
 
   for(int i=0; i<hess.dim1(); i++)
-    for(int j=0; j<hess.dim2(); j++)
-      hess(i,j).zeroOut();
+    for(int j=0; j<hess(i).dim1(); j++)
+      for(int k=0; k<hess(i).dim2(); k++)
+	(hess(i))(j,k).zeroOut();
 
   if (calc_density)
     for (int i=0; i<nBasisFunc; i++)
@@ -206,9 +211,16 @@ void QMCFutureWalkingProperties::newSample(QMCFutureWalkingProperties* newProper
       der(i,j).newSample(newProperties->der(i,j).getAverage(),weight);
 
   for (int i=0; i<hess.dim1(); i++)
-    for (int j=0; j<=i; j++)
-      hess(i,j).newSample(newProperties->hess(i,j).getAverage(),weight);
-  
+    for(int j=0; j<hess(i).dim1(); j++)
+      {
+	int max = hess(i).dim2();
+	if(hessIsSymmetric)
+	  max = j+1;
+
+	for(int k=0; k<max; k++)
+	  (hess(i))(j,k).newSample( (newProperties->hess(i))(j,k).getAverage(),weight);
+      }
+
   if (calc_density)
     for (int i=0; i<nBasisFunc; i++)
       chiDensity(i).newSample(newProperties->chiDensity(i).getAverage(),weight);
@@ -216,20 +228,12 @@ void QMCFutureWalkingProperties::newSample(QMCFutureWalkingProperties* newProper
 
 void QMCFutureWalkingProperties::matchParametersTo( const QMCFutureWalkingProperties &rhs )
 {
-  if(rhs.der.dim1() > 0 && rhs.der.dim2() > 0)
-    der.allocate(rhs.der.dim1(),rhs.der.dim2());
-  else
-    der.deallocate();
-  
-  if(rhs.hess.dim1() > 0 && rhs.hess.dim2() > 0)
-    hess.allocate(rhs.hess.dim1(),rhs.hess.dim2());
-  else
-    hess.deallocate();
-
   if(rhs.calc_forces)
     setCalcForces(rhs.calc_forces,rhs.nuclearForces.get(0).dim1(),rhs.nuclearForces.get(0).dim2());
   if(rhs.calc_density)
     setCalcDensity(rhs.calc_density,rhs.nBasisFunc);
+
+  zeroOut();
 }
 
 void QMCFutureWalkingProperties::operator = ( const QMCFutureWalkingProperties &rhs )
@@ -404,14 +408,21 @@ ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs)
       if(rhs.hess.dim1() > 0)
 	{
 	  strm << endl << "------ Objective Function Hessian --------" << endl;
-	  for(int i=0; i<rhs.hess.dim1(); i++)
+	  
+	  for (int i=0; i<rhs.hess.dim1(); i++)
 	    {
-	      for(int j=0; j<=i; j++)
+	      for(int j=0; j<rhs.hess(i).dim1(); j++)
 		{
-		  strm << "i " << i << ", j " << j << ": " << rhs.hess(i,j);
+		  int max = rhs.hess(i).dim2();
+		  if(rhs.hessIsSymmetric)
+		    max = j+1;
+		  
+		  for(int k=0; k<max; k++)
+		    strm << "(" << j << "," << k << "): " << (rhs.hess(i))(j,k);
 		}
 	      strm << endl;
 	    }
+	  strm << endl << endl;
 	}
     }
 

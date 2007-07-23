@@ -388,10 +388,10 @@ void QMCRun::randomlyInitializeWalkers()
 			       Input->flags.energy_estimated_original)/
 			      Input->flags.energy_estimated_original);
       initialization_try = 1;
-      while( (w.isSingular() || rel_diff > 5.0) && initialization_try < 1000)
+      while( (w.isSingular() || rel_diff > globalInput.flags.rel_cutoff) && initialization_try < 1000)
 	{
-	  //cerr << "Regenerating Walker " << i << ", rel_diff = " << rel_diff <<  "..." << endl;
-	  //cerr.flush();
+	  cerr << "Regenerating Walker " << i << ", rel_diff = " << rel_diff <<  "..." << endl;
+	  cerr.flush();
         
 	  temp_R = IW->initializeWalkerPosition();
 	  w.setR(temp_R);
@@ -578,7 +578,7 @@ void QMCRun::unitWeightBranching()
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
     {
       int times_to_branch = 0;
-      if(Input->flags.limit_branching > 0 && wp->branchRecommended())
+      if(wp->branchRecommended())
 	times_to_branch = int(wp->getWeight() + ran.unidev())-1;
 	
       // Set the walkers weight back to unity
@@ -628,7 +628,7 @@ void QMCRun::nonunitWeightBranching()
     {
       if( wp->getWeight() > Input->flags.branching_threshold )
         {
-	  if(Input->flags.limit_branching > 0 && wp->branchRecommended())
+	  if(wp->branchRecommended())
 	    {
 	      // Split this walker into two; each with half the weight
 	      wp->setWeight( wp->getWeight()/2.0 );
@@ -738,7 +738,7 @@ void QMCRun::ack_reconfiguration()
 	      if( fabs(w - 1.0) >= ran.unidev() && numToAdd > 0)
 		{
 		  //what if none of the candidates are recommended?
-		  if(Input->flags.limit_branching > 0 && wp->branchRecommended())
+		  if(wp->branchRecommended())
 		    {
 		      numToAdd--;
 		      WalkersToAdd.push_back( *wp );
@@ -942,14 +942,28 @@ int QMCRun::getNumberOfWalkers()
 
 bool QMCRun::step(bool writeConfigs, int iteration)
 {
-  //cout << endl;
   propagateWalkers(writeConfigs,iteration);
   calculatePopulationSizeBiasCorrectionFactor();
   calculateObservables();
 
-  growthRate = getNumberOfWalkers();
-  branchWalkers();
-  growthRate -= getNumberOfWalkers();
+  int step = iteration + Input->flags.equilibration_steps - 1;
+
+  int whichE = -1;
+  if(globalInput.flags.one_e_per_iter != 0)
+    whichE = step & globalInput.WF.getNumberElectrons();
+
+  if(whichE == -1 || whichE == 0)
+    {
+      /*
+	In the HLR QMC book pg 273, they recommend branching only once
+	per N electron cycle.
+
+	Why? Is this important?
+      */
+      growthRate = getNumberOfWalkers();
+      branchWalkers();
+      growthRate -= getNumberOfWalkers();
+    }
 
   if(getWeights() <= 0.0 || getNumberOfWalkers() == 0)
     {

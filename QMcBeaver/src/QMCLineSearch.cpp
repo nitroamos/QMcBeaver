@@ -29,8 +29,9 @@ QMCLineSearch::QMCLineSearch(QMCObjectiveFunction *function,
 double QMCLineSearch::stepLength(Array1D<double> & x,Array1D<double> & p,
 				 Array1D<double> & g, double f)
 {
+  Array2D<double> temp;
   if(stepLengthAlg != 0)
-    return stepLengthAlg->stepLength(OF,x,p,g,f); 
+    return stepLengthAlg->stepLength(OF,x,p,g,temp,f); 
   return 1.0;
 }
 
@@ -57,9 +58,7 @@ Array1D<double> QMCLineSearch::searchDirection()
 }
 
 Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
-					double InitialValue,
-					Array1D<double> & InitialGradient,
-					Array2D<double> & InitialHessian,
+					QMCDerivativeProperties & dp,
 					double a_diag_factor,
 					int optStep)
 					
@@ -68,6 +67,11 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
   cout << endl;
 
   dim = InitialGuess.dim1();
+
+  double InitialValue = dp.getParameterValue();
+  Array1D<double> InitialGradient = dp.getParameterGradient();
+  Array2D<double> InitialHessian = dp.getParameterHessian();
+  
   bool useInitialHess = InitialHessian.dim1() == dim && InitialHessian.dim2() == dim;
   bool useInitialGrad = InitialGradient.dim1() == dim;
 
@@ -94,7 +98,8 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
     {
       static double a_diag = globalInput.flags.a_diag;
       
-      if(globalInput.flags.optimize_Psi_method == "automatic")
+      if(globalInput.flags.optimize_Psi_method == "automatic" &&
+	 fabs(a_diag_factor - 1.0) < 1e-10)
 	if(optStep == 6)
 	  {
 	    /*
@@ -165,9 +170,6 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
       InitialHessian.determinant_and_inverse(InitialInverseHessian,
 					     det, &ok);
 
-      //we're transposing because the determinant_and_inverse returns
-      //the transpose of what we want, so we need to untranspose it.
-      InitialInverseHessian.transpose();
       if(!ok)
 	{
 	  cerr << "Error: InitialHessian can't be inverted!";
@@ -264,17 +266,6 @@ Array1D<double> QMCLineSearch::optimize(Array1D<double> & InitialGuess,
   cout << endl << "Ending Line Search Optimization... " << endl;
 
   cout << endl;
-
-  /*
-  for(unsigned int i=0; i<x.size(); i++)
-    cout << "             x[" << i << "] = " << x[i];
-  for(unsigned int i=0; i<gradient.size(); i++)
-    cout << "      gradient[" << i << "] = " << gradient[i];
-  for(unsigned int i=0; i<inverseHessian.size(); i++)
-    cout << "inverseHessian[" << i << "] =\n" << inverseHessian[i];
-  cout << endl;
-  //*/
-
   return x.back();
 }
 

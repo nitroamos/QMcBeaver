@@ -126,9 +126,13 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
   */
   //These are pure CPU routines
   Jastrow.evaluate(xData,num-gpp,gpp);
-  Alpha.evaluate(xData,num-gpp,gpp);
-  Beta.evaluate(xData,num-gpp,gpp);
+  int whichE = walkerData(0)->whichE;
 
+  if((whichE >= 0 && whichE < nalpha) || whichE == -1)
+    Alpha.evaluate(xData,num-gpp,gpp,whichE);
+  if(whichE >= nalpha || whichE == -1)
+    Beta.evaluate(xData,num-gpp,gpp,whichE);
+  
   PE.evaluate(xData,num);
 
   if(Input->flags.nuclear_derivatives != "none")
@@ -148,8 +152,8 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
 #endif
 
   //These are CPU if no GPU, otherwise mixed CPU/GPU
-  Alpha.update_Ds();
-  Beta.update_Ds();
+  Alpha.update_Ds(walkerData);
+  Beta.update_Ds(walkerData);
 #ifdef QMC_GPU
 
   Jastrow.gpuEvaluate(xData,gpp);
@@ -199,9 +203,12 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
 
 void QMCSCFJastrow::evaluate(Array2D<double> &X, QMCWalkerData & data)
 {
-  Array1D< Array2D<double>* > temp;
-  temp.allocate(1);
+  Array1D< Array2D<double>* > temp(1);
   temp(0) = &X;
+
+  Array1D<QMCWalkerData *> wdArray(1);
+  wdArray(0) = &data;
+  int whichE = data.whichE;
 
 #ifdef QMC_GPU
   //These are pure GPU
@@ -209,12 +216,15 @@ void QMCSCFJastrow::evaluate(Array2D<double> &X, QMCWalkerData & data)
   Beta.gpuEvaluate(temp,1);
 #else
   //These are pure CPU
-  Alpha.evaluate(temp,1,0);
-  Beta.evaluate(temp,1,0);
+  if((whichE >= 0 && whichE < nalpha) || whichE == -1)
+    Alpha.evaluate(temp,1,0,whichE);
+  if(whichE >= nalpha || whichE == -1)
+    Beta.evaluate(temp,1,0,whichE);
+
 #endif
 
-  Alpha.update_Ds();
-  Beta.update_Ds();
+  Alpha.update_Ds(wdArray);
+  Beta.update_Ds(wdArray);
   //We just let the CPU initialize the Jastrow
   Jastrow.evaluate(temp,1,0);
   PE.evaluate(temp,1);
@@ -241,6 +251,8 @@ void QMCSCFJastrow::evaluate(Array2D<double> &X, QMCWalkerData & data)
 //  to make sure we aren't dividing by too small a number
 void QMCSCFJastrow::calculate_Psi_quantities(int walker)
 {
+  assert(wd);
+
   if(Alpha.isSingular(walker) || Beta.isSingular(walker))
     {
       /*
@@ -256,7 +268,7 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
 
   double** term_AlphaGrad = 0;
   double** term_BetaGrad  = 0;
-
+  
   Array1D<double>* alphaPsi       = Alpha.getPsi(walker);
   Array3D<double>* alphaGrad      = Alpha.getGradPsiRatio(walker);
   Array1D<double>* alphaLaplacian = Alpha.getLaplacianPsiRatio(walker);
@@ -286,6 +298,8 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
     termPR(ci) = (double)termPsiRatio(ci);
   termPsiRatio.deallocate();
 
+  double ae = 0;
+  double be = 0;
   wd->SCF_Laplacian_PsiRatio = 0.0;  
   wd->SCF_Grad_PsiRatio      = 0.0;
   for (int ci=0; ci<Input->WF.getNumberDeterminants(); ci++)
@@ -293,20 +307,22 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
       if(alphaGrad) term_AlphaGrad = alphaGrad->array()[ci];
       if(betaGrad)   term_BetaGrad =  betaGrad->array()[ci];
       
-      for (int j=0; j<nalpha; j++)
-	for (int k=0; k<3; k++)
-	  wd->SCF_Grad_PsiRatio(j,k) += termPR(ci)*term_AlphaGrad[j][k];
+      if(nalpha > 0)
+	wd->SCF_Laplacian_PsiRatio += termPR(ci) * (*alphaLaplacian)(ci);
+      if(nbeta > 0)
+	wd->SCF_Laplacian_PsiRatio += termPR(ci) * (*betaLaplacian)(ci);
 
-      for (int j=0; j<nbeta; j++)
+      for (int e=0; e<nalpha; e++)
 	for (int k=0; k<3; k++)
-	  wd->SCF_Grad_PsiRatio(j+nalpha,k) += termPR(ci)*term_BetaGrad[j][k];
-      
-      wd->SCF_Laplacian_PsiRatio += termPR(ci) * (*alphaLaplacian)(ci);
-      wd->SCF_Laplacian_PsiRatio += termPR(ci) * (*betaLaplacian)(ci);
+	  wd->SCF_Grad_PsiRatio(e,k) += termPR(ci)*term_AlphaGrad[e][k];
+
+      for (int e=0; e<nbeta; e++)
+	for (int k=0; k<3; k++)
+	  wd->SCF_Grad_PsiRatio(e+nalpha,k) += termPR(ci)*term_BetaGrad[e][k];
     }
   
-  Psi = SCF_Psi * Jastrow_Psi;
-  
+  Psi = SCF_Psi * Jastrow_Psi;    
+
   Laplacian_PsiRatio = wd->SCF_Laplacian_PsiRatio +
     Jastrow.getLaplacianLnJastrow(walker);
 
@@ -332,7 +348,7 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
         //This is the 2 * F^2 term = ( del log Psi )^2
         //PsuedoForce2_PsiRatio += wd->gradPsiRatio(i,j) * wd->gradPsiRatio(i,j);
       }
-  
+
   //This switches to KE = F
   //Laplacian_PsiRatio = -2.0*PsuedoForce2_PsiRatio;
   
@@ -380,18 +396,22 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
 	      else
 		dtermPsiRatio_ci_dcj = -termPR(ci) * termPR(ci) + termPR(ci);
 	      dtermPsiRatio_ci_dcj /= Input->WF.CI_coeffs(ci);
-	      
-	      wd->p3_xxa(ai)  += dtermPsiRatio_ci_dcj * ((*alphaLaplacian)(cj) + (*betaLaplacian)(cj));
 
 	      if(alphaGrad) term_AlphaGrad = alphaGrad->array()[cj];
 	      if(betaGrad)   term_BetaGrad =  betaGrad->array()[cj];
 	      
+	      if(nalpha > 0)
+		wd->p3_xxa(ai)  += dtermPsiRatio_ci_dcj * (*alphaLaplacian)(cj);
+	      if(nbeta > 0)
+		wd->p3_xxa(ai)  += dtermPsiRatio_ci_dcj * (*betaLaplacian)(cj);
+
 	      for(int i=0; i<nalpha; i++)
-		for(int j=0; j<3; j++)
-		  wd->p3_xxa(ai) += 2.0 * dtermPsiRatio_ci_dcj * term_AlphaGrad[i][j] * (*JastrowGrad)(i,j);
+		  for(int j=0; j<3; j++)
+		    wd->p3_xxa(ai) += 2.0 * dtermPsiRatio_ci_dcj * term_AlphaGrad[i][j] * (*JastrowGrad)(i,j);
+
 	      for(int i=0; i<nbeta; i++)
 		for(int j=0; j<3; j++)
-		  wd->p3_xxa(ai) += 2.0 * dtermPsiRatio_ci_dcj * term_BetaGrad[i][j]  * (*JastrowGrad)(i+nalpha,j);
+		    wd->p3_xxa(ai) += 2.0 * dtermPsiRatio_ci_dcj * term_BetaGrad[i][j]  * (*JastrowGrad)(i+nalpha,j);
 	    }
 	  ai++;
 	}
@@ -453,7 +473,11 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
 		  dtermPsiRatio_dai = (dtermPsi_dai(ci) - termPR(ci) * dSCF_Psi_dai) / SCF_Psi;
 
 		  // d ( N * (A + B) ) = dN * (A + B) + N * (dA + dB)
-		  wd->p3_xxa(ai) += dtermPsiRatio_dai * ((*alphaLaplacian)(ci) + (*betaLaplacian)(ci));
+		  if(nalpha > 0)
+		    wd->p3_xxa(ai) += dtermPsiRatio_dai * (*alphaLaplacian)(ci);
+		  if(nbeta > 0)
+		    wd->p3_xxa(ai) += dtermPsiRatio_dai * (*betaLaplacian)(ci);
+
 		  if(oa != unusedIndicator)
 		    wd->p3_xxa(ai) += termPR(ci) * Alpha.get_p3_xxa(walker,ci)->get(oa,bf);
 		  if(ob != unusedIndicator)

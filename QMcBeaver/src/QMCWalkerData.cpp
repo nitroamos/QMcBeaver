@@ -26,12 +26,6 @@ QMCWalkerData::QMCWalkerData()
 
 QMCWalkerData::~QMCWalkerData()
 {
-  rp_a.deallocate();
-  p3_xxa.deallocate();
-
-  gradPsiRatio.deallocate();
-  modifiedGradPsiRatio.deallocate();
-  SCF_Grad_PsiRatio.deallocate();
 }
 
 void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
@@ -39,6 +33,44 @@ void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
 {
   Input = INPUT;
   int numElectrons  = Input->WF.getNumberElectrons();
+  int numCI = Input->WF.getNumberDeterminants();
+
+  //Initialization probably requires all to be updated immediately
+  whichE = -1;
+  if(globalInput.flags.one_e_per_iter)
+    {
+      int na = Input->WF.getNumberAlphaElectrons();
+      int nb = Input->WF.getNumberBetaElectrons();
+
+      D_invA.allocate(numCI);
+      D_invB.allocate(numCI);
+      Laplacian_DA.allocate(numCI);
+      Laplacian_DB.allocate(numCI);
+      Grad_DA.allocate(numCI);
+      Grad_DB.allocate(numCI);
+
+      for(int ci=0; ci<numCI; ci++)
+	{
+	  D_invA(ci).allocate(na,na);
+	  D_invB(ci).allocate(nb,nb);
+	  Laplacian_DA(ci).allocate(na,na);
+	  Laplacian_DB(ci).allocate(nb,nb);
+	  Grad_DA(ci).allocate(3);
+	  Grad_DB(ci).allocate(3);
+	  for(int i=0; i<3; i++)
+	    {
+	      (Grad_DA(ci))(i).allocate(na,na);
+	      (Grad_DB(ci))(i).allocate(nb,nb);
+	    }
+	}
+
+      PsiA.allocate(numCI);
+      PsiB.allocate(numCI);
+      Laplacian_PsiRatioA.allocate(numCI);
+      Laplacian_PsiRatioB.allocate(numCI);
+      Grad_PsiRatioA.allocate(numCI,numElectrons,3);
+      Grad_PsiRatioB.allocate(numCI,numElectrons,3);
+    }
 
   gradPsiRatio.allocate(numElectrons,numDimensions);
   modifiedGradPsiRatio.allocate(numElectrons,numDimensions);
@@ -133,7 +165,7 @@ ostream& operator<<(ostream & strm, const QMCWalkerData & rhs)
   strm.precision(15);  strm.width(20);
   strm << "       NE              = " << rhs.neEnergy << endl;
   strm.precision(15);  strm.width(20);
-  strm << "       Psi             = " << rhs.psi << endl;
+  strm << "       Psi             = " << (double)(rhs.psi) << endl;
   strm.precision(15);  strm.width(20);
   strm << "       Energy          = " << rhs.localEnergy << endl;
   return strm;

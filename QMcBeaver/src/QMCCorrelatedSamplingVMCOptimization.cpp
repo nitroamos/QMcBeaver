@@ -24,11 +24,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
   Array1D<double> Guess_parameters(orig_parameters.dim1());
 
   QMCDerivativeProperties dp(&lastRun,&fwLastRun,0);
-
-  double value             = dp.getParameterValue();
-  Array1D<double> gradient = dp.getParameterGradient();
-  Array2D<double> hessian  = dp.getParameterHessian();
-
+  
   if(optStep == 0)
     {
       clog << "Notice: the CI coefficients have norm = " << globalInput.WF.getCINorm() << endl;
@@ -52,10 +48,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
       double penalty, norm;
       do {
 	Guess_parameters = 
-	  optAlg->optimize(orig_parameters,
-			   value,
-			   gradient,
-			   hessian,
+	  optAlg->optimize(orig_parameters,dp,
 			   a_diag_factor,
 			   optStep);
 
@@ -83,7 +76,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 	  }
 
 	iter++;
-      } while( !acceptable && iter < 10);
+      } while( !acceptable && iter < globalInput.flags.optimization_max_iterations);
 
       if(acceptable)
 	{
@@ -139,7 +132,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
   clog << setw(20) << "Best objective value (step = " << optStep << "):";
   clog.precision(12);
   clog.width(20);
-  clog << value << endl;
+  clog <<   dp.getParameterValue() << endl;
   globalInput.printAIParameters(clog,"Best parameters:",20,Guess_parameters,false);
   clog << endl << endl;
 
