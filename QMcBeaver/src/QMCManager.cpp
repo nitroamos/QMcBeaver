@@ -1983,10 +1983,23 @@ void QMCManager::checkMaxStepsTerminationCriteria()
 {
   if(  globalInput.flags.max_time_steps == 0 )
     return;
-  if(  iteration >= globalInput.flags.max_time_steps )
-  {
-    done = true;
-  }
+
+  if(globalInput.flags.one_e_per_iter == 1)
+    {
+
+      /*
+	If we're moving one electron at a time, then it
+	will take numElectrons iterations to equal
+	each time step.
+      */
+      int numElectrons = globalInput.WF.getNumberElectrons();
+      if( iteration >= numElectrons * globalInput.flags.max_time_steps )
+	done = true;
+
+    } else {
+      if( iteration >= globalInput.flags.max_time_steps )
+	done = true;
+    }
 }
 
 void QMCManager::checkMaxTimeTerminationCriteria()

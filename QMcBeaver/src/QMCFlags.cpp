@@ -903,7 +903,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "number_of_walkers\n " << flags.number_of_walkers_initial<< endl;
   strm << "max_time_steps\n " << flags.original_max_time_steps << endl;
   strm << "max_time\n " << flags.max_time << endl;
-  strm << "one_e_per_iter\n" << flags.one_e_per_iter << endl;
+  strm << "one_e_per_iter\n " << flags.one_e_per_iter << endl;
   strm << "desired_convergence\n " << flags.desired_convergence << endl;
   strm << "warn_verbosity\n " << flags.warn_verbosity << endl;
   strm << "rel_cutoff\n " << flags.rel_cutoff << endl;
@@ -1132,6 +1132,11 @@ bool QMCFlags::checkFlags()
   if(mpireduce_interval < output_interval)
     {
       clog << "Warning: mpireduce_interval < output_interval!" << endl;
+    }
+
+  if(rel_cutoff < 10.0)
+    {
+      clog << "Warning: rel_cutoff = " << rel_cutoff << " is too low..." << endl;
     }
 
   /**

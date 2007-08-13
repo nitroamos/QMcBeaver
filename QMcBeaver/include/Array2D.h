@@ -33,6 +33,7 @@ for more details.
 #define Array2D_H
 
 #include <iostream>
+#include <iomanip>
 #include <typeinfo>
 #include "cppblas.h"
 #include "Complex.h"

@@ -64,7 +64,10 @@ void QMCProperties::newSample(QMCProperties* newProperties, double weight,
   if(newProperties->energy.getNumberSamples() > 0)
     {
       energy.newSample(newProperties->energy.getAverage(), weight);
-      energy2.newSample(newProperties->energy2.getAverage(), weight);
+
+      double e = newProperties->energy.getAverage();
+      energy2.newSample(e*e, weight);
+      
       kineticEnergy.newSample(newProperties->kineticEnergy.getAverage(), weight);
       potentialEnergy.newSample(newProperties->potentialEnergy.getAverage(),
 				weight);
@@ -323,13 +326,16 @@ bool QMCProperties::readXML(istream& strm)
 
 ostream& operator <<(ostream& strm, QMCProperties &rhs)
 {
-  strm << endl << "------------------- Energy -------------------" << endl;
-  strm << rhs.energy;
 
-  strm << "STAT StdVar   = " << rhs.energy.getSeriallyCorrelatedVariance() << endl;
-  double e = rhs.energy.getAverage();
-  double e2 = rhs.energy2.getAverage();
-  strm << "STAT StdVar   = " << (e2 - e*e) << endl;
+  strm << endl << "------------------- Energy -------------------" << endl;
+  //strm << rhs.energy;
+  
+  strm << "Sample variance = " << rhs.energy.getSeriallyCorrelatedVariance() << endl;
+  rhs.energy.printAll(strm);
+
+  strm << endl << "----------------- Energy^2 -------------------" << endl;
+  strm << rhs.energy2;
+  //rhs.energy2.printAll(strm);
 
   strm << endl << "--------------- Kinetic Energy ---------------" << endl;
   strm << rhs.kineticEnergy;
@@ -363,9 +369,6 @@ ostream& operator <<(ostream& strm, QMCProperties &rhs)
 
   strm << endl << "----------------- logWeights -----------------" << endl;
   strm << rhs.logWeights;
-
-  strm << endl << "----------------- Energy^2 -------------------" << endl;
-  strm << rhs.energy2;
 
   return strm;
 }

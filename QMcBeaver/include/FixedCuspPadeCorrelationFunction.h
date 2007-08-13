@@ -25,14 +25,16 @@
 
 class FixedCuspPadeCorrelationFunction : public QMCCorrelationFunction
 {
-private:    
-  Polynomial Numerator;
-  QMCPolynomial Denominator;
+ protected:
   double FunctionValue;
   double dFunctionValue;
   double d2FunctionValue;
   
-public:
+ private:    
+  Polynomial Numerator;
+  QMCPolynomial Denominator;
+  
+ public:
 
   void initializeParameters(Array1D<int> & BeginningIndexOfParameterType, 
 			    Array1D<double> &Parameters,

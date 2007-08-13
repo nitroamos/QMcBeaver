@@ -1947,7 +1947,6 @@ void QMCWalker::calculateObservables( QMCProperties & props )
     {
       // Calculate the Energy ...
       props.energy.newSample( localEnergy, getWeight() );
-      props.energy2.newSample( localEnergy*localEnergy, getWeight() );
       
       // Calculate the Kinetic Energy  
       props.kineticEnergy.newSample( kineticEnergy, getWeight() );

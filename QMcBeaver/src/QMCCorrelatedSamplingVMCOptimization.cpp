@@ -129,9 +129,11 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 
   globalInput.setAIParameters(Guess_parameters);
 
-  clog << setw(20) << "Best objective value (step = " << optStep << "):";
+  clog << setw(20) << "Best objective value (step = " << setw(3) << optStep << "):";
   clog.precision(12);
   clog.width(20);
+  clog.unsetf(ios::scientific);
+  clog.unsetf(ios::fixed);
   clog <<   dp.getParameterValue() << endl;
   globalInput.printAIParameters(clog,"Best parameters:",20,Guess_parameters,false);
   clog << endl << endl;
