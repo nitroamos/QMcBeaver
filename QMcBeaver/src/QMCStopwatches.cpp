@@ -133,22 +133,38 @@ QMCStopwatches QMCStopwatches::operator+(QMCStopwatches & rhs)
 
 ostream& operator <<(ostream& strm, QMCStopwatches & rhs)
 {
+  double total = rhs.getTotalTimeStopwatch()->timeUS() / 100.0;
+  strm.setf(ios::fixed);
+  strm.unsetf(ios::scientific);
+  int prec = 2;
+  int width = 10;
   strm << "Total Time:             " << *rhs.getTotalTimeStopwatch() 
-       << endl;
+       << setprecision(prec) << setw(width) << (double) rhs.getTotalTimeStopwatch()->timeUS() / total
+       << " %" << endl;
   strm << "Initialization Time:    " << *rhs.getInitializationStopwatch() 
-       << endl;
+       << setprecision(prec) << setw(width) << (double) rhs.getInitializationStopwatch()->timeUS() / total
+       << " %" << endl;
   strm << "Equilibration Time:     " << *rhs.getEquilibrationStopwatch()
-       << endl;
-  strm << "Propagation Time:       " << *rhs.getPropagationStopwatch() << endl;
-  strm << "Send Command Time:      " << *rhs.getSendCommandStopwatch() << endl;
+       << setprecision(prec) << setw(width) << (double) rhs.getEquilibrationStopwatch()->timeUS() / total
+       << " %" << endl;
+  strm << "Propagation Time:       " << *rhs.getPropagationStopwatch() 
+       << setprecision(prec) << setw(width) << (double) rhs.getPropagationStopwatch()->timeUS() / total
+       << " %" << endl;
+  strm << "Send Command Time:      " << *rhs.getSendCommandStopwatch()
+       << setprecision(prec) << setw(width) << (double) rhs.getSendCommandStopwatch()->timeUS() / total
+       << " %" << endl;
   strm << "Gather Properties Time: " << *rhs.getGatherPropertiesStopwatch() 
-       << endl;
-  strm << "Synchronization Time:   " 
-       << *rhs.getCommunicationSynchronizationStopwatch() << endl;
+       << setprecision(prec) << setw(width) << (double) rhs.getGatherPropertiesStopwatch()->timeUS() / total
+       << " %" << endl;
+  strm << "Synchronization Time:   " << *rhs.getCommunicationSynchronizationStopwatch()
+       << setprecision(prec) << setw(width) << (double) rhs.getCommunicationSynchronizationStopwatch()->timeUS() / total
+       << " %" << endl;
   strm << "Poll for Command Time:  " << *rhs.getCommandPollingStopwatch() 
-       << endl;
+       << setprecision(prec) << setw(width) << (double) rhs.getCommandPollingStopwatch()->timeUS() / total
+       << " %" << endl;
   strm << "Optimization Time:      " << *rhs.getOptimizationStopwatch() 
-       << endl;
+       << setprecision(prec) << setw(width) << (double) rhs.getOptimizationStopwatch()->timeUS() / total
+       << " %" << endl;
 
   return strm;
 }

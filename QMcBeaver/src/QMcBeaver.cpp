@@ -286,7 +286,7 @@ void qmcbeaver()
     
   if( globalInput.flags.my_rank == 0 )
     {
-      clog << "Run Time: " << timer << endl;
+      clog << "Wallclock Time:         " << timer << endl;
       TheMan.writeTimingData(clog);
 
       *TheMan.getResultsOutputStream() << "RunTime: " << timer << endl;

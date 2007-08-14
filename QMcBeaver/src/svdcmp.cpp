@@ -72,7 +72,7 @@ template<typename T>int _SVDecompose(Array2D<T> &A, Array1D<T> &W, Array2D<T> &V
 					sum += A(k,i) * A(k,i);
 				}
 				f=A(i,i);
-				g=SignOfNeg(sqrt(sum),(double)f);
+				g=SignOfNeg((double)sqrt(sum),(double)f);
 				h=f*g-sum;
 				A(i,i)=f-g;
 				for(int j=l; j<n; j++)
@@ -104,7 +104,7 @@ template<typename T>int _SVDecompose(Array2D<T> &A, Array1D<T> &W, Array2D<T> &V
 					sum += A(i,k) * A(i,k);
 				}
 				f=A(i,l);
-				g=SignOfNeg(sqrt(sum), (double)f);
+				g=SignOfNeg((double)sqrt(sum), (double)f);
 				h=f*g-sum;
 				A(i,l)=f-g;
 				for(int k=l; k<n; k++)
@@ -121,7 +121,7 @@ template<typename T>int _SVDecompose(Array2D<T> &A, Array1D<T> &W, Array2D<T> &V
 					A(i,k) *= scale;
 			}
 		}
-		anorm=max( (double)(anorm), fabs(W[i])+fabs(tmp[i]) );
+		anorm=max( (double)(anorm), (double) fabs(W[i])+fabs(tmp[i]) );
 	}
 	
 	// The next two loops will accumulate the transformations 

@@ -1666,6 +1666,17 @@ void QMCManager::writeTransientProperties( int label )
 void QMCManager::writeTimingData( ostream & strm )
 {
   strm << globalTimers << endl;
+
+  //This is the cumulative time across all processors
+  double time = globalTimers.getTotalTimeStopwatch()->timeUS();
+  //The number of samples from all processors
+  time /= Properties_total.energy.getNumberSamples();
+
+  strm << "Average microseconds per sample:                          " << time << endl;
+
+  //A better estimate for DMC would be the average number of walkers...
+  time /= globalInput.flags.number_of_walkers_initial;
+  strm << "Average microseconds per sample per num initial walkers:  " << time << endl;
 }
 
 void QMCManager::writeRestart()
