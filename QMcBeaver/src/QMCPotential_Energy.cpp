@@ -23,6 +23,7 @@ void QMCPotential_Energy::operator=( const QMCPotential_Energy & rhs )
 
   Input        = rhs.Input;
   HartreeFock  = rhs.HartreeFock;
+  wd           = 0;
 
   P_nn = rhs.P_nn;
   P_en = rhs.P_en;
@@ -31,8 +32,9 @@ void QMCPotential_Energy::operator=( const QMCPotential_Energy & rhs )
 
 void QMCPotential_Energy::initialize(QMCInput *Ip, QMCHartreeFock* HF)
 {
-  Input = Ip;
+  Input       = Ip;
   HartreeFock = HF;
+  wd          = 0;
 
   Energy_total.allocate(Input->flags.walkers_per_pass);
   Energy_ne.allocate(Input->flags.walkers_per_pass);
@@ -41,10 +43,14 @@ void QMCPotential_Energy::initialize(QMCInput *Ip, QMCHartreeFock* HF)
   calc_P_nn();
 }
 
-void QMCPotential_Energy::evaluate(Array1D<Array2D<double>*> &X, int num)
+void QMCPotential_Energy::evaluate(Array1D<Array2D<double>*> &X,
+				   Array1D<QMCWalkerData *> &walkerData,
+				   int num)
 {
   for(int walker = 0; walker < num; walker++)
     {
+      wd = walkerData(walker);
+
       calc_P_en(*X(walker));
       calc_P_ee(*X(walker));
       Energy_total(walker) = P_nn + P_ee + P_en;
@@ -52,6 +58,7 @@ void QMCPotential_Energy::evaluate(Array1D<Array2D<double>*> &X, int num)
       Energy_ne(walker) = P_en;
       Energy_ee(walker) = P_ee;
     }
+  wd = 0;
 }
 
 void QMCPotential_Energy::calc_P_nn()
@@ -81,7 +88,6 @@ void QMCPotential_Energy::calc_P_nn()
 void QMCPotential_Energy::calc_P_en(Array2D<double> &R)
 {
   P_en = 0.0;
-  double r;
   double chargei, chargej;
 
   //loop over every atom
@@ -95,9 +101,7 @@ void QMCPotential_Energy::calc_P_en(Array2D<double> &R)
       for(int j=0;j<R.dim1();j++)
         {
           chargej = -1.0;
-
-          r = rij(Input->Molecule.Atom_Positions,R,i,j);
-          P_en += (chargei*chargej)/r;
+          P_en += (chargei*chargej)/wd->riI(j,i);
         }
     }
 }
@@ -119,12 +123,10 @@ void QMCPotential_Energy::calc_P_ee(Array2D<double> &R)
       for (int i=0; i<R.dim1(); i++)
 	{
 	  chargei = -1.0;
-	  for (int j=i+1; j<R.dim1(); j++)
+	  for (int j=0; j<i; j++)
 	    {
 	      chargej = -1.0;
-
-	      r = rij(R,i,j);
-	      P_ee += (chargei*chargej)/r;
+	      P_ee += (chargei*chargej)/wd->rij(i,j);
 	    }
 	}
     }

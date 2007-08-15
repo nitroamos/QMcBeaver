@@ -23,6 +23,7 @@
 #include "QMCJastrowElectronElectron.h"
 #include "Stopwatch.h"
 #include "IeeeMath.h"
+#include "QMCWalkerData.h"
 
 #ifdef QMC_GPU
 #include "GPUQMCJastrowElectronElectron.h"
@@ -75,7 +76,11 @@ public:
     @param num how many walkers to process
     @param start where the GPU left off (is 0 when the GPU isn't used)
     */
-  void evaluate(Array1D<Array2D<double>*> &X, int num, int start);
+  void evaluate(Array1D<QMCWalkerData *> &walkerData,
+		Array1D<Array2D<double>*> &X,
+		int num, int start);
+
+  void evaluate(Array2D<double> & R);
 
 #ifdef QMC_GPU
 
@@ -108,7 +113,10 @@ public:
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
     */
-  void evaluate( QMCJastrowParameters & JP, Array1D<Array2D<double>*> &X, int num, int start);
+  void evaluate( QMCJastrowParameters & JP,
+		 Array1D<QMCWalkerData *> &walkerData,
+		 Array1D<Array2D<double>*> &X,
+		 int num, int start);
 
   /**
     Gets the value of the Jastrow function for the last evaluated

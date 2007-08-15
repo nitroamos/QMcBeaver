@@ -286,11 +286,12 @@ void qmcbeaver()
     
   if( globalInput.flags.my_rank == 0 )
     {
-      clog << "Wallclock Time:         " << timer << endl;
       TheMan.writeTimingData(clog);
-
-      *TheMan.getResultsOutputStream() << "RunTime: " << timer << endl;
+      clog << "Wallclock Time:         " << timer << endl;
+      
       TheMan.writeTimingData( *TheMan.getResultsOutputStream() );
+      *TheMan.getResultsOutputStream()
+	<< "Wallclock Time:         " << timer << endl;
     }
 }
 

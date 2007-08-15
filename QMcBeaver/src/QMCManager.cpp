@@ -1665,18 +1665,32 @@ void QMCManager::writeTransientProperties( int label )
 
 void QMCManager::writeTimingData( ostream & strm )
 {
-  strm << globalTimers << endl;
+  double ltime = localTimers.getTotalTimeStopwatch()->timeUS();
+  //convert to hours
+  ltime /= (1.0e6 * 60.0 * 60.0);
+
+  strm.setf(ios::scientific);
+  strm << "Average iterations per hour:                              " << (iteration/ltime) << endl;
+  strm << "Average iterations*walkers per hour:                      "
+       << (iteration * globalInput.flags.number_of_walkers_initial / ltime) << endl;
+
+  strm.unsetf(ios::fixed);
+  strm.unsetf(ios::scientific);
 
   //This is the cumulative time across all processors
   double time = globalTimers.getTotalTimeStopwatch()->timeUS();
+
   //The number of samples from all processors
   time /= Properties_total.energy.getNumberSamples();
-
   strm << "Average microseconds per sample:                          " << time << endl;
 
   //A better estimate for DMC would be the average number of walkers...
   time /= globalInput.flags.number_of_walkers_initial;
   strm << "Average microseconds per sample per num initial walkers:  " << time << endl;
+
+  strm << endl;
+  strm << "Wallclock Time:         " << *localTimers.getTotalTimeStopwatch() << endl;
+  strm << globalTimers << endl;
 }
 
 void QMCManager::writeRestart()

@@ -230,7 +230,7 @@ public:
     @param temp_R the positions of the electrons
     @return whether the position is ok
   */
-  bool setR(Array2D<double>& temp_R);
+  bool setR(Array2D<double> temp_R);
 
   /**
     Gets the walkerData for this walker
@@ -357,6 +357,15 @@ private:
     @return Greens's function for the forward move of the electrons.
   */
   QMCGreensRatioComponent moveElectrons();
+  
+  /**
+     Once we've moved an electron, we want to update the arrays
+     in QMCWalkerData which contain the interparticle distances,
+     as well as electron-electron unit vectors. The purpose is so that
+     we only have to calculate this stuff once, and then everybody
+     else just gets the saved data.
+  */
+  void updateDistances(int whichE);
 
   /**
     Randomly moves the electrons to their new locations without using

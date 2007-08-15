@@ -19,6 +19,7 @@
 #include "Array2D.h"
 #include "QMCInput.h"
 #include "QMCHartreeFock.h"
+#include "QMCWalkerData.h"
 
 using namespace std;
 
@@ -49,7 +50,9 @@ public:
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
     */
-  void evaluate(Array1D<Array2D<double>*> &X, int num);
+  void evaluate(Array1D<Array2D<double>*> &X,
+		Array1D<QMCWalkerData *> &walkerData,
+		int num);
 
   /**
     Gets the potential energy of the last configuration evaluated.
@@ -73,9 +76,24 @@ public:
   */
   void operator=( const QMCPotential_Energy & rhs );
 
+  /**
+     Calculates distance between electrons i and j
+     based on the coordinates found in R
+  */
+  static double rij(Array2D<double> &R, int i, int j);
+
+  /**
+     Calculates the distance between particles i and j,
+     where i is found in positioni and
+     j is found in positionj.
+  */
+  static double rij(Array2D<double> &positioni,Array2D<double> &positionj, 
+		    int i, int j);
+  
  private:
   QMCInput *Input;
   QMCHartreeFock *HartreeFock;
+  QMCWalkerData * wd;
 
   Array1D<double> Energy_total;
   Array1D<double> Energy_ne;
@@ -88,10 +106,6 @@ public:
   void calc_P_nn();
   void calc_P_en(Array2D<double> &R);
   void calc_P_ee(Array2D<double> &R);
-  double rij(Array2D<double> &R, int i, int j);
-  double rij(Array2D<double> &positioni,Array2D<double> &positionj, 
-	     int i, int j);
-
 };
 
 #endif

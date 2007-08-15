@@ -64,7 +64,7 @@ double MathFunctions::erfc(double x)
 {
   // Series on [0,1]
   int ERFC_COEF_LENGTH = 14;
-  double ERFC_COEF[] = 
+  static double ERFC_COEF[] = 
   {
     -.490461212346918080399845440334e-1,
     -.142261205103713642378247418996e0,
@@ -84,7 +84,7 @@ double MathFunctions::erfc(double x)
 
   // Series on [0.25,1.00]
   int ERFC2_COEF_LENGTH = 27;
-  double ERFC2_COEF[] = 
+  static double ERFC2_COEF[] = 
   {
     -.69601346602309501127391508262e-1,
     -.411013393626208934898221208467e-1,
@@ -117,7 +117,7 @@ double MathFunctions::erfc(double x)
 
   // Series on [0,0.25]
   int ERFCC_COEF_LENGTH = 29;
-  double ERFCC_COEF[] = 
+  static double ERFCC_COEF[] = 
   {
     .715179310202924774503697709496e-1,
     -.265324343376067157558893386681e-1,
@@ -191,7 +191,7 @@ double MathFunctions::erfc(double x)
   return ans;
 }
 
-double MathFunctions::csevl(double x, double coef[], int lengthCoef)
+double MathFunctions::csevl(double x, double * coef, int lengthCoef)
 {
   double b0, b1, b2, twox;
   int	 i;

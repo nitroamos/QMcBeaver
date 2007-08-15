@@ -17,6 +17,7 @@
 #include "Array2D.h"
 #include "QMCInput.h"
 #include "QMCJastrowParameters.h"
+#include "QMCWalkerData.h"
 
 /**
   This class calculates the value of the electron-electron part of the 
@@ -59,7 +60,9 @@ public:
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
     */
-  void evaluate( QMCJastrowParameters & JP, Array2D<double> & X);
+  void evaluate( QMCJastrowParameters & JP,
+		 QMCWalkerData * wData,
+		 Array2D<double> & X);
 
   /**
     Gets the value of the natural log of the electron-electron Jastrow 
@@ -125,9 +128,11 @@ protected:
   Array1D<double> p3_xxa;
 
 private:  
+  QMCWalkerData * wd;
 
   void collectForPair(int el1, int el2,
-	QMCCorrelationFunction *U_Function,Array2D<double> & X,
+		      QMCCorrelationFunction *U_Function,
+		      Array2D<double> & X,
 		      int index, int numP);
 
   void calculateDistanceAndUnitVector(Array2D<double> & X1, int x1particle, 

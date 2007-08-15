@@ -19,6 +19,7 @@
 #include "Array2D.h"
 #include "QMCInput.h"
 #include "QMCJastrowParameters.h"
+#include "QMCWalkerData.h"
 
 using namespace std;
 
@@ -63,7 +64,9 @@ public:
     @param X \f$3N\f$ dimensional configuration of electrons represented by 
     a \f$N \times 3\f$ matrix
     */
-  void evaluate( QMCJastrowParameters & JP, Array2D<double> & X);
+  void evaluate( QMCJastrowParameters & JP,
+		 QMCWalkerData * wData,
+		 Array2D<double> & X);
 
   /**
      Partial derivative of the natural log of this function with 

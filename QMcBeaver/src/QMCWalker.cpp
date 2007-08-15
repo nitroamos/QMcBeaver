@@ -12,6 +12,7 @@
 
 #include "QMCWalker.h"
 #include "QMCSurfer.h"
+#include "QMCPotential_Energy.h"
 
 const double QMCWalker::maxFWAsymp = 1.0;
 long int QMCWalker::nextID = 0;
@@ -247,13 +248,14 @@ QMCGreensRatioComponent QMCWalker::moveElectrons()
       cerr << "ERROR: Negative dt value! (" << Input->flags.dt << ")" << endl;
       exit(0);
     }
+  QMCGreensRatioComponent gr = QMCGreensRatioComponent();
   
   if(Input->flags.sampling_method == "no_importance_sampling")
-      return moveElectronsNoImportanceSampling();
+    gr = moveElectronsNoImportanceSampling();
   else if(Input->flags.sampling_method == "importance_sampling" )
-      return moveElectronsImportanceSampling();
+    gr = moveElectronsImportanceSampling();
   else if(Input->flags.sampling_method == "umrigar93_importance_sampling")
-      return moveElectronsUmrigar93ImportanceSampling();
+    gr = moveElectronsUmrigar93ImportanceSampling();
   else
     {
       cerr << "ERROR: Improper value for sampling_method set ("
@@ -261,9 +263,45 @@ QMCGreensRatioComponent QMCWalker::moveElectrons()
       exit(0);
     }
 
-  // should never reach this
-  QMCGreensRatioComponent TRASH = QMCGreensRatioComponent();
-  return TRASH;
+  updateDistances(walkerData.whichE);
+  return gr;
+}
+
+void QMCWalker::updateDistances(int whichE)
+{
+  if(whichE == -1)
+    {
+      for(int i=0; i<R.dim1(); i++)
+	{
+	  for(int j=0; j<i; j++)
+	    {
+	      walkerData.rij(i,j) = 
+		QMCPotential_Energy::rij(R,i,j);
+	      for(int xyz=0; xyz<3; xyz++)
+		walkerData.rij_uvec(i,j,xyz) = (R(i,xyz) - R(j, xyz)) / walkerData.rij(i,j);
+	    }
+
+	  for(int j=0; j<Input->Molecule.getNumberAtoms(); j++)
+	    walkerData.riI(i,j) =
+	      QMCPotential_Energy::rij(R,Input->Molecule.Atom_Positions,i,j);
+	}
+    } else {
+      for(int j=0; j<R.dim1(); j++)
+	{
+	  if(j == whichE) continue;
+	  double r = QMCPotential_Energy::rij(R,j,whichE);
+	  int e1 = max(whichE,j);
+	  int e2 = min(whichE,j);
+
+	  walkerData.rij(e1,e2) = r;
+	  for(int xyz=0; xyz<3; xyz++)
+	    walkerData.rij_uvec(e1,e2,xyz) = (R(e1,xyz) - R(e2, xyz)) / r;
+	}
+
+      for(int j=0; j<Input->Molecule.getNumberAtoms(); j++)
+	walkerData.riI(whichE,j) =
+	  QMCPotential_Energy::rij(R,Input->Molecule.Atom_Positions,whichE,j);
+    }
 }
 
 QMCGreensRatioComponent QMCWalker::moveElectronsNoImportanceSampling()
@@ -379,18 +417,15 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 
       // Find the nearest nucleus to this electron
       int nearestNucleus = Input->Molecule.findClosestNucleusIndex(R,electron);
-      double distanceFromNucleus = 0.0;
+      double distanceFromNucleus = walkerData.riI(electron,nearestNucleus);
       
       // Calculate the unit vector in the Z direction
       for(int i=0; i<3; i++)
         {
           zUnitVector(i) = R(electron,i) -
                            Input->Molecule.Atom_Positions(nearestNucleus,i);
-                           
-          distanceFromNucleus += zUnitVector(i)*zUnitVector(i);
         }
-        
-      distanceFromNucleus = sqrt(distanceFromNucleus);
+
       zUnitVector /= distanceFromNucleus;
       
       
@@ -436,6 +471,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       double probabilitySlaterTypeMove = 0.5 *
               MathFunctions::erfc( (distanceFromNucleus + zComponentQF * tau) /
                                                              sqrt(2.0 * tau) );
+
       if (probabilitySlaterTypeMove > 1.0)
 	{
 	  cerr << "Warning: probabilitySlaterTypeMove = ";
@@ -607,6 +643,9 @@ QMCWalker::calculateReverseGreensFunctionImportanceSampling()
 QMCGreensRatioComponent \
 QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
 {
+  int whichE = walkerData.whichE;
+  bool moved;
+
   double tau = Input->flags.dt;
   Array1D<double> zUnitVector(3);
   Array1D<double> radialUnitVector(3);
@@ -618,6 +657,10 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
 
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
     {      
+      moved = true;
+      if(whichE != -1 && electron != whichE)
+	moved = false;
+
       // Find the nearest nucleus to this electron
       int nearestNucleus =
         Input->Molecule.findClosestNucleusIndex(TrialWalker->R,electron);
@@ -1662,7 +1705,7 @@ void QMCWalker::initializeWalkerPosition(QMCFunctions & QMF)
     QMCInitializeWalkerFactory::initializeWalkerFactory(Input,
         Input->flags.walker_initialization_method);
   
-  R = IW->initializeWalkerPosition();
+  setR(IW->initializeWalkerPosition());
   QMF.evaluate(R,walkerData);
   
   int initilization_try = 1;
@@ -1676,8 +1719,8 @@ void QMCWalker::initializeWalkerPosition(QMCFunctions & QMF)
           << "trying to initilize walker!" << endl;
           exit(0);
         }
-        
-      R = IW->initializeWalkerPosition();
+
+      setR(IW->initializeWalkerPosition());
       QMF.evaluate(R,walkerData);
       initilization_try++;
     }
@@ -1716,7 +1759,7 @@ Array2D<double> * QMCWalker::getR()
   return &R;
 }
 
-bool QMCWalker::setR(Array2D<double>& temp_R)
+bool QMCWalker::setR(Array2D<double> temp_R)
 {
   bool ok = true;
   for(int i=0; i<temp_R.dim1(); i++)
@@ -1726,7 +1769,11 @@ bool QMCWalker::setR(Array2D<double>& temp_R)
 	  cout << "(" << i << "," << j << ") = " << temp_R(i,j) << endl;
 	  ok = false;
 	}
-  if(ok) R = temp_R;
+  if(ok)
+    {
+      R = temp_R;
+      updateDistances(-1);
+    }
   return ok;
 }
 

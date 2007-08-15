@@ -125,7 +125,7 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
     gpp is the first index the CPU needs to handle
   */
   //These are pure CPU routines
-  Jastrow.evaluate(xData,num-gpp,gpp);
+  Jastrow.evaluate(walkerData,xData,num-gpp,gpp);
   int whichE = walkerData(0)->whichE;
 
   if((whichE >= 0 && whichE < nalpha) || whichE == -1)
@@ -133,7 +133,7 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
   if(whichE >= nalpha || whichE == -1)
     Beta.evaluate(xData,num-gpp,gpp,whichE);
   
-  PE.evaluate(xData,num);
+  PE.evaluate(xData,walkerData,num);
 
   if(Input->flags.nuclear_derivatives != "none")
     nf.evaluate(walkerData,xData,num);
@@ -226,8 +226,8 @@ void QMCSCFJastrow::evaluate(Array2D<double> &X, QMCWalkerData & data)
   Alpha.update_Ds(wdArray);
   Beta.update_Ds(wdArray);
   //We just let the CPU initialize the Jastrow
-  Jastrow.evaluate(temp,1,0);
-  PE.evaluate(temp,1);
+  Jastrow.evaluate(wdArray,temp,1,0);
+  PE.evaluate(temp,wdArray,1);
 
   wd  = & data;
   x   = & X;

@@ -32,8 +32,9 @@ void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
 			       int numNucForceDim1, int numNucForceDim2)
 {
   Input = INPUT;
-  int numElectrons  = Input->WF.getNumberElectrons();
-  int numCI = Input->WF.getNumberDeterminants();
+  int numElectrons = Input->WF.getNumberElectrons();
+  int numNuclei    = Input->Molecule.getNumberAtoms();
+  int numCI        = Input->WF.getNumberDeterminants();
 
   //Initialization probably requires all to be updated immediately
   whichE = -1;
@@ -83,7 +84,15 @@ void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
   modificationRatio    = 0.0;
   psi                  = 0.0;
   isSingular           = false;
-    
+
+  rij.allocate(numElectrons, numElectrons);
+  rij_uvec.allocate(numElectrons, numElectrons, 3);
+  riI.allocate(numElectrons, numNuclei);
+
+  Uij.allocate(numElectrons, numElectrons);
+  Uij_x.allocate(numElectrons, numElectrons);
+  Uij_xx.allocate(numElectrons, numElectrons);
+
   if(Input->flags.nuclear_derivatives != "none")
     nuclearDerivatives.allocate(numNucForceDim1, numNucForceDim2);
   

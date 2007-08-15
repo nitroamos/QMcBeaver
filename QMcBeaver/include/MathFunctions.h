@@ -54,7 +54,7 @@ class MathFunctions
   /**
      Evaluates a Chebyschev series
   */
-  static double csevl(double x, double coef[], int lengthCoef);
+  static double csevl(double x, double * coef, int lengthCoef);
 
   /*
     Returns the value of x with the sign of y.

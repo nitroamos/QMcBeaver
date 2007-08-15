@@ -249,12 +249,7 @@ bool QMCReadAndEvaluateConfigs::AddNewConfigToProperites(
   // Calculate the jastrow values
 
   Input->setAIParameters( Params );
-
-  //there is a much better way to do this...
-  Array1D< Array2D<double>* > temp;
-  temp.allocate(1);
-  temp(0) = &R;
-  Jastrow.evaluate(temp,1,0);
+  Jastrow.evaluate(R);
 
   double E_Local;
   double logWeight;

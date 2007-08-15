@@ -98,6 +98,7 @@ double QMCJastrowElectronNuclear::get_p_a_ln(int ai)
 }
 
 void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
+					 QMCWalkerData * wd,
 					 Array2D<double> & X)
 {
   // initialize the results

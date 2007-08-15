@@ -32,7 +32,7 @@ QMCJastrowElectronElectron::~QMCJastrowElectronElectron()
 void QMCJastrowElectronElectron::initialize(QMCInput * input)
 {
   Input = input;
-
+  wd = 0;
   grad_sum_U.allocate(Input->WF.getNumberElectrons(),3);
 
   int numEE = Input->JP.getNumberEEParameters();
@@ -97,8 +97,10 @@ double QMCJastrowElectronElectron::get_p_a_ln(int ai)
 }
 
 void QMCJastrowElectronElectron::evaluate(QMCJastrowParameters & JP,
-    Array2D<double> & X)
+					  QMCWalkerData * wData,
+					  Array2D<double> & X)
 {
+  wd = wData;
   // initialize the results
   sum_U            = 0.0;
   laplacian_sum_U  = 0.0;
@@ -148,7 +150,7 @@ void QMCJastrowElectronElectron::evaluate(QMCJastrowParameters & JP,
     }
   for(int Electron1=0; Electron1<nalpha; Electron1++)
     for(int Electron2=nalpha; Electron2<X.dim1(); Electron2++)
-	collectForPair(Electron1,Electron2,U_Function,X,index,numP);
+	collectForPair(Electron2,Electron1,U_Function,X,index,numP);
 
   index += numP;
 
@@ -178,6 +180,8 @@ void QMCJastrowElectronElectron::evaluate(QMCJastrowParameters & JP,
   for(int Electron1=nalpha; Electron1<X.dim1(); Electron1++)
     for(int Electron2=nalpha; Electron2<Electron1; Electron2++)
       collectForPair(Electron1,Electron2,U_Function,X,index,numP);
+
+  wd = 0;
 }
 
 inline void QMCJastrowElectronElectron::collectForPair(int Electron1, 
@@ -186,34 +190,45 @@ inline void QMCJastrowElectronElectron::collectForPair(int Electron1,
 						       Array2D<double> & X,
 						       int index, int numP)
 {
-  // Find the unit vector between electron1 and electron2 and their
-  // distance apart
-  static double * unitVector = new double[3];
-  double r = 0;
-  double firstDeriv;
   double temp;
+  double Uij, Uij_x, Uij_xx;
+  
+  double r = wd->rij(Electron1, Electron2);
 
-  for(int i=0; i<3; i++)
+  if(wd->whichE == Electron1 ||
+     wd->whichE == Electron2 || 
+     wd->whichE == -1)
     {
-      unitVector[i] = X(Electron1,i) - X(Electron2,i);
-      r += unitVector[i]*unitVector[i];
+      /*
+	One of the electrons involved was moved, so
+	we need to recalculate everything, and then
+	store it.
+      */
+      U_Function->evaluate(r);
+      
+      Uij    = U_Function->getFunctionValue();
+      Uij_x  = U_Function->getFirstDerivativeValue();
+      Uij_xx = 2.0*(2.0/r * Uij_x + U_Function->getSecondDerivativeValue());
+      
+      wd->Uij(Electron1, Electron2)    = Uij;
+      wd->Uij_x(Electron1, Electron2)  = Uij_x;
+      wd->Uij_xx(Electron1, Electron2) = Uij_xx;      
+    } else {
+      /*
+	We already calculated the data, so we just
+	retrieve it.
+      */
+      Uij    = wd->Uij(Electron1, Electron2);
+      Uij_x  = wd->Uij_x(Electron1, Electron2);
+      Uij_xx = wd->Uij_xx(Electron1, Electron2);
     }
 
-  r = sqrt( r );
-
-  U_Function->evaluate(r);
-
-  // Update the values being calculated ...
-
-  sum_U +=  U_Function->getFunctionValue();
-  firstDeriv = U_Function->getFirstDerivativeValue();
-  laplacian_sum_U += 2.0*(2.0/r * firstDeriv +
-                          U_Function->getSecondDerivativeValue());
+  sum_U           += Uij;
+  laplacian_sum_U += Uij_xx;
 
   for(int i=0; i<3; i++)
     {
-      unitVector[i] /= r;
-      temp = firstDeriv * unitVector[i];
+      temp = Uij_x * wd->rij_uvec(Electron1, Electron2,i);
 
       grad_sum_U(Electron1,i) += temp;
       grad_sum_U(Electron2,i) -= temp;
@@ -226,6 +241,9 @@ inline void QMCJastrowElectronElectron::collectForPair(int Electron1,
   if(globalInput.flags.calculate_Derivatives == 1 &&
      globalInput.flags.optimize_EE_Jastrows == 1)
     {
+      double firstDeriv;
+      //This probably calculates more than is needed...
+      U_Function->evaluate(r);
       for(int ai=0; ai<numP; ai++)
 	{
 	  
@@ -236,7 +254,7 @@ inline void QMCJastrowElectronElectron::collectForPair(int Electron1,
 	  
 	  for(int i=0; i<3; i++)
 	    {
-	      temp = firstDeriv * unitVector[i];
+	      temp = firstDeriv * wd->rij_uvec(Electron1, Electron2,i);
 	      
 	      (p2_xa(ai+index))(Electron1,i) += temp;
 	      (p2_xa(ai+index))(Electron2,i) -= temp;

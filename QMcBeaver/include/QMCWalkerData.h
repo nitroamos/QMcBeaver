@@ -54,6 +54,15 @@ class QMCWalkerData {
 
   Array1D<double> Chi_DensityA, Chi_DensityB;
 
+
+  Array2D<double> rij;
+  Array3D<double> rij_uvec;
+  Array2D<double> riI;
+
+  Array2D<double> Uij;
+  Array2D<double> Uij_x;
+  Array2D<double> Uij_xx;
+
   double localEnergy, kineticEnergy, potentialEnergy;
   double neEnergy, eeEnergy;
 

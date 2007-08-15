@@ -110,9 +110,20 @@ double QMCJastrow::get_p3_xxa_ln(int which, int ai)
   return p3_xxa(which,ai);
 }
 
-void QMCJastrow::evaluate(Array1D<Array2D<double>*> &X, int num, int start)
+void QMCJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
+			  Array1D<Array2D<double>*> &X, int num, int start)
 {
-  evaluate(Input->JP,X,num,start);
+  evaluate(Input->JP,walkerData,X,num,start);
+}
+
+void QMCJastrow::evaluate(Array2D<double> & R)
+{
+  Array1D< Array2D<double>* > temp(1);
+  temp(0) = &R;
+
+  Array1D<QMCWalkerData *> wdArray(1);
+  wdArray(0) = 0;
+  evaluate(Input->JP,wdArray,temp,1,0);
 }
 
 #ifdef QMC_GPU
@@ -180,7 +191,9 @@ void QMCJastrow::setUpGPU(GLuint aElectrons, GLuint bElectrons, int num)
 }
 #endif
 
-void QMCJastrow::evaluate(QMCJastrowParameters & JP, Array1D<Array2D<double>*> &X, int num, int start)
+void QMCJastrow::evaluate(QMCJastrowParameters & JP,
+			  Array1D<QMCWalkerData *> &walkerData,
+			  Array1D<Array2D<double>*> &X, int num, int start)
 {
   static double averageJ = 0, timeJ = 0;
   static double numT = -5;
@@ -194,10 +207,14 @@ void QMCJastrow::evaluate(QMCJastrowParameters & JP, Array1D<Array2D<double>*> &
 
   for(int walker = start; walker < start+num; walker++)
     {
-      JastrowElectronNuclear.evaluate(JP,*X(walker));
+      JastrowElectronNuclear.evaluate(JP,
+				      walkerData(walker),
+				      *X(walker));
 
       if(showTimings){sw.start();}
-      JastrowElectronElectron.evaluate(JP,*X(walker));
+      JastrowElectronElectron.evaluate(JP,
+				       walkerData(walker),
+				       *X(walker));
       if(showTimings){sw.stop();}
 
       sum_U(walker) = JastrowElectronNuclear.getLnJastrow() +
