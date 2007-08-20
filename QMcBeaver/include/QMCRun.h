@@ -48,6 +48,13 @@ class QMCRun
   void initialize(QMCInput *input);  
 
   /**
+     Initalize the QMC Function. This is available
+     separately because it will need to be reset everytime
+     we change the number of parameters we're optimizing.
+  */
+  void initializeFunction();
+
+  /**
     Sets all of the data in the object to zero.
   */
   void zeroOut();

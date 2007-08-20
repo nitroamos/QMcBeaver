@@ -1489,8 +1489,8 @@ template <class T> class Array2D
           eigval.allocate(n);
           for(int i=0; i<n; i++)
             {
-              if(fabs(beta(i)) < 1e-50)
-                cout << "Eigenvalue " << i << " has small beta " << beta(i) << endl;
+              //if(fabs(beta(i)) < 1e-50)
+              //  cout << "Eigenvalue " << setw(3) << i << " has small beta " << setw(15) << beta(i) << endl;
               double real = alphar(i) / beta(i);
               double imag = alphai(i) / beta(i);
 

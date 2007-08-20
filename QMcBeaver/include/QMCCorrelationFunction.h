@@ -102,6 +102,13 @@ public:
     Returns the coefficients for the denominator of the Jastrow's function
     */
   virtual Array1D<double> getDenominatorCoeffs() = 0;
+
+  /**
+     Override this function if there's some Jastrow specific
+     message you want to print.
+     It will be called right after the Jastrow is initialized.
+  */
+  virtual void print(ostream& strm){}
 };
 
 

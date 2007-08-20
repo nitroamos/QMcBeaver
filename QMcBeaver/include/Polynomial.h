@@ -158,6 +158,11 @@ public:
     */
   double getCoefficient(int i);
 
+  /**
+     Write out a string that represents the polynomial.
+  */
+  void print(ostream & strm);
+
 private:
   /**
     Initialize all of the member variables of this object.
