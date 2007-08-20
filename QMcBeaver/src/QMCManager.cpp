@@ -652,6 +652,12 @@ bool QMCManager::run(bool equilibrate)
       
       int numOR = globalInput.WF.getNumberORParameters();
       if(numOR != 0) clog << setw(width) << numOR << " orbital parameters" << endl;
+
+      /**
+	 Allow the reallocation of memory since the number of parameters
+	 might be different than we had in the previous run.
+      */
+      QMCnode.initializeFunction();
     }
   
   int width = 16;

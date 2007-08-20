@@ -199,6 +199,23 @@ Array1D<double> Polynomial::getCoefficients()
   return coefficients;
 }
 
+void Polynomial::print(ostream & strm)
+{
+  strm.unsetf(ios::fixed);
+  strm.unsetf(ios::scientific);
+  for(int i=0; i<coefficients.dim1(); i++)
+    {
+      strm << coefficients(i);
+      if(i > 0)
+	strm << " x^" << i;
+      if(i < coefficients.dim1() - 1 &&
+	 coefficients(i+1) > 0)
+	strm << " +";
+      else
+	strm << " ";
+    }
+}
+
 Array1D<Complex> Polynomial::getRoots()
 {
   Array1D<Complex> complexCoeffs(coefficients.dim1());

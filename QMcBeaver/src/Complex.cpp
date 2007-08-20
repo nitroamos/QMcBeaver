@@ -214,7 +214,9 @@ Complex Complex::squareroot()
 
 ostream & operator<<(ostream & strm, Complex & c)
 {
-  strm << c.real() << (c.imaginary() > 0? "+i":"-i") << fabs(c.imaginary());
+  if(c.real() >= 0.0) strm << " ";
+  strm << c.real();
+  strm << (c.imaginary() > 0? "+i":"-i") << fabs(c.imaginary());
 
   return strm;
 }

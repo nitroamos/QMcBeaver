@@ -35,7 +35,7 @@ void QMCJastrowElectronElectron::initialize(QMCInput * input)
   wd = 0;
   grad_sum_U.allocate(Input->WF.getNumberElectrons(),3);
 
-  int numEE = Input->JP.getNumberEEParameters();
+  int numEE = globalInput.JP.getNumberEEParameters();
   p_a.allocate(numEE);
   p2_xa.allocate(numEE);
   p3_xxa.allocate(numEE);
@@ -190,6 +190,7 @@ inline void QMCJastrowElectronElectron::collectForPair(int Electron1,
 						       Array2D<double> & X,
 						       int index, int numP)
 {
+  bool evaluated = false;
   double temp;
   double Uij, Uij_x, Uij_xx;
   
@@ -205,6 +206,7 @@ inline void QMCJastrowElectronElectron::collectForPair(int Electron1,
 	store it.
       */
       U_Function->evaluate(r);
+      evaluated = true;
       
       Uij    = U_Function->getFunctionValue();
       Uij_x  = U_Function->getFirstDerivativeValue();
@@ -243,10 +245,11 @@ inline void QMCJastrowElectronElectron::collectForPair(int Electron1,
     {
       double firstDeriv;
       //This probably calculates more than is needed...
-      U_Function->evaluate(r);
+      if(!evaluated)
+	U_Function->evaluate(r);
+
       for(int ai=0; ai<numP; ai++)
-	{
-	  
+	{	  
 	  p_a(ai+index)    += U_Function->get_p_a(ai);
 	  firstDeriv        = U_Function->get_p2_xa(ai);
 	  p3_xxa(ai+index) += 2.0*(2.0/r * firstDeriv +

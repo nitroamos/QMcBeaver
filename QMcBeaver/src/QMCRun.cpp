@@ -110,17 +110,22 @@ void QMCRun::zeroOut()
     }
 }
 
-void QMCRun::initialize(QMCInput *INPUT)
+void QMCRun::initializeFunction()
 {
-  Input = INPUT;
-
-  QMF = QMCFunctionsFactory::functionsFactory(INPUT, Input->flags.trial_function_type);
+  QMF = QMCFunctionsFactory::functionsFactory(Input, Input->flags.trial_function_type);
 
   if(Input->flags.trial_function_type ==   "restricted" ||
      Input->flags.trial_function_type == "unrestricted"){
     QMCSCFJastrow * qmfHFJ = static_cast<QMCSCFJastrow*>(QMF);
     qmfHFJ->initialize(Input,&HartreeFock);
   }
+}
+
+void QMCRun::initialize(QMCInput *INPUT)
+{
+  Input = INPUT;
+
+  initializeFunction();
 
   if (Input->flags.calculate_bf_density == 1)
     {

@@ -59,70 +59,74 @@ void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
       Array1D<double> temp;
 
       // Set eup edn
-
-      if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
+      if(getNumberEEParameters() > 0)
 	{
-	  CurrentNumberOfParams = EupEdn.getTotalNumberOfParameters();
-
-	  temp.allocate( CurrentNumberOfParams );
-
-	  for(int i=0; i<temp.dim1(); i++)
+	  if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
 	    {
-	      temp(i) = params(Counter + shift);
-	      Counter++;
+	      CurrentNumberOfParams = EupEdn.getTotalNumberOfParameters();
+	      
+	      temp.allocate( CurrentNumberOfParams );
+	      
+	      for(int i=0; i<temp.dim1(); i++)
+		{
+		  temp(i) = params(Counter + shift);
+		  Counter++;
+		}
+	      
+	      EupEdn.setParameters( temp );
 	    }
-
-	  EupEdn.setParameters( temp );
-	}
-
-      // Set eup eup
-
-      if( NumberOfElectronsUp > 1 )
-	{
-	  CurrentNumberOfParams = EupEup.getTotalNumberOfParameters();
-
-	  temp.allocate(CurrentNumberOfParams);
-
-	  for(int i=0; i<temp.dim1(); i++)
+	  
+	  // Set eup eup
+	  
+	  if( NumberOfElectronsUp > 1 )
 	    {
-	      temp(i) = params(Counter + shift);
-	      Counter++;
+	      CurrentNumberOfParams = EupEup.getTotalNumberOfParameters();
+	      
+	      temp.allocate(CurrentNumberOfParams);
+	      
+	      for(int i=0; i<temp.dim1(); i++)
+		{
+		  temp(i) = params(Counter + shift);
+		  Counter++;
+		}
+	      
+	      EupEup.setParameters( temp );
 	    }
-
-	  EupEup.setParameters( temp );
 	}
 
       // Set eup nuc
-
-      for(int i=0; i<EupNuclear.dim1(); i++)
+      if(getNumberNEParameters() > 0)
 	{
-	  CurrentNumberOfParams = 
-	    EupNuclear(i).getTotalNumberOfParameters();
-
-	  temp.allocate(CurrentNumberOfParams);
-
-	  for(int j=0; j<temp.dim1(); j++)
+	  for(int i=0; i<EupNuclear.dim1(); i++)
 	    {
-	      temp(j) = params(Counter + shift);
-	      Counter++;
+	      CurrentNumberOfParams = 
+		EupNuclear(i).getTotalNumberOfParameters();
+	      
+	      temp.allocate(CurrentNumberOfParams);
+	      
+	      for(int j=0; j<temp.dim1(); j++)
+		{
+		  temp(j) = params(Counter + shift);
+		  Counter++;
+		}
+	      
+	      EupNuclear(i).setParameters( temp );
 	    }
-
-	  EupNuclear(i).setParameters( temp );
 	}
 
       // Now set the things equal that need to be
-
+      
       if( NumberOfElectronsDown > 1 )
 	{
 	  EdnEdn = EupEup;
 	  EdnEdn.setParticle1Type("Electron_down");
 	  EdnEdn.setParticle2Type("Electron_down");
 	}
-
+      
       if( NumberOfElectronsDown > 0 )
 	{
 	  EdnNuclear = EupNuclear;
-
+	  
 	  for(int i=0; i<EdnNuclear.dim1(); i++)
 	    {
 	      EdnNuclear(i).setParticle1Type("Electron_down");
@@ -136,83 +140,66 @@ void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
       Array1D<double> temp;
 
       // Set eup edn
-
-      if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
+      if(getNumberEEParameters() > 0)
 	{
-	  CurrentNumberOfParams = EupEdn.getTotalNumberOfParameters();
-
-	  temp.allocate( CurrentNumberOfParams );
-
-	  for(int i=0; i<temp.dim1(); i++)
-	    {  
-	      temp(i) = params(Counter + shift);
-	      Counter++;
+	  if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
+	    {
+	      CurrentNumberOfParams = EupEdn.getTotalNumberOfParameters();
+	      
+	      temp.allocate( CurrentNumberOfParams );
+	      
+	      for(int i=0; i<temp.dim1(); i++)
+		{  
+		  temp(i) = params(Counter + shift);
+		  Counter++;
+		}
+	      
+	      EupEdn.setParameters( temp );
 	    }
-
-	  EupEdn.setParameters( temp );
-	}
-
-      // Set eup eup
-
-      if( NumberOfElectronsUp > 1 )
-	{
-	  CurrentNumberOfParams = EupEup.getTotalNumberOfParameters();
-
-	  temp.allocate(CurrentNumberOfParams);
 	  
-	  for(int i=0; i<temp.dim1(); i++)
+	  // Set eup eup
+	  
+	  if( NumberOfElectronsUp > 1 )
 	    {
-	      temp(i) = params(Counter + shift);
-	      Counter++;
+	      CurrentNumberOfParams = EupEup.getTotalNumberOfParameters();
+	      
+	      temp.allocate(CurrentNumberOfParams);
+	      
+	      for(int i=0; i<temp.dim1(); i++)
+		{
+		  temp(i) = params(Counter + shift);
+		  Counter++;
+		}
+	      
+	      EupEup.setParameters( temp );
 	    }
-
-	  EupEup.setParameters( temp );
-	}
-
-      // Set edn edn
-
-      if( NumberOfElectronsDown > 1 )
-	{
-	  CurrentNumberOfParams = EdnEdn.getTotalNumberOfParameters();
-
-	  temp.allocate(CurrentNumberOfParams);
-
-	  for(int i=0; i<temp.dim1(); i++)
+	  
+	  // Set edn edn
+	  
+	  if( NumberOfElectronsDown > 1 )
 	    {
-	      temp(i) = params(Counter + shift);
-	      Counter++;
+	      CurrentNumberOfParams = EdnEdn.getTotalNumberOfParameters();
+	      
+	      temp.allocate(CurrentNumberOfParams);
+	      
+	      for(int i=0; i<temp.dim1(); i++)
+		{
+		  temp(i) = params(Counter + shift);
+		  Counter++;
+		}
+	      
+	      EdnEdn.setParameters( temp );
 	    }
-
-	  EdnEdn.setParameters( temp );
 	}
 
       // Set eup nuc
-
-      for(int i=0; i<EupNuclear.dim1(); i++)
+      if(getNumberNEParameters() > 0)
 	{
-	  CurrentNumberOfParams = 
-	    EupNuclear(i).getTotalNumberOfParameters();
-
-	  temp.allocate(CurrentNumberOfParams);
-
-	  for(int j=0; j<temp.dim1(); j++)
-	    {
-	      temp(j) = params(Counter + shift);
-	      Counter++;
-	    }
-
-	  EupNuclear(i).setParameters( temp );
-	}
-
-      // Set edn nuc
-
-      if( NumberOfElectronsDown > 0 )
-	{
-	  for(int i=0; i<EdnNuclear.dim1(); i++)
+	  for(int i=0; i<EupNuclear.dim1(); i++)
 	    {
 	      CurrentNumberOfParams = 
-		EdnNuclear(i).getTotalNumberOfParameters();
-
+		EupNuclear(i).getTotalNumberOfParameters();
+	      
 	      temp.allocate(CurrentNumberOfParams);
 	      
 	      for(int j=0; j<temp.dim1(); j++)
@@ -220,8 +207,29 @@ void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
 		  temp(j) = params(Counter + shift);
 		  Counter++;
 		}
-
-	      EdnNuclear(i).setParameters( temp );
+	      
+	      EupNuclear(i).setParameters( temp );
+	    }
+	  
+	  // Set edn nuc
+	  
+	  if( NumberOfElectronsDown > 0 )
+	    {
+	      for(int i=0; i<EdnNuclear.dim1(); i++)
+		{
+		  CurrentNumberOfParams = 
+		    EdnNuclear(i).getTotalNumberOfParameters();
+		  
+		  temp.allocate(CurrentNumberOfParams);
+		  
+		  for(int j=0; j<temp.dim1(); j++)
+		    {
+		      temp(j) = params(Counter + shift);
+		      Counter++;
+		    }
+		  
+		  EdnNuclear(i).setParameters( temp );
+		}
 	    }
 	}
     }
@@ -266,41 +274,46 @@ void QMCJastrowParameters::getJWParameters(Array1D<double> & params, int shift)
       Array1D<double> temp;
 
       // Put in eup edn params
-
-      if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
+      if(getNumberEEParameters() > 0)
 	{
-	  temp = EupEdn.getParameters();
-
-	  for(int i=0; i<temp.dim1(); i++)
+	  if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
 	    {
-	      params(Counter + shift) = temp(i);
-	      Counter++;
+	      temp = EupEdn.getParameters();
+	      
+	      for(int i=0; i<temp.dim1(); i++)
+		{
+		  params(Counter + shift) = temp(i);
+		  Counter++;
+		}
 	    }
-	}
-
-      // Put in eup eup params
-
-      if( NumberOfElectronsUp > 1 )
-	{
-	  temp = EupEup.getParameters();
-
-	  for(int i=0; i<temp.dim1(); i++)
+	  
+	  // Put in eup eup params
+	  
+	  if( NumberOfElectronsUp > 1 )
 	    {
-	      params(Counter + shift) = temp(i);
-	      Counter++;
+	      temp = EupEup.getParameters();
+	      
+	      for(int i=0; i<temp.dim1(); i++)
+		{
+		  params(Counter + shift) = temp(i);
+		  Counter++;
+		}
 	    }
 	}
 
       // Put in eup nuclear params
 
-      for(int i=0; i<EupNuclear.dim1(); i++)
+      if(getNumberNEParameters() > 0)
 	{
-	  temp = EupNuclear(i).getParameters();
-
-	  for(int j=0; j<temp.dim1(); j++)
+	  for(int i=0; i<EupNuclear.dim1(); i++)
 	    {
-	      params(Counter + shift) = temp(j);
-	      Counter++;
+	      temp = EupNuclear(i).getParameters();
+	      
+	      for(int j=0; j<temp.dim1(); j++)
+		{
+		  params(Counter + shift) = temp(j);
+		  Counter++;
+		}
 	    }
 	}
     }
@@ -310,69 +323,73 @@ void QMCJastrowParameters::getJWParameters(Array1D<double> & params, int shift)
       Array1D<double> temp;
       
       // Put in eup edn params
-
-      if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
+      if(getNumberEEParameters() > 0)
 	{
-	  temp = EupEdn.getParameters();
-
-	  for(int i=0; i<temp.dim1(); i++)
+	  if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
 	    {
-	      params(Counter + shift) = temp(i);
-	      Counter++;
+	      temp = EupEdn.getParameters();
+	      
+	      for(int i=0; i<temp.dim1(); i++)
+		{
+		  params(Counter + shift) = temp(i);
+		  Counter++;
+		}
 	    }
-	}
 
-      // Put in eup eup params
-      
-      if( NumberOfElectronsUp > 1 )
-	{
-	  temp = EupEup.getParameters();
+	  // Put in eup eup params
 	  
-	  for(int i=0; i<temp.dim1(); i++)
+	  if( NumberOfElectronsUp > 1 )
 	    {
-	      params(Counter + shift) = temp(i);
-	      Counter++;
+	      temp = EupEup.getParameters();
+	      
+	      for(int i=0; i<temp.dim1(); i++)
+		{
+		  params(Counter + shift) = temp(i);
+		  Counter++;
+		}
 	    }
-	}
-
-      // Put in edn edn params
-
-      if( NumberOfElectronsDown > 1 )
-	{
-	  temp = EdnEdn.getParameters();
-
-	  for(int i=0; i<temp.dim1(); i++)
+	  
+	  // Put in edn edn params
+	  
+	  if( NumberOfElectronsDown > 1 )
 	    {
-	      params(Counter + shift) = temp(i);
-	      Counter++;
+	      temp = EdnEdn.getParameters();
+	      
+	      for(int i=0; i<temp.dim1(); i++)
+		{
+		  params(Counter + shift) = temp(i);
+		  Counter++;
+		}
 	    }
 	}
       
       // Put in eup nuc params
-
-      for(int i=0; i<EupNuclear.dim1(); i++)
+      if(getNumberNEParameters() > 0)
 	{
-	  temp = EupNuclear(i).getParameters();
-
-	  for(int j=0; j<temp.dim1(); j++)
+	  for(int i=0; i<EupNuclear.dim1(); i++)
 	    {
-	      params(Counter + shift) = temp(j);
-	      Counter++;
-	    }
-	}
-
-      // Put in edn nuc params
-      
-      if( NumberOfElectronsDown > 0 )
-	{
-	  for(int i=0; i<EdnNuclear.dim1(); i++)
-	    {
-	      temp = EdnNuclear(i).getParameters();
-
+	      temp = EupNuclear(i).getParameters();
+	      
 	      for(int j=0; j<temp.dim1(); j++)
 		{
 		  params(Counter + shift) = temp(j);
 		  Counter++;
+		}
+	    }
+	  
+	  // Put in edn nuc params
+	  
+	  if( NumberOfElectronsDown > 0 )
+	    {
+	      for(int i=0; i<EdnNuclear.dim1(); i++)
+		{
+		  temp = EdnNuclear(i).getParameters();
+		  
+		  for(int j=0; j<temp.dim1(); j++)
+		    {
+		      params(Counter + shift) = temp(j);
+		      Counter++;
+		    }
 		}
 	    }
 	}

@@ -75,10 +75,18 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 
   cout << endl << endl;
 
-  if(hamiltonian.dim1() < 20)
+  int largestPrintableMatrix = 10;
+  if(hamiltonian.dim1() <= largestPrintableMatrix)
     {
-      cout << "Hamiltonian:\n" << hamiltonian << endl;
-      cout << "Overlap:\n" << overlap << endl;
+      cout << "Hamiltonian:" << endl;
+      hamiltonian.printArray2D(cout,12,7,-1,',',true);
+      cout << "Overlap:\n" << endl;
+      overlap.printArray2D(cout,12,7,-1,',',true);
+    } else if(hamiltonian.dim1() < 20) {
+      cout << "Hamiltonian:" << endl;
+      hamiltonian.printArray2D(cout,2,7,-1,',',true);
+      cout << "Overlap:\n" << endl;
+      overlap.printArray2D(cout,2,7,-1,',',true);
     }
 
   Array2D<double> eigvec;
@@ -87,14 +95,20 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 				 overlap,
 				 eigval);
 
-  if(eigvec.dim1() < 20)
-    cout << "Eigenvectors:\n" << eigvec << endl;
+  if(eigvec.dim1() <= largestPrintableMatrix)
+    {
+      cout << "Eigenvectors:" << endl;
+      eigvec.printArray2D(cout,12,7,-1,',',true);
+    } else if(hamiltonian.dim1() < 20) {
+      cout << "Eigenvectors:" << endl;
+      eigvec.printArray2D(cout,2,7,-1,' ',true);
+    }
 
   int best_idx = 0;
   double best_val = 0.0;
   for(int i=0; i<dim+1; i++)
     {
-      cout << "Eigenvalue(" << i << "): " << eigval(i) << endl;
+      cout << "Eigenvalue(" << setw(3) << i << "): " << eigval(i) << endl;
       double val = eigval(i).real();
       if( fabs(eigval(i).imaginary()) < 1e-50 &&
 	  val < best_val &&
@@ -129,20 +143,21 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 					  fresh_overlap,
 					  0.5);
     }
-
   cout << setw(20) << "rescaling factor:";
   cout.precision(12);
   cout.width(20);
   cout << rescale << endl;
-    
+  
   // Calculate the next step
+  delta_x *= rescale;
   Array1D<double> x_new = x.back();
+  
   for(int j=0; j<dim; j++)
-    x_new(j) += rescale * delta_x(j);
+    x_new(j) += delta_x(j);
 
   cout << endl << "Ending Generalized Eigenvalue Search Optimization... " << endl;
 
-  globalInput.printAIParameters(cout,"Delta params",20,delta_x,true);   
+  globalInput.printAIParameters(cout,"Delta params",20,delta_x,true);
   return x_new;
 }
 

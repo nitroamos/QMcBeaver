@@ -1,6 +1,7 @@
 #include <iostream>
 #include "QMCLinearizeStepLength.h"
 #include "QMCInput.h"
+#include <iomanip>
 
 using namespace std;
 
@@ -26,7 +27,8 @@ double QMCLinearizeStepLength::stepLength(QMCObjectiveFunction *function,
   //see JCP 126 084102 (2007) for description
 
   Array1D<double> N(delta_x.dim1());
-    
+  double denom;
+
   for(int ai=0; ai<N.dim1(); ai++)
     {
       
@@ -40,8 +42,8 @@ double QMCLinearizeStepLength::stepLength(QMCObjectiveFunction *function,
 	    if(!isLinear(j))
 	      numerator += delta_x(j) * overlap(ai+1,j+1);
 	  numerator *= (1.0 - ksi);
-	  
-	  double denom = 1.0;
+
+	  denom = 1.0;
 	  for(int j=0; j<N.dim1(); j++)
 	    for(int k=0; k<N.dim1(); k++)
 	      if(!isLinear(j) && !isLinear(k))
@@ -50,10 +52,12 @@ double QMCLinearizeStepLength::stepLength(QMCObjectiveFunction *function,
 	  denom = (1.0 - ksi) + ksi*denom;
 	  
 	  N(ai) = - numerator / denom;
-	  cout << "ai = " << ai << " num = " << numerator << " den = " << denom << endl;
 	}
     }
-  
+
+  //it appears to be the same for all the ai
+  cout << "Rescaling denominator: " << denom << endl;
+
   globalInput.printAIParameters(cout,"Rescaling terms",20,N,!true);
   
   double sum = 0;

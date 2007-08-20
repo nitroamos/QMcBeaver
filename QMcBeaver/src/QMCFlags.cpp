@@ -1027,6 +1027,8 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
 
   strm << "\n# Parameters for wavefunction optimization\n";
   strm << "optimize_Psi\n " << flags.optimize_Psi << endl;
+  strm << "optimize_EE_Jastrows\n " << flags.optimize_EE_Jastrows << endl;
+  strm << "optimize_EN_Jastrows\n " << flags.optimize_EN_Jastrows << endl;
   strm << "optimize_CI\n " << flags.optimize_CI << endl;
   strm << "optimize_Orbitals\n " << flags.optimize_Orbitals << endl;
   strm << "optimize_Psi_method\n " << flags.optimize_Psi_method << endl;

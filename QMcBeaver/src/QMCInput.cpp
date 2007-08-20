@@ -110,6 +110,9 @@ void QMCInput::printAIParameters(ostream & strm,
       strm << setw(margin) << name << " EE = ";
       for(int ai=0; ai<numEE; ai++)
 	{
+	  if(ai%5 == 0 && ai != 0)
+	    strm << endl << setw(margin+6) << " ";
+
 	  strm.width(width);
 	  strm.precision(prec);
 	  strm << array(ai + shift);
@@ -124,6 +127,9 @@ void QMCInput::printAIParameters(ostream & strm,
       strm << setw(margin) << name << " NE = ";
       for(int ai=0; ai<numNE; ai++)
 	{
+	  if(ai%5 == 0 && ai != 0)
+	    strm << endl << setw(margin+6) << " ";
+
 	  strm.width(width);
 	  strm.precision(prec);
 	  strm << array(ai + shift);

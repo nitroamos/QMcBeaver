@@ -35,7 +35,7 @@ void QMCJastrowElectronNuclear::initialize(QMCInput * input)
 
   grad_sum_U.allocate(Input->WF.getNumberElectrons(),3);
 
-  int numNE = Input->JP.getNumberNEParameters();
+  int numNE = globalInput.JP.getNumberNEParameters();
   p_a.allocate(numNE);
   p2_xa.allocate(numNE);
   p3_xxa.allocate(numNE);
