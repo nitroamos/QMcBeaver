@@ -103,13 +103,6 @@ bool QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
   
   strm >> temp >> CorrelationFunctionType;
 
-  if( ParticleTypes(1) != "Electron_up" && ParticleTypes(1) != "Electron_down"
-      && nucCuspReplacement && CorrelationFunctionType != "None")
-    {
-      //clog << "WARNING: switching CorrelationFunctionType to \"None\" for (" << pt1 << ", " << pt2 << ")" << 
-      //" since we're replacing the cusps." << endl;
-      CorrelationFunctionType = "None";
-    }
   // Load the number of parameter types
   
   strm >> temp >> temp;
@@ -227,6 +220,23 @@ bool QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
       Constants(i) = atof(temp.c_str());
     }
 
+  if( ParticleTypes(1) != "Electron_up" && ParticleTypes(1) != "Electron_down"
+      && nucCuspReplacement && CorrelationFunctionType != "None")
+    {
+      /*
+	If the electron nuclear cusp condition is already fulfilled
+	(i.e. replace_electron_nucleus_cusps = 1), then the question
+	is whether we want to automatically turn off any Electron-Nuclear
+	Jastrow that might conflict with this.
+
+	Previously, it would be automatically turned off. However, with the
+	Cambridge Jastrow, it's probably advantageous to use an Electron Nucleus
+	Jastrow with a cusp condition of 0.
+      */
+      //clog << "WARNING: switching CorrelationFunctionType to \"None\" for (" << pt1 << ", " << pt2 << ")" << 
+      //" since we're replacing the cusps." << endl;
+      //CorrelationFunctionType = "None";
+    }
 
   // if the correlation function type is "None"
   // then remove any parameters or constants
@@ -251,6 +261,8 @@ bool QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
   // set the correlation function
   setCorrelationFunction();
   initializeCorrelationFunctionParameters();
+  
+  CorrelationFunction->print(clog);
 
   return ok;
 }

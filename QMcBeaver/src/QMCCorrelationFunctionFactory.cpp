@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCCorrelationFunctionFactory.h"
+#include "Cambridge2CorrelationFunction.h"
 
 QMCCorrelationFunction * 
   QMCCorrelationFunctionFactory::correlationFunctionFactory(string & Type)
@@ -28,6 +29,10 @@ QMCCorrelationFunction *
   else if( Type == "FixedCuspPade" )
     {
       CorrelationFunction = new FixedCuspPadeCorrelationFunction();
+    }
+  else if( Type == "Cambridge2" )
+    {
+      CorrelationFunction = new Cambridge2CorrelationFunction();
     }
   else if( Type == "Julius" )
     {
