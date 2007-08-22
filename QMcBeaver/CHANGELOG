@@ -1,3 +1,15 @@
+Wed, Aug 20, 2007 Amos Anderson
+1.  I added two new 2 particle Jastrow functions, based on the most
+    recent publications from the CHAMP and CASINO people. They
+    both work better than the Pade Jastrows. However, both are difficult
+    to optimize.
+
+2.  I added some performance metrics to the output.
+
+3.  I also included numerous other small improvements and bug fixes.
+    For example, there was a bug compelling the user to optimize both
+    EE and EN Jastrows at the same time.
+
 Mon, Jul 23, 2007 Amos Anderson
 1.  I added an option, one_e_per_iter, which will allow you to move
     one electron at a time. I'm not completely sure I'm handling the
