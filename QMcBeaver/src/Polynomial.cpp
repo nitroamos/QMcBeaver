@@ -209,7 +209,7 @@ void Polynomial::print(ostream & strm)
       if(i > 0)
 	strm << " x^" << i;
       if(i < coefficients.dim1() - 1 &&
-	 coefficients(i+1) > 0)
+	 coefficients(i+1) >= 0)
 	strm << " +";
       else
 	strm << " ";

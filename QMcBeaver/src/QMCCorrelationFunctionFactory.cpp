@@ -12,6 +12,7 @@
 
 #include "QMCCorrelationFunctionFactory.h"
 #include "Cambridge2CorrelationFunction.h"
+#include "Umrigar2CorrelationFunction.h"
 
 QMCCorrelationFunction * 
   QMCCorrelationFunctionFactory::correlationFunctionFactory(string & Type)
@@ -33,6 +34,10 @@ QMCCorrelationFunction *
   else if( Type == "Cambridge2" )
     {
       CorrelationFunction = new Cambridge2CorrelationFunction();
+    }
+  else if( Type == "Umrigar2" )
+    {
+      CorrelationFunction = new Umrigar2CorrelationFunction();
     }
   else if( Type == "Julius" )
     {
