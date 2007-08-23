@@ -218,9 +218,21 @@ void Polynomial::print(ostream & strm)
 
 Array1D<Complex> Polynomial::getRoots()
 {
-  Array1D<Complex> complexCoeffs(coefficients.dim1());
+  int numRoots = coefficients.dim1();
 
-  for(int i=0; i<coefficients.dim1(); i++)
+  /**
+     If the highest order terms have 0 for
+     a coefficient, then we have fewer roots.
+  */
+  for(int i=coefficients.dim1()-1; i>=0; i--)
+    if( fabs(coefficients(i)) <  1.0e-50)
+      numRoots--;
+    else
+      break;
+
+  Array1D<Complex> complexCoeffs(numRoots);
+
+  for(int i=0; i<numRoots; i++)
     {
       complexCoeffs(i) = coefficients(i);
     }

@@ -50,6 +50,39 @@ void QMCJastrowParameters::operator=( const QMCJastrowParameters & rhs )
   NumberOfElectronsDown = rhs.NumberOfElectronsDown;
 }
 
+void QMCJastrowParameters::print(ostream & strm)
+{
+  strm << "EupEdn:" << endl;
+  EupEdn.getCorrelationFunction()->print(strm);
+  strm << endl;
+
+  strm << "EupEup:" << endl;
+  EupEup.getCorrelationFunction()->print(strm);
+  strm << endl;
+
+  if(!EquivalentElectronUpDownParams)
+    {
+      strm << "EdnEdn:" << endl;
+      EdnEdn.getCorrelationFunction()->print(strm);    
+      strm << endl;
+    }
+
+  for(int i=0; i<EupNuclear.dim1(); i++) 
+    {
+      strm << "EupNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" << endl;
+      EupNuclear(i).getCorrelationFunction()->print(strm);    
+      strm << endl;
+    }
+
+  if(!EquivalentElectronUpDownParams)
+    for(int i=0; i<EdnNuclear.dim1(); i++) 
+      {
+	strm << "EdnNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" << endl;
+	EdnNuclear(i).getCorrelationFunction()->print(strm);    
+	strm << endl;
+      }
+}
+
 void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
 {
   if( EquivalentElectronUpDownParams )
@@ -404,19 +437,32 @@ Array1D<Complex> QMCJastrowParameters::getPoles()
     {
       // up up jastrow
 
-      Array1D<Complex> poles = EupEup.getPoles();
-      
+      Array1D<Complex> poles;
+      try {
+	poles = EupEup.getPoles();
+      }
+
+      catch(Exception e){
+	cout << "Exception: EupEup " << e.getMessage() << endl;
+      }
+
       for(int i=0; i<poles.dim1(); i++)
 	{
 	  allPoles.push_back(poles(i));
 	}
     }
 
-  if( NumberOfElectronsDown > 1 )
+  if( NumberOfElectronsDown > 1 && !EquivalentElectronUpDownParams)
     {
       // down down jastrow
+      Array1D<Complex> poles;
+      try {
+	poles = EdnEdn.getPoles();
+      }
 
-      Array1D<Complex> poles = EdnEdn.getPoles();
+      catch(Exception e){
+	cout << "Exception: EdnEdn " << e.getMessage() << endl;
+      }
       
       for(int i=0; i<poles.dim1(); i++)
 	{
@@ -427,8 +473,14 @@ Array1D<Complex> QMCJastrowParameters::getPoles()
   if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
     {
       // up down jastrow
+      Array1D<Complex> poles;
+      try {
+	poles = EupEdn.getPoles();
+      }
 
-      Array1D<Complex> poles = EupEdn.getPoles();
+      catch(Exception e){
+	cout << "Exception: EupEdn " << e.getMessage() << endl;
+      }
       
       for(int i=0; i<poles.dim1(); i++)
 	{
@@ -439,26 +491,39 @@ Array1D<Complex> QMCJastrowParameters::getPoles()
   for(int i=0; i<EupNuclear.dim1(); i++)
     {
       // up nuclear jastrow
+      Array1D<Complex> poles;
+      try {
+	poles = EupNuclear(i).getPoles();
+      }
 
-      Array1D<Complex> poles = EupNuclear(i).getPoles();
-      
+      catch(Exception e){
+	cout << "Exception: EupNuclear(" << i << ") " << e.getMessage() << endl;
+      }
+
       for(int j=0; j<poles.dim1(); j++)
 	{
 	  allPoles.push_back(poles(j));
 	}
     }
 
-  for(int i=0; i<EdnNuclear.dim1(); i++)
-    {
-      // down nuclear jastrow
-
-      Array1D<Complex> poles = EdnNuclear(i).getPoles();
-      
-      for(int j=0; j<poles.dim1(); j++)
-	{
-	  allPoles.push_back(poles(j));
+  if(!EquivalentElectronUpDownParams)
+    for(int i=0; i<EdnNuclear.dim1(); i++)
+      {
+	// down nuclear jastrow
+	Array1D<Complex> poles;
+	try {
+	  poles = EdnNuclear(i).getPoles();
 	}
-    }
+	
+	catch(Exception e){
+	  cout << "Exception: EdnNuclear(" << i << ") " << e.getMessage() << endl;
+	}
+	
+	for(int j=0; j<poles.dim1(); j++)
+	  {
+	    allPoles.push_back(poles(j));
+	  }
+      }
 
   // pack up the results into a vector
   Array1D<Complex> results( (int)allPoles.size() );
@@ -721,6 +786,8 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 	    EdnNuclear(i).getTotalNumberOfParameters();
 	}
     }
+
+  print(clog);
 }
 
 QMCCorrelationFunctionParameters * QMCJastrowParameters::

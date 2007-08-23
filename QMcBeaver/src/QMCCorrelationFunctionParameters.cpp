@@ -261,9 +261,6 @@ bool QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
   // set the correlation function
   setCorrelationFunction();
   initializeCorrelationFunctionParameters();
-  
-  CorrelationFunction->print(clog);
-
   return ok;
 }
 
