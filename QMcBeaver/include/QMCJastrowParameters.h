@@ -71,6 +71,12 @@ public:
   void setJWParameters(Array1D<double> & params, int shift);
 
   /**
+     Print all the correlation functions out so we can see what they
+     look like.
+  */
+  void print(ostream & strm);
+
+  /**
     Gets the parameters describing the particle-particle interactions.
 
     @return parameters describing particle-particle interactions.

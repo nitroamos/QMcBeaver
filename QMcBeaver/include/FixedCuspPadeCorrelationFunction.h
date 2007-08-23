@@ -59,6 +59,8 @@ class FixedCuspPadeCorrelationFunction : public QMCCorrelationFunction
   Array1D<double> getNumeratorCoeffs();
 
   Array1D<double> getDenominatorCoeffs();
+
+  void print(ostream& strm);
 };
 
 #endif
