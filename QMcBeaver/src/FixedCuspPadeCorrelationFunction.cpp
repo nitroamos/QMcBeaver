@@ -105,11 +105,20 @@ double FixedCuspPadeCorrelationFunction::getFunctionValue()
 
 double FixedCuspPadeCorrelationFunction::get_p_a(int ai)
 {
-  /*
-    The first adjustable parameter is not the x^0 term, but
-    the x^1 term. We aren't letting the c_0 term to be adjustable.
-  */
-  ai++;
+  if(ai < Numerator.getNumberCoefficients() - 2)
+    {
+      //The parameter is in the numerator. The first
+      //two terms in the numerator are not optimizable, so the first
+      //one is at 2.
+      ai += 2;
+      return Numerator.get_p_a(ai) / Denominator.getFunctionValue();
+      return 0.0;
+    }
+
+  //The parameter is in the denominator, where first optimizable
+  //parameter has index 1.
+  ai -= (Numerator.getNumberCoefficients() - 2) -1;
+
   double t = -FunctionValue/Denominator.getFunctionValue();
   return t * Denominator.get_p_a(ai);
 }
@@ -121,12 +130,21 @@ double FixedCuspPadeCorrelationFunction::getFirstDerivativeValue()
 
 double FixedCuspPadeCorrelationFunction::get_p2_xa(int ai)
 {
-  ai++;
   double div    = Denominator.getFunctionValue();
   double div2   = div*div;
+  double  p_x   = Denominator.getFirstDerivativeValue();
+
+  if(ai < Numerator.getNumberCoefficients() - 2)
+    {
+      ai += 2;
+      double t = div * Numerator.get_p2_xa(ai);
+      t -= Numerator.get_p_a(ai) * p_x;
+      return t / div2;
+    }
+
+  ai -= (Numerator.getNumberCoefficients() - 2) -1; 
 
   double  p_a   = Denominator.get_p_a(ai);
-  double  p_x   = Denominator.getFirstDerivativeValue();
   double p2_xa  = Denominator.get_p2_xa(ai);
 
   double t1 =  2.0 * p_a * p_x / div;
@@ -146,14 +164,24 @@ double FixedCuspPadeCorrelationFunction::getSecondDerivativeValue()
 
 double FixedCuspPadeCorrelationFunction::get_p3_xxa(int ai)
 {
-  ai++;
   double div    = Denominator.getFunctionValue();
   double div2   = div*div;
-
-  double  p_a   = Denominator.get_p_a(ai);
   double  p_x   = Denominator.getFirstDerivativeValue();
-  double p2_xa  = Denominator.get_p2_xa(ai);
   double p2_xx  = Denominator.getSecondDerivativeValue();
+
+  if(ai < Numerator.getNumberCoefficients() - 2)
+    {
+      ai += 2;
+      double t = 2.0 * p_x * p_x * Numerator.get_p_a(ai);
+      t -= div * p2_xx * Numerator.get_p_a(ai);
+      t -= 2.0 * div * p_x * Numerator.get_p2_xa(ai);
+      t += div2 * Numerator.get_p3_xxa(ai);
+      return t/(div2 * div);
+    }
+
+  ai -= (Numerator.getNumberCoefficients() - 2) -1; 
+  double  p_a   = Denominator.get_p_a(ai);
+  double p2_xa  = Denominator.get_p2_xa(ai);
   double p3_xxa = Denominator.get_p3_xxa(ai);
   /*
     There are 7 terms. First, we'll handle the 4 terms where the numerator
@@ -188,5 +216,16 @@ Array1D<double> FixedCuspPadeCorrelationFunction::getDenominatorCoeffs()
   return Denominator.getCoefficients();
 }
 
+void FixedCuspPadeCorrelationFunction::print(ostream& strm)
+{
+  strm << "Fixed Cusp Pade Jastrow parameters:" << endl;
+  strm << "(";
+  Numerator.print(strm);
+  strm << ")/" << endl;
+ 
+  strm << "(";
+  Denominator.print(strm);
+  strm << ")" << endl;
+}
 
 
