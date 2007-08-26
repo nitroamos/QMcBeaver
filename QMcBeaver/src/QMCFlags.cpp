@@ -141,6 +141,11 @@ void QMCFlags::read_flags(string InFileName)
   link_Orbital_parameters        = 1;
   link_Determinant_parameters    = 1;
 
+  use_three_body_jastrow         = 0;
+  optimize_NEE_cutoffs           = 0;
+  reproduce_NE_with_NEE_jastrow  = 0;
+  reproduce_EE_with_NEE_jastrow  = 0;
+
   //Difficult to categorize
   programmersLongs.clear();
   chip_and_mike_are_cool         = "false";
@@ -483,6 +488,26 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
           optimize_EN_Jastrows = atoi(temp_string.c_str());
         }
+      else if(temp_string == "use_three_body_jastrow")
+        {
+          input_file >> temp_string;
+          use_three_body_jastrow = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "reproduce_NE_with_NEE_jastrow")
+	{
+	  input_file >> temp_string;
+	  reproduce_NE_with_NEE_jastrow = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "reproduce_EE_with_NEE_jastrow")
+	{
+	  input_file >> temp_string;
+	  reproduce_EE_with_NEE_jastrow = atoi(temp_string.c_str());
+	}
+      else if(temp_string == "optimize_NEE_cutoffs")
+	{
+	  input_file >> temp_string;
+	  optimize_NEE_cutoffs = atoi(temp_string.c_str());
+	}
       else if(temp_string == "optimize_CI")
         {
           input_file >> temp_string;
@@ -1030,6 +1055,14 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "optimize_EE_Jastrows\n " << flags.optimize_EE_Jastrows << endl;
   strm << "optimize_EN_Jastrows\n " << flags.optimize_EN_Jastrows << endl;
   strm << "optimize_CI\n " << flags.optimize_CI << endl;
+
+  strm << "use_three_body_jastrow\n " << flags.use_three_body_jastrow << endl;
+  strm << "reproduce_NE_with_NEE_jastrow\n " 
+       << flags.reproduce_NE_with_NEE_jastrow << endl;
+  strm << "reproduce_EE_with_NEE_jastrow\n "
+       << flags.reproduce_EE_with_NEE_jastrow << endl;
+  strm << "optimize_NEE_cutoffs\n " << flags.optimize_NEE_cutoffs << endl;
+
   strm << "optimize_Orbitals\n " << flags.optimize_Orbitals << endl;
   strm << "optimize_Psi_method\n " << flags.optimize_Psi_method << endl;
   strm << "optimize_Psi_criteria\n " << flags.optimize_Psi_criteria << endl;

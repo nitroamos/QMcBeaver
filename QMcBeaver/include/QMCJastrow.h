@@ -21,6 +21,7 @@
 #include "QMCJastrowParameters.h"
 #include "QMCJastrowElectronNuclear.h"
 #include "QMCJastrowElectronElectron.h"
+#include "QMCThreeBodyJastrow.h"
 #include "Stopwatch.h"
 #include "IeeeMath.h"
 #include "QMCWalkerData.h"
@@ -202,6 +203,7 @@ private:
 #endif
 
   QMCJastrowElectronElectron JastrowElectronElectron;
+  QMCThreeBodyJastrow ThreeBodyJastrow;
   QMCInput* Input;
 };
 

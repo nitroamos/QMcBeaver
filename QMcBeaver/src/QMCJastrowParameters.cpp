@@ -30,7 +30,6 @@ FITNESS FOR A  PARTICULAR PURPOSE.  See the GNU General Public License
 for more details. 
 **************************************************************************/
 
-
 #include "QMCJastrowParameters.h"
 #include "QMCInput.h"
 
@@ -39,11 +38,24 @@ void QMCJastrowParameters::operator=( const QMCJastrowParameters & rhs )
   NumberOfEEParameters   = rhs.NumberOfEEParameters;
   NumberOfNEParameters   = rhs.NumberOfNEParameters;
   NumberOfNEupParameters = rhs.NumberOfNEupParameters;
+
   EupNuclear = rhs.EupNuclear;
   EdnNuclear = rhs.EdnNuclear;
   EupEdn = rhs.EupEdn;
   EupEup = rhs.EupEup;
   EdnEdn = rhs.EdnEdn;
+
+  if (globalInput.flags.use_three_body_jastrow == 1)
+    {
+      NumberOfNEupEdnParameters = rhs.NumberOfNEupEdnParameters;
+      NumberOfNEupEupParameters = rhs.NumberOfNEupEupParameters;
+      NumberOfNEdnEdnParameters = rhs.NumberOfNEdnEdnParameters;
+
+      EupEdnNuclear = rhs.EupEdnNuclear;
+      EupEupNuclear = rhs.EupEupNuclear;
+      EdnEdnNuclear = rhs.EdnEdnNuclear;
+    }
+
   EquivalentElectronUpDownParams = rhs.EquivalentElectronUpDownParams;
   NucleiTypes = rhs.NucleiTypes;
   NumberOfElectronsUp = rhs.NumberOfElectronsUp;
@@ -69,7 +81,8 @@ void QMCJastrowParameters::print(ostream & strm)
 
   for(int i=0; i<EupNuclear.dim1(); i++) 
     {
-      strm << "EupNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" << endl;
+      strm << "EupNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" 
+	   << endl;
       EupNuclear(i).getCorrelationFunction()->print(strm);    
       strm << endl;
     }
@@ -77,9 +90,10 @@ void QMCJastrowParameters::print(ostream & strm)
   if(!EquivalentElectronUpDownParams)
     for(int i=0; i<EdnNuclear.dim1(); i++) 
       {
-	strm << "EdnNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" << endl;
-	EdnNuclear(i).getCorrelationFunction()->print(strm);    
-	strm << endl;
+        strm << "EdnNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" 
+	     << endl;
+        EdnNuclear(i).getCorrelationFunction()->print(strm);    
+        strm << endl;
       }
 }
 
@@ -147,6 +161,42 @@ void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
 	    }
 	}
 
+      if (globalInput.flags.use_three_body_jastrow == 1)
+	{
+	  if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
+	    for (int i=0; i<EupEdnNuclear.dim1(); i++)
+	      {
+		CurrentNumberOfParams = 
+		  EupEdnNuclear(i).getNumberOfFreeParameters();
+            
+		temp.allocate(CurrentNumberOfParams);
+
+		for (int j=0; j<temp.dim1(); j++)
+		  {
+		    temp(j) = params(Counter + shift);
+		    Counter++;
+		  }
+
+		EupEdnNuclear(i).setFreeParameters( temp );
+	      }
+
+	  if (NumberOfElectronsUp > 1)
+	    for (int i=0; i<EupEupNuclear.dim1(); i++)
+	      {
+		CurrentNumberOfParams =
+		  EupEupNuclear(i).getNumberOfFreeParameters();
+
+		temp.allocate(CurrentNumberOfParams);
+		
+		for (int j=0; j<temp.dim1(); j++)
+		  {
+		    temp(j) = params(Counter + shift);
+		    Counter++;
+		  }
+
+		EupEupNuclear(i).setFreeParameters( temp );
+	      }
+	}
       // Now set the things equal that need to be
       
       if( NumberOfElectronsDown > 1 )
@@ -154,16 +204,24 @@ void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
 	  EdnEdn = EupEup;
 	  EdnEdn.setParticle1Type("Electron_down");
 	  EdnEdn.setParticle2Type("Electron_down");
-	}
-      
+	  
+	  if (globalInput.flags.use_three_body_jastrow == 1)
+	    {
+	      EdnEdnNuclear = EupEupNuclear;
+	      for (int i=0; i<EdnEdnNuclear.dim1(); i++)
+		{
+		  EdnEdnNuclear(i).setParticle2Type("Electron_down");
+		  EdnEdnNuclear(i).setParticle3Type("Electron_down");
+		}
+	    }
+	}      
+
       if( NumberOfElectronsDown > 0 )
 	{
 	  EdnNuclear = EupNuclear;
 	  
 	  for(int i=0; i<EdnNuclear.dim1(); i++)
-	    {
-	      EdnNuclear(i).setParticle1Type("Electron_down");
-	    }
+	    EdnNuclear(i).setParticle1Type("Electron_down");
 	}
     }
   else
@@ -265,12 +323,68 @@ void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
 		}
 	    }
 	}
+
+      if (globalInput.flags.use_three_body_jastrow == 1)
+	{
+	  if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
+	    for (int i=0; i<EupEdnNuclear.dim1(); i++)
+	      {
+		CurrentNumberOfParams = 
+		  EupEdnNuclear(i).getNumberOfFreeParameters();
+            
+		temp.allocate(CurrentNumberOfParams);
+              
+		for (int j=0; j<temp.dim1(); j++)
+		  {
+		    temp(j) = params(Counter + shift);
+		    Counter++;
+		  }
+
+		EupEdnNuclear(i).setFreeParameters( temp );
+	      }
+
+	  if (NumberOfElectronsUp > 1)
+	    for (int i=0; i<EupEupNuclear.dim1(); i++)
+	      {
+		CurrentNumberOfParams =
+		  EupEupNuclear(i).getNumberOfFreeParameters();
+
+		temp.allocate(CurrentNumberOfParams);
+            
+		for (int j=0; j<temp.dim1(); j++)
+		  {
+		    temp(j) = params(Counter + shift);
+		    Counter++;
+		  }
+
+		EupEupNuclear(i).setFreeParameters( temp );
+	      }
+
+	  if (NumberOfElectronsDown > 1)
+	    for (int i=0; i<EdnEdnNuclear.dim1(); i++)
+	      {
+		CurrentNumberOfParams =
+		  EdnEdnNuclear(i).getNumberOfFreeParameters();
+
+		temp.allocate(CurrentNumberOfParams);
+		
+		for (int j=0; j<temp.dim1(); j++)
+		  {
+		    temp(j) = params(Counter + shift);
+		    Counter++;
+		  }
+
+		EdnEdnNuclear(i).setFreeParameters( temp );
+	      }
+	}
     }
 }
 
 int QMCJastrowParameters::getNumberJWParameters()
 {
-  return getNumberEEParameters() + getNumberNEParameters();
+  return getNumberEEParameters() + getNumberNEParameters() + 
+    getNumberNEupEdnParameters() + getNumberNEupEupParameters() + 
+    getNumberNEdnEdnParameters();
 }
 
 int QMCJastrowParameters::getNumberEEParameters()
@@ -290,6 +404,27 @@ int QMCJastrowParameters::getNumberNEParameters()
 int QMCJastrowParameters::getNumberNEupParameters()
 {
   return NumberOfNEupParameters;
+}
+
+int QMCJastrowParameters::getNumberNEupEdnParameters()
+{
+  if (globalInput.flags.use_three_body_jastrow == 0)
+    return 0;
+  return NumberOfNEupEdnParameters;
+}
+
+int QMCJastrowParameters::getNumberNEupEupParameters()
+{
+  if (globalInput.flags.use_three_body_jastrow == 0)
+    return 0;
+  return NumberOfNEupEupParameters;
+}
+
+int QMCJastrowParameters::getNumberNEdnEdnParameters()
+{
+  if (globalInput.flags.use_three_body_jastrow == 0)
+    return 0;
+  return NumberOfNEdnEdnParameters;
 }
 
 Array1D<double> QMCJastrowParameters::getJWParameters()
@@ -337,17 +472,42 @@ void QMCJastrowParameters::getJWParameters(Array1D<double> & params, int shift)
       // Put in eup nuclear params
 
       if(getNumberNEParameters() > 0)
-	{
-	  for(int i=0; i<EupNuclear.dim1(); i++)
-	    {
-	      temp = EupNuclear(i).getParameters();
+	for(int i=0; i<EupNuclear.dim1(); i++)
+	  {
+	    temp = EupNuclear(i).getParameters();
 	      
-	      for(int j=0; j<temp.dim1(); j++)
-		{
-		  params(Counter + shift) = temp(j);
-		  Counter++;
-		}
-	    }
+	    for(int j=0; j<temp.dim1(); j++)
+	      {
+		params(Counter + shift) = temp(j);
+		Counter++;
+	      }
+	  }
+
+      if (globalInput.flags.use_three_body_jastrow == 1)
+	{
+	  if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
+	    for (int i=0; i<EupEdnNuclear.dim1(); i++)
+	      {
+		temp = EupEdnNuclear(i).getFreeParameters();
+
+		for (int j=0; j<temp.dim1(); j++)
+		  {
+		    params(Counter + shift) = temp(j);
+		    Counter++;
+		  }
+	      }
+
+	  if (NumberOfElectronsUp > 1)
+	    for (int i=0; i<EupEupNuclear.dim1(); i++)
+	      {
+		temp = EupEupNuclear(i).getFreeParameters();
+
+		for (int j=0; j<temp.dim1(); j++)
+		  {
+		    params(Counter + shift) = temp(j);
+		    Counter++;
+		  }
+	      }
 	}
     }
   else
@@ -426,6 +586,45 @@ void QMCJastrowParameters::getJWParameters(Array1D<double> & params, int shift)
 		}
 	    }
 	}
+
+      if (globalInput.flags.use_three_body_jastrow == 1)
+	{
+	  if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
+	    for (int i=0; i<EupEdnNuclear.dim1(); i++)
+	      {
+		temp = EupEdnNuclear(i).getFreeParameters();
+
+		for (int j=0; j<temp.dim1(); j++)
+		  {
+		    params(Counter + shift) = temp(j);
+		    Counter++;
+		  }
+	      }
+
+	  if (NumberOfElectronsUp > 1)
+	    for (int i=0; i<EupEupNuclear.dim1(); i++)
+	      {
+		temp = EupEupNuclear(i).getFreeParameters();
+            
+		for (int j=0; j<temp.dim1(); j++)
+		  {
+		    params(Counter + shift) = temp(j);
+		    Counter++;
+		  }
+	      }
+
+	  if (NumberOfElectronsDown > 1)
+	    for (int i=0; i<EdnEdnNuclear.dim1(); i++)
+	      {
+		temp = EdnEdnNuclear(i).getFreeParameters();
+            
+		for (int j=0; j<temp.dim1(); j++)
+		  {
+		    params(Counter + shift) = temp(j);
+		    Counter++;
+		  }
+	      }
+	}
     }
 }
 
@@ -439,17 +638,17 @@ Array1D<Complex> QMCJastrowParameters::getPoles()
 
       Array1D<Complex> poles;
       try {
-	poles = EupEup.getPoles();
+        poles = EupEup.getPoles();
       }
 
       catch(Exception e){
-	cout << "Exception: EupEup " << e.getMessage() << endl;
+        cout << "Exception: EupEup " << e.getMessage() << endl;
       }
 
       for(int i=0; i<poles.dim1(); i++)
-	{
-	  allPoles.push_back(poles(i));
-	}
+        {
+          allPoles.push_back(poles(i));
+        }
     }
 
   if( NumberOfElectronsDown > 1 && !EquivalentElectronUpDownParams)
@@ -457,17 +656,17 @@ Array1D<Complex> QMCJastrowParameters::getPoles()
       // down down jastrow
       Array1D<Complex> poles;
       try {
-	poles = EdnEdn.getPoles();
+        poles = EdnEdn.getPoles();
       }
 
       catch(Exception e){
-	cout << "Exception: EdnEdn " << e.getMessage() << endl;
+        cout << "Exception: EdnEdn " << e.getMessage() << endl;
       }
       
       for(int i=0; i<poles.dim1(); i++)
-	{
-	  allPoles.push_back(poles(i));
-	}
+        {
+          allPoles.push_back(poles(i));
+        }
     }
 
   if( NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0 )
@@ -475,17 +674,17 @@ Array1D<Complex> QMCJastrowParameters::getPoles()
       // up down jastrow
       Array1D<Complex> poles;
       try {
-	poles = EupEdn.getPoles();
+        poles = EupEdn.getPoles();
       }
 
       catch(Exception e){
-	cout << "Exception: EupEdn " << e.getMessage() << endl;
+        cout << "Exception: EupEdn " << e.getMessage() << endl;
       }
       
       for(int i=0; i<poles.dim1(); i++)
-	{
-	  allPoles.push_back(poles(i));
-	}
+        {
+          allPoles.push_back(poles(i));
+        }
     }
 
   for(int i=0; i<EupNuclear.dim1(); i++)
@@ -493,36 +692,38 @@ Array1D<Complex> QMCJastrowParameters::getPoles()
       // up nuclear jastrow
       Array1D<Complex> poles;
       try {
-	poles = EupNuclear(i).getPoles();
+        poles = EupNuclear(i).getPoles();
       }
 
       catch(Exception e){
-	cout << "Exception: EupNuclear(" << i << ") " << e.getMessage() << endl;
+        cout << "Exception: EupNuclear(" << i << ") " << e.getMessage() 
+	     << endl;
       }
 
       for(int j=0; j<poles.dim1(); j++)
-	{
-	  allPoles.push_back(poles(j));
-	}
+        {
+          allPoles.push_back(poles(j));
+        }
     }
 
   if(!EquivalentElectronUpDownParams)
     for(int i=0; i<EdnNuclear.dim1(); i++)
       {
-	// down nuclear jastrow
-	Array1D<Complex> poles;
-	try {
-	  poles = EdnNuclear(i).getPoles();
-	}
-	
-	catch(Exception e){
-	  cout << "Exception: EdnNuclear(" << i << ") " << e.getMessage() << endl;
-	}
-	
-	for(int j=0; j<poles.dim1(); j++)
-	  {
-	    allPoles.push_back(poles(j));
-	  }
+        // down nuclear jastrow
+        Array1D<Complex> poles;
+        try {
+          poles = EdnNuclear(i).getPoles();
+        }
+        
+        catch(Exception e){
+          cout << "Exception: EdnNuclear(" << i << ") " << e.getMessage() 
+	       << endl;
+        }
+        
+        for(int j=0; j<poles.dim1(); j++)
+          {
+            allPoles.push_back(poles(j));
+          }
       }
 
   // pack up the results into a vector
@@ -546,7 +747,7 @@ double QMCJastrowParameters::calculate_penalty_function()
 
 // calculates a penalty function for getting singular parameters
 double QMCJastrowParameters::calculate_penalty_function(
-							Array1D<Complex> & poles)
+						      Array1D<Complex> & poles)
 {
   double penalty = 0.0;
 
@@ -556,37 +757,35 @@ double QMCJastrowParameters::calculate_penalty_function(
       double distance = 0.0;
 
       if( poles(i).real() > 0 )
-	{
-	  distance = fabs(poles(i).imaginary());
-	}
+	distance = fabs(poles(i).imaginary());
       else
+	distance = poles(i).abs();
+
+      if(distance <= 0)
 	{
-	  distance = poles(i).abs();
+	  penalty = 1e100; 
+	  cerr << "Warning: distance from real axis is " << distance << "  in OFR, can\'t take log" << endl;
+	  cerr << "         poles(" << i << ") = " << poles(i) << endl;
+	  cerr << "         penalty will be set to " << penalty << endl;
+	  cerr.flush();
+	} 
+      else 
+	{
+	  /*
+	    Singularities exist when the poles are on the +'ve real
+	    axis. So, a configuration's score will be improved (lowered)
+	    the further it is from this region.
+	  */
+	  penalty -= log( distance );
 	}
-
-      if(distance <= 0){
-	penalty = 1e100; 
-	cerr << "Warning: distance from real axis is " << distance << "  in OFR, can\'t take log" << endl;
-	cerr << "         poles(" << i << ") = " << poles(i) << endl;
-	cerr << "         penalty will be set to " << penalty << endl;
-	cerr.flush();
-      } else {
-
-	/*
-	  Singularities exist when the poles are on the +'ve real
-	  axis. So, a configuration's score will be improved (lowered)
-	  the further it is from this region.
-	*/
-	penalty -= log( distance );
-      }
     }
   
   return penalty;
 }
 
 void QMCJastrowParameters::read(Array1D<string> & nucleitypes, 
-				bool linkparams, bool nucCuspReplacement, int nelup, int neldn, 
-				string runfile)
+				bool linkparams, bool nucCuspReplacement, 
+				int nelup, int neldn, string runfile)
 {
   // Set the internal variable telling if the electrons of different spins
   // should use the same parameters
@@ -776,8 +975,9 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 	  for (int i=0; i<EdnNuclear.dim1(); i++)
 	    EdnNuclear(i).setParticle1Type("Electron_down");
 	}
-    } else {
-
+    } 
+  else 
+    {
       NumberOfEEParameters += EdnEdn.getTotalNumberOfParameters();
 
       for(int i=0; i<EdnNuclear.dim1(); i++)
@@ -787,7 +987,135 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 	}
     }
 
-  print(clog);
+  // Read in the QMCThreeBodyCorrelationFunctionParameters
+  
+  if (globalInput.flags.use_three_body_jastrow == 1)
+    {
+      int NumberOfThreeBodyCorrelationFunctions = 0;
+
+      if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
+	{
+	  EupEdnNuclear.allocate( NucleiTypes.dim1() );
+	  NumberOfThreeBodyCorrelationFunctions += NucleiTypes.dim1();
+	}
+
+      if (NumberOfElectronsUp > 1)
+	{
+	  EupEupNuclear.allocate( NucleiTypes.dim1() );
+	  NumberOfThreeBodyCorrelationFunctions += NucleiTypes.dim1();
+	}
+
+      if (NumberOfElectronsDown > 1)
+	{
+	  EdnEdnNuclear.allocate( NucleiTypes.dim1() );
+	  NumberOfThreeBodyCorrelationFunctions += NucleiTypes.dim1();
+	}
+
+      // Load in the three body correlation functions
+
+      for(int i=0; i<NumberOfThreeBodyCorrelationFunctions; i++)
+	{
+	  QMCThreeBodyCorrelationFunctionParameters CP;
+	  bool ok = CP.read( file );
+
+	  if(!ok)
+	    {
+	      clog << "ERROR: there was a problem reading the three body "
+		   << "correlation function." << endl;
+	      clog << "   NumberOfThreeBodyCorrelationFunctions = " 
+		   << NumberOfThreeBodyCorrelationFunctions << endl;
+	      clog << "   NumberOfElectronsUp          = " 
+		   << NumberOfElectronsUp << endl;
+	      clog << "   NumberOfElectronsDown        = " 
+		   << NumberOfElectronsDown << endl;
+	      clog << "   CP #" << i << " = " << endl;
+	      clog << CP << endl << endl;
+	      clog << "It appears you haven't included enough correlation "
+		   << "functions. Put some more in!" << endl;
+	      exit(0);
+	    }
+
+	  if( CP.getParticle2Type() == "Electron_up" )
+	    {
+	      if( CP.getParticle3Type() == "Electron_down" )
+		{
+		  if( NumberOfElectronsUp < 1 && NumberOfElectronsDown < 1 )
+		    {
+		      cerr << "ERROR: Electron_up-Electron_down nuclear "
+			   << "{correlation function loaded when one does not "
+			   << "belong!" << endl;
+		      exit(0);
+		    }
+		  for (int j=0; j<NucleiTypes.dim1(); j++)
+		    if (NucleiTypes(j) == CP.getParticle1Type() )
+		      {
+			EupEdnNuclear(j) = CP;
+			break;
+		      }
+		}
+	      else if( CP.getParticle3Type() == "Electron_up" )
+		{
+		  if(NumberOfElectronsUp < 2)
+		    {
+		      cerr << "ERROR: Electron_up-Electron_up nuclear "
+			   << "correlation function loaded when one does not "
+			   << "belong!" << endl
+			   << "Maybe you are using an old ckmf file?" << endl;
+		      exit(0);
+		    }
+		  for (int j=0; j<NucleiTypes.dim1(); j++)
+		    if (NucleiTypes(j) == CP.getParticle1Type() )
+		      {
+			EupEupNuclear(j) = CP;
+			break;
+		      }
+		}
+	    }
+	  else if (CP.getParticle2Type() == "Electron_down" && 
+		   CP.getParticle3Type() == "Electron_down")
+	    {
+	      if( NumberOfElectronsDown < 2 )
+		{
+		  cerr << "ERROR: Electron_down-Electron_down nuclear "
+		       << "correlation function loaded when one does not "
+		       << "belong!" << endl;
+		  exit(0);
+		}
+
+	      for( int j=0; j<NucleiTypes.dim1(); j++ )
+		if( NucleiTypes(j) == CP.getParticle1Type() )
+		  {
+		    EdnEdnNuclear(j) = CP;
+		    break;
+		  }
+	    }
+	}
+
+      // if the particles are linked make the down electron parameters equal
+      // to the up electron parameters.
+      NumberOfNEupEdnParameters = 0;
+      NumberOfNEupEupParameters = 0;
+      NumberOfNEdnEdnParameters = 0;
+
+      for (int i=0; i<EupEdnNuclear.dim1(); i++)
+	NumberOfNEupEdnParameters += EupEdnNuclear(i).getNumberOfFreeParameters();
+
+      for (int i=0; i<EupEupNuclear.dim1(); i++)
+	NumberOfNEupEupParameters += EupEupNuclear(i).getNumberOfFreeParameters();
+
+      for (int i=0; i<EdnEdnNuclear.dim1(); i++)
+	NumberOfNEdnEdnParameters += EdnEdnNuclear(i).getNumberOfFreeParameters();
+      
+      if( EquivalentElectronUpDownParams )
+	// Now set the things equal that need to be
+	if( NumberOfElectronsUp > 1 && NumberOfElectronsDown > 1 )
+	  for (int i=0; i<EupEupNuclear.dim1(); i++)
+	    {
+	      EdnEdnNuclear(i) = EupEupNuclear(i);
+	      EdnEdnNuclear(i).setParticle2Type("Electron_down");
+	      EdnEdnNuclear(i).setParticle3Type("Electron_down");
+	    }
+    }
 }
 
 QMCCorrelationFunctionParameters * QMCJastrowParameters::
@@ -818,6 +1146,24 @@ Array1D<QMCCorrelationFunctionParameters> * QMCJastrowParameters::
                                              getElectronDownNuclearParameters()
 {
   return &EdnNuclear;
+}
+
+Array1D<QMCThreeBodyCorrelationFunctionParameters> * QMCJastrowParameters::
+                                   getElectronUpElectronDownNuclearParameters()
+{
+  return &EupEdnNuclear;
+}
+
+Array1D<QMCThreeBodyCorrelationFunctionParameters> * QMCJastrowParameters::
+                                     getElectronUpElectronUpNuclearParameters()
+{
+  return &EupEupNuclear;
+}
+
+Array1D<QMCThreeBodyCorrelationFunctionParameters> * QMCJastrowParameters::
+                                 getElectronDownElectronDownNuclearParameters()
+{
+  return &EdnEdnNuclear;
 }
 
 Array1D<string> * QMCJastrowParameters::getNucleiTypes()
@@ -862,6 +1208,19 @@ ostream & operator<<(ostream &strm, QMCJastrowParameters & rhs)
 	  strm << rhs.EdnNuclear(i) << endl;
 	}
     }
+
+  if (globalInput.flags.use_three_body_jastrow == 1)
+    for (int i=0; i<rhs.EupEdnNuclear.dim1(); i++)
+      {
+	if( rhs.NumberOfElectronsDown > 0 && rhs.NumberOfElectronsUp > 0 )
+	  strm << rhs.EupEdnNuclear(i) << endl;
+  
+	if ( rhs.NumberOfElectronsUp > 1 )
+	  strm << rhs.EupEupNuclear(i) << endl;
+	
+	if ( rhs.NumberOfElectronsDown > 1)
+	  strm << rhs.EdnEdnNuclear(i) << endl;
+      }
 
   strm << "&Jastrow" << endl;
   

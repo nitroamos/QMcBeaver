@@ -649,6 +649,26 @@ class QMCFlags
   int optimize_CI;
   int optimize_Orbitals;
 
+  int use_three_body_jastrow;
+
+  /*
+    If this flag is true, we allow the terms in the three body Jastrow that
+    overlap the NE Jastrow to be nonzero.
+  */
+  int reproduce_NE_with_NEE_jastrow;
+
+  /*
+    If this flag is true, we allow the terms in the three body Jastrow that
+    overlap the EE Jastrow to be nonzero.
+  */
+  int reproduce_EE_with_NEE_jastrow;
+
+  /*
+    If this flag is true, we allow the nucleus-electron cutoff distances to be
+    optimized in the three body correlation functions
+  */
+  int optimize_NEE_cutoffs;
+
   /*
     This controls the initial value used by QMCLineSearch for
     modifying the hessian. If this is large, then the optimization

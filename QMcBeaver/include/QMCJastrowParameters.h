@@ -20,9 +20,9 @@
 
 #include "Array1D.h"
 #include "QMCCorrelationFunctionParameters.h"
+#include "QMCThreeBodyCorrelationFunctionParameters.h"
 
 using namespace std;
-
 
 /**
   This class contains all of the parameters and correlation functons from 
@@ -114,6 +114,24 @@ public:
   int getNumberNEupParameters();
 
   /**
+     The number of parameters used for electron up electron down nuclear
+     correlation functions.
+  */
+  int getNumberNEupEdnParameters();
+  
+  /**
+     The number of parameters used for electron up electron up nuclear
+     correlation functions.
+  */
+  int getNumberNEupEupParameters();
+
+  /**
+     The number of parameters used for electron down electron down nuclear
+     correlation functions.
+  */
+  int getNumberNEdnEdnParameters();
+
+  /**
      Gets the poles of the correlation functions.
 
      @return poles of the correlation functions.
@@ -171,6 +189,27 @@ public:
                                             getElectronDownNuclearParameters();
  
   /**
+    Gets an array of QMCThreeBodyCorrelationFunctionParameters describing
+    electron up electron down nuclear interactions.
+  */
+  Array1D<QMCThreeBodyCorrelationFunctionParameters> *
+                                  getElectronUpElectronDownNuclearParameters();
+
+  /**
+    Gets an array of QMCThreeBodyCorrelationFunctionParameters describing
+    electron up electron up nuclear interactions.
+  */
+  Array1D<QMCThreeBodyCorrelationFunctionParameters> *
+                                    getElectronUpElectronUpNuclearParameters();
+
+  /**
+    Gets an array of QMCThreeBodyCorrelationFunctionParameters describing
+    electron down electron down nuclear interactions.
+  */
+  Array1D<QMCThreeBodyCorrelationFunctionParameters> *
+                                getElectronDownElectronDownNuclearParameters();
+
+  /**
     Gets an array which is a list of all the different types of nuclei
     in the molecule being calculated.
   */
@@ -195,8 +234,8 @@ public:
     @param neldn numer of down spin electrons
     @param runfile name of the file to be loaded
   */
-  void read(Array1D<string> & nucleitypes, bool linkparams, bool nucCuspReplacement,
-	    int nelup, int neldn, string runfile);
+  void read(Array1D<string> & nucleitypes, bool linkparams, 
+	    bool nucCuspReplacement, int nelup, int neldn, string runfile);
 
   /**
     Writes the state of the object to an output stream.
@@ -207,11 +246,21 @@ private:
   int NumberOfEEParameters;
   int NumberOfNEParameters;
   int NumberOfNEupParameters;
+
   Array1D<QMCCorrelationFunctionParameters> EupNuclear;
   Array1D<QMCCorrelationFunctionParameters> EdnNuclear;
   QMCCorrelationFunctionParameters EupEdn;
   QMCCorrelationFunctionParameters EupEup;
   QMCCorrelationFunctionParameters EdnEdn;
+
+  int NumberOfNEupEdnParameters;
+  int NumberOfNEupEupParameters;
+  int NumberOfNEdnEdnParameters;
+
+  Array1D<QMCThreeBodyCorrelationFunctionParameters> EupEdnNuclear;
+  Array1D<QMCThreeBodyCorrelationFunctionParameters> EupEupNuclear;
+  Array1D<QMCThreeBodyCorrelationFunctionParameters> EdnEdnNuclear;
+
   bool EquivalentElectronUpDownParams;
   Array1D<string> NucleiTypes;
   int NumberOfElectronsUp;

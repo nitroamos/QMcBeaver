@@ -1,3 +1,8 @@
+Sat, Aug 25, 2007 Daniel R Fisher
+1.  I added three body Jastrow functions to the code.  They are
+    identical to the function 'f' described in Physical Review B 70,
+    235119 by the CASINO people.
+
 Wed, Aug 20, 2007 Amos Anderson
 1.  I added two new 2 particle Jastrow functions, based on the most
     recent publications from the CHAMP and CASINO people. They
