@@ -1,3 +1,9 @@
+Mon, Aug 27, 2007 Daniel R Fisher
+1.  I revised the way that the free parameters are determined in the
+    new class QMCThreeBodyJastrowParameters.  All of the parameters
+    that are dependent due to cusp conditions are now excluded from the
+    free parameter array, which should make optimization easier.
+
 Sat, Aug 25, 2007 Daniel R Fisher
 1.  I added three body Jastrow functions to the code.  They are
     identical to the function 'f' described in Physical Review B 70,

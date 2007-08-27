@@ -193,19 +193,24 @@ bool QMCThreeBodyCorrelationFunctionParameters::read(istream & strm)
 
   NumberOfFreeParameters = TotalNumberOfParameters+1; 
 
+  if (globalInput.flags.optimize_NEE_cutoffs == 0)
+    NumberOfFreeParameters -= 1;
+
   // We subtract the number of elements with m>l
   NumberOfFreeParameters -= Nee*NeN*(NeN-1)/2; 
 
-  // We know that the parameters with l=0,m=0,n=1 and l=1,m=0,n=1 are zero due
-  // to the electron-electron no-cusp condition
-  NumberOfFreeParameters -= 2;
+  // For every k from 0 to 2*NeN-2, there is one dependent parameter due to the
+  // electron-electron no-cusp condition
+
+  NumberOfFreeParameters -= 2*NeN-1;
 
   // We know that the parameters with l=0,m=0,n=0 and l=1,m=1,n=0 depend on
   // l=1,m=0,n=0 due to the electron-nucleus no-cusp condition
-  NumberOfFreeParameters -= 2;
 
-  if (globalInput.flags.optimize_NEE_cutoffs == 0)
-    NumberOfFreeParameters -= 1;
+  // For every k from 0 to NeN+Nee-2, there is one dependent parameter due to
+  // the electron-nucleus no-cusp condition
+
+  NumberOfFreeParameters -= NeN+Nee-1;
 
   if (globalInput.flags.reproduce_NE_with_NEE_jastrow == 0)
     {
@@ -404,9 +409,6 @@ void QMCThreeBodyCorrelationFunctionParameters::makeFreeParameterArray()
   // parameters that are free to be optimized.  The decision is based on the 
   // flags of what we are optimizing and the symmetry of the function.
 
-  // The cusp conditions will further reduce the size of the set of free
-  // parameters, but we are not going to worry about that right now.
-
   freeParameters.allocate(NumberOfFreeParameters);
   freeParameters = 0.0;
 
@@ -444,21 +446,31 @@ void QMCThreeBodyCorrelationFunctionParameters::makeFreeParameterArray()
 		  counter++;
 		}
 	    }
-	  else if (l==0 && n==1)
+	  // These parameters are dependent due to the EE no-cusp condition
+	  else if (m==0 && n==1)
 	    {
-	      // Do nothing- this parameter is always zero
+	      // Do nothing- these parameters are dependent
 	    }
-	  else if (l==1 && m==0 && n==1)
+	  else if (l==NeN-1 && n==1)
 	    {
-	      // Do nothing- this parameter is always zero
+	      // Do nothing- these parameters are dependent
 	    }
+	  // These parameters are dependent due to the EN no-cusp condition
 	  else if (l==0 && n==0)
 	    {
-	      // Do nothing- this parameter is not free
+	      // Do nothing- this parameter is dependent
 	    }
-	  else if (l==1 && m==1 && n==0)
+	  else if (l<NeN && m==1 && n==0)
 	    {
-	      // Do nothing- this parameter is not free
+	      // Do nothing- these parameters are dependent
+	    }
+	  else if (l==NeN-2 && m==1 && n==2)
+	    {
+	      // Do nothing- this parameter is dependent
+	    }
+	  else if (l==NeN-1 && m==1 && n>1)
+	    {
+	      // Do nothing- these parameters are dependent
 	    }
 	  else
 	    {
@@ -522,17 +534,31 @@ void QMCThreeBodyCorrelationFunctionParameters::setParameters()
 	      else
 		Parameters(index) = 0.0;
 	    }
-	  else if (l==0 && n==1)
-	    Parameters(index) = 0.0;
-	  else if (l==1 && m==0 && n==1)
-	    Parameters(index) = 0.0;
+	  // These parameters are dependent due to the EE no-cusp condition
+	  else if (m==0 && n==1)
+	    {
+	      // Do nothing- these parameters are dependent
+	    }
+	  else if (l==NeN-1 && n==1)
+	    {
+	      // Do nothing- these parameters are dependent
+	    }
+	  // These parameters are dependent due to the EN no-cusp condition
 	  else if (l==0 && n==0)
 	    {
-	      // Do nothing- this parameter is not free
+	      // Do nothing- this parameter is dependent
 	    }
-	  else if (l==1 && m==1 && n==0)
+	  else if (l<NeN && m==1 && n==0)
 	    {
-	      // Do nothing- this parameter is not free
+	      // Do nothing- these parameters are dependent
+	    }
+	  else if (l==NeN-2 && m==1 && n==2)
+	    {
+	      // Do nothing- this parameter is dependent
+	    }
+	  else if (l==NeN-1 && m==1 && n>1)
+	    {
+	      // Do nothing- these parameters are dependent
 	    }
 	  else 
 	    {
@@ -605,7 +631,7 @@ void QMCThreeBodyCorrelationFunctionParameters::enforceCuspConditions()
 	      index1 = l*NeN*Nee + m*Nee +1;
 	      sum += 2*Parameters(index1); // This should be zero
 	    }
-      if ( fabs(sum) > 1e-15 ) // If the sum is not zero 
+      if ( fabs(sum) > 1e-10 ) // If the sum is not zero 
 	{
 	  if (k<NeN)
 	    {
@@ -662,7 +688,7 @@ void QMCThreeBodyCorrelationFunctionParameters::enforceCuspConditions()
 	      sum += C*Parameters(index1) - cutoff*Parameters(index2); 
 	    }
 
-      if ( fabs(sum) > 1e-15 )
+      if ( fabs(sum) > 1e-10 )
 	{
 	  if (k<NeN)
 	    {
