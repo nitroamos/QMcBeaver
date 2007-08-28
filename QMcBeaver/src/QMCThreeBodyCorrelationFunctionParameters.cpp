@@ -29,6 +29,8 @@ void QMCThreeBodyCorrelationFunctionParameters::operator = (const
   NumberOfFreeParameters = rhs.NumberOfFreeParameters;
   freeParameters = rhs.freeParameters;
 
+  paramDepMatrix = rhs.paramDepMatrix;
+
   TotalNumberOfParameters = rhs.TotalNumberOfParameters;
   Parameters = rhs.Parameters;
 
@@ -37,14 +39,6 @@ void QMCThreeBodyCorrelationFunctionParameters::operator = (const
 
   ParticleTypes = rhs.ParticleTypes;
   threeBodyCorrelationFunctionType = rhs.threeBodyCorrelationFunctionType;
-
-  if (threeBodyCorrelationFunctionType != "None")
-    {
-      enforceCuspConditions();
-      enforceSymmetry();
-      checkCuspAndSymmetry();
-      makeFreeParameterArray();
-    }
 
   setThreeBodyCorrelationFunction();
   initializeThreeBodyCorrelationFunctionParameters();
@@ -185,8 +179,13 @@ bool QMCThreeBodyCorrelationFunctionParameters::read(istream & strm)
   strm >> temp >> temp;
   cutoff = atof(temp.c_str());
 
-  // Now we see how many of the parameters are free to be optimized.  Some of 
-  // the parameters are constrained by symmetry or cusp conditions.
+  // Make the matrix of parameter dependencies.  This matrix generates the set
+  // of all parameters from the set of free parameters.  The parameters 
+  // generated will satisfy symmetry and the cusp conditions
+  makeParamDepMatrix();
+
+  // Now we calculate how many of the parameters are free to be optimized.  
+  // Some of the parameters are constrained by symmetry or cusp conditions.
 
   // If everything was free to be optmized, we would have all of the parameters
   // and the cutoff distance
@@ -201,17 +200,14 @@ bool QMCThreeBodyCorrelationFunctionParameters::read(istream & strm)
 
   // For every k from 0 to 2*NeN-2, there is one dependent parameter due to the
   // electron-electron no-cusp condition
-
   NumberOfFreeParameters -= 2*NeN-1;
-
-  // We know that the parameters with l=0,m=0,n=0 and l=1,m=1,n=0 depend on
-  // l=1,m=0,n=0 due to the electron-nucleus no-cusp condition
 
   // For every k from 0 to NeN+Nee-2, there is one dependent parameter due to
   // the electron-nucleus no-cusp condition
-
   NumberOfFreeParameters -= NeN+Nee-1;
 
+  // If we don't allow terms that are proportional to the two particle
+  // functions, the number of free parameters is reduced
   if (globalInput.flags.reproduce_NE_with_NEE_jastrow == 0)
     {
       NumberOfFreeParameters -= NeN-1;
@@ -240,11 +236,22 @@ bool QMCThreeBodyCorrelationFunctionParameters::read(istream & strm)
       cutoff = 0.0;
       NumberOfFreeParameters = 0;
       freeParameters.deallocate();
+      paramDepMatrix.deallocate();
     }
   else
     {
-      enforceCuspConditions();
-      enforceSymmetry();
+      // We multiply the paramDepMatrix by the parameters we loaded in to make
+      // sure the parameters satisfy the symmetry and cusp conditions
+
+      Array1D<double> temp;
+      temp.allocate(TotalNumberOfParameters);
+      temp = 0.0;
+
+      for (int i=0; i<TotalNumberOfParameters; i++)
+	for (int j=0; j<TotalNumberOfParameters; j++)
+	  temp(i) += paramDepMatrix(i,j)*Parameters(j);
+
+      Parameters = temp;
       checkCuspAndSymmetry();
       makeFreeParameterArray();
     }
@@ -306,11 +313,19 @@ void QMCThreeBodyCorrelationFunctionParameters::setFreeParameters(Array1D<double
 
   freeParameters = params;
   setParameters();
-  enforceCuspConditions();
-  enforceSymmetry();
+
+  Array1D<double> temp;
+  temp.allocate(TotalNumberOfParameters);
+  temp = 0.0;
+  
+  for (int i=0; i<TotalNumberOfParameters; i++)
+    for (int j=0; j<TotalNumberOfParameters; j++)
+      temp(i) += paramDepMatrix(i,j)*Parameters(j);
+  
+  Parameters = temp;
+
   checkCuspAndSymmetry();
   initializeThreeBodyCorrelationFunctionParameters();
-  makeFreeParameterArray();
 }
 
 void QMCThreeBodyCorrelationFunctionParameters::setParticle1Type(string val)
@@ -521,8 +536,6 @@ void QMCThreeBodyCorrelationFunctionParameters::setParameters()
 		  Parameters(index) = freeParameters(counter);
 		  counter++;
 		}
-	      else
-		Parameters(index) = 0.0;
 	    }
 	  else if (l==0 && n>1)
 	    {
@@ -531,8 +544,6 @@ void QMCThreeBodyCorrelationFunctionParameters::setParameters()
 		  Parameters(index) = freeParameters(counter);
 		  counter++;
 		}
-	      else
-		Parameters(index) = 0.0;
 	    }
 	  // These parameters are dependent due to the EE no-cusp condition
 	  else if (m==0 && n==1)
@@ -566,153 +577,6 @@ void QMCThreeBodyCorrelationFunctionParameters::setParameters()
 	      counter++;
 	    }
 	}
-
-  // Parameters l=0,m=0,n=0 and l=1,m=1,n=0 depend on l=1,m=0,n=0
-  Parameters(0) = cutoff*Parameters(NeN*Nee)/C;
-  Parameters(NeN*Nee+Nee) = C*Parameters(NeN*Nee)/cutoff;
-}
-
-void QMCThreeBodyCorrelationFunctionParameters::enforceSymmetry()
-{
-  // We satisfy symmetry by setting all the parameters with m>l equal to 
-  // the ones with l>m.
-
-  int index1 = -1;
-  int index2 = -1;
-
-  for (int l=0; l<NeN-1; l++)
-    for (int m=l+1; m<NeN; m++)
-      for (int n=0; n<Nee; n++)
-	{
-	  index1 = l*NeN*Nee + m*Nee +n;
-	  index2 = m*NeN*Nee + l*Nee +n;
-	  Parameters(index1) = Parameters(index2);
-	}
-}
-
-void QMCThreeBodyCorrelationFunctionParameters::enforceCuspConditions()
-{
-  // This function enforces the cusp conditions on the set of parameters.
-  // The procedure is described in the appendix of the paper.
-
-  // First we enforce the electron-electron no-cusp condition.  This has to do
-  // with all parameters that have n=1
-
-  // For every k from 0 to 2(NeN-1), the sum of all parameters such that l+m=k
-  // and n=1 must be zero.
-  // In every case, the elements (l=0, m=0, n=1) and (l=1, m=0, n=1) will be
-  // zero because of this cusp condition.  I am going to make sure they are 
-  // always zero and do not come into the array of free parameters.
-
-  // This is the condition for k=0
-  Parameters(1) = 0.0;
-  // This is the condition for k=1
-  Parameters(NeN*Nee+1) = 0.0;
-
-  double sum = 0.0;
-  int l_index = -1;
-  int m_index = -1;
-  int n_index = -1;
-  int index1 = -1;
-  int index2 = -1;
-
-  for (int k=2; k<2*NeN-1; k++)
-    {
-      sum = 0.0;
-      if (k%2 == 0)
-	{
-	  index1 = k*NeN*Nee/2 + k*Nee/2 +1;
-	  sum += Parameters(index1);
-	}
-      for (int l=0; l<NeN; l++)
-	for (int m=0; m<l; m++)
-	  if (l+m == k)
-	    {
-	      index1 = l*NeN*Nee + m*Nee +1;
-	      sum += 2*Parameters(index1); // This should be zero
-	    }
-      if ( fabs(sum) > 1e-10 ) // If the sum is not zero 
-	{
-	  if (k<NeN)
-	    {
-	      // let l=k, m=0
-	      l_index = k;
-	      m_index = 0;
-	    }
-	  else if (k>=NeN)
-	    {
-	      // let l=NeN-1, m=k-(NeN-1)
-	      l_index = NeN-1;
-	      m_index = k-l_index;
-	    }
-
-	  index1 = l_index*NeN*Nee + m_index*Nee +1;	  
-
-	  if (l_index == m_index)
-	    {
-	      sum -= Parameters(index1);
-	      Parameters(index1) = -sum;
-	    }
-	  else if (l_index != m_index)
-	    {
-	      sum -= 2*Parameters(index1);
-	      Parameters(index1) = -sum/2;	      
-	    }
-	}
-    }
-
-  // Now we will enforce the electron-electron no-cusp condition.  
-
-  // This is the condition for k=0
-  Parameters(0) = cutoff*Parameters(NeN*Nee)/C;
-  // This is the condition for k=1
-  Parameters(NeN*Nee+Nee) = C*Parameters(NeN*Nee)/cutoff;
-
-  for (int k=2; k<NeN+Nee-1; k++)
-    {
-      sum = 0.0;
-      if (k<Nee)
-	{
-	  index1 = k;
-	  index2 = NeN*Nee+k;
-	  sum += C*Parameters(index1)-cutoff*Parameters(index2);
-	}
-
-      for (int l=1; l<NeN; l++)
-	for (int n=0; n<Nee; n++)
-	  if (l+n == k)
-	    {
-	      index1 = l*NeN*Nee + n;
-	      index2 = l*NeN*Nee + Nee + n;
-	      // This sum should be zero
-	      sum += C*Parameters(index1) - cutoff*Parameters(index2); 
-	    }
-
-      if ( fabs(sum) > 1e-10 )
-	{
-	  if (k<NeN)
-	    {
-	      // let l=k, n=0
-	      l_index = k;
-	      n_index = 0;
-	    }
-	  else if (k==NeN)
-	    {
-	      // let l=NeN-2, n=2
-	      l_index = k-2;
-	      n_index = 2;
-	    }
-	  else if (k>NeN)
-	    {
-	      // let l=NeN-1, n=k-(NeN-1)
-	      l_index = NeN-1;
-	      n_index = k-l_index;
-	    }
-	  index1 = l_index*NeN*Nee + Nee + n_index;
-	  sum += cutoff*Parameters(index1);
-	  Parameters(index1) = sum/cutoff;
-	}
-    }
 }
 
 void QMCThreeBodyCorrelationFunctionParameters::checkCuspAndSymmetry()
@@ -786,3 +650,183 @@ void QMCThreeBodyCorrelationFunctionParameters::checkCuspAndSymmetry()
     }
 }
 
+void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
+{
+  // This function will make the matrix of parameter dependencies.  The size of
+  // the matrix will be TotalNumberOfParameters x TotalNumberOfParameters
+  // The matrix depends on NeN, Nee, and the cusp conditions.  It is made when
+  // the function is read and not changed.
+
+  paramDepMatrix.allocate(TotalNumberOfParameters,TotalNumberOfParameters);
+
+  // We start off by assuming all the parameters are free
+  for (int i=0; i<TotalNumberOfParameters; i++)
+    for (int j=0; j<TotalNumberOfParameters; j++)
+      {
+	if (i != j)
+	  paramDepMatrix(i,j) = 0.0;
+	else
+	  paramDepMatrix(i,j) = 1.0;
+      }
+
+  // We start with the electron-electron cusp
+
+  // The parameter 001 is zero due to the electron-electron cusp (k=0)
+  paramDepMatrix(1,1) = 0.0;
+
+  // The parameter 101 is zero due to the electron-electron cusp (k=1)
+  paramDepMatrix(NeN*Nee+1,NeN*Nee+1) = 0.0;
+
+  int l_index   = -1;
+  int m_index   = -1;
+  int n_index   = -1;
+  int index1    = -1;
+  int index2    = -1;
+  int index_dep = -1;
+
+  for (int k=2; k<2*NeN-1; k++)
+    {
+      // We find the index of the dependent parameter
+      if (k<NeN)
+	{
+	  // let l=k, m=0
+	  l_index = k;
+	  m_index = 0;
+	}
+      else if (k>=NeN)
+	{
+	  // let l=NeN-1, m=k-(NeN-1)
+	  l_index = NeN-1;
+	  m_index = k-l_index;
+	}
+
+      index_dep = l_index*NeN*Nee + m_index*Nee +1;
+
+      paramDepMatrix(index_dep,index_dep) = 0.0;
+
+      // Now we find the indexes of the parameters that determine the dependent
+      // one
+      if (k%2 == 0)
+	{
+	  index1 = k*NeN*Nee/2 + k*Nee/2 +1;
+
+	  if (index_dep != index1) 
+	    {      
+	      if (l_index == m_index)
+		paramDepMatrix(index_dep,index1) = -1.0;
+	      else if (l_index != m_index)
+		paramDepMatrix(index_dep,index1) = -0.5;
+	    }
+	}
+
+      for (int l=0; l<NeN; l++)
+	for (int m=0; m<l; m++)
+	  if (l+m == k)
+	    {
+	      index1 = l*NeN*Nee + m*Nee + 1;
+
+	      if (index_dep != index1)
+		{
+		  if (l_index == m_index)
+		    paramDepMatrix(index_dep,index1) = -2.0;
+		  else if (l_index != m_index)
+		    paramDepMatrix(index_dep,index1) = -1.0;
+		}
+	    }
+    }
+
+  // Now we do the electron-nucleus cusp
+  // The parameter 000 depends on 100 due to the e-n cusp (k=0)
+  paramDepMatrix(0,0) = 0.0;
+  paramDepMatrix(0,NeN*Nee) = cutoff/C;
+
+  // The parameter 110 depends on 100 due to the e-n cusp (k=1)
+  paramDepMatrix(NeN*Nee+Nee,NeN*Nee+Nee) = 0.0;
+  paramDepMatrix(NeN*Nee+Nee,NeN*Nee) = C/cutoff;
+
+  for (int k=2; k<NeN+Nee-1; k++)
+    {
+      // We find the index of the dependent parameter
+      if (k<NeN)
+	{
+	  // let l=k, n=0
+	  l_index = k;
+	  n_index = 0;
+	}
+      else if (k==NeN)
+	{
+	  // let l=NeN-2, k=2
+	  l_index = k-2;
+	  n_index = 2;
+	}
+      else if (k>NeN)
+	{
+	  // let l=NeN-1, n=k-(NeN-1)
+	  l_index = NeN-1;
+	  n_index = k-l_index;
+	}
+      index_dep = l_index*NeN*Nee + Nee + n_index;
+
+      paramDepMatrix(index_dep,index_dep) = 0.0;
+
+      if (k<Nee)
+	{
+	  index1 = k;
+	  index2 = NeN*Nee+k;
+	  paramDepMatrix(index_dep,index1) = C/cutoff;
+	  if (index_dep != index2)
+	    paramDepMatrix(index_dep,index2) = -1.0;
+	}
+
+      for (int l=1; l<NeN; l++)
+	for (int n=0; n<Nee; n++)
+	  if (l+n == k)
+	    {
+	      index1 = l*NeN*Nee + n;
+	      index2 = l*NeN*Nee + Nee + n;
+	      paramDepMatrix(index_dep,index1) = C/cutoff;
+	      if (index_dep != index2)
+		paramDepMatrix(index_dep,index2) = -1.0;
+	    }
+    }
+
+  // If the two body Jastrows are not to be reproduced, the terms proportional
+  // to them will be set to zero
+  if (globalInput.flags.reproduce_NE_with_NEE_jastrow == 0)
+    for (int l=1; l<NeN; l++)
+      {
+	index1 = l*NeN*Nee;
+	paramDepMatrix(index1,index1) = 0.0;
+      }
+
+  if (globalInput.flags.reproduce_EE_with_NEE_jastrow == 0)
+    for (int n=2; n<Nee; n++)
+      paramDepMatrix(n,n) = 0.0;
+
+  // For every parameter that is not free, we substitute its definition in
+  // terms of free parameters in the definitions of the parameters that depend
+  // on it
+  for (int i=0; i<TotalNumberOfParameters; i++)
+    {
+      if ( fabs(paramDepMatrix(i,i)-1.0 ) > 1e-10 )
+	for (int j=0; j<TotalNumberOfParameters; j++)
+	  {
+	    for (int k=0; k<TotalNumberOfParameters; k++)
+	      paramDepMatrix(j,k) += paramDepMatrix(j,i)*paramDepMatrix(i,k);
+	    paramDepMatrix(j,i) = 0.0;
+	  }
+    }
+	      
+  // We can enforce symmetry by setting the elements with m>l equal to the ones
+  // with l>m
+
+  for (int l=0; l<NeN-1; l++)
+    for (int m=l+1; m<NeN; m++)
+      for (int n=0; n<Nee; n++)
+	{
+	  index1 = l*NeN*Nee + m*Nee + n;
+	  index2 = m*NeN*Nee + l*Nee + n;
+	  for (int i=0; i<TotalNumberOfParameters; i++)
+	    paramDepMatrix(index1,i) = paramDepMatrix(index2,i);
+	}
+}

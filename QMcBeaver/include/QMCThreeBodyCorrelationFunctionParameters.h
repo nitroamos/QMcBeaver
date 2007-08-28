@@ -162,8 +162,7 @@ private:
   
   void makeFreeParameterArray();
   void setParameters();
-  void enforceSymmetry();
-  void enforceCuspConditions();
+
   void checkCuspAndSymmetry();
 
   Array1D<string> ParticleTypes;
@@ -182,10 +181,11 @@ private:
   int C;
   double cutoff;
 
+  void makeParamDepMatrix();
+  Array2D<double> paramDepMatrix;
+
   string threeBodyCorrelationFunctionType;
   QMCThreeBodyCorrelationFunction* ThreeBodyCorrelationFunction;
-
-  Array2D<double>* constraintMatrix;
 };
 
 #endif

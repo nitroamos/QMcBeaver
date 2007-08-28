@@ -1,3 +1,10 @@
+Tues, Aug 28, 2007 Daniel R Fisher
+1.  I replaced the way that the symmetry and cusp conditions are
+    enforced in QMCThreeBodyJastrowParameters with a matrix.  It is
+    faster and more elegant to enforce the cusps and symmetry this
+    way.  The transpose of the matrix should be useful for calculating
+    derivatives of quantities with respect to the free parameters.  
+
 Mon, Aug 27, 2007 Daniel R Fisher
 1.  I revised the way that the free parameters are determined in the
     new class QMCThreeBodyJastrowParameters.  All of the parameters
