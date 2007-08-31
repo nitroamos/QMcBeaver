@@ -33,6 +33,7 @@ class Cambridge2CorrelationFunction : public QMCCorrelationFunction
   double L;
   // A scaling factor that might help the L parameter to optimize
   double f;
+  double fL;
 
   /**
      The parameter L is very highly coupled to the other
@@ -55,10 +56,12 @@ class Cambridge2CorrelationFunction : public QMCCorrelationFunction
   
   //Intermediate variables
   double d, d2, dpc;
-  double         dpc_r,  dpc_rr;
+  double dpc_r, dpc_rr;
   double dpc_L, dpc_Lr, dpc_Lrr;
   double d_a1_dL;
 
+  double P, dP_r, dP_rr;
+  double    dP_L, dP_Lr, dP_Lrr;
  public:
 
   void initializeParameters(Array1D<int> & BeginningIndexOfParameterType, 

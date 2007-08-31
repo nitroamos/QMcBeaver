@@ -82,6 +82,14 @@ void Polynomial::initialize(Array1D<double> & coeffs)
     {
       secondDerivativeCoefficients(i) = (i+2)*(i+1)*coefficients(i+2);
     }
+
+  // Polynomial's second derivative coefficients
+  thirdDerivativeCoefficients.allocate(coefficients.dim1()-3);
+
+  for(int i=0; i<thirdDerivativeCoefficients.dim1(); i++)
+    {
+      thirdDerivativeCoefficients(i) = (i+3)*(i+2)*(i+1)*coefficients(i+3);
+    }
 }
 
 void Polynomial::evaluate(double x)
@@ -177,6 +185,13 @@ double Polynomial::getSecondDerivativeValue()
   //evaluatedD2F = true;
 
   return d2f;
+}
+
+double Polynomial::getThirdDerivativeValue()
+{
+  d3f = evaluate(x,thirdDerivativeCoefficients);
+
+  return d3f;
 }
 
 double Polynomial::get_p3_xxa(int ai)

@@ -23,24 +23,7 @@ QMCOptimizationAlgorithm * QMCOptimizationFactory::
 {
   QMCOptimizationAlgorithm * optAlg = 0;
   
-  if( input->flags.optimize_Psi_method == "Steepest_Descent" )
-    {
-      /*
-	This method will use the identity matrix for its hessian. It's fairly
-	reliable, given good derivatives. However, it will probably take you more
-	steps to converge because the best parameters are usually not in the Steepest_Descent
-	direction.
-      */
-      QMCLineSearchStepLengthSelectionAlgorithm *stepAlg =
-	QMCLineSearchStepLengthSelectionFactory::factory(
-				       input->flags.line_search_step_length);
-
-      optAlg = new QMCSteepestDescent(&objFunc, stepAlg, 
-			 input->flags.optimization_max_iterations, 
-			 input->flags.optimization_error_tolerance);
-
-    }  
-  else if( input->flags.optimize_Psi_criteria == "analytical_energy_variance")
+  if( input->flags.optimize_Psi_criteria == "analytical_energy_variance")
     {
       /*
 	The analytical_energy_variance method will evaluate a hessian. See the
@@ -67,20 +50,6 @@ QMCOptimizationAlgorithm * QMCOptimizationFactory::
 			 input->flags.optimization_error_tolerance);
 
     }  
-  else if( input->flags.optimize_Psi_method == "BFGSQuasiNewton" )
-    {
-      /*
-	This method approximates a hessian to use with approximated derivatives.
-      */
-      QMCLineSearchStepLengthSelectionAlgorithm *stepAlg =
-	QMCLineSearchStepLengthSelectionFactory::factory(
-				       input->flags.line_search_step_length);
-
-      optAlg = new QMCBFGSQuasiNewtonLineSearch(&objFunc, stepAlg, 
-			 input->flags.optimization_max_iterations, 
-			 input->flags.optimization_error_tolerance);
-
-    }
   else if( input->flags.optimize_Psi_criteria == "generalized_eigenvector" )
     {
       /*
@@ -102,6 +71,20 @@ QMCOptimizationAlgorithm * QMCOptimizationFactory::
 			 input->flags.optimization_error_tolerance);
 
     }
+  else if( input->flags.optimize_Psi_method == "BFGSQuasiNewton" )
+    {
+      /*
+	This method approximates a hessian to use with approximated derivatives.
+      */
+      QMCLineSearchStepLengthSelectionAlgorithm *stepAlg =
+	QMCLineSearchStepLengthSelectionFactory::factory(
+				       input->flags.line_search_step_length);
+
+      optAlg = new QMCBFGSQuasiNewtonLineSearch(&objFunc, stepAlg, 
+			 input->flags.optimization_max_iterations, 
+			 input->flags.optimization_error_tolerance);
+
+    }
   else if( input->flags.optimize_Psi_method == "CKGeneticAlgorithm1" )
     {      
       /*
@@ -118,6 +101,23 @@ QMCOptimizationAlgorithm * QMCOptimizationFactory::
 	 input->flags.ck_genetic_algorithm_1_mutation_rate,
          input->flags.ck_genetic_algorithm_1_initial_distribution_deviation);
     }
+  else if( input->flags.optimize_Psi_method == "Steepest_Descent" )
+    {
+      /*
+	This method will use the identity matrix for its hessian. It's fairly
+	reliable, given good derivatives. However, it will probably take you more
+	steps to converge because the best parameters are usually not in the Steepest_Descent
+	direction.
+      */
+      QMCLineSearchStepLengthSelectionAlgorithm *stepAlg =
+	QMCLineSearchStepLengthSelectionFactory::factory(
+				       input->flags.line_search_step_length);
+
+      optAlg = new QMCSteepestDescent(&objFunc, stepAlg, 
+			 input->flags.optimization_max_iterations, 
+			 input->flags.optimization_error_tolerance);
+
+    }  
   else
     {
       cerr << "ERROR: Unknown optimization algorithm ("

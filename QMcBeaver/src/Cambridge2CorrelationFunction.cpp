@@ -43,18 +43,17 @@ void Cambridge2CorrelationFunction::initializeParameters(
   else
     {
       f = 1.0;
-      //f = 1e-4;
     }
+  fL = f * L;
 
-  //L = L / f;
-
-  if( L <= 0.0 )
+  if( L <= 0.0 || fL > 100.0)
     {
-      cerr << "Warning: Cambridge 2 particle Jastrow's L needs to be greater than 0, "
-	   << "but you set L = " << L << endl;
+      cerr << "Warning: bad value for L in Cambridge2CorrelationFunction." << endl
+	   << "    you set L = " << L << endl
+	   << "           fL = " << fL << endl
+	   << "         1/fL = " << (1.0/fL) << endl;
       //If L was requested to be negative, then fabs will permit the calculation to continue
       //even if L really is bad.
-      L = fabs(L);
       exit(0);
     }
 
@@ -64,9 +63,9 @@ void Cambridge2CorrelationFunction::initializeParameters(
   alpha_0 = Parameters(1);
   //We are using a modified version of their Jastrow.
   //alpha_1 is the coefficient of rij in the polynomial
-  alpha_1 = g / pow( -1.0 , C ) + alpha_0 * C * f * L;
+  alpha_1 =  g / pow( -1.0 , C ) / ( fL ) + alpha_0 * C;
   //derivative of alpha_1 w.r.t. L
-  d_a1_dL = alpha_0 * C * f;
+  d_a1_dL = -g / pow( -1.0 , C ) / ( fL * L );
 
   a(0) = alpha_0;
   a(1) = alpha_1;
@@ -92,49 +91,40 @@ void Cambridge2CorrelationFunction::evaluate( double _r )
     FunctionValue = 0.0;
    dFunctionValue = 0.0;
   d2FunctionValue = 0.0;
-  d   = r * f * L - 1.0;
+  d   = fL * r - 1.0;
+
   //This is the Heaviside function
   if( d > 0.0 )
-    {
-      //cout << "r = " << setw(15) << r << endl;
-      return;
-    }
+    return;
 
-  alpha.evaluate(r);
-  double a   = alpha.getFunctionValue();
-  double da  = alpha.getFirstDerivativeValue();
-  double d2a = alpha.getSecondDerivativeValue();
-  dpc = pow(d, C);
+  //The polynomial and its derivatives
+  alpha.evaluate(fL * r);
+   P     =           alpha.getFunctionValue();
+  dP_r   = fL *      alpha.getFirstDerivativeValue();
+  dP_rr  = fL * fL * alpha.getSecondDerivativeValue();
+  dP_L   = f * r *   alpha.getFirstDerivativeValue();
+  dP_Lr  = dP_L / r + f * fL * r * alpha.getSecondDerivativeValue();
+  dP_Lrr = 2.0 * f *      fL * alpha.getSecondDerivativeValue() +
+             r * f * fL * fL * alpha.getThirdDerivativeValue();
 
-  //Derivatives of dpc with respect to L and r
-  dpc_r  = C * f * L * dpc / d;
-  dpc_rr = (C - 1.0) * f * L * dpc_r / d;
+  // "_d_ to the _p_ower of _c_" and its derivatives
+  dpc    = pow(d, C);
+  dpc_r  = C * fL * dpc / d;
+  dpc_rr = (C - 1.0) * fL * dpc_r / d;
   dpc_L  = dpc_r * r / L;
-  dpc_Lr = dpc_L / d * (C * f * L - 1.0 / r);  //is dividing by r here going to be a problem?
+  dpc_Lr = dpc_L / d * (C * fL - 1.0 / r);  //is dividing by r here going to be a problem?
   dpc_Lrr = dpc_rr / d * (C * f * r - 2.0 / L);
 
-  //FunctionValue = (r - L) ^ C * \sum_0^Nu a_i r^i
-  FunctionValue = dpc * a;
+  //The Jastrow, and its derivatives w.r.t. r
+  FunctionValue = dpc * P;
 
   //dFunctionValue -> g as r -> 0
-  dFunctionValue = dpc_r * a + dpc * da;
+  dFunctionValue = dpc_r * P + dpc * dP_r;
 
   d2FunctionValue =
-    dpc_rr *   a       +
-    dpc_r  *  da * 2.0 +
-    dpc    * d2a;
-
-  /*
-  if(g < 0)
-    {
-      cout << "r = " << setw(15) << r
-	   << " dpc = " << setw(15) << dpc
-	   << "   a = " << setw(15) << a
-	   << " F = " << setw(15) << FunctionValue
-	   << " dF = " << setw(15) << dFunctionValue
-	   << " d2F = " << setw(15) << d2FunctionValue << endl;
-    }
-  //*/
+    dpc_rr *  P         +
+    dpc_r  * dP_r * 2.0 +
+    dpc    * dP_rr;
 }
 
 double Cambridge2CorrelationFunction::getFunctionValue()
@@ -153,8 +143,9 @@ double Cambridge2CorrelationFunction::get_p_a(int ai)
     case 0:
       if(optimizeL)
 	{
-	  p_a  = dpc * d_a1_dL * r;
-	  p_a += dpc_L * alpha.getFunctionValue();
+	  p_a  = dpc * d_a1_dL * fL * r;
+	  p_a += dpc   * dP_L;
+	  p_a += dpc_L *  P;
 	} else {
 	  p_a = 0.0;
 	}
@@ -162,7 +153,7 @@ double Cambridge2CorrelationFunction::get_p_a(int ai)
       
       //derivative w.r.t. alpha_0
     case 1:
-      p_a = dpc * (1.0 + C * r * f * L);
+      p_a = dpc * (1.0 + C * fL * r);
       break;
       
       //derivative w.r.t. one of the terms in the summation
@@ -189,9 +180,11 @@ double Cambridge2CorrelationFunction::get_p2_xa(int ai)
     case 0:
       if(optimizeL)
 	{
-	  p2_xa  = d_a1_dL * ( dpc + dpc_r * r);
-	  p2_xa += dpc_Lr  * alpha.getFunctionValue();
-	  p2_xa += dpc_L   * alpha.getFirstDerivativeValue();
+	  p2_xa  = fL * d_a1_dL * ( dpc + dpc_r * r);
+	  p2_xa += dpc     * dP_Lr;
+	  p2_xa += dpc_L   * dP_r;
+	  p2_xa += dpc_r   * dP_L;
+	  p2_xa += dpc_Lr  *  P;
 	} else {
 	  p2_xa = 0.0;
 	}
@@ -199,13 +192,14 @@ double Cambridge2CorrelationFunction::get_p2_xa(int ai)
       
       //derivative w.r.t. alpha_0
     case 1:
-      p2_xa = dpc_L * (1.0 + C) * f * L * L;
+      p2_xa  = dpc_r * (1.0 + C * fL * r);
+      p2_xa += dpc   *        C * fL;
       break;
       
       //derivative w.r.t. one of the terms in the summation
     default:
       p2_xa  = dpc_r * alpha.get_p_a(ai);
-      p2_xa += dpc   * alpha.get_p2_xa(ai);
+      p2_xa += dpc   * alpha.get_p2_xa(ai) * fL;
       break;
     }
   return p2_xa;
@@ -227,10 +221,13 @@ double Cambridge2CorrelationFunction::get_p3_xxa(int ai)
     case 0:
       if(optimizeL)
 	{
-	  p3_xxa  = dpc_Lrr * alpha.getFunctionValue();
-	  p3_xxa += dpc_Lr  * alpha.getFirstDerivativeValue() * 2.0;
-	  p3_xxa += dpc_L   * alpha.getSecondDerivativeValue();
-	  p3_xxa += (2.0 * dpc_r + r * dpc_rr) * d_a1_dL;
+	  p3_xxa  = dpc_Lrr * P;
+	  p3_xxa += dpc_rr  * dP_L;
+	  p3_xxa += dpc_Lr  * dP_r  * 2.0;
+	  p3_xxa += dpc_r   * dP_Lr * 2.0;
+	  p3_xxa += dpc_L   * dP_rr;
+	  p3_xxa += dpc     * dP_Lrr;
+	  p3_xxa += (2.0 * dpc_r + r * dpc_rr) * d_a1_dL * fL;
 	} else {
 	  p3_xxa = 0.0;
 	}
@@ -238,14 +235,15 @@ double Cambridge2CorrelationFunction::get_p3_xxa(int ai)
       
       //derivative w.r.t. alpha_0
     case 1:
-      p3_xxa  = dpc_Lr * (1.0 + C) * f * L * L;
+      p3_xxa  = dpc_rr * (1.0 + C * fL * r);
+      p3_xxa += dpc_r  *  2.0 * C * fL;
       break;
       
       //derivative w.r.t. one of the terms in the summation
     default:
       p3_xxa  = dpc_rr * alpha.get_p_a(ai);
-      p3_xxa += dpc_r  * alpha.get_p2_xa(ai) * 2.0;
-      p3_xxa += dpc    * alpha.get_p3_xxa(ai);
+      p3_xxa += dpc_r  * alpha.get_p2_xa(ai) * 2.0 * fL;
+      p3_xxa += dpc    * alpha.get_p3_xxa(ai) * fL * fL;
       break;
     }
   return p3_xxa;
@@ -294,7 +292,8 @@ ostream& operator <<(ostream& strm, Cambridge2CorrelationFunction &rhs)
   strm << endl;
   
   strm.unsetf(ios::scientific);
-  strm << "(" << (rhs.f * rhs.L) <<  " x - 1)^" << rhs.C << " (";
+  strm << "x = r / " << (1.0 / rhs.fL) << endl;
+  strm << "(x - 1)^" << rhs.C << " (";
   rhs.alpha.print(strm);
   strm << ")" << endl;
   return strm;

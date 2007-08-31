@@ -47,6 +47,12 @@ private:
   Array1D<double> secondDerivativeCoefficients;
 
   /**
+    Coefficients of the polynomial's third derivative.  They are arranged
+    from smallest to largest powers of x.
+    */
+  Array1D<double> thirdDerivativeCoefficients;
+
+  /**
     Last calculated function value.
     */
   double f;
@@ -60,6 +66,11 @@ private:
     Last calculated function second derivative value.
     */
   double d2f;
+
+  /**
+    Last calculated function third derivative value.
+    */
+  double d3f;
 
   /**
     Last evaluated x value.
@@ -108,6 +119,7 @@ public:
   double getFunctionValue();
   double getFirstDerivativeValue();
   double getSecondDerivativeValue();
+  double getThirdDerivativeValue();
 
   double get_p_a(int ai);
   double get_p2_xa(int ai);
