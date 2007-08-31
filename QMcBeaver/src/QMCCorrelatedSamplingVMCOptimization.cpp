@@ -138,6 +138,8 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
   globalInput.printAIParameters(clog,"Best parameters:",20,Guess_parameters,false);
   clog << endl << endl;
 
+  globalInput.JP.print(clog);
+
   double penalty = globalInput.JP.calculate_penalty_function();
   if(penalty >= 1e10)
     {

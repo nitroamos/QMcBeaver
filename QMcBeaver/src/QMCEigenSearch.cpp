@@ -44,7 +44,7 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
   x.push_back(CurrentParams);
   f.push_back(InitialValue);  
   
-  cout << "Beginning Generalized Eigenvalue Optimization step " << optStep << " for " << dim
+  cout << "Beginning Generalized Eigenvector Optimization step " << optStep << " for " << dim
        << " parameters, max steps = " << maximumSteps << ", with: " << endl;
   cout << "        InitialValue = " << InitialValue << endl;
   globalInput.printAIParameters(cout,"Parameters",20,CurrentParams,false);
@@ -63,7 +63,10 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 	  {
 	    a_diag *= 1e-5;
 	  }
-  
+
+  if( fabs(a_diag) < 1e-7 )
+    a_diag = 1e-7;
+
   if( fabs(a_diag) > 0.0)
     {
       for(int d=1; d<dim+1; d++)
@@ -71,6 +74,11 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
       
       cout << "Notice: Adding a_diag = " << (a_diag * a_diag_factor)
 	   << " to the diagonal elements of the hamiltonian" << endl;
+
+      /*
+      cout << "ADDING a_diag = " << (a_diag * 1e3) << " to first parameter" << endl;
+      hamiltonian(1,1) = hamiltonian(1,1) + a_diag * 1.0e3;
+      */
     }
 
   cout << endl << endl;
@@ -106,6 +114,7 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 
   int best_idx = 0;
   double best_val = 0.0;
+  cout.precision(12);
   for(int i=0; i<dim+1; i++)
     {
       cout << "Eigenvalue(" << setw(3) << i << "): " << eigval(i) << endl;
@@ -155,7 +164,7 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
   for(int j=0; j<dim; j++)
     x_new(j) += delta_x(j);
 
-  cout << endl << "Ending Generalized Eigenvalue Search Optimization... " << endl;
+  cout << endl << "Ending Generalized Eigenvector Search Optimization... " << endl;
 
   globalInput.printAIParameters(cout,"Delta params",20,delta_x,true);
   return x_new;
