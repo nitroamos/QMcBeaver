@@ -441,7 +441,11 @@ template <class T> class Array1D
     T& operator()(int i)
     {
 #ifdef QMC_DEBUG
-      assert( i >= 0 && i < n_1 );
+      if( i < 0 || i >= n_1 )
+	{
+	  cerr << "Error: Array1D::operator() has i = " << i << endl;
+	  assert( i >= 0 && i < n_1 );
+	}
       assert(pArray);
 #endif
       return pArray[i];
@@ -481,6 +485,48 @@ template <class T> class Array1D
       strm << endl;
       return strm;
     }
+
+    /**
+       This function assumes that the Array1D was initialized to the expected
+       number of parameters.
+
+       This function will read into Array1D a set of parameters, separated
+       by whitespace. It will read in as many numbers as it can until
+       it runs into a letter [a-zA-Z]. At that point, if too many parameters
+       were entered, it will print a warning, using 'label' to help the user
+       find the problem.
+
+       If too few parameters were entered, then it will initialize the rest to
+       the provided initialization value.
+
+       @param strm the input stream where the parameters are ready to be read
+       @param initialization the value to use to fill in missing entries
+       @param label printed with the warning for loading too many variables
+       @return the number of parameters that were available
+    */
+    int read(istream & strm, T initialization, string label)
+      {
+	  int pi = 0;
+	  strm >> ws;
+	  string temp;
+	  while(!isalpha(strm.peek()))
+	    {
+	      strm >> temp;
+	      if(pi < n_1)
+		pArray[pi] = (T)(atof(temp.c_str()));
+	      pi++;
+	      strm >> ws;
+	    }
+
+	  if(pi > n_1)
+	    clog << "Warning: you entered " << pi << " parameters, when only "
+		 << n_1 << " were expected for " << label << endl;  
+
+	  for (int i=pi; i < n_1; i++)
+	    pArray[i] = initialization;
+
+	  return pi;
+      }
   };
 
 #endif
