@@ -22,8 +22,9 @@ void ZeroThreeBodyCorrelationFunction::initializeParameters(int en, int ee,
   grad2 = 0.0;
 }
 
-void ZeroThreeBodyCorrelationFunction::evaluate(Array1D<double> &xyz1,
-			     double dist1, Array1D<double> &xyz2, double dist2)
+void ZeroThreeBodyCorrelationFunction::evaluate(Array1D<double> &xyz1, double dist1,
+						Array1D<double> &xyz2, double dist2,
+						Array1D<double> &xyz12, double r12)
 {
   // Do nothing
 }
@@ -48,7 +49,7 @@ Array1D<double>* ZeroThreeBodyCorrelationFunction::getElectron2Gradient()
   return &grad2;
 }
 
-double ZeroThreeBodyCorrelationFunction::get_p2_xa(int ai)
+double ZeroThreeBodyCorrelationFunction::get_p2_xa(bool e1, int xyz, int ai)
 {
   return 0.0;
 }

@@ -64,37 +64,73 @@ void QMCJastrowParameters::operator=( const QMCJastrowParameters & rhs )
 
 void QMCJastrowParameters::print(ostream & strm)
 {
-  strm << "EupEdn:" << endl;
-  EupEdn.getCorrelationFunction()->print(strm);
-  strm << endl;
+  if(EupEdn.getCorrelationFunction() != 0)
+    {
+      strm << "EupEdn:" << endl;
+      EupEdn.getCorrelationFunction()->print(strm);
+      strm << endl;
+    }
+  for(int i=0; i<EupEdnNuclear.dim1(); i++) 
+    {
+      strm << "EupEdnNuclear(" << globalInput.Molecule.Atom_Labels(i) << "): " << endl
+	   << " Total Parameters = " << EupEdnNuclear(i).getNumberOfTotalParameters() << endl
+	   << " Free Parameters = " << EupEdnNuclear(i).getNumberOfFreeParameters() 
+	   << endl;
+      EupEdnNuclear(i).getThreeBodyCorrelationFunction()->print(strm);
+      strm << endl;
+    }
 
-  strm << "EupEup:" << endl;
-  EupEup.getCorrelationFunction()->print(strm);
-  strm << endl;
 
-  if(!EquivalentElectronUpDownParams)
+  if(EupEup.getCorrelationFunction() != 0)
+    {
+      strm << "EupEup:" << endl;
+      EupEup.getCorrelationFunction()->print(strm);
+      strm << endl;
+    }
+  if(!EquivalentElectronUpDownParams && EdnEdn.getCorrelationFunction() != 0)
     {
       strm << "EdnEdn:" << endl;
       EdnEdn.getCorrelationFunction()->print(strm);    
       strm << endl;
     }
 
+
   for(int i=0; i<EupNuclear.dim1(); i++) 
     {
-      strm << "EupNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" 
+      strm << "EupNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):"
 	   << endl;
       EupNuclear(i).getCorrelationFunction()->print(strm);    
       strm << endl;
     }
+  for(int i=0; i<EupEupNuclear.dim1(); i++) 
+    {
+      strm << "EupEupNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" << endl
+	   << " Total Parameters = " << EupEupNuclear(i).getNumberOfTotalParameters() << endl
+	   << " Free Parameters = " << EupEupNuclear(i).getNumberOfFreeParameters() 
+	   << endl;
+      EupEupNuclear(i).getThreeBodyCorrelationFunction()->print(strm);
+      strm << endl;
+    }
 
   if(!EquivalentElectronUpDownParams)
-    for(int i=0; i<EdnNuclear.dim1(); i++) 
-      {
-        strm << "EdnNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" 
-	     << endl;
-        EdnNuclear(i).getCorrelationFunction()->print(strm);    
-        strm << endl;
-      }
+    {
+      for(int i=0; i<EdnNuclear.dim1(); i++) 
+	{
+	  strm << "EdnNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" 
+	       << endl;
+	  EdnNuclear(i).getCorrelationFunction()->print(strm);    
+	  strm << endl;
+	}
+      for(int i=0; i<EdnEdnNuclear.dim1(); i++) 
+	{
+	  strm << "EdnEdnNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" << endl
+	       << " Total Parameters = " << EdnEdnNuclear(i).getNumberOfTotalParameters() << endl
+	       << " Free Parameters = " << EdnEdnNuclear(i).getNumberOfFreeParameters() 
+	       << endl;
+	  EdnEdnNuclear(i).getThreeBodyCorrelationFunction()->print(strm);
+	  strm << endl;
+	}
+    }
 }
 
 void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
@@ -382,8 +418,11 @@ void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
 
 int QMCJastrowParameters::getNumberJWParameters()
 {
-  return getNumberEEParameters() + getNumberNEParameters() + 
-    getNumberNEupEdnParameters() + getNumberNEupEupParameters() + 
+  return
+    getNumberEEParameters() +
+    getNumberNEParameters() + 
+    getNumberNEupEdnParameters() +
+    getNumberNEupEupParameters() + 
     getNumberNEdnEdnParameters();
 }
 
@@ -408,21 +447,22 @@ int QMCJastrowParameters::getNumberNEupParameters()
 
 int QMCJastrowParameters::getNumberNEupEdnParameters()
 {
-  if (globalInput.flags.use_three_body_jastrow == 0)
+  if(globalInput.flags.optimize_NEE_Jastrows == 0)
     return 0;
   return NumberOfNEupEdnParameters;
 }
 
 int QMCJastrowParameters::getNumberNEupEupParameters()
 {
-  if (globalInput.flags.use_three_body_jastrow == 0)
+  if(globalInput.flags.optimize_NEE_Jastrows == 0)
     return 0;
   return NumberOfNEupEupParameters;
 }
 
 int QMCJastrowParameters::getNumberNEdnEdnParameters()
 {
-  if (globalInput.flags.use_three_body_jastrow == 0)
+  if(globalInput.flags.optimize_NEE_Jastrows == 0 ||
+     EquivalentElectronUpDownParams)
     return 0;
   return NumberOfNEdnEdnParameters;
 }
@@ -1116,6 +1156,8 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 	      EdnEdnNuclear(i).setParticle3Type("Electron_down");
 	    }
     }
+
+  print(clog);
 }
 
 QMCCorrelationFunctionParameters * QMCJastrowParameters::

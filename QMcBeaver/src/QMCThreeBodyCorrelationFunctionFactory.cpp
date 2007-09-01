@@ -11,6 +11,8 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCThreeBodyCorrelationFunctionFactory.h"
+#include "CambridgeThreeBodyCorrelationFunction.h"
+#include "ZeroThreeBodyCorrelationFunction.h"
 
 QMCThreeBodyCorrelationFunction * 
   QMCThreeBodyCorrelationFunctionFactory::threeBodyCorrelationFunctionFactory(string & Type)

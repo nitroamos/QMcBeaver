@@ -162,7 +162,7 @@ void QMCJastrow::gpuEvaluate(Array1D<Array2D<double>*> &X, int num)
 
 	sum_U(walker) += ThreeBodyJastrow.getLnJastrow();
 	laplacian_sum_U(walker) += ThreeBodyJastrow.getLaplacianLnJastrow();
-	
+
 	grad_3body = ThreeBodyJastrow.getGradientLnJastrow();
 	for (int i=0; i<grad_3body->dim1(); i++)
 	  for (int j=0; j<grad_3body->dim2(); j++)
@@ -281,6 +281,14 @@ void QMCJastrow::evaluate(QMCJastrowParameters & JP,
 	      p_a(walker,ai+shift)    = JastrowElectronNuclear.get_p_a_ln(ai);
 	      p2_xa(walker,ai+shift)  = *JastrowElectronNuclear.get_p2_xa_ln(ai);
 	      p3_xxa(walker,ai+shift) = JastrowElectronNuclear.get_p3_xxa_ln(ai);
+	    }
+	  shift += numNE;
+	  int numJW = globalInput.JP.getNumberJWParameters(); 
+	  for(int ai=shift; ai<numJW; ai++)
+	    {
+	      p_a(walker,ai)    = ThreeBodyJastrow.get_p_a_ln(ai-shift);
+	      p2_xa(walker,ai)  = *ThreeBodyJastrow.get_p2_xa_ln(ai-shift);
+	      p3_xxa(walker,ai) = ThreeBodyJastrow.get_p3_xxa_ln(ai-shift);
 	    }
 	}
 

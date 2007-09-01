@@ -631,27 +631,13 @@ bool QMCManager::run(bool equilibrate)
 {
   if(globalInput.flags.optimize_Psi == 1) 
     {
-      int width = 10;
-      
       int numAI = globalInput.getNumberAIParameters();
       if(numAI != 0)
-	clog << "Notice: we are optimizing " << numAI << " parameters this step:" << endl;
+	globalInput.printAISummary();
       else {
 	clog << "Error: you have " << numAI << " optimization parameters!" << endl;
 	exit(0);
       }
-      
-      int numEE = globalInput.JP.getNumberEEParameters();
-      if(numEE != 0) clog << setw(width)  << numEE << " Electron-Electron Jastrow parameters" << endl;
-      
-      int numNE = globalInput.JP.getNumberNEParameters();
-      if(numNE != 0) clog << setw(width) << numNE << "  Nuclear-Electron Jastrow parameters" << endl;
-      
-      int numCI = globalInput.WF.getNumberCIParameters();
-      if(numCI != 0) clog << setw(width) << numCI << " CI parameters" << endl;
-      
-      int numOR = globalInput.WF.getNumberORParameters();
-      if(numOR != 0) clog << setw(width) << numOR << " orbital parameters" << endl;
 
       /**
 	 Allow the reallocation of memory since the number of parameters
@@ -659,7 +645,7 @@ bool QMCManager::run(bool equilibrate)
       */
       QMCnode.initializeFunction();
     }
-  
+
   int width = 16;
   if( globalInput.flags.my_rank == 0 )
     {

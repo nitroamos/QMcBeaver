@@ -528,10 +528,13 @@ void QMCSCFJastrow::calculate_Psi_quantities(int walker)
       //Make sure that the derivative = (f(x + h) - f(x))/h
       //as h -> 0 by editing a ckmf file
       /*
+      globalInput.printAISummary();
+
       //int aStart = Input->getNumberAIParameters() - Input->WF.getNumberORParameters();
       int aStart = 0;
       int aStop  = Input->getNumberAIParameters();
       Array1D<double> params = Input->getAIParameters();
+      globalInput.printAIParameters(cout,"Parameters:",25,params,false);
       printf("function %23c p   %25.15e p2_xx  %25.15e\n",
 	     ' ',
 	     (double)Psi,

@@ -282,8 +282,12 @@ void QMCWalker::updateDistances(int whichE)
 	    }
 
 	  for(int j=0; j<Input->Molecule.getNumberAtoms(); j++)
-	    walkerData.riI(i,j) =
-	      QMCPotential_Energy::rij(R,Input->Molecule.Atom_Positions,i,j);
+	    {
+	      double r = QMCPotential_Energy::rij(R,Input->Molecule.Atom_Positions,i,j);
+	      walkerData.riI(i,j) = r;
+	      for(int xyz=0; xyz<3; xyz++)
+		walkerData.riI_uvec(i,j,xyz) = (R(i,xyz) - Input->Molecule.Atom_Positions(j,xyz)) / r;
+	    }
 	}
     } else {
       for(int j=0; j<R.dim1(); j++)
@@ -299,8 +303,12 @@ void QMCWalker::updateDistances(int whichE)
 	}
 
       for(int j=0; j<Input->Molecule.getNumberAtoms(); j++)
-	walkerData.riI(whichE,j) =
-	  QMCPotential_Energy::rij(R,Input->Molecule.Atom_Positions,whichE,j);
+	{
+	  walkerData.riI(whichE,j) =
+	    QMCPotential_Energy::rij(R,Input->Molecule.Atom_Positions,whichE,j);
+	  for(int xyz=0; xyz<3; xyz++)
+	    walkerData.riI_uvec(whichE,j,xyz) = (R(whichE,xyz) - Input->Molecule.Atom_Positions(j,xyz)) / walkerData.riI(whichE,j);
+	}
     }
 }
 

@@ -88,7 +88,8 @@ void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
   rij.allocate(numElectrons, numElectrons);
   rij_uvec.allocate(numElectrons, numElectrons, 3);
   riI.allocate(numElectrons, numNuclei);
-
+  riI_uvec.allocate(numElectrons, numNuclei, 3);
+  
   Uij.allocate(numElectrons, numElectrons);
   Uij_x.allocate(numElectrons, numElectrons);
   Uij_xx.allocate(numElectrons, numElectrons);

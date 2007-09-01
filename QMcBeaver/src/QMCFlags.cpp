@@ -135,6 +135,7 @@ void QMCFlags::read_flags(string InFileName)
 
   optimize_EE_Jastrows           = 1;
   optimize_EN_Jastrows           = 1;
+  optimize_NEE_Jastrows          = 1;
   optimize_CI                    = 0;
   optimize_Orbitals              = 0;
   link_Jastrow_parameters        = 0;
@@ -487,6 +488,11 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
           optimize_EN_Jastrows = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "optimize_NEE_Jastrows")
+        {
+          input_file >> temp_string;
+          optimize_NEE_Jastrows = atoi(temp_string.c_str());
         }
       else if(temp_string == "use_three_body_jastrow")
         {
@@ -1054,15 +1060,9 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "optimize_Psi\n " << flags.optimize_Psi << endl;
   strm << "optimize_EE_Jastrows\n " << flags.optimize_EE_Jastrows << endl;
   strm << "optimize_EN_Jastrows\n " << flags.optimize_EN_Jastrows << endl;
-  strm << "optimize_CI\n " << flags.optimize_CI << endl;
-
-  strm << "use_three_body_jastrow\n " << flags.use_three_body_jastrow << endl;
-  strm << "reproduce_NE_with_NEE_jastrow\n " 
-       << flags.reproduce_NE_with_NEE_jastrow << endl;
-  strm << "reproduce_EE_with_NEE_jastrow\n "
-       << flags.reproduce_EE_with_NEE_jastrow << endl;
+  strm << "optimize_NEE_Jastrows\n " << flags.optimize_NEE_Jastrows << endl;
   strm << "optimize_NEE_cutoffs\n " << flags.optimize_NEE_cutoffs << endl;
-
+  strm << "optimize_CI\n " << flags.optimize_CI << endl;
   strm << "optimize_Orbitals\n " << flags.optimize_Orbitals << endl;
   strm << "optimize_Psi_method\n " << flags.optimize_Psi_method << endl;
   strm << "optimize_Psi_criteria\n " << flags.optimize_Psi_criteria << endl;
@@ -1120,6 +1120,11 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
        << flags.link_Orbital_parameters << endl;
   strm << "link_Determinant_parameters\n "
        << flags.link_Determinant_parameters << endl;
+  strm << "use_three_body_jastrow\n " << flags.use_three_body_jastrow << endl;
+  strm << "reproduce_NE_with_NEE_jastrow\n " 
+       << flags.reproduce_NE_with_NEE_jastrow << endl;
+  strm << "reproduce_EE_with_NEE_jastrow\n "
+       << flags.reproduce_EE_with_NEE_jastrow << endl;
   
   strm << "\n# Other parameters\n";
   strm << "chip_and_mike_are_cool\n " << flags.chip_and_mike_are_cool << endl;

@@ -85,6 +85,29 @@ void QMCInput::setAIParameters(Array1D<double> & params)
   WF.setORParameters(params,shift);
 }
 
+void QMCInput::printArray(ostream & strm,
+		string name, int num,
+		Array1D<double> & array, int & start,
+		int margin, int width, int prec, int numPerRow)
+{
+  if(num > 0)
+    {
+      strm << setw(margin) << name;
+      int len = name.length();
+      for(int ai=0; ai<num; ai++)
+	{
+	  if(ai%numPerRow == 0 && ai != 0)
+	    strm << endl << setw(margin) << " ";
+	  
+	  strm.width(width);
+	  strm.precision(prec);
+	  strm << array(ai + start);
+	}
+      strm << endl;
+      start += num;
+    }
+}
+
 void QMCInput::printAIParameters(ostream & strm, 
 				 string name, 
 				 int margin,
@@ -99,66 +122,33 @@ void QMCInput::printAIParameters(ostream & strm,
     don't want to print all of them.
   */
   int numAI = getNumberAIParameters();
-
   int width = 20;
   int prec  = 12;
+  margin += 7;
 
   int shift = 0;
-  int numEE = JP.getNumberEEParameters();
-  if(numEE > 0)
-    {
-      strm << setw(margin) << name << " EE = ";
-      for(int ai=0; ai<numEE; ai++)
-	{
-	  if(ai%5 == 0 && ai != 0)
-	    strm << endl << setw(margin+6) << " ";
+  printArray(strm, name + "  EE = ", JP.getNumberEEParameters(),
+	     array, shift, margin, width, prec, 5);
+  printArray(strm, name + "  NE = ", JP.getNumberNEParameters(),
+	     array, shift, margin, width, prec, 5);
 
-	  strm.width(width);
-	  strm.precision(prec);
-	  strm << array(ai + shift);
-	}
-      strm << endl;
-    }
+  printArray(strm, name + " NUD = ", JP.getNumberNEupEdnParameters(),
+	     array, shift, margin, width, prec, 5);
+  printArray(strm, name + " NUU = ", JP.getNumberNEupEupParameters(),
+	     array, shift, margin, width, prec, 5);
+  printArray(strm, name + " NDD = ", JP.getNumberNEdnEdnParameters(),
+	     array, shift, margin, width, prec, 5);
 
-  shift += numEE;
-  int numNE = JP.getNumberNEParameters();
-  if(numNE > 0)
-    {
-      strm << setw(margin) << name << " NE = ";
-      for(int ai=0; ai<numNE; ai++)
-	{
-	  if(ai%5 == 0 && ai != 0)
-	    strm << endl << setw(margin+6) << " ";
+  printArray(strm, name + "  CI = ", WF.getNumberCIParameters(),
+	     array, shift, margin, width, prec, 5);
 
-	  strm.width(width);
-	  strm.precision(prec);
-	  strm << array(ai + shift);
-	}
-      strm << endl;
-    }
-
-  shift += numNE;
-  int numCI = WF.getNumberCIParameters();
-  if(numCI > 0)
-    {
-      strm << setw(margin) << name << " CI = ";
-      for(int ai=0; ai<numCI; ai++)
-	{
-	  strm.width(width);
-	  strm.precision(prec);
-	  strm << array(ai + shift);
-	}
-      strm << endl;
-    }
-
-  shift += numCI;
   int numOR = WF.getNumberORParameters();
   if(numOR > 0)
     {
       if(forcePrintOrbitals || numOR < 10)
 	{
 	  int numBF = WF.getNumberBasisFunctions();
-	  strm << setw(margin) << name << " OR =";
+	  strm << setw(margin) << name << "  OR =";
 	  for(int ai=0; ai<numOR; ai++)
 	    {
 	      if(ai%5 == 0 && ai%numBF != 0)
@@ -177,6 +167,35 @@ void QMCInput::printAIParameters(ostream & strm,
 	  strm << endl;
 	}
     }
+}
+
+void QMCInput::printAISummary()
+{
+  int width = 10;
+  int numAI = globalInput.getNumberAIParameters();
+
+  clog << "There are currently " << numAI << " optimizable parameters:" << endl;  
+  
+  int num = globalInput.JP.getNumberEEParameters();
+  if(num != 0) clog << setw(width) << num << "  Electron-Electron Jastrow parameters" << endl;
+  
+  num = globalInput.JP.getNumberNEParameters();
+  if(num != 0) clog << setw(width) << num << "  Nuclear-Electron Jastrow parameters" << endl;
+  
+  num = globalInput.JP.getNumberNEupEdnParameters();
+  if(num != 0) clog << setw(width) << num << "  NEupEdn Jastrow parameters" << endl;
+  
+  num = globalInput.JP.getNumberNEupEupParameters();
+  if(num != 0) clog << setw(width) << num << "  NEupEup Jastrow parameters" << endl;
+  
+  num = globalInput.JP.getNumberNEdnEdnParameters();
+  if(num != 0) clog << setw(width) << num << "  NEdnEdn Jastrow parameters" << endl;
+  
+  num = globalInput.WF.getNumberCIParameters();
+  if(num != 0) clog << setw(width) << num << " CI parameters" << endl;
+  
+  num = globalInput.WF.getNumberORParameters();
+  if(num != 0) clog << setw(width) << num << " orbital parameters" << endl;
 }
 
 ostream& operator<<(ostream & strm, QMCInput & Input)

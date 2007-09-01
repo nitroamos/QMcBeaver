@@ -19,13 +19,6 @@ QMCThreeBodyJastrow::QMCThreeBodyJastrow()
 QMCThreeBodyJastrow::~QMCThreeBodyJastrow()
 {
   grad_sum_U.deallocate();
-
-  for(int i=0; i<p2_xa.dim1(); i++)
-    p2_xa(i).deallocate();
-
-  p_a.deallocate();
-  p2_xa.deallocate();
-  p3_xxa.deallocate();
 }
 
 void QMCThreeBodyJastrow::initialize(QMCInput * input)
@@ -33,14 +26,6 @@ void QMCThreeBodyJastrow::initialize(QMCInput * input)
   Input = input;
 
   grad_sum_U.allocate(Input->WF.getNumberElectrons(),3);
-
-  int numNE = Input->JP.getNumberNEParameters();
-  p_a.allocate(numNE);
-  p2_xa.allocate(numNE);
-  p3_xxa.allocate(numNE);
-
-  for(int i=0; i<p2_xa.dim1(); i++)
-    p2_xa(i).allocate(Input->WF.getNumberElectrons(),3);
 }
 
 /**
@@ -105,18 +90,13 @@ double QMCThreeBodyJastrow::get_p_a_ln(int ai)
 }
 
 void QMCThreeBodyJastrow::evaluate(QMCJastrowParameters & JP, 
-				   QMCWalkerData * wd, Array2D<double> & X)
+				   QMCWalkerData * wData, Array2D<double> & X)
 {
+  wd = wData;
   // initialize the results
   sum_U = 0.0;
   laplacian_sum_U = 0.0;
   grad_sum_U = 0.0;
-  double firstDeriv;
-
-  p_a              = 0.0;
-  p3_xxa           = 0.0;
-  for(int ai=0; ai<p2_xa.dim1(); ai++)
-    p2_xa(ai)      = 0.0;
 
   int nalpha = Input->WF.getNumberAlphaElectrons();
   int nbeta = Input->WF.getNumberBetaElectrons();
@@ -125,269 +105,182 @@ void QMCThreeBodyJastrow::evaluate(QMCJastrowParameters & JP,
 
   Array1D<string> * NucleiTypes = JP.getNucleiTypes();
 
-  Array1D<QMCThreeBodyCorrelationFunctionParameters> * EupEdnNuclear = 0;
   if (nalpha > 0 && nbeta > 0)
-    EupEdnNuclear = JP.getElectronUpElectronDownNuclearParameters();
+    {
+      EupEdnNuclear = JP.getElectronUpElectronDownNuclearParameters();
+      for(int nuc=0; nuc<EupEdnNuclear->dim1(); nuc++)
+	(*EupEdnNuclear)(nuc).zeroOutDerivatives();
+    }
+  else
+    EupEdnNuclear = 0;    
 
-  Array1D<QMCThreeBodyCorrelationFunctionParameters> * EupEupNuclear = 0;
   if (nalpha > 1)
-    EupEupNuclear = JP.getElectronUpElectronUpNuclearParameters();
-
-  Array1D<QMCThreeBodyCorrelationFunctionParameters> * EdnEdnNuclear = 0;
+    {
+      EupEupNuclear = JP.getElectronUpElectronUpNuclearParameters();
+      for(int nuc=0; nuc<EupEupNuclear->dim1(); nuc++)
+	(*EupEupNuclear)(nuc).zeroOutDerivatives();
+    }
+  else
+    EupEupNuclear = 0;    
+  
   if (nbeta > 1)
-    EdnEdnNuclear = JP.getElectronDownElectronDownNuclearParameters();
-
-  // Loop over each atom calculating the three body jastrow function
-
-  double dist1 = 0.0;
-  double dist2 = 0.0;
-  double cutoff = 0.0;
-
-  Array1D<double> xyz1(3);
-  xyz1 = 0.0;
-
-  Array1D<double> xyz2(3);
-  xyz2 = 0.0;
-
-  Array1D<double> *grad1;
-  Array1D<double> *grad2;
-
-  QMCThreeBodyCorrelationFunction *U_function = 0;
-  int ai_shift = 0;
+    {
+      EdnEdnNuclear = JP.getElectronDownElectronDownNuclearParameters();
+      for(int nuc=0; nuc<EdnEdnNuclear->dim1(); nuc++)
+	(*EdnEdnNuclear)(nuc).zeroOutDerivatives();
+    }
+  else
+    EdnEdnNuclear = 0;
 
   for(int Nuclei=0; Nuclei<Input->Molecule.getNumberAtoms(); Nuclei++)
     {
-      /*
-	For labeling the ai parameters, we need to make sure that the order
-	we place the ai derivatives in our vectors lines up with how the ai
-	are placed in the parameter vector in QMCJastrowParameters.
-
-	In particular, the loops are inverted relative to what is done here.
-	The parameters need to have the nuclei indices as the "fast loop".
-	Eup comes first, then if the Jastrows are not linked, we have the Edn
-	parameters.
-
-	nuc_E??_shift will bring us to the right nucleus
-	ai_shift will bring us to the right Jastrow.
-	ai indexes the parameter within the Jastrow.
-      */
-      int nucEupEdnShift = 0;
-      int nucEupEupShift = 0;
-      int nucEdnEdnShift = 0;
-      int numP;
-
       // Find the number of the current nucleus in the nuclei list
-      int CurrentNucleiNumber = -1;
+      int NucleiType = -1;
       for( int i=0; i<NucleiTypes->dim1(); i++ )
 	if( Input->Molecule.Atom_Labels(Nuclei) == (*NucleiTypes)(i) )
 	  {
-	    CurrentNucleiNumber = i;
+	    NucleiType = i;
 	    break;
 	  } 
-	else 
-	  {
-	    nucEupEdnShift += (*EupEdnNuclear)(i).getNumberOfFreeParameters();
-	    nucEupEupShift += (*EupEupNuclear)(i).getNumberOfFreeParameters();
-	    nucEdnEdnShift += (*EdnEdnNuclear)(i).getNumberOfFreeParameters();
-	  }
+
+      // Now we do all opposite spin pairs with this nucleus	 
+      if (nalpha > 0 && nbeta > 0)
+	for(int Electron1=0; Electron1<nalpha; Electron1++)
+	  for (int Electron2=nalpha; Electron2<nalpha+nbeta; Electron2++)
+	    collectForPair(Electron2, Electron1, Nuclei,
+			   & (*EupEdnNuclear)(NucleiType));
 
       // First we do all pairs of two alphas with this nucleus
-
       if (nalpha > 1)
-	{
-	  U_function =
-       (*EupEupNuclear)(CurrentNucleiNumber).getThreeBodyCorrelationFunction();
-
-	  ai_shift = nucEupEupShift;
-	  numP = 
-	    (*EupEupNuclear)(CurrentNucleiNumber).getNumberOfFreeParameters();
-
-	  cutoff = (*EupEupNuclear)(CurrentNucleiNumber).getCutoffDist();
-
-	  for(int Electron1=0; Electron1<nalpha-1; Electron1++)
-	    for (int Electron2=Electron1+1; Electron2<nalpha; Electron2++)
-	      {
-		// Find the distances between the two electrons and the nucleus
-
-		xyz1 = 0.0;
-		dist1 = 0.0;
-
-		xyz2 = 0.0;
-		dist2 = 0.0;
-	  
-		calculateDistances(X, Electron1, Electron2,
-				   Input->Molecule.Atom_Positions, Nuclei,
-				   xyz1,dist1, xyz2, dist2);
-
-		if (dist1 < cutoff && dist2 < cutoff)
-		  {
-		    U_function->evaluate(xyz1,dist1,xyz2,dist2);
-
-		    sum_U += U_function->getFunctionValue();
-
-		    grad1 = U_function->getElectron1Gradient();
-		    grad2 = U_function->getElectron2Gradient();
-	      
-		    for (int i=0; i<3; i++)
-		      {
-			grad_sum_U(Electron1,i) += (*grad1)(i);
-			grad_sum_U(Electron2,i) += (*grad2)(i);
-		      }
-
-		    laplacian_sum_U += U_function->getLaplacianValue();
-		  }
-
-	  /*
-	    This part has to do with the parameter derivatives, and I haven't
-	    figured out how this works yet.
-	  if(globalInput.flags.calculate_Derivatives == 1 &&
-	     globalInput.flags.optimize_NEE_Jastrows == 1)
-	    for(int ai=0; ai<numP; ai++)
-	      {
-		p_a(ai+ai_shift)    += U_Function->get_p_a(ai);
-		firstDeriv           = U_Function->get_p2_xa(ai);
-		p3_xxa(ai+ai_shift) += 2.0/dist1 * firstDeriv + U_Function->get_p3_xxa(ai);
-		  
-		for(int i=0; i<3; i++)
-		  (p2_xa(ai+ai_shift))(Electron1,i) += firstDeriv; 
-	      }
-	  */
-	      }
-	}
-      // Now we do all opposite spin pairs with this nucleus
-
-	 
-      if (nalpha > 0 && nbeta > 0)
-	{
-	  U_function = 
-       (*EupEdnNuclear)(CurrentNucleiNumber).getThreeBodyCorrelationFunction();
-
-	  ai_shift = nucEupEdnShift;
-	  numP = 
-	    (*EupEdnNuclear)(CurrentNucleiNumber).getNumberOfFreeParameters();
-
-	  cutoff = (*EupEdnNuclear)(CurrentNucleiNumber).getCutoffDist();
-
-	  for(int Electron1=0; Electron1<nalpha; Electron1++)
-	    for (int Electron2=nalpha; Electron2<nalpha+nbeta; Electron2++)
-	      {
-		// Find the distances between the two electrons and the nucleus
-
-		xyz1 = 0.0;
-		dist1 = 0.0;
-		
-		xyz2 = 0.0;
-		dist2 = 0.0;
-	  
-		calculateDistances(X, Electron1, Electron2,
-				   Input->Molecule.Atom_Positions, Nuclei,
-				   xyz1,dist1, xyz2, dist2);
-
-		if (dist1 < cutoff && dist2 < cutoff)
-		  {
-		    U_function->evaluate(xyz1,dist1,xyz2,dist2);
-
-		    sum_U += U_function->getFunctionValue();
-
-		    grad1 = U_function->getElectron1Gradient();
-		    grad2 = U_function->getElectron2Gradient();
-	      
-		    for (int i=0; i<3; i++)
-		      {
-			grad_sum_U(Electron1,i) += (*grad1)(i);
-			grad_sum_U(Electron2,i) += (*grad2)(i);
-		      }
-
-		    laplacian_sum_U += U_function->getLaplacianValue();
-		  }
-
-	  /*
-	    This part has to do with the parameter derivatives.
-
-	  if(globalInput.flags.calculate_Derivatives == 1 &&
-	     globalInput.flags.optimize_NEE_Jastrows == 1)
-	    for(int ai=0; ai<numP; ai++)
-	      {
-		p_a(ai+ai_shift)    += U_Function->get_p_a(ai);
-		firstDeriv           = U_Function->get_p2_xa(ai);
-		p3_xxa(ai+ai_shift) += 2.0/r * firstDeriv + U_Function->get_p3_xxa(ai);
-		  
-		for(int i=0; i<3; i++)
-		  (p2_xa(ai+ai_shift))(Electron,i) += firstDeriv * unitVector[i];
-	      }
-	  */
-	      }
-	}
-
-      // Finally we do all beta spin pairs with this nucleus
+	for(int Electron1=0; Electron1<nalpha; Electron1++)
+	  for(int Electron2=0; Electron2<Electron1; Electron2++)	      
+	    collectForPair(Electron1, Electron2, Nuclei,
+			   & (*EupEupNuclear)(NucleiType));
       
+      // Finally we do all beta spin pairs with this nucleus
       if (nbeta > 1)
+	for(int Electron1=nalpha; Electron1<X.dim1(); Electron1++)
+	  for(int Electron2=nalpha; Electron2<Electron1; Electron2++)
+	    collectForPair(Electron1, Electron2, Nuclei,
+			   & (*EdnEdnNuclear)(NucleiType));
+    }
+
+  packageDerivatives();
+  wd = 0;
+}
+
+inline void QMCThreeBodyJastrow::collectForPair(int Electron1, 
+						int Electron2,
+						int Nuclei,
+						QMCThreeBodyCorrelationFunctionParameters * paramset)
+{
+  QMCThreeBodyCorrelationFunction *U_Function = paramset->getThreeBodyCorrelationFunction();
+
+  // Find the distances between the two electrons and the nucleus
+  double dist1 = wd->riI(Electron1,Nuclei);
+  double dist2 = wd->riI(Electron2,Nuclei);
+  double r12   = wd->rij(Electron1,Electron2);
+
+  Array1D<double> xyz1(3);
+  Array1D<double> xyz2(3);
+  Array1D<double> xyz12(3);
+
+  for(int i=0; i<3; i++)
+    {
+      xyz1(i)  = wd->riI_uvec(Electron1,Nuclei,i);
+      xyz2(i)  = wd->riI_uvec(Electron2,Nuclei,i);
+      xyz12(i) = wd->rij_uvec(Electron1, Electron2,i);
+    }
+
+  U_Function->evaluate(xyz1,  dist1,
+		       xyz2,  dist2,
+		       xyz12, r12);
+  
+  sum_U += U_Function->getFunctionValue();
+
+  Array1D<double> * grad1 = U_Function->getElectron1Gradient();
+  Array1D<double> * grad2 = U_Function->getElectron2Gradient();
+  
+  for (int i=0; i<3; i++)
+    {
+      grad_sum_U(Electron1,i) += (*grad1)(i);
+      grad_sum_U(Electron2,i) += (*grad2)(i);
+    }
+  
+  laplacian_sum_U += U_Function->getLaplacianValue();
+
+  if(globalInput.flags.calculate_Derivatives == 1 &&
+     globalInput.flags.optimize_NEE_Jastrows == 1)
+    {
+      for(int ai=0; ai<paramset->getNumberOfTotalParameters(); ai++)
 	{
-	  U_function =
-       (*EdnEdnNuclear)(CurrentNucleiNumber).getThreeBodyCorrelationFunction();
-
-	  ai_shift = nucEdnEdnShift;
-	  numP = 
-	    (*EdnEdnNuclear)(CurrentNucleiNumber).getNumberOfFreeParameters();
-
-	  cutoff = (*EdnEdnNuclear)(CurrentNucleiNumber).getCutoffDist();
-
-	  for(int Electron1=nalpha; Electron1<nalpha+nbeta-1; Electron1++)
-	    for (int Electron2=Electron1+1; Electron2<nalpha+nbeta; Electron2++)
-	      {
-		// Find the distances between the two electrons and the nucleus
-
-		xyz1 = 0.0;
-		dist1 = 0.0;
-
-		xyz2 = 0.0;
-		dist2 = 0.0;
+	  paramset->pt_a(ai)    += U_Function->get_p_a(ai);
+	  paramset->pt3_xxa(ai) += U_Function->get_p3_xxa(ai);
 	  
-		calculateDistances(X, Electron1, Electron2,
-				   Input->Molecule.Atom_Positions, Nuclei,
-				   xyz1,dist1, xyz2, dist2);
-
-		if (dist1 < cutoff && dist2 < cutoff)
-		  {
-		    U_function->evaluate(xyz1,dist1,xyz2,dist2);
-		    
-		    sum_U += U_function->getFunctionValue();
-
-		    grad1 = U_function->getElectron1Gradient();
-		    grad2 = U_function->getElectron2Gradient();
-	      
-		    for (int i=0; i<3; i++)
-		      {
-			grad_sum_U(Electron1,i) += (*grad1)(i);
-			grad_sum_U(Electron2,i) += (*grad2)(i);
-		      }
-
-		    laplacian_sum_U += U_function->getLaplacianValue();
-		  }
-		
-	  /*
-	    This part has to do with the parameter derivatives.
-	  
-	  if(globalInput.flags.calculate_Derivatives == 1 &&
-	     globalInput.flags.optimize_EEN_Jastrows == 1)
-	    for(int ai=0; ai<numP; ai++)
-	      {
-		p_a(ai+ai_shift)    += U_Function->get_p_a(ai);
-		firstDeriv           = U_Function->get_p2_xa(ai);
-		p3_xxa(ai+ai_shift) += 2.0/r * firstDeriv + U_Function->get_p3_xxa(ai);
-		  
-		for(int i=0; i<3; i++)
-		  (p2_xa(ai+ai_shift))(Electron,i) += firstDeriv * unitVector[i];
-	      }
-	  */
-	      }
+	  for(int i=0; i<3; i++)
+	    {
+	      (paramset->pt2_xa(ai))(Electron1,i) += U_Function->get_p2_xa(true,i,ai); 
+	      (paramset->pt2_xa(ai))(Electron2,i) += U_Function->get_p2_xa(false,i,ai); 
+	    }
 	}
     }
 }
 
+void QMCThreeBodyJastrow::packageDerivatives()
+{
+  int numNEE =
+    globalInput.JP.getNumberNEupEdnParameters() +
+    globalInput.JP.getNumberNEupEupParameters() + 
+    globalInput.JP.getNumberNEdnEdnParameters();  
+  
+  p_a.allocate(numNEE);
+  p2_xa.allocate(numNEE);
+  p3_xxa.allocate(numNEE);
+  for(int i=0; i<p2_xa.dim1(); i++)
+    {
+      p2_xa(i).allocate(globalInput.WF.getNumberElectrons(),3);
+      p2_xa(i) = 0.0;
+    }
+  p_a = 0.0;
+  p3_xxa = 0.0;
+  
+  int ai = 0;
+  int upupstart;
 
+  if(EupEdnNuclear != 0)
+    for(int nuc=0; nuc<EupEdnNuclear->dim1(); nuc++)
+      {
+	(*EupEdnNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	ai += (*EupEdnNuclear)(nuc).getNumberOfFreeParameters();
+      }
+  upupstart = ai;
 
+  if(EupEupNuclear != 0)
+    for(int nuc=0; nuc<EupEupNuclear->dim1(); nuc++)
+      {
+	(*EupEupNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	ai += (*EupEupNuclear)(nuc).getNumberOfFreeParameters();
+      }  
 
+  /*
+    If upup and dndn are the same, then their derivatives
+    are added to the same accumulator.
+  */
+  if(globalInput.flags.link_Jastrow_parameters == 1)
+    ai = upupstart;
 
+  if(EdnEdnNuclear != 0)
+    for(int nuc=0; nuc<EdnEdnNuclear->dim1(); nuc++)
+      {
+	(*EdnEdnNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	ai += (*EdnEdnNuclear)(nuc).getNumberOfFreeParameters();
+      }
 
+  if(ai != numNEE)
+    {
+      clog << "Error: parameter counting went bad in packageDerivatives" << endl;
+      clog << "     ai = " << ai << endl;
+      clog << " numNEE = " << numNEE << endl;
+    }
+}
 

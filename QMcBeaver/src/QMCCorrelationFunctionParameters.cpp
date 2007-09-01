@@ -155,13 +155,7 @@ bool QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
   Parameters.allocate(TotalNumberOfParameters);
   strm >> temp;
   
-  for (int i = 0; i < TotalNumberOfParameters; i++)
-    {
-      strm >> temp;
-      Parameters(i) = atof(temp.c_str());
-    }
-  
-  // Load the number of constant types
+  int pi = Parameters.read(strm,0.0,"2 particle Jastrow");
 
   // Load the number of Constant types  
   strm >> temp >> temp;
