@@ -27,8 +27,9 @@ class ZeroThreeBodyCorrelationFunction : public QMCThreeBodyCorrelationFunction
   void initializeParameters(int electron_nucleus, int electron_electron, 
 			    Array1D<double> &Parameters, int C, double max);
 
-  void evaluate(Array1D<double> &xyz1, double dist1, Array1D<double> &xyz2,
-		double dist2);
+  void evaluate(Array1D<double> &xyz1, double dist1,
+		Array1D<double> &xyz2, double dist2,
+		Array1D<double> &xyz12, double r12);
 
   double getFunctionValue();
   double get_p_a(int ai);
@@ -36,7 +37,7 @@ class ZeroThreeBodyCorrelationFunction : public QMCThreeBodyCorrelationFunction
   Array1D<double> * getElectron1Gradient();
   Array1D<double> * getElectron2Gradient();
 
-  double get_p2_xa(int ai);
+  double get_p2_xa(bool e1, int xyz, int ai);
   
   double getLaplacianValue();
   double get_p3_xxa(int ai);

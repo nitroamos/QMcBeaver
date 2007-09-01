@@ -124,16 +124,29 @@ public:
   Array2D<double> grad_sum_U;
   double laplacian_sum_U;
   QMCInput* Input;
-  
-  Array1D<double>  p_a;
+
+  QMCWalkerData * wd;
+
+  Array1D<double> p_a;
   Array1D< Array2D<double> > p2_xa;
   Array1D<double> p3_xxa;
-  
+
+  Array1D<QMCThreeBodyCorrelationFunctionParameters> * EupEdnNuclear;
+  Array1D<QMCThreeBodyCorrelationFunctionParameters> * EupEupNuclear;
+  Array1D<QMCThreeBodyCorrelationFunctionParameters> * EdnEdnNuclear;
+
 private:    
+  void packageDerivatives();
+
   void calculateDistances(Array2D<double> &X1, int x1particle, int x2particle, 
 			  Array2D<double> &X3, int x3particle, 
 			  Array1D<double> &position1, double &r1, 
 			  Array1D<double> &position2, double &r2);
 
+  void collectForPair(int Electron1, 
+		      int Electron2,
+		      int Nuclei,
+		      QMCThreeBodyCorrelationFunctionParameters * paramset);
+  
 };
 #endif

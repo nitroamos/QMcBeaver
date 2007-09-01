@@ -126,6 +126,23 @@ public:
 			 bool forcePrintOrbitals);
 
   /**
+     This function makes it easy to print segments of an array,
+     where the segments correspond to different kinds of parameters.
+
+     This function is used to print out one segment, with several
+     customization options.
+  */
+  void printArray(ostream & strm, string name, int num, 
+		  Array1D<double> & array, int & start, 
+		  int margin, int width, int prec, int numPerRow);
+
+  /**
+     Prints out the number of parameters we're optimizing in the
+     current step, and shows a break down of the numbers.
+  */
+  void printAISummary();
+
+  /**
      Write this object's state out to a stream. The same format is 
      used as in the QMC input file.
   */

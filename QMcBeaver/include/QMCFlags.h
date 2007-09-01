@@ -646,6 +646,7 @@ class QMCFlags
   */
   int optimize_EE_Jastrows;
   int optimize_EN_Jastrows;
+  int optimize_NEE_Jastrows;
   int optimize_CI;
   int optimize_Orbitals;
 

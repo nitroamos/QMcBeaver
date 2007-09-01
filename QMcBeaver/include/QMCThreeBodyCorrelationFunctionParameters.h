@@ -17,6 +17,7 @@
 #include <string>
 
 #include "Array1D.h"
+#include "Array2D.h"
 #include "QMCThreeBodyCorrelationFunctionFactory.h"
 #include "StringManipulation.h"
 
@@ -97,6 +98,12 @@ class QMCThreeBodyCorrelationFunctionParameters
   int getNumberOfFreeParameters();
 
   /**
+     Gets the total number of parameters.
+     @return total number of parameters
+  */
+  int getNumberOfTotalParameters();
+
+  /**
     Gets the parameterized QMCThreeBodyCorrelationFunction used in QMCJastrow 
     to describe the particular three body interaction when calculating the 
     Jastrow function.
@@ -105,13 +112,6 @@ class QMCThreeBodyCorrelationFunctionParameters
   */
 
   QMCThreeBodyCorrelationFunction * getThreeBodyCorrelationFunction();    
-
-  /**
-    Sets the free parameters describing the particle-particle interaction.
-
-    @param params new set of parameters
-  */
-  void setFreeParameters(Array1D<double> & params);
 
   /**
     Sets the type of particle1 for the particular three body interaction 
@@ -156,20 +156,79 @@ class QMCThreeBodyCorrelationFunctionParameters
   */
   double getCutoffDist();
 
-private:
+  void zeroOutDerivatives();
+  Array1D<double> pt_a;
+  Array1D< Array2D<double> > pt2_xa;
+  Array1D<double> pt3_xxa;
+
+  //private:
   void initializeThreeBodyCorrelationFunctionParameters();    
   void setThreeBodyCorrelationFunction();
   
-  void makeFreeParameterArray();
-  void setParameters();
+  /**
+     convert an array in the total basis into an array in the free basis
+     free -> total (transformed)
+  */
+  void getFree(const Array1D<double> & total,
+	       Array1D<double> & free);
 
-  void checkCuspAndSymmetry();
+  /**
+     takes a new set of free parameters and recreates the total parameter array
+     free -> total (transformed)
+  */
+  void setFreeParameters(const Array1D<double> & free);
+
+  /**
+     takes a new set of free parameters and recreates the total parameter array
+     total -> total (transformed) -> free
+  */
+  void setTotalParameters(const Array1D<double> & total);
+  
+  /**
+     maps the (transformed) total parameter array to the free array
+     (transformed) total -> free
+  */
+  void totalToFree(const Array1D<double> & total,
+		   Array1D<double> & free) const;
+
+  void totalDerivativesToFree(int shift,
+			      Array1D<double> & p_a,
+			      Array1D< Array2D<double> > & p2_xa,
+			      Array1D<double> & p3_xxa) const;
+
+  /**
+     returns true if the coefficient associated with
+     this particular l, m, and n is free.
+  */
+  bool isFree(int l, int m, int n) const;
+
+  /**
+     maps the free parameter array to the total parameter array
+     free -> total (transformed)
+  */
+  void freeToTotal(const Array1D<double> & free,
+		   Array1D<double> & total);
+
+  /**
+     creates the transformation matrix which can apply the cusp and symmetry conditions
+     to the total parameter array. this creates certain dependencies between the parameters.
+     total -> (transformed) total
+  */
+  void makeParamDepMatrix();
+
+  /**
+     verifies that total parameter array statisfies the cusp and symmetry conditions
+     (transformed) total -> true
+     total -> false
+  */
+  bool checkCuspAndSymmetry();
 
   Array1D<string> ParticleTypes;
 
   int NumberOfParameterTypes;
   Array1D<int> NumberOfParameters;
   Array1D<double> Parameters;
+  Array1D<double> tempArray;
   int TotalNumberOfParameters;
 
   Array1D<double> freeParameters;
@@ -181,7 +240,6 @@ private:
   int C;
   double cutoff;
 
-  void makeParamDepMatrix();
   Array2D<double> paramDepMatrix;
 
   string threeBodyCorrelationFunctionType;

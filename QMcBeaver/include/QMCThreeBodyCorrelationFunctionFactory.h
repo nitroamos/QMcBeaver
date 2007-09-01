@@ -16,8 +16,6 @@
 #include <string>
 
 #include "QMCThreeBodyCorrelationFunction.h"
-#include "CambridgeThreeBodyCorrelationFunction.h"
-#include "ZeroThreeBodyCorrelationFunction.h"
 
 using namespace std;
 

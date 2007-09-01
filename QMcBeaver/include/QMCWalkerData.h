@@ -58,7 +58,8 @@ class QMCWalkerData {
   Array2D<double> rij;
   Array3D<double> rij_uvec;
   Array2D<double> riI;
-
+  Array3D<double> riI_uvec;
+  
   Array2D<double> Uij;
   Array2D<double> Uij_x;
   Array2D<double> Uij_xx;

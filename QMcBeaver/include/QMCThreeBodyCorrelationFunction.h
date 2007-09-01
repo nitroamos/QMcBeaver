@@ -46,7 +46,8 @@ class QMCThreeBodyCorrelationFunction
     \f$r\f$.
     */
   virtual void evaluate( Array1D<double> &xyz1, double dist1,
-			 Array1D<double> &xyz2, double dist2) = 0;
+			 Array1D<double> &xyz2, double dist2,
+			 Array1D<double> &xyz12, double r12) = 0;
   
   /**
     Gets the value of the correlation function for the last evaluated \f$r\f$.
@@ -73,7 +74,7 @@ class QMCThreeBodyCorrelationFunction
   /**
      Second Partial derivative of function with respect to parameters x and ai.
   */
-  virtual double get_p2_xa(int ai) = 0;
+  virtual double get_p2_xa(bool e1, int xyz, int ai) = 0;
   
   /**
      Gets the value of the Laplacian of the correlation function with respect
@@ -91,6 +92,13 @@ class QMCThreeBodyCorrelationFunction
      Returns the cutoff for the electron-nucleus distance for this function.
   */
   virtual double getCutoffDist() = 0;
+
+  /**
+     Override this function if there's some Jastrow specific
+     message you want to print.
+     It will be called right after the Jastrow is initialized.
+  */
+  virtual void print(ostream& strm){}
 };
 
 
