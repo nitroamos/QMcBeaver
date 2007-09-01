@@ -1,3 +1,14 @@
+Sat, Sep 1, 2007 Amos Anderson
+1.  I fixed a bug in the Cambridge jastrows.
+
+2.  I added parameter derivatives to the 3 particle jastrows, i think
+    everything is optimizing correctly.
+
+3.  I added a function in Array1D to make it easier to read arrays
+    from the input file. Specifically, you don't have to type something
+    for all the parameters in the input file, the function will read
+    as many as available, and initialize the rest to some chosen value.
+
 Tues, Aug 28, 2007 Daniel R Fisher
 1.  I replaced the way that the symmetry and cusp conditions are
     enforced in QMCThreeBodyJastrowParameters with a matrix.  It is
