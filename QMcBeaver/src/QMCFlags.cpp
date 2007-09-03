@@ -1272,7 +1272,8 @@ bool QMCFlags::checkFlags()
 	  needPrintedConfigs = true;
 
 	  if(optimize_Psi_method == "Steepest_Descent" &&
-	     optimize_Psi_criteria == "analytical_energy_variance")
+	     (optimize_Psi_criteria == "analytical_energy_variance" ||
+	      optimize_Psi_criteria == "generalized_eigenvector"))
 	    needPrintedConfigs = false;
 
 	  if(optimize_Psi_method == "BFGSQuasiNewton" && 

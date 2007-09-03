@@ -803,9 +803,12 @@ double QMCJastrowParameters::calculate_penalty_function(
 
       if(distance <= 0)
 	{
-	  penalty = 1e100; 
-	  cerr << "Warning: distance from real axis is " << distance << "  in OFR, can\'t take log" << endl;
+	  cerr << "Warning: distance from real axis = " << distance << " in calculate_penalty_function, can\'t take log" << endl;
 	  cerr << "         poles(" << i << ") = " << poles(i) << endl;
+	  if(poles(i).real() > 50.0)
+	    penalty = 10;
+	  else
+	    penalty = 1e100;
 	  cerr << "         penalty will be set to " << penalty << endl;
 	  cerr.flush();
 	} 
