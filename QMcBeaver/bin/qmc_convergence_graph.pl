@@ -126,16 +126,18 @@ for(my $index=0; $index<=$#ARGV; $index++){
 	    }
 	    $numerrors++;
 	}
-	next if($_ =~ /[a-zA-Z]/ && $_ !~ /Results/);
+
+	next if($_ =~ /[=]/ && $_ !~ /Results/);
 	chomp;
 	@data = split/[ ]+/;
         #this is the number of data elements per line
-	if($#data >= 8){
+	if($#data >= 8 && $more){
 	    $counter++;
 	    $iteration   = $data[1];
 	    $eavg        = $data[2];
 	    $estd        = $data[3];
 	    $num_samples = $data[$#data];
+	    #printf "$#data $more %20i %20.10f %20.10f %20i\n", $num_samples, $eavg, $estd, $iteration; 
 	    next if($num_samples <= 0);
 
 	    #make sure we have the first and last data points included
