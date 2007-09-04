@@ -1,3 +1,7 @@
+/**
+   This has been modified to use Array2D
+*/
+
 /* 
  * numerics/linalg/svdcmp.cc
  * 
@@ -17,10 +21,6 @@
  * WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  * 
  */ 
-
-/**
-   This has been modified to use Array2D
-*/
 
 #ifndef SVDCMP_H
 #define SVDCMP_H
