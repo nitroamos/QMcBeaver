@@ -144,7 +144,7 @@ template <class T> class Array1D
         }
     }
 
-#ifdef USEATLAS
+#ifdef USEBLAS
     T operator*( const Array1D<double> & rhs)
     {
 #ifdef QMC_DEBUG
@@ -152,7 +152,12 @@ template <class T> class Array1D
       assert(pArray);
       assert(rhs.pArray);
 #endif
+#ifdef USE_CBLAS
       return cblas_ddot(n_1, pArray, 1,rhs.pArray, 1);
+#else
+      int inc = 1;
+      return ddot_(&n_1, pArray, &inc, rhs.pArray, &inc);
+#endif
     }
 
     T operator*( const Array1D<float> & rhs)
@@ -162,14 +167,25 @@ template <class T> class Array1D
       assert(pArray);
       assert(rhs.pArray);
 #endif
+#ifdef USE_CBLAS
       return cblas_sdot(n_1, pArray, 1,rhs.pArray, 1);
+#else
+      int inc = 1;
+      return sdot_(&n_1, pArray, &inc, rhs.pArray, &inc);
+#endif
     }
 
     //this method has not been tested with ATLAS
     Array1D operator+( const Array1D & rhs)
     {
       Array1D <T> A(rhs);
+#ifdef USE_CBLAS
       cblas_daxpy(n_1, 1.0, pArray,1, A.pArray, 1);
+#else
+      int inc = 1;
+      double a = 1.0;
+      daxpy_(&n_1, &a, pArray, &inc, A.pArray, &inc);
+#endif
       return A;
     }
 #else

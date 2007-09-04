@@ -35,42 +35,45 @@ for more details.
 #include <iostream>
 #include <iomanip>
 #include <typeinfo>
-#include "cppblas.h"
 #include "Complex.h"
-
-/*
-  These are function prototypes for the LAPACK
-  library that will be linked in.
- 
-  You may or may not need to modify the function names
-  depending on the local fortran calling convention.
-*/
-extern "C"
-  {
-    void dgesv_(int* N, int* NRHS,
-                double *A, int* lda, int* ipiv,
-                double *B, int* ldb,
-                int* info);
-    void sgesv_(int* N, int* NRHS,
-                float *A, int* lda, int* ipiv,
-                float *B, int* ldb,
-                int* info);
-    void dggev_(const char* jobvl, const char* jobvr, int* n,
-                double *a, int* lda, double *b, int* ldb,
-                double *alphar, double *alphai, double *beta,
-                double *vl, int* ldvl,
-                double *vr, int* ldvr,
-                double *work, int* lwork,
-                int *info);
-  }
-
-#if defined USEAPPLE
-#include <vecLib/vBLAS.h>
-#endif
-
 #include <assert.h>
 #include "Array1D.h"
 #include "fastfunctions.h"
+#include "cppblas.h"
+
+/*
+  Kahan's method is very slightly more accurate with
+  single precision. It is implemented for curiousity's sake,
+  since it's only available when gemm libraries are not linked.
+  http://en.wikipedia.org/wiki/Kahan_summation_algorithm
+*/
+static const bool USE_KAHAN = false;
+
+/*
+  These are function prototypes for the LAPACK
+  libraries that might be linked in.
+  
+  You may or may not need to modify the function names
+  depending on the local fortran compiler's calling convention.
+*/
+extern "C"
+{
+  void dgesv_(int* N, int* NRHS,
+	      double *A, int* lda, int* ipiv,
+	      double *B, int* ldb,
+	      int* info);
+  void sgesv_(int* N, int* NRHS,
+	      float *A, int* lda, int* ipiv,
+	      float *B, int* ldb,
+	      int* info);
+  void dggev_(const char* jobvl, const char* jobvr, int* n,
+	      double *a, int* lda, double *b, int* ldb,
+	      double *alphar, double *alphai, double *beta,
+	      double *vl, int* ldvl,
+	      double *vr, int* ldvr,
+	      double *work, int* lwork,
+	      int *info);
+}
 
 //Array2D is included in all the classes where this change is relevant
 #if defined SINGLEPRECISION || defined QMC_GPU
@@ -81,41 +84,32 @@ typedef double qmcfloat;
 const static double REALLYTINY = 1e-300;
 #endif
 
-#if defined SINGLEPRECISION || defined QMC_GPU
-#else
-#endif
-
-static const bool USE_KAHAN = false;
-
 using namespace std;
 
 /**
    A 2-dimensional template for making arrays.  All of the memory allocation
    and deallocation details are dealt with by the class. Some of the operators
    require the Array2D to contain doubles or floats.
-   
-   NOTICE: All Array2D a operator * Array2D b methods now require b to be transposed.
 */
-
 
 template <class T> class Array2D
   {
   private:
     /**
-    Number of elements in the array's first dimension.
+       Number of elements in the array's first dimension.
     */
-
+    
     int n_1;
 
 
     /**
-    Number of elements in the array's second dimension.
+       Number of elements in the array's second dimension.
     */
 
     int n_2;
 
     /**
-    Array containing the data.
+       Array containing the data.
     */
     T * pArray;
 
@@ -126,108 +120,101 @@ template <class T> class Array2D
     Array1D<T> diCol;
     Array1D<int> diINDX;
     Array1D<T> diVV;
-
+    
   public:
     /**
-    Gets a pointer to an array containing the array elements.  
-    The ordering of this array is NOT specified.  
+       Gets a pointer to an array containing the array elements.  
+       The ordering of this array is NOT specified.  
     */
     T* array()
-    {
-      return pArray;
-    }
-
+      {
+	return pArray;
+      }
+    
     /**
-    Gets the number of elements in the array's first dimension.
-
-    @return number of elements in the array's first dimension.
+       Gets the number of elements in the array's first dimension.
+       
+       @return number of elements in the array's first dimension.
     */
     int dim1() const
       {
         return n_1;
       }
-
+    
     /**
-    Gets the number of elements in the array's second dimension.
-
-    @return number of elements in the array's second dimension.
+       Gets the number of elements in the array's second dimension.
+       
+       @return number of elements in the array's second dimension.
     */
     int dim2() const
       {
         return n_2;
       }
-
+    
     /**
-    Gets the total number of elements in the array.
-
-    @return total number of elements in the array.
+       Gets the total number of elements in the array.
+       
+       @return total number of elements in the array.
     */
     int size() const
       {
         return n_1*n_2;
       }
-
+    
     /**
-    Allocates memory for the array.
-
-    @param i size of the array's first dimension.
-    @param j size of the array's second dimension.
+       Allocates memory for the array.
+       
+       @param i size of the array's first dimension.
+       @param j size of the array's second dimension.
     */
-
+    
     void allocate(int i, int j)
-    {
+      {
 #ifdef QMC_DEBUG
-      if( i < 0 || j < 0)
-        {
-	  cerr << "Error: invalid dimensions in Array2D::allocate\n"
-	       << " i = " << i << endl
-	       << " j = " << j << endl;
-	  assert(0);
-        }
+	if( i < 0 || j < 0)
+	  {
+	    cerr << "Error: invalid dimensions in Array2D::allocate\n"
+		 << " i = " << i << endl
+		 << " j = " << j << endl;
+	    assert(0);
+	  }
 #endif
-      if( n_1 != i || n_2 != j )
-        {
-          deallocate();
-
-          n_1 = i;
-          n_2 = j;
-
-          if(n_1 >= 1 && n_2 >= 1)
-            {
-              pArray = new T[ n_1*n_2 ];
-            }
-          else
-            {
-              pArray = 0;
-            }
-        }
-    }
-
+	if( n_1 != i || n_2 != j )
+	  {
+	    deallocate();
+	    
+	    n_1 = i;
+	    n_2 = j;
+	    
+	    if(n_1 >= 1 && n_2 >= 1)
+	      {
+		pArray = new T[ n_1*n_2 ];
+	      }
+	    else
+	      {
+		pArray = 0;
+	      }
+	  }
+      }
+    
     /**
        Deallocates memory for the array.
     */
-
+    
     void deallocate()
-    {
-      if(pArray != 0)
-	delete [] pArray;
-      pArray = 0;
-
-      n_1 = 0;
-      n_2 = 0;
-
-      diCol.deallocate();
-      diINDX.deallocate();
-      diVV.deallocate();
-    }
-
-    /**
-       The flag USEATLAS dictates whether Array2D will use the library to speed it's math or not.
-       Actually, if the dimensions of the data are small, using ATLAS may actually be slower.
-       FYI: DGEMM stands for Double-precision GEneral Matrix-Matrix multiplication
-       DGEMM convention: MxN = MxK * KxN; lda, ldb, and ldc are the n_2 of their respective Array2Ds
-    */
-
+      {
+	if(pArray != 0)
+	  delete [] pArray;
+	pArray = 0;
+	
+	n_1 = 0;
+	n_2 = 0;
+	
+	diCol.deallocate();
+	diINDX.deallocate();
+	diVV.deallocate();
+      }
+        
     void setupMatrixMultiply(const Array2D<T> & rhs, Array2D<T> & result,
                              const bool rhsIsTransposed) const
       {
@@ -236,7 +223,7 @@ template <class T> class Array2D
             if(n_2 != rhs.n_2)
               {
                 cerr << "ERROR: Transposed Matrix multiplication: " << n_1 << "x"
-                << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
+		     << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
                 exit(1);
               }
             result.allocate(n_1,rhs.n_1);
@@ -246,32 +233,50 @@ template <class T> class Array2D
             if(n_2 != rhs.n_1)
               {
                 cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
-                << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
+		     << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
                 exit(1);
               }
             result.allocate(n_1,rhs.n_2);
           }
       }
-
-#ifdef USEATLAS
-
+    
+#ifdef USEBLAS
+    
     void gemm(const Array2D<double> & rhs, Array2D<double> & result,
               const bool rhsIsTransposed) const
       {
         setupMatrixMultiply(rhs,result,rhsIsTransposed);
 
-        //MxN = MxK * KxN
-        int M = n_1;
-        int N = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
-        int K = n_2;
-        CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
+        //MxN = alpha * MxK * KxN + beta * MxN
+        int M        = n_1;
+        int N        = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
+        int K        = n_2;
+	int lda      = n_2;
+	int ldb      = rhs.n_2;
+	int ldc      = result.n_2;
+	double alpha = 1.0;
+	double beta  = 0.0;
 
+#ifdef USE_CBLAS
+        CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
         cblas_dgemm(CBLAS_ORDER(CblasRowMajor),
                     CBLAS_TRANSPOSE(CblasNoTrans), myTrans,
                     M, N, K,
-                    1.0, pArray, n_2,
-                    rhs.pArray, rhs.n_2,
-                    0.0, result.pArray, result.n_2);
+                    alpha, pArray, lda,
+                    rhs.pArray, ldb,
+                    beta, result.pArray, ldc);
+#else
+	char transa = rhsIsTransposed ? 'T' : 'N';
+	char transb = 'N';
+	
+        dgemm_(&transa, &transb,		    
+	       &M, &N, &K,
+	       &alpha,
+	       rhs.pArray, &lda,
+	       pArray, &ldb,
+	       &beta,
+	       result.pArray, &ldc);
+#endif
       }
 
     void gemm(const Array2D<float> & rhs, Array2D<float> & result,
@@ -279,50 +284,89 @@ template <class T> class Array2D
       {
         setupMatrixMultiply(rhs,result,rhsIsTransposed);
 
-        //MxN = MxK * KxN
-        int M = n_1;
-        int N = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
-        int K = n_2;
-        CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
+        //MxN = alpha * MxK * KxN + beta * MxN
+        int M        = n_1;
+        int N        = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
+        int K        = n_2;
+	int lda      = n_2;
+	int ldb      = rhs.n_2;
+	int ldc      = result.n_2;
+	float alpha  = 1.0;
+	float beta   = 0.0;
 
+#ifdef USE_CBLAS
+        CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
         cblas_sgemm(CBLAS_ORDER(CblasRowMajor),
-                    CBLAS_TRANSPOSE(CblasNoTrans),myTrans,
+                    CBLAS_TRANSPOSE(CblasNoTrans), myTrans,
                     M, N, K,
-                    1.0, pArray, n_2,
-                    rhs.pArray, rhs.n_2,
-                    0.0, result.pArray, result.n_2);
+                    alpha, pArray, lda,
+                    rhs.pArray, ldb,
+                    beta, result.pArray, ldc);
+#else
+	char transa = rhsIsTransposed ? 'T' : 'N';
+	char transb = 'N';
+	
+        sgemm_(&transa, &transb,		    
+	       &M, &N, &K,
+	       &alpha,
+	       rhs.pArray, &lda,
+	       pArray, &ldb,
+	       &beta,
+	       result.pArray, &ldc);
+#endif
       }
 
     /**
-    This uses ATLAS to calculate a dot product between all the elements in one
-    Array2D and all the elements in another Array2D
+       This uses ATLAS to calculate a dot product between all the elements in one
+       Array2D and all the elements in another Array2D
     */
     double dotAllElectrons(const Array2D<double> & rhs)
-    {
-      return cblas_ddot(n_1*n_2, pArray, 1, rhs.pArray, 1);
-    }
-
-    /**
-    This uses ATLAS to calculate a dot product between all the elements in one
-    row from one Array2D and one row in another Array2D
-    */
-    double dotOneElectron(const Array2D<double> & rhs, int whichElectron)
-    {
-      return cblas_ddot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
-    }
+      {
+#ifdef USE_CBLAS
+	return cblas_ddot(n_1*n_2, pArray, 1, rhs.pArray, 1);
+#else
+	int inc = 1;
+	int num = n_1 * n_2;
+	return ddot_(&num, pArray, &inc, rhs.pArray, &inc);
+#endif
+      }
 
     float dotAllElectrons(const Array2D<float> & rhs)
-    {
-      return cblas_sdot(n_1*n_2, pArray, 1, rhs.pArray, 1);
-    }
-
-    float dotOneElectron(const Array2D<float> & rhs, int whichElectron)
-    {
-      return cblas_sdot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
-    }
-
+      {
+#ifdef USE_CBLAS
+	return cblas_sdot(n_1*n_2, pArray, 1, rhs.pArray, 1);
 #else
-
+	int inc = 1;
+	int num = n_1 * n_2;
+	return sdot_(&num, pArray, &inc, rhs.pArray, &inc);
+#endif
+      }
+    
+    /**
+       This uses ATLAS to calculate a dot product between all the elements in one
+       row from one Array2D and one row in another Array2D
+    */
+    double dotOneElectron(const Array2D<double> & rhs, int whichElectron)
+      {
+#ifdef USE_CBLAS
+	return cblas_ddot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
+#else
+	int inc = 1;
+	return ddot_(&n_1, pArray + whichElectron*n_2, &inc, rhs.pArray + whichElectron*n_2, &inc);
+#endif
+      }
+        
+    float dotOneElectron(const Array2D<float> & rhs, int whichElectron)
+      {
+#ifdef USE_CBLAS
+	return cblas_sdot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
+#else
+	int inc = 1;
+	return sdot_(&n_1, pArray + whichElectron*n_2, &inc, rhs.pArray + whichElectron*n_2, &inc);
+#endif	
+      }
+    
+#else
     void gemm(const Array2D<T> & rhs, Array2D<T> & result,
               const bool rhsIsTransposed) const
       {
@@ -353,6 +397,10 @@ template <class T> class Array2D
                         Cee = 0;
                         for (k = 1; k < K; ++k)
                           {
+			    /*
+			      This is the KSF. The parenthesis
+			      are critical to its success.
+			    */
                             Why = Ai_[k] * B_j[k] - Cee;
                             Tee = cij + Why;
                             Cee = (Tee - cij) - Why;
@@ -401,8 +449,8 @@ template <class T> class Array2D
       }
 
     /**
-    Calculates a dot product between all the elements in one
-    Array2D and all the elements in another Array2D
+       Calculates a dot product between all the elements in one
+       Array2D and all the elements in another Array2D
     */
     T dotAllElectrons(const Array2D<T> & rhs)
     {
@@ -413,8 +461,8 @@ template <class T> class Array2D
     }
 
     /**
-    Calculates a dot product between all the elements in one
-    row from one Array2D and one row in another Array2D
+       Calculates a dot product between all the elements in one
+       row from one Array2D and one row in another Array2D
     */
     T dotOneElectron(const Array2D<T> & rhs, int whichElectron)
     {

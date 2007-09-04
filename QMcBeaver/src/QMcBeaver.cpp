@@ -71,8 +71,8 @@ void printCompileInfo(ostream & strm)
 #ifdef PARALLEL
   strm << " MPI";
 #endif
-#ifdef USEATLAS
-  strm << " ATLAS";
+#ifdef USEBLAS
+  strm << " BLAS";
 #endif
 #ifdef USELAPACK
   strm << " LAPACK"; 

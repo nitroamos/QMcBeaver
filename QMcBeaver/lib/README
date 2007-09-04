@@ -1,4 +1,22 @@
-This README discusses some issues about using ATLAS and GPUs.
+This README discusses some issues about using BLAS and GPUs.
+**********************************************************
+Summary:
+1) find and compile GotoBLAS, or some other BLAS library
+2) put libgoto.a into this directory
+3) add "--goto" when you run configure.py
+
+**********************************************************
+GotoBLAS related:
+
+This library is described here:
+http://www.tacc.utexas.edu/resources/software/gotoblasfaq.php
+
+and appears to be significantly faster than ATLAS. After compiling,
+copy the file:
+libgoto.a
+
+into this directory, and add "--goto" as a flag when you run
+configure.py.
 
 **********************************************************
 ATLAS related:

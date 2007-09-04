@@ -215,7 +215,7 @@ class CompilerIntel(Compiler):
 class CompilerMPICC(Compiler):
     def __init__(self,optimize,debug,profile):
         self.CXX = 'mpiCC'
-        self.FLAGS = '-Wall -Wno-long-double'
+        self.FLAGS = '-Wall '
         self.INCLUDE = ''
         self.DEPENDENCY = '-MM'
 
@@ -398,6 +398,7 @@ optionalarguments = {
     '--noprofile' : 'self.profile = 0',
     '--hdf5': 'self.hdf5 = 1',
     '--atlas': 'self.atlas = 1',
+    '--goto': 'self.goto = 1',
     '--lapack': 'self.lapack = 1',
     '--sprng': 'self.sprng = 1',
     '--float': 'self.float = 1',
@@ -416,6 +417,7 @@ class CommandLineArgs:
         self.parallel = 0
         self.hdf5 = 0
         self.atlas = 0
+	self.goto = 0
         self.lapack = 0
         self.sprng = 0
         self.float = 0
@@ -529,8 +531,8 @@ class CommandLineArgs:
 #            extra.append("optimize")
         if self.hdf5:
             extra.append("hdf5")
-        if self.atlas:
-            extra.append("atlas")
+        if self.atlas or self.goto:
+            extra.append("blas")
         if self.parallel:
             extra.append("parallel")
         if self.profile:
@@ -586,8 +588,11 @@ class MakeConfigBuilder:
         text += 'FLAGS = ' + self._compiler.FLAGS + self._mpi.FLAGS
         if self._inputs.hdf5:
             text += ' -DUSEHDF5 '
-        if self._inputs.atlas:
-            text += ' -DUSEATLAS '
+        if self._inputs.atlas or self._inputs.goto:
+            text += ' -DUSEBLAS '
+        if self._inputs.atlas and self._inputs.goto:
+	    print "You can't specify both ATLAS and Goto!"
+	    sys.exit(1)
         if self._inputs.lapack:
             text += ' -DUSELAPACK '
         if self._inputs.sprng:
@@ -615,12 +620,12 @@ class MakeConfigBuilder:
         if self._inputs.sprng:
             text += ' -lsprng'
         if self._inputs.lapack:
-	    #fortran LAPACK, Array2D.h is set to use this
-            text += ' -llapack -lf77blas -lcblas -latlas -lg2c'
-	    #ATLAS LAPACK
-	    #text += ' -llapack -lcblas -latlas'
-        if self._inputs.atlas and not self._inputs.lapack:
-            text += ' -lcblas -latlas'
+            text += ' -llapack'
+        if self._inputs.atlas:
+            text += ' -lf77blas -latlas'
+	if self._inputs.goto:
+            text += ' -lgoto'
+
         if self._inputs.gpu:
             text+= ' -lkernel32 -lgdi32 -luser32 -lopengl32 -lglut32 -lversion -lglew32 -lglu32 -lcg -lcgGL'
         if self._inputs.vtune:
