@@ -122,6 +122,7 @@ void QMCFlags::read_flags(string InFileName)
   optimize_Psi_criteria          = "analytical_energy_variance";
   optimize_Psi_method            = "automatic";
   a_diag                         = 0.1;
+  ksi                            = 0.5;
   equilibrate_every_opt_step     = 1;
   equilibrate_first_opt_step     = 1;
   numerical_derivative_surface   = "umrigar88";
@@ -546,6 +547,11 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
 	  a_diag = atof(temp_string.c_str());
+        }
+      else if(temp_string == "ksi")
+        {
+          input_file >> temp_string;
+	  ksi = atof(temp_string.c_str());
         }
       else if(temp_string == "singularity_penalty_function_parameter")
         {
@@ -1067,6 +1073,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "optimize_Psi_method\n " << flags.optimize_Psi_method << endl;
   strm << "optimize_Psi_criteria\n " << flags.optimize_Psi_criteria << endl;
   strm << "a_diag\n " << flags.a_diag << endl;
+  strm << "ksi\n " << flags.ksi << endl;
   strm << "max_optimize_Psi_steps\n " << flags.max_optimize_Psi_steps << endl;
   strm << "equilibrate_first_opt_step\n "
        << flags.equilibrate_first_opt_step << endl;
@@ -1266,6 +1273,18 @@ bool QMCFlags::checkFlags()
 	      clog << "Warning: you probably want \"None\" as your line_search_step_length!" << endl;
 	      needPrintedConfigs = true;
 	    }	  
+
+	  if(a_diag <= 0.0 || a_diag > 1)
+	    {
+	      clog << "Error: bad value for a_diag = " << a_diag << endl;
+	      return false;
+	    }
+
+	  if(ksi < 0.0 || ksi > 1)
+	    {
+	      clog << "Error: bad value for ksi = " << ksi << endl;
+	      return false;
+	    }
 	}
       else
 	{
@@ -1288,7 +1307,11 @@ bool QMCFlags::checkFlags()
       if(replace_electron_nucleus_cusps == 1 &&
 	 optimize_Psi_method == "automatic")
 	{
-	  clog << "Notice: the we won't optimize the orbitals since we're using cusp replacement." << endl;
+	  /*
+	    jastrows don't necessarily conflict with cusp replacement. is it worth programming something
+	    to verify no conflict?
+	  */
+	  //clog << "Notice: the we won't optimize the orbitals since we're using cusp replacement." << endl;
 	}
 
       if(link_Orbital_parameters == 0)

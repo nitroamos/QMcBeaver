@@ -680,6 +680,14 @@ class QMCFlags
   */
   double a_diag;
 
+  /*
+    A parameter used by the Linearize step length method, must
+    be between 0 and 1.
+
+    The method is most stable when ksi = 0.
+  */
+  double ksi;
+
   /**
      Objective function to optimize when optimizing a VMC wavefunction.
   */

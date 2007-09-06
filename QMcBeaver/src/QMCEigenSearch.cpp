@@ -64,8 +64,9 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 	    a_diag *= 1e-5;
 	  }
 
-  if( fabs(a_diag) < 1e-7 )
-    a_diag = 1e-7;
+  double cutoff = 1.0e-10;
+  if( fabs(a_diag) < cutoff )
+    a_diag = cutoff;
 
   if( fabs(a_diag) > 0.0)
     {
@@ -145,12 +146,14 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
   if(stepLengthAlg != 0)
     {
       Array2D<double> fresh_overlap = dp.getParameterOverlap();
+      double ksi = globalInput.flags.ksi;
+      cout << "Notice: ksi = " << ksi << endl;
       rescale = stepLengthAlg->stepLength(OF,
 					  delta_x,
 					  delta_x,
 					  delta_x,
 					  fresh_overlap,
-					  0.5);
+					  ksi);
     }
   cout << setw(20) << "rescaling factor:";
   cout.precision(12);
