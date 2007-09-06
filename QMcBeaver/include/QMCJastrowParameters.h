@@ -101,6 +101,10 @@ public:
   */
   int getNumberEEParameters();
 
+  int getNumberEupEdnParameters();
+  int getNumberEupEupParameters();
+  int getNumberEdnEdnParameters();
+
   /**
      Returns the total number of Nuclear-Electron
      Jastrow parameters.
@@ -244,6 +248,10 @@ public:
     
 private:
   int NumberOfEEParameters;
+  int NumberOfEupEdnParameters;
+  int NumberOfEupEupParameters;
+  int NumberOfEdnEdnParameters;
+
   int NumberOfNEParameters;
   int NumberOfNEupParameters;
 

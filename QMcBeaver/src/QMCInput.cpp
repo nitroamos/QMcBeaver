@@ -90,22 +90,21 @@ void QMCInput::printArray(ostream & strm,
 		Array1D<double> & array, int & start,
 		int margin, int width, int prec, int numPerRow)
 {
-  if(num > 0)
+  if(num <= 0) return;
+
+  strm << setw(margin) << name;
+  int len = name.length();
+  for(int ai=0; ai<num; ai++)
     {
-      strm << setw(margin) << name;
-      int len = name.length();
-      for(int ai=0; ai<num; ai++)
-	{
-	  if(ai%numPerRow == 0 && ai != 0)
-	    strm << endl << setw(margin) << " ";
-	  
-	  strm.width(width);
-	  strm.precision(prec);
-	  strm << array(ai + start);
-	}
-      strm << endl;
-      start += num;
+      if(ai%numPerRow == 0 && ai != 0)
+	strm << endl << setw(margin) << " ";
+      
+      strm.width(width);
+      strm.precision(prec);
+      strm << array(ai + start);
     }
+  strm << endl;
+  start += num;
 }
 
 void QMCInput::printAIParameters(ostream & strm, 
@@ -127,8 +126,13 @@ void QMCInput::printAIParameters(ostream & strm,
   margin += 7;
 
   int shift = 0;
-  printArray(strm, name + "  EE = ", JP.getNumberEEParameters(),
+  printArray(strm, name + "  UD = ", JP.getNumberEupEdnParameters(),
 	     array, shift, margin, width, prec, 5);
+  printArray(strm, name + "  UU = ", JP.getNumberEupEupParameters(),
+	     array, shift, margin, width, prec, 5);
+  printArray(strm, name + "  DD = ", JP.getNumberEdnEdnParameters(),
+	     array, shift, margin, width, prec, 5);
+
   printArray(strm, name + "  NE = ", JP.getNumberNEParameters(),
 	     array, shift, margin, width, prec, 5);
 

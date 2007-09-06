@@ -35,9 +35,12 @@ for more details.
 
 void QMCJastrowParameters::operator=( const QMCJastrowParameters & rhs )
 {
-  NumberOfEEParameters   = rhs.NumberOfEEParameters;
-  NumberOfNEParameters   = rhs.NumberOfNEParameters;
-  NumberOfNEupParameters = rhs.NumberOfNEupParameters;
+  NumberOfEEParameters       = rhs.NumberOfEEParameters;
+  NumberOfEupEdnParameters   = rhs.NumberOfEupEdnParameters;
+  NumberOfEupEupParameters   = rhs.NumberOfEupEupParameters;
+  NumberOfEdnEdnParameters   = rhs.NumberOfEdnEdnParameters;
+  NumberOfNEParameters       = rhs.NumberOfNEParameters;
+  NumberOfNEupParameters     = rhs.NumberOfNEupParameters;
 
   EupNuclear = rhs.EupNuclear;
   EdnNuclear = rhs.EdnNuclear;
@@ -431,6 +434,28 @@ int QMCJastrowParameters::getNumberEEParameters()
   if(globalInput.flags.optimize_EE_Jastrows == 0)
     return 0;
   return NumberOfEEParameters;
+}
+
+int QMCJastrowParameters::getNumberEupEdnParameters()
+{
+  if(globalInput.flags.optimize_EE_Jastrows == 0)
+    return 0;
+  return NumberOfEupEdnParameters;
+}
+
+int QMCJastrowParameters::getNumberEupEupParameters()
+{
+  if(globalInput.flags.optimize_EE_Jastrows == 0)
+    return 0;
+  return NumberOfEupEupParameters;
+}
+
+int QMCJastrowParameters::getNumberEdnEdnParameters()
+{
+  if(globalInput.flags.optimize_EE_Jastrows == 0 ||
+     EquivalentElectronUpDownParams)
+    return 0;
+  return NumberOfEdnEdnParameters;
 }
 
 int QMCJastrowParameters::getNumberNEParameters()
@@ -987,11 +1012,18 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 
   // if the particles are linked make the down electron parameters equal
   // to the up electron parameters.
-  NumberOfEEParameters   = 0;
-  NumberOfNEParameters   = 0;
-  NumberOfNEupParameters = 0;
-  NumberOfEEParameters += EupEup.getTotalNumberOfParameters();
-  NumberOfEEParameters += EupEdn.getTotalNumberOfParameters();
+  NumberOfEEParameters       = 0;
+  NumberOfEupEdnParameters   = 0;
+  NumberOfEupEupParameters   = 0;
+  NumberOfEdnEdnParameters   = 0;
+  NumberOfNEParameters       = 0;
+  NumberOfNEupParameters     = 0;
+
+  NumberOfEupEupParameters  += EupEup.getTotalNumberOfParameters();
+  NumberOfEEParameters      += EupEup.getTotalNumberOfParameters();
+  
+  NumberOfEupEdnParameters  += EupEdn.getTotalNumberOfParameters();
+  NumberOfEEParameters      += EupEdn.getTotalNumberOfParameters();
 
   for(int i=0; i<EupNuclear.dim1(); i++)
     {
@@ -1021,7 +1053,8 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
     } 
   else 
     {
-      NumberOfEEParameters += EdnEdn.getTotalNumberOfParameters();
+      NumberOfEEParameters      += EdnEdn.getTotalNumberOfParameters();
+      NumberOfEdnEdnParameters  += EdnEdn.getTotalNumberOfParameters();
 
       for(int i=0; i<EdnNuclear.dim1(); i++)
 	{
