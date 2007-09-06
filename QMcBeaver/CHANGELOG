@@ -1,3 +1,6 @@
+Thu, Sep 6, 2007 Amos Anderson
+1.  Code will now allow the setting of "ksi" from input file.
+
 Tue, Sep 4, 2007 Amos Anderson
 1.  I changed the code to use BLAS by default instead of CBLAS. This
     makes it easier to compile on systems where CBLAS is difficult to get,
