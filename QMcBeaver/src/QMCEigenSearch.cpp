@@ -13,6 +13,7 @@
 #include "QMCEigenSearch.h"
 #include "QMCInput.h"
 #include <iomanip>
+#include <sstream>
 
 QMCEigenSearch::QMCEigenSearch(QMCObjectiveFunction *function, 
 			       QMCLineSearchStepLengthSelectionAlgorithm * stepAlg,
@@ -31,6 +32,10 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 					 double a_diag_factor,
 					 int optStep)  
 {
+  stringstream stepinfo;
+  stepinfo << "(Step = " << setw(3) << optStep << "):";
+  stepinfo.precision(12);
+  
   cout.setf(ios::scientific);
   cout << endl;
   
@@ -73,8 +78,7 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
       for(int d=1; d<dim+1; d++)
 	hamiltonian(d,d) = hamiltonian(d,d) + a_diag * a_diag_factor;
       
-      cout << "Notice: Adding a_diag = " << (a_diag * a_diag_factor)
-	   << " to the diagonal elements of the hamiltonian" << endl;
+      stepinfo << " a_diag = " << setw(10) << (a_diag * a_diag_factor);
 
       /*
       cout << "ADDING a_diag = " << (a_diag * 1e3) << " to first parameter" << endl;
@@ -129,7 +133,7 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 	  best_idx = i;
 	}
     }
-  cout << "Lowest eigenvalue: " << best_val << endl;
+  stepinfo << " lowest eigenvalue = " << setw(20) << best_val;
   
   Array1D<double> delta_x(dim);
   for(int i=0; i<delta_x.dim1(); i++)
@@ -147,7 +151,7 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
     {
       Array2D<double> fresh_overlap = dp.getParameterOverlap();
       double ksi = globalInput.flags.ksi;
-      cout << "Notice: ksi = " << ksi << endl;
+      stepinfo << " ksi = " << setw(5) << ksi;
       rescale = stepLengthAlg->stepLength(OF,
 					  delta_x,
 					  delta_x,
@@ -155,21 +159,19 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 					  fresh_overlap,
 					  ksi);
     }
-  cout << setw(20) << "rescaling factor:";
-  cout.precision(12);
-  cout.width(20);
-  cout << rescale << endl;
+  stepinfo << " rescaling factor = " << setw(20) << rescale;
   
   // Calculate the next step
   delta_x *= rescale;
   Array1D<double> x_new = x.back();
+
+  globalInput.printAIParameters(cout,"Delta params",20,delta_x,true);
   
   for(int j=0; j<dim; j++)
     x_new(j) += delta_x(j);
 
-  cout << endl << "Ending Generalized Eigenvector Search Optimization... " << endl;
-
-  globalInput.printAIParameters(cout,"Delta params",20,delta_x,true);
+  cout << endl << "Ending Generalized Eigenvector Search Optimization... " << endl << endl;
+  cout << stepinfo.str() << endl;
   return x_new;
 }
 

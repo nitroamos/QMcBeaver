@@ -27,8 +27,12 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
   
   if(optStep == 0)
     {
-      clog << "Notice: the CI coefficients have norm = " << globalInput.WF.getCINorm() << endl;
-      globalInput.printAIParameters(clog,"Best parameters:",20,orig_parameters,false);
+      clog << "Notice: CI norm = " << globalInput.WF.getCINorm() << endl;
+      clog.precision(12);
+      clog.width(20);
+      clog.unsetf(ios::scientific);
+      clog.unsetf(ios::fixed);
+      globalInput.printAIParameters(clog,"Best Step params:",20,orig_parameters,false);
       clog << endl << endl;
     }
 
@@ -52,6 +56,28 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 			   a_diag_factor,
 			   optStep);
 
+	double rel = 0;
+	double abs = 0;
+	for(int i=0; i<Guess_parameters.dim1(); i++)
+	  {
+	    double g = Guess_parameters(i);
+	    double o = orig_parameters(i);
+	    double v = g - o;
+	    abs += v*v;
+	    if( fabs(o) > 1.0e-100 )
+	      {
+		v /= o;
+		rel += v*v;	  
+	      }
+	  }
+	abs = sqrt(abs);
+	rel = sqrt(rel);
+
+	clog.unsetf(ios::scientific);
+	clog << "(Step = " << setw(3) << optStep << "):"
+	     << " abs delta = " << setw(20) << abs
+	     << " rel delta = " << setw(20) << rel << endl;
+	
 	globalInput.setAIParameters(Guess_parameters);	
 	penalty = globalInput.JP.calculate_penalty_function();
 	norm = globalInput.WF.getCINorm();
@@ -78,11 +104,11 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 	iter++;
       } while( !acceptable && iter < globalInput.flags.optimization_max_iterations);
 
-      if(acceptable)
-	{
-	  clog << "Notice: the CI coefficients have norm = " << globalInput.WF.getCINorm() << endl;
-	  clog << "Notice: the new parameters have an acceptable singularity penalty = " << penalty << endl;
-	}
+      if(acceptable && fabs(globalInput.WF.getCINorm() - 1.0) > 1.0e-7)
+	clog << "(Step = " << setw(3) << optStep << "): CI norm = " << globalInput.WF.getCINorm() << endl;
+      
+      if(acceptable && fabs(penalty) > 1.0e-10)
+	clog << "Notice: the new parameters have an acceptable singularity penalty = " << penalty << endl;
       
       delete optAlg;
       optAlg = 0;
@@ -129,13 +155,13 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 
   globalInput.setAIParameters(Guess_parameters);
 
-  clog << setw(20) << "Best objective value (step = " << setw(3) << optStep << "):";
+  clog << "(Step = " << setw(3) << optStep << "):    Best Objective Value ";
   clog.precision(12);
   clog.width(20);
   clog.unsetf(ios::scientific);
   clog.unsetf(ios::fixed);
-  clog <<   dp.getParameterValue() << endl;
-  globalInput.printAIParameters(clog,"Best parameters:",20,Guess_parameters,false);
+  clog << left << dp.getParameterValue() << endl << right;
+  globalInput.printAIParameters(clog,"Best Step params:",20,Guess_parameters,false);
   clog << endl << endl;
 
   globalInput.JP.print(clog);

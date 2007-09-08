@@ -75,7 +75,7 @@ void QMCJastrowParameters::print(ostream & strm)
     }
   for(int i=0; i<EupEdnNuclear.dim1(); i++) 
     {
-      strm << "EupEdnNuclear(" << globalInput.Molecule.Atom_Labels(i) << "): " << endl
+      strm << "EupEdnNuclear(" << NucleiTypes(i) << "): " << endl
 	   << " Total Parameters = " << EupEdnNuclear(i).getNumberOfTotalParameters() << endl
 	   << " Free Parameters = " << EupEdnNuclear(i).getNumberOfFreeParameters() 
 	   << endl;
@@ -100,14 +100,14 @@ void QMCJastrowParameters::print(ostream & strm)
 
   for(int i=0; i<EupNuclear.dim1(); i++) 
     {
-      strm << "EupNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):"
+      strm << "EupNuclear(" << NucleiTypes(i) << "):"
 	   << endl;
       EupNuclear(i).getCorrelationFunction()->print(strm);    
       strm << endl;
     }
   for(int i=0; i<EupEupNuclear.dim1(); i++) 
     {
-      strm << "EupEupNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" << endl
+      strm << "EupEupNuclear(" << NucleiTypes(i) << "):" << endl
 	   << " Total Parameters = " << EupEupNuclear(i).getNumberOfTotalParameters() << endl
 	   << " Free Parameters = " << EupEupNuclear(i).getNumberOfFreeParameters() 
 	   << endl;
@@ -119,14 +119,14 @@ void QMCJastrowParameters::print(ostream & strm)
     {
       for(int i=0; i<EdnNuclear.dim1(); i++) 
 	{
-	  strm << "EdnNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" 
+	  strm << "EdnNuclear(" << NucleiTypes(i) << "):" 
 	       << endl;
 	  EdnNuclear(i).getCorrelationFunction()->print(strm);    
 	  strm << endl;
 	}
       for(int i=0; i<EdnEdnNuclear.dim1(); i++) 
 	{
-	  strm << "EdnEdnNuclear(" << globalInput.Molecule.Atom_Labels(i) << "):" << endl
+	  strm << "EdnEdnNuclear(" << NucleiTypes(i) << "):" << endl
 	       << " Total Parameters = " << EdnEdnNuclear(i).getNumberOfTotalParameters() << endl
 	       << " Free Parameters = " << EdnEdnNuclear(i).getNumberOfFreeParameters() 
 	       << endl;
