@@ -248,16 +248,17 @@ template <class T> class Array2D
         setupMatrixMultiply(rhs,result,rhsIsTransposed);
 
         //MxN = alpha * MxK * KxN + beta * MxN
-        int M        = n_1;
-        int N        = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
-        int K        = n_2;
-	int lda      = n_2;
-	int ldb      = rhs.n_2;
-	int ldc      = result.n_2;
 	double alpha = 1.0;
 	double beta  = 0.0;
 
 #ifdef USE_CBLAS
+	int M        = result.n_1;
+	int N        = result.n_2;
+	int K        = n_2;
+	int lda      = n_2;
+	int ldb      = rhs.n_2;
+	int ldc      = result.n_2;
+
         CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
         cblas_dgemm(CBLAS_ORDER(CblasRowMajor),
                     CBLAS_TRANSPOSE(CblasNoTrans), myTrans,
@@ -266,9 +267,21 @@ template <class T> class Array2D
                     rhs.pArray, ldb,
                     beta, result.pArray, ldc);
 #else
+	/*
+	  since fortran is column major, we need to mess around a bit
+	  to trick it into handling our row major data correctly.
+	  a row major matrix as a transposed column major matrix.
+	*/
+	int M        = result.n_2;
+	int N        = result.n_1;
+	int K        = n_2;
+	int lda      = rhs.n_2;
+	int ldb      = n_2;
+	int ldc      = result.n_2;
+
 	char transa = rhsIsTransposed ? 'T' : 'N';
 	char transb = 'N';
-	
+
         dgemm_(&transa, &transb,		    
 	       &M, &N, &K,
 	       &alpha,
@@ -285,16 +298,17 @@ template <class T> class Array2D
         setupMatrixMultiply(rhs,result,rhsIsTransposed);
 
         //MxN = alpha * MxK * KxN + beta * MxN
-        int M        = n_1;
-        int N        = rhsIsTransposed ? rhs.n_1 : rhs.n_2;
-        int K        = n_2;
+	float alpha = 1.0;
+	float beta  = 0.0;
+
+#ifdef USE_CBLAS
+	int M        = result.n_1;
+	int N        = result.n_2;
+	int K        = n_2;
 	int lda      = n_2;
 	int ldb      = rhs.n_2;
 	int ldc      = result.n_2;
-	float alpha  = 1.0;
-	float beta   = 0.0;
 
-#ifdef USE_CBLAS
         CBLAS_TRANSPOSE myTrans = rhsIsTransposed ? CblasTrans : CblasNoTrans;
         cblas_sgemm(CBLAS_ORDER(CblasRowMajor),
                     CBLAS_TRANSPOSE(CblasNoTrans), myTrans,
@@ -303,9 +317,21 @@ template <class T> class Array2D
                     rhs.pArray, ldb,
                     beta, result.pArray, ldc);
 #else
+	/*
+	  since fortran is column major, we need to mess around a bit
+	  to trick it into handling our row major data correctly.
+	  a row major matrix as a transposed column major matrix.
+	*/
+	int M        = result.n_2;
+	int N        = result.n_1;
+	int K        = n_2;
+	int lda      = rhs.n_2;
+	int ldb      = n_2;
+	int ldc      = result.n_2;
+
 	char transa = rhsIsTransposed ? 'T' : 'N';
 	char transb = 'N';
-	
+
         sgemm_(&transa, &transb,		    
 	       &M, &N, &K,
 	       &alpha,
