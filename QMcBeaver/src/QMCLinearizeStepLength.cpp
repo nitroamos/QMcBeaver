@@ -24,10 +24,31 @@ double QMCLinearizeStepLength::stepLength(QMCObjectiveFunction *function,
 					  Array2D<double> & overlap,
 					  double ksi)
 {
-  //see JCP 126 084102 (2007) for description
+  //see JCP 126 084102 (2007) eq 34 for description
+
+  /*
+    ksi = 0 is supposed to be safer
+    ksi = 1 is supposed to be the "SR method"
+  */
+  if(ksi > 1.0 || ksi < 0.0)
+    {
+      cerr << "Warning: bad value for ksi in QMCLinearizeStepLength!" << endl;
+      cerr << " ksi = " << ksi << endl;
+      ksi = 0.5;
+      cerr << "changing, ksi is now = " << ksi << endl;
+    }
 
   Array1D<double> N(delta_x.dim1());
-  double denom;
+  double denom = 1.0;
+
+  for(int j=0; j<N.dim1(); j++)
+    for(int k=0; k<N.dim1(); k++)
+      if(!isLinear(j) && !isLinear(k))
+	denom += delta_x(j) * delta_x(k) * overlap(j+1,k+1);
+  printf("den = %20.10e",denom);
+  denom = sqrt(denom);
+  denom = (1.0 - ksi) + ksi*denom;
+  printf(" -> den = %20.10e\n",denom);
 
   for(int ai=0; ai<N.dim1(); ai++)
     {
@@ -41,17 +62,11 @@ double QMCLinearizeStepLength::stepLength(QMCObjectiveFunction *function,
 	  for(int j=0; j<N.dim1(); j++)
 	    if(!isLinear(j))
 	      numerator += delta_x(j) * overlap(ai+1,j+1);
+	  printf("ai %3i num = %20.10e",ai,numerator);
 	  numerator *= (1.0 - ksi);
-
-	  denom = 1.0;
-	  for(int j=0; j<N.dim1(); j++)
-	    for(int k=0; k<N.dim1(); k++)
-	      if(!isLinear(j) && !isLinear(k))
-		denom += delta_x(j) * delta_x(k) * overlap(j+1,k+1);
-	  denom = sqrt(denom);
-	  denom = (1.0 - ksi) + ksi*denom;
 	  
 	  N(ai) = - numerator / denom;
+	  printf(" Nai = %20.10e\n",N(ai));
 	}
     }
 
