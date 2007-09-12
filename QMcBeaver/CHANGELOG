@@ -1,3 +1,9 @@
+Tues, Sep 11, 2007 Daniel R Fisher
+1.  I improved the makeParamDepMatrix() function in
+    QMCThreeBodyCorrelationFunctionParameters.  It has a much more
+    rigorous check to make sure that all dependent parameters are
+    defined in terms of free parameters only.
+
 Thu, Sep 6, 2007 Amos Anderson
 1.  Code will now allow the setting of "ksi" from input file.
 

@@ -524,7 +524,7 @@ void QMCThreeBodyCorrelationFunctionParameters::totalDerivativesToFree(int shift
       clog << "ERROR in "
 	   << "QMCThreeBodyCorrelationFunctionParameters::totalDerivativesToFree()"
 	   << ": there should be " << NumberOfFreeParameters << " free "
-	   << "parameters, but we found " << counter+1 << endl;
+	   << "parameters, but we found " << counter << endl;
       exit(0);
     }
 }
@@ -565,7 +565,7 @@ void QMCThreeBodyCorrelationFunctionParameters::totalToFree(const Array1D<double
       clog << "ERROR in "
 	   << "QMCThreeBodyCorrelationFunctionParameters::totalToFree()"
 	   << ": there should be " << NumberOfFreeParameters << " free "
-	   << "parameters, but we found " << counter+1 << endl;
+	   << "parameters, but we found " << counter << endl;
       exit(0);
     }
 }
@@ -601,6 +601,10 @@ void QMCThreeBodyCorrelationFunctionParameters::freeToTotal(const Array1D<double
 
 inline bool QMCThreeBodyCorrelationFunctionParameters::isFree(int l, int m, int n) const
 {
+  if (m>l)
+    // These parameters are dependent by symmetry
+    return false;
+
   if (l>0 && m==0 && n==0)
     {
       if (globalInput.flags.reproduce_NE_with_NEE_jastrow == 1)
@@ -740,6 +744,23 @@ void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
 	  paramDepMatrix(i,j) = 1.0;
       }
 
+  int l_index   = -1;
+  int m_index   = -1;
+  int n_index   = -1;
+  int index1    = -1;
+  int index2    = -1;
+  int index_dep = -1;
+
+  // We know that all parameters with m>l are dependent by symmetry
+  // These rows will get filled in at the end of this function
+  for (int l=0; l<NeN-1; l++)
+    for (int m=l+1; m<NeN; m++)
+      for (int n=0; n<Nee; n++)
+        {
+          index1 = l*NeN*Nee + m*Nee +n;
+          paramDepMatrix(index1,index1) = 0.0;
+        }
+
   // We start with the electron-electron cusp
 
   // The parameter 001 is zero due to the electron-electron cusp (k=0)
@@ -747,13 +768,6 @@ void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
 
   // The parameter 101 is zero due to the electron-electron cusp (k=1)
   paramDepMatrix(NeN*Nee+1,NeN*Nee+1) = 0.0;
-
-  int l_index   = -1;
-  int m_index   = -1;
-  int n_index   = -1;
-  int index1    = -1;
-  int index2    = -1;
-  int index_dep = -1;
 
   for (int k=2; k<2*NeN-1; k++)
     {
@@ -874,20 +888,105 @@ void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
     for (int n=2; n<Nee; n++)
       paramDepMatrix(n,n) = 0.0;
 
-  // For every parameter that is not free, we substitute its definition in
-  // terms of free parameters in the definitions of the parameters that depend
-  // on it
-  for (int i=0; i<TotalNumberOfParameters; i++)
+  // Here we use a while loop to make sure that all dependent parameters are 
+  // defined in terms of independent parameters.  Dependent params should not 
+  // be in the definition of any parameter.
+
+  bool goodDefs = false;
+  int counter = 0;
+  
+  while (goodDefs == false)
     {
-      if ( fabs(paramDepMatrix(i,i)-1.0 ) > 1e-10 )
-	for (int j=0; j<TotalNumberOfParameters; j++)
-	  {
-	    for (int k=0; k<TotalNumberOfParameters; k++)
-	      paramDepMatrix(j,k) += paramDepMatrix(j,i)*paramDepMatrix(i,k);
-	    paramDepMatrix(j,i) = 0.0;
-	  }
+      counter++;
+      if (counter > 100)
+        {
+          cerr << "ERROR in QMCThreeBodyCorrelationFunctionParameters::make"
+               << "ParamDepMatrix(): dependent parameters are still used in "
+               << "definitions after 100 iterations- definitions may be "
+               << "circular" << endl;
+          exit(0);
+        }
+
+      goodDefs = true;
+      for (int l=0; l<NeN; l++)
+        for (int m=0; m<=l; m++)
+          for (int n=0; n<Nee; n++)
+            {
+              index1 = l*NeN*Nee + m*Nee + n;
+              
+              if (isFree(l,m,n) == true)
+                {
+                  // If this parameter is free, its diagonal element in the 
+                  // matrix should be 1.0 and it should have nothing else in
+                  // its row.
+
+                  if ( fabs(paramDepMatrix(index1,index1)-1.0) > 1e-10 )
+                    {
+                      cerr << "ERROR in QMCThreeBodyCorrelationFunction"
+                           << "Parameters::makeParamDepMatrix(): parameter "
+                           << l << m << n << " should be free, but its "
+                           << "diagonal matrix element is "
+                           << paramDepMatrix(index1,index1) << endl;
+                      exit(0);
+                    }
+
+                  for (int i=0; i<TotalNumberOfParameters; i++)
+                    if (index1 != i && fabs(paramDepMatrix(index1,i)) > 1e-10)
+                      {
+                        cerr << "ERROR in QMCThreeBodyCorrelationFunction"
+                             << "Parameters::makeParamDepMatrix(): parameter "
+                             << l << m << n << " should be free, but element "
+                             << "(" << index1 << "," << i << ") is "
+                             << paramDepMatrix(index1,i) << endl;
+                        exit(0);
+                      }
+                }
+              else if (isFree(l,m,n) == false)
+                {
+                  // If this parameter is dependent, its entire column should
+                  // be zeros.  Any nonzero elements in its row should
+                  // correspond to free parameters.
+                  if ( fabs(paramDepMatrix(index1,index1)) > 1e-10 )
+                    {
+                      cerr << "ERROR in QMCThreeBodyCorrelationFunction"
+                           << "Parameters::makeParamDepMatrix(): parameter "
+                           << l << m << n << "should be dependent, but "
+                           << "its diagonal element is "
+                           << paramDepMatrix(index1,index1) << endl;
+                      exit(0);
+                    }
+                  // Now we check the column
+                  for (int i=0; i<TotalNumberOfParameters; i++)             
+                    if (index1 != i && fabs(paramDepMatrix(i,index1)) > 1e-10)
+                      {
+                        goodDefs = false;
+                        for (int j=0; j<TotalNumberOfParameters; j++)
+                          paramDepMatrix(i,j) += paramDepMatrix(i,index1) *
+                            paramDepMatrix(index1,j);
+                        paramDepMatrix(i,index1) = 0.0;                     
+                      }
+                  // Finally we check the row
+                  for (int a=0; a<NeN; a++)
+                    for (int b=0; b<NeN; b++)
+                      for (int c=0; c<Nee; c++)
+                        {
+                          index2 = a*NeN*Nee + b*Nee + c;
+                          if (isFree(a,b,c) == false && 
+                              fabs(paramDepMatrix(index1,index2)) > 1e-10)
+                            {
+                              goodDefs = false;
+                              for (int i=0; i<TotalNumberOfParameters; i++)
+                                paramDepMatrix(index1,i) += 
+                                  paramDepMatrix(index1,index2) * 
+                                  paramDepMatrix(index2,i);
+                              paramDepMatrix(index1,index2) = 0.0;
+                            }
+                        }
+                }
+            }
+    
     }
-	      
+
   // We can enforce symmetry by setting the elements with m>l equal to the ones
   // with l>m
 
