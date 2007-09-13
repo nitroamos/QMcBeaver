@@ -425,15 +425,17 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 
       // Find the nearest nucleus to this electron
       int nearestNucleus = Input->Molecule.findClosestNucleusIndex(R,electron);
-      double distanceFromNucleus = walkerData.riI(electron,nearestNucleus);
+      double distanceFromNucleus = 0.0;
       
       // Calculate the unit vector in the Z direction
       for(int i=0; i<3; i++)
         {
           zUnitVector(i) = R(electron,i) -
                            Input->Molecule.Atom_Positions(nearestNucleus,i);
+	  distanceFromNucleus += zUnitVector(i)*zUnitVector(i);
         }
 
+      distanceFromNucleus = sqrt(distanceFromNucleus);
       zUnitVector /= distanceFromNucleus;
       
       
@@ -443,7 +445,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       double zComponentQF = 0.0;
       
       for(int i=0; i<3; i++)
-          zComponentQF += zUnitVector(i)*Displacement(electron,i);
+	zComponentQF += zUnitVector(i)*Displacement(electron,i);
         
       double radialComponentQF = 0.0;
       

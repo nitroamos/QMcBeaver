@@ -926,6 +926,9 @@ bool QMCManager::run(bool equilibrate)
 	  if(globalInput.flags.nuclear_derivatives != "none")
 	    gatherForces();
 
+	  // Collect timing data
+	  finalize();
+
 	  /*
 	    This should represent the best data known
 	    to all processors.
@@ -982,6 +985,9 @@ bool QMCManager::run(bool equilibrate)
 	  
 	  if(globalInput.flags.nuclear_derivatives != "none")
 	    gatherForces();
+
+	  // Gather stopwatch data
+	  finalize();
 	}
       
       if( globalInput.flags.print_transient_properties &&
@@ -996,7 +1002,7 @@ bool QMCManager::run(bool equilibrate)
 	  writeEnergyResultsSummary( *qmcOut );
 	}
     }
-    else//else this is a worker node
+    else //else this is a worker node
     {
 
       int poll_result = QMC_WORK_STEP;
@@ -1036,6 +1042,9 @@ bool QMCManager::run(bool equilibrate)
 	    if(globalInput.flags.nuclear_derivatives != "none")
 	      gatherForces();
 
+	    // Gather stopwatch data
+	    finalize();
+
 	    break;	
 	    
 	  case QMC_REDUCE_ALL:
@@ -1060,6 +1069,9 @@ bool QMCManager::run(bool equilibrate)
 	    
 	    if(globalInput.flags.nuclear_derivatives != "none")
 	      gatherForces();
+
+	    // Gather timing data
+	    finalize();
 
 	    if(globalInput.flags.checkpoint == 1)
 	      //	      writeCheckpoint();
@@ -1852,6 +1864,7 @@ void QMCManager::initializeCalculationState(long int iseed)
   else
     {
       // Create the checkpoint file name
+
       string filename = globalInput.flags.checkin_file_name + ".checkpoint." +
         StringManipulation::intToString( globalInput.flags.my_rank );
 
@@ -1863,6 +1876,7 @@ void QMCManager::initializeCalculationState(long int iseed)
       // We use a test stream to find where the checkpoint file is.  For some
       // reason, trying to open several files with the input stream was
       // causing it to not read the file properly.
+
       ifstream test_strm( filename.c_str() );
 
       /*
@@ -1894,6 +1908,7 @@ void QMCManager::initializeCalculationState(long int iseed)
               localTimers.getInitializationStopwatch()->start();
               qmcCheckpoint.open(temp_filename.c_str());
               clog << "Reading in checkpoint file " << temp_filename << "...";
+
               if (readXML(qmcCheckpoint))
                 {
                   // We make sure the checkpoint file was read successfully
@@ -1947,6 +1962,9 @@ void QMCManager::initializeCalculationState(long int iseed)
         }
       else
         {
+	  clog << "Could not open checkpoint file.  Randomly initializing ";
+	  clog << "walkers." << endl;
+
           // We can't open the checkpoint file at all
           localTimers.getInitializationStopwatch()->start();
           QMCnode.zeroOut();

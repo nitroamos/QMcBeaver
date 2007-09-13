@@ -1,3 +1,15 @@
+Wed, Sep 12, 2007 Daniel R Fisher
+1.  I changed the way that data is reduced in QMCManager to make sure
+    that the timing data is collected and written out when a
+    calculation terminates unexpectedly.  Previously this was not
+    being done and all the times were zeros.
+
+2.  I fixed a bug in QMCWalker::moveElectronsU93ImpSampling().  If the
+    configuration was read in from a checkpoint file, the
+    electron-nuclear distances were not filled in yet in
+    QMCWalkerData, so it was dividing by zero when it tried to move
+    the electrons.
+
 Tues, Sep 11, 2007 Daniel R Fisher
 1.  I improved the makeParamDepMatrix() function in
     QMCThreeBodyCorrelationFunctionParameters.  It has a much more
