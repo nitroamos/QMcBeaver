@@ -1,5 +1,6 @@
 #include "Cambridge2CorrelationFunction.h"
 #include <iomanip>
+#include "QMCInput.h"
 
 void Cambridge2CorrelationFunction::initializeParameters(
   Array1D<int> & BeginningIndexOfParameterType,
@@ -7,6 +8,7 @@ void Cambridge2CorrelationFunction::initializeParameters(
   Array1D<int> & BeginningIndexOfConstantType,
   Array1D<double> & Constants)
 {
+  active = true;
   if( Constants.dim1() < 2 )
   {
     cerr << "ERROR: Cambridge 2 particle Jastrow needs two constants, gamma and C." << endl
@@ -19,9 +21,11 @@ void Cambridge2CorrelationFunction::initializeParameters(
 
   if( C != 2 && C != 3 )
     {
+      /*
+	Anything less than 3 will produce a discontinuity in the local energy.
+      */
       cerr << "ERROR: Cambridge 2 particle Jastrow requires C = 2 or C = 3, "
 	   << "but you set C = " << C << endl;
-
     }
 
   if( BeginningIndexOfParameterType.dim1() != 2 || Parameters.dim1() < 2)
@@ -48,13 +52,13 @@ void Cambridge2CorrelationFunction::initializeParameters(
 
   if( L <= 0.0 || fL > 100.0)
     {
+      //hopefully this isn't a guiding function...
       cerr << "Warning: bad value for L in Cambridge2CorrelationFunction." << endl
 	   << "    you set L = " << L << endl
 	   << "           fL = " << fL << endl
 	   << "         1/fL = " << (1.0/fL) << endl;
-      //If L was requested to be negative, then fabs will permit the calculation to continue
-      //even if L really is bad.
-      exit(0);
+      cerr << " This Jastrow will be inactivated." << endl;
+      active = false;
     }
 
   int N = Parameters.dim1() - 1;  
@@ -91,6 +95,8 @@ void Cambridge2CorrelationFunction::evaluate( double _r )
     FunctionValue = 0.0;
    dFunctionValue = 0.0;
   d2FunctionValue = 0.0;
+  if(!active) return;
+
   d   = fL * r - 1.0;
 
   //This is the Heaviside function
@@ -102,18 +108,22 @@ void Cambridge2CorrelationFunction::evaluate( double _r )
    P     =           alpha.getFunctionValue();
   dP_r   = fL *      alpha.getFirstDerivativeValue();
   dP_rr  = fL * fL * alpha.getSecondDerivativeValue();
-  dP_L   = f * r *   alpha.getFirstDerivativeValue();
-  dP_Lr  = dP_L / r + f * fL * r * alpha.getSecondDerivativeValue();
-  dP_Lrr = 2.0 * f *      fL * alpha.getSecondDerivativeValue() +
-             r * f * fL * fL * alpha.getThirdDerivativeValue();
-
   // "_d_ to the _p_ower of _c_" and its derivatives
   dpc    = pow(d, C);
   dpc_r  = C * fL * dpc / d;
   dpc_rr = (C - 1.0) * fL * dpc_r / d;
-  dpc_L  = dpc_r * r / L;
-  dpc_Lr = dpc_L / d * (C * fL - 1.0 / r);  //is dividing by r here going to be a problem?
-  dpc_Lrr = dpc_rr / d * (C * f * r - 2.0 / L);
+
+  if(globalInput.flags.calculate_Derivatives == 1)
+    {
+      dP_L   = f * r *   alpha.getFirstDerivativeValue();
+      dP_Lr  = dP_L / r + f * fL * r * alpha.getSecondDerivativeValue();
+      dP_Lrr = 2.0 * f *      fL * alpha.getSecondDerivativeValue() +
+	         r * f * fL * fL * alpha.getThirdDerivativeValue();
+      
+      dpc_L  = dpc_r * r / L;
+      dpc_Lr = dpc_L / d * (C * fL - 1.0 / r);  //is dividing by r here going to be a problem?
+      dpc_Lrr = dpc_rr / d * (C * f * r - 2.0 / L);
+    }
 
   //The Jastrow, and its derivatives w.r.t. r
   FunctionValue = dpc * P;
@@ -135,7 +145,7 @@ double Cambridge2CorrelationFunction::getFunctionValue()
 double Cambridge2CorrelationFunction::get_p_a(int ai)
 {
   double p_a = 0.0;
-  if( d > 0.0 ) return 0.0;
+  if( d > 0.0 || !active) return 0.0;
 
   switch(ai)
     {
@@ -172,7 +182,7 @@ double Cambridge2CorrelationFunction::getFirstDerivativeValue()
 double Cambridge2CorrelationFunction::get_p2_xa(int ai)
 {
   double p2_xa = 0.0;
-  if( d > 0.0 ) return 0.0;
+  if( d > 0.0  || !active) return 0.0;
 
   switch(ai)
     {
@@ -213,7 +223,7 @@ double Cambridge2CorrelationFunction::getSecondDerivativeValue()
 double Cambridge2CorrelationFunction::get_p3_xxa(int ai)
 {
   double p3_xxa = 0.0;
-  if( d > 0.0 ) return 0.0;
+  if( d > 0.0  || !active ) return 0.0;
 
   switch(ai)
     {
