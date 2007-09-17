@@ -781,7 +781,7 @@ void QMCFlags::read_flags(string InFileName)
         }
       else
         {
-          cerr << "Warning: Unknown input flag: " << temp_string << endl;
+          clog << "Warning: Unknown input flag: " << temp_string << endl;
         }
       input_file >> temp_string;
     }

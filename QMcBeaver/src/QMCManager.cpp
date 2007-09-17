@@ -247,12 +247,13 @@ void QMCManager::gatherProperties()
               QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, 0, MPI_COMM_WORLD );
 
   int numCS = QMCnode.getFWProperties()->cs_Energies.dim1();
+
   if(numCS > 1)
     MPI_Reduce( QMCnode.getFWProperties()->cs_Energies.array(),
 		fwProperties_total.cs_Energies.array(),
 		numCS,
-		QMCStatistic::MPI_TYPE,
-		QMCStatistic::MPI_REDUCE,
+		QMCProperty::MPI_TYPE,
+		QMCProperty::MPI_REDUCE,
 		0,MPI_COMM_WORLD );
 
   int numAI = fwProperties_total.der.dim1();

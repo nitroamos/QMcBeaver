@@ -57,11 +57,13 @@ void Cambridge2CorrelationFunction::initializeParameters(
   if( L <= 0.0 || fL > 100.0)
     {
       //hopefully this isn't a guiding function...
+      /*
       cerr << "Warning: bad value for L in Cambridge2CorrelationFunction." << endl
 	   << "    you set L = " << L << endl
 	   << "           fL = " << fL << endl
 	   << "         1/fL = " << (1.0/fL) << endl;
       cerr << " This Jastrow will be inactivated." << endl;
+      */
       active = false;
     }
 
