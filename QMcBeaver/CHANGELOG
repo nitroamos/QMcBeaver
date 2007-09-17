@@ -1,3 +1,15 @@
+Mon, Sep 17, 2007 Amos Anderson
+1.  I added correlated sampling -- the real way. It doesn't require
+    anything written to file. This is useful for choosing good
+    a_diag values. So set a_diag to something negative, and the
+    code will automatically choose a stable a_diag using correlated sampling.
+
+    This only applies to the eigenvector optimization method. The others
+    could be added if I get bored.
+
+2.  I changed the parameter for optimizing Jastrow cutoffs so that the
+    same parameter is referenced by all Cambridge jastrows.
+
 Wed, Sep 12, 2007 Daniel R Fisher
 1.  I changed the way that data is reduced in QMCManager to make sure
     that the timing data is collected and written out when a
