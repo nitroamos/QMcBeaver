@@ -60,11 +60,10 @@ void Stopwatch::start()
 {
   if(running)
     {
+#ifdef QMC_DEBUG
       //stopped a stopwatch that was not running
-      cerr << "ERROR: You just started a stopwatch that was running" << endl;
-      cerr << "check to make sure this is not a bug" << endl;
-      cerr << "exit in void Stopwatch::start()" << endl;
-      exit(1);
+      cerr << "Warning: You just started a stopwatch that was already running." << endl;
+#endif
     }
   else
     {

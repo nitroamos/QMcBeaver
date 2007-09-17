@@ -113,6 +113,7 @@ void QMCInput::printAIParameters(ostream & strm,
 				 Array1D<double> & array,
 				 bool forcePrintOrbitals)
 {
+  if(array.dim1() <= 0) return;
   /*
     This function assumes a particular ordering of the parameters
     in the array.
