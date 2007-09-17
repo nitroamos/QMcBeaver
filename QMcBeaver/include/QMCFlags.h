@@ -641,14 +641,18 @@ class QMCFlags
     These next flags control which part of the wavefunction
     we're optimizing. If the optimization method is set to
     automatic, then these parameters will automatically be changed.
-
-    For now, I won't add these to the input file.
   */
   int optimize_EE_Jastrows;
   int optimize_EN_Jastrows;
   int optimize_NEE_Jastrows;
   int optimize_CI;
   int optimize_Orbitals;
+
+  /*
+    Some Jastrows (e.g. the cambridge ones) use cutoffs which can be difficult
+    to optimize. this one parameter will let you decide whether to optimize them.
+  */
+  int optimize_L;
 
   int use_three_body_jastrow;
 
@@ -663,12 +667,6 @@ class QMCFlags
     overlap the EE Jastrow to be nonzero.
   */
   int reproduce_EE_with_NEE_jastrow;
-
-  /*
-    If this flag is true, we allow the nucleus-electron cutoff distances to be
-    optimized in the three body correlation functions
-  */
-  int optimize_NEE_cutoffs;
 
   /*
     This controls the initial value used by QMCLineSearch for
