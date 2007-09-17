@@ -246,6 +246,15 @@ void QMCManager::gatherProperties()
   MPI_Reduce( QMCnode.getProperties(), &Properties_total, 1,
               QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, 0, MPI_COMM_WORLD );
 
+  int numCS = QMCnode.getFWProperties()->cs_Energies.dim1();
+  if(numCS > 1)
+    MPI_Reduce( QMCnode.getFWProperties()->cs_Energies.array(),
+		fwProperties_total.cs_Energies.array(),
+		numCS,
+		QMCStatistic::MPI_TYPE,
+		QMCStatistic::MPI_REDUCE,
+		0,MPI_COMM_WORLD );
+
   int numAI = fwProperties_total.der.dim1();
   MPI_Reduce( QMCnode.getFWProperties()->der.array(),
               fwProperties_total.der.array(),
@@ -629,6 +638,7 @@ int QMCManager::pollForACommand()
 
 bool QMCManager::run(bool equilibrate)
 {
+  localTimers.getTotalTimeStopwatch()->start();
   if(globalInput.flags.optimize_Psi == 1) 
     {
       int numAI = globalInput.getNumberAIParameters();
@@ -1681,10 +1691,13 @@ void QMCManager::writeTimingData( ostream & strm )
   strm.unsetf(ios::fixed);
   strm.unsetf(ios::scientific);
 
-  //This is the cumulative time across all processors
-  double time = globalTimers.getTotalTimeStopwatch()->timeUS();
+  /*
+    This is the cumulative time across all processors, for
+    all optimization iterations.
+  */
+  double time = globalTimers.getPropagationStopwatch()->timeUS();
 
-  //The number of samples from all processors
+  //The number of samples, from the most recent optimization iteration, from all processors
   time /= Properties_total.energy.getNumberSamples();
   strm << "Average microseconds per sample:                          " << time << endl;
 

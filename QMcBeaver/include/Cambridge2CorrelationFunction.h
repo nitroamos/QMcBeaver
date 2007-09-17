@@ -19,7 +19,17 @@ class Cambridge2CorrelationFunction : public QMCCorrelationFunction
   double d2FunctionValue;
   
  private:    
-  
+  /*
+    if this is false, then we will return zeros for all values.
+    i think this is more useful than quitting the program since this
+    jastrow might just represent a correlated sampling run, and bad
+    jastrows would be ignored elsewhere.
+
+    the only real problem would be a bad jastrow used to guide
+    the calculation.
+  */
+  bool active;
+
   //The gamma term for establishing the cusp conditions
   // 1/2 for opposite spin electrons
   // 1/4 for parallel spin electrons

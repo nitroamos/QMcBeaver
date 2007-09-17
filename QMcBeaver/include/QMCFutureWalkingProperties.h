@@ -84,6 +84,8 @@ public:
   bool hessIsSymmetric;
   Array1D< Array2D<QMCStatistic> > hess;
 
+  Array1D< QMCProperty > cs_Energies;
+
  /**
     Tells if basis function density is being calculated.
   */

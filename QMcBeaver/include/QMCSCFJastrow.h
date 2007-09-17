@@ -124,6 +124,7 @@ public:
  private:
   QMCWalkerData * wd;
   Array2D<double> * x;
+  int iWalker;
 
   /**
      Corresponding to QMCFunction's ability to process several walkers 
@@ -136,16 +137,50 @@ public:
   QMCNuclearForces nf;
 
   QMCGreensRatioComponent Psi;
+
   double Laplacian_PsiRatio;
 
   double E_Local;
+
+  /**
+     These next several peices of data are the intermediary
+     data used to calculate psi and the energy.
+
+     Since they are likely to be needed by the parameter
+     derivative functions, we need to make them available
+     outside the function that assigns them.
+  */
+  Array1D<double> termPR;
+  double** term_AlphaGrad;
+  double** term_BetaGrad;
+  
+  Array1D<double>* alphaPsi;
+  Array3D<double>* alphaGrad;
+  Array1D<double>* alphaLaplacian;
+  
+  Array1D<double>* betaPsi;
+  Array3D<double>* betaGrad;
+  Array1D<double>* betaLaplacian;
+
+  Array2D<double>* JastrowGrad;
 
   /**
      This function processes the results from a QMCSlater. The input parameters
      are the data structures this function is meant to fill and are from
      a QMCWalkerData struct.
   */
-  void calculate_Psi_quantities(int walker);
+  void calculate_Psi_quantities();
+
+  void update_SCF();
+
+  /**
+     This must be called after calculate_Psi_quantities.
+     It assumes that we're only interested Jastrow parameter modifications,
+     recalculate the energy for each set of parameters.
+  */
+  void calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walkerData,
+				    Array1D<Array2D<double> * > &xData,
+				    int num);
 
   /**
      This function continues to process results from a QMCSlater calculation.
@@ -153,53 +188,134 @@ public:
      it in with an & requires modification of several Array2D functions...
   */
   void calculate_Modified_Grad_PsiRatio();
-          
-  /**
-    Calculate the local energy.
-    @param which indicates which walker
-    */
-  void calculate_E_Local(int which);
 
   /**
-    Gets the value of the wavefunction at the last evaluated electronic
-    configuration.  The returned value is not normalized to one.
+     Calculate the derivative of the energy with respect to
+     parameters in the Jastrow.
 
-    @return wavefunction value
+     @param ai the index where to start putting derivatives for
+     this type
   */
-  QMCGreensRatioComponent getPsi();
+  void calculate_JastrowDerivatives(int & ai);
 
   /**
-    Gets the local energy at the last evaluated electronic configuration.
+     Calculate the derivative of the energy with respect to
+     the CI coefficients.
 
-    @return local energy
+     @param ai the index where to start putting derivatives for
+     this type
   */
-  double getLocalEnergy();
+  void calculate_CIDerivatives(int & ai);
 
   /**
-    Gets the kinetic energy at the last evaluated electronic configuration.
+     Calculate the derivative of the energy with respect to
+     parameters in the orbitals.
 
-    @return kinetic energy.
+     @param ai the index where to start putting derivatives for
+     this type
   */
-  double getKineticEnergy();
+  void calculate_OrbitalDerivatives(int & ai);
 
   /**
-    Gets the potential energy at the last evaluated electronic configuration.
-    @param which indicates which walker
-    @return potential energy.
+     Call this function to print out the parameter derivatives
+     and then exit. The derivatives will be formatted in a way that it's easy to
+     check them in a spreadsheet.
+
+     To use this, uncomment the function call.
+     Run the program and copy/paste the output into a spreadsheet.
+     Change one of the parameters in the input file by a small
+     amount "h".
+     Rerun the program with the modified input file, and copy this
+     data into your spreadsheet.
+     Use the spreadsheet to calculate ( f(x+h) - f(x) ) / h
+     and verify that this quantity matches the derivative the program
+     calculated.
+
+     The derivatives should match to a relative error of at least 1e-5,
+     depending on the magnitude of h. If h is too small, then the quality
+     of your derivative is going to suffer from poor output precision.
+     If h is too large, then quality is going to suffer from the derivative
+     approximation formula.
   */
-  double getPotentialEnergy(int which);
-
-  double getEnergyEE(int which);
-  double getEnergyNE(int which);
-
+  void checkParameterDerivatives();
+            
   /**
-    Returns true if the last evaluated electronic configuration gives a
-    singular Slater matrix and false otherwise.
-
-    @param walker indicate which QMCWalker we are interested in
-    @return true if the Slater matrix is singular and false otherwise
+     Gets the value of the wavefunction at the last evaluated electronic
+     configuration.  The returned value is not normalized to one.
+     
+     @return wavefunction value
   */
-  bool isSingular(int walker);
+  QMCGreensRatioComponent getPsi()
+    {
+      return Psi;
+    }
+  
+  /**
+     Gets the local energy at the last evaluated electronic configuration.
+
+     E_L &=& -\frac{1}{2}\frac{\nabla^2 \left(D e^{U}\right)}{D e^{U}} + V \\
+     &=&
+     - \frac{1}{2} \left[\frac{\nabla^2 D}{D}
+     +2 \left( \frac{\nabla D}{D} \right ) \cdot \nabla U
+     + \nabla U \cdot \nabla U
+     + \nabla^2 U \right]
+     + V
+
+     @return local energy
+  */
+  double getLocalEnergy()
+    {
+      return E_Local;
+    }
+  
+  /**
+     Gets the kinetic energy at the last evaluated electronic configuration.
+     
+     @return kinetic energy.
+  */
+  double getKineticEnergy()
+    {
+      return -0.5 * Laplacian_PsiRatio; 
+    }
+  
+  /**
+     Gets the potential energy at the last evaluated electronic configuration.
+     @param which indicates which walker
+     @return potential energy.
+  */
+  double getPotentialEnergy(int whichWalker)
+    {
+      return PE.getEnergy(whichWalker); 
+    }
+  
+  double getEnergyEE(int whichWalker)
+    {
+      return PE.getEnergyEE(whichWalker);
+    }
+  
+  double getEnergyNE(int whichWalker)
+    {
+      return PE.getEnergyNE(whichWalker);
+    }
+  
+  /**
+     Calculate the local energy.
+     must calculate Laplacian_PsiRatio before calling this
+     @param which indicates which walker
+  */
+  void calculate_E_Local(int whichWalker)
+    {
+      E_Local = -0.5 * Laplacian_PsiRatio + PE.getEnergy(whichWalker);
+    }
+  
+  /**
+     Returns true if the last evaluated electronic configuration gives a
+     singular Slater matrix and false otherwise.
+     
+     @param walker indicate which QMCWalker we are interested in
+     @return true if the Slater matrix is singular and false otherwise
+  */
+  bool isSingular(int whichWalker);
 };
 
 #endif

@@ -151,6 +151,30 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
   MPI_Bcast(Guess_parameters.array(),Guess_parameters.dim1(),
 	    MPI_DOUBLE,0,MPI_COMM_WORLD);
 
+  /*
+    Some things might have been changed, so all the processors need to be
+    apprised of the new data.
+  */
+  MPI_Bcast(&globalInput.flags.calculate_Derivatives,1,MPI_INT,0,MPI_COMM_WORLD);
+
+  int numCS = globalInput.cs_Parameters.dim1();
+  MPI_Bcast(&numCS,1,MPI_INT,0,MPI_COMM_WORLD);
+
+  if(numCS > 0)
+    {
+      globalInput.cs_Parameters.allocate(numCS);  
+      for(int cs=0; cs<numCS; cs++)
+	{
+	  globalInput.cs_Parameters(cs).allocate(Guess_parameters.dim1());
+	  MPI_Bcast(globalInput.cs_Parameters(cs).array(), globalInput.cs_Parameters(cs).dim1(),
+		    MPI_DOUBLE,0,MPI_COMM_WORLD);
+	}
+    }
+  else
+    {
+      globalInput.cs_Parameters.deallocate();
+    }
+
 #endif
 
   globalInput.setAIParameters(Guess_parameters);

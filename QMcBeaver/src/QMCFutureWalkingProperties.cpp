@@ -146,6 +146,11 @@ void QMCFutureWalkingProperties::zeroOut()
           (nuclearForces(fw))(i,j).zeroOut();
   }
 
+  if(globalInput.cs_Parameters.dim1() > 1)
+    cs_Energies.allocate(globalInput.cs_Parameters.dim1());
+  else
+    cs_Energies.deallocate();
+
   int numAI = globalInput.getNumberAIParameters();
 
   if(globalInput.flags.calculate_Derivatives == 1)
@@ -156,7 +161,7 @@ void QMCFutureWalkingProperties::zeroOut()
     } else {
       der.deallocate();
     }
-  
+
   if( globalInput.flags.optimize_Psi_criteria == "analytical_energy_variance")
     {
       hessIsSymmetric = true;
@@ -173,6 +178,9 @@ void QMCFutureWalkingProperties::zeroOut()
 	  hess(i).deallocate();
 	hess.deallocate();
       }
+
+  for(int i=0; i<cs_Energies.dim1(); i++)
+    cs_Energies(i).zeroOut();
 
   for(int i=0; i<der.dim1(); i++)
     for(int j=0; j<der.dim2(); j++)
@@ -205,7 +213,10 @@ void QMCFutureWalkingProperties::newSample(QMCFutureWalkingProperties* newProper
 	if((newProperties->props(i))(fw).getNumberSamples() > 0)
 	  (props(i))(fw).newSample( (newProperties->props(i))(fw).getAverage(), weight);
     }
-  
+
+  for(int i=0; i<cs_Energies.dim1(); i++)
+    cs_Energies(i).newSample(newProperties->cs_Energies(i).getAverage(), weight);
+
   for (int i=0; i<der.dim1(); i++)
     for (int j=0; j<der.dim2(); j++)
       der(i,j).newSample(newProperties->der(i,j).getAverage(),weight);
@@ -254,6 +265,7 @@ void QMCFutureWalkingProperties::operator = ( const QMCFutureWalkingProperties &
 
   der = rhs.der;
   hess = rhs.hess;
+  cs_Energies = rhs.cs_Energies;
 }
 
 QMCFutureWalkingProperties QMCFutureWalkingProperties::operator + ( QMCFutureWalkingProperties &rhs )
@@ -384,6 +396,18 @@ ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs)
   int w1 = 10;
   int w2 = 10;
   int p1 = 2;
+
+  if(rhs.cs_Energies.dim1() > 1)
+    {
+      strm << endl << "------ Correlated Sampling Energies --------" << endl;
+      for(int i=0; i<rhs.cs_Energies.dim1(); i++)
+	{
+	  strm << "Set " << setw(3) << i << ": Sample variance = " << rhs.cs_Energies(i).getSeriallyCorrelatedVariance() << endl;
+	  strm << rhs.cs_Energies(i);
+	  //rhs.cs_Energies(i).printAll(strm);
+	  strm << endl;
+	}
+    }
 
   //We almost certainly don't need these printed out
   //Just look for the derivative printout during the optimization step.

@@ -63,6 +63,10 @@ public:
       @return function's second derivative value.
   */
   virtual double getSecondDerivativeValue() = 0;
+
+  double Brent_fmin(double ax, double bx, double tol);
+  double function(double x);
+  double minimum(double left, double right);
 };
 
 

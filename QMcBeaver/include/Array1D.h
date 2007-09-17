@@ -459,7 +459,8 @@ template <class T> class Array1D
 #ifdef QMC_DEBUG
       if( i < 0 || i >= n_1 )
 	{
-	  cerr << "Error: Array1D::operator() has i = " << i << endl;
+	  cerr << "Error: Array1D::operator() has i = " << i
+	       << " where n_1 = " << n_1 << endl;
 	  assert( i >= 0 && i < n_1 );
 	}
       assert(pArray);

@@ -86,6 +86,8 @@ public:
     */
   double getVirialRatioStandardDeviation(int whichFW);
 
+  Array1D<double> getCorrelatedSamples(int whichKind);
+
   /**
      The current value of the objective function
      we are minimizing.
@@ -126,6 +128,7 @@ public:
   friend ostream& operator <<(ostream& strm, QMCDerivativeProperties &rhs);
 
 private:
+  bool typePRL;
   QMCProperties * properties;
   QMCFutureWalkingProperties * fwProperties;
   double dt;

@@ -68,7 +68,13 @@ public:
      This object is used to output the configuation file.
   */
   QMCConfigIO outputer;
-  
+
+  /**
+     The complete set of correlated sampling parameters.
+     The set at 0 are for the guiding wavefunction.
+  */
+  Array1D< Array1D<double> > cs_Parameters;
+
   /**
      Save parameters related to a parallel MPI calculation 
      in this class so that they are available throughout the

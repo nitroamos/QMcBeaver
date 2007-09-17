@@ -271,6 +271,8 @@ private:
   double kineticEnergy_grad;
   double potentialEnergy;
 
+  Array1D<double> cs_Energies;
+  Array1D<double> cs_Weights;
   Array1D<double> p3_xxa;
   Array1D<double> rp_a;
   

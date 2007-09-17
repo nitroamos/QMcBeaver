@@ -83,6 +83,7 @@ void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
 
   modificationRatio    = 0.0;
   psi                  = 0.0;
+  SCF_Psi              = 0.0;
   isSingular           = false;
 
   rij.allocate(numElectrons, numElectrons);

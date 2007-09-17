@@ -19,6 +19,7 @@
 #include "QMCObjectiveFunction.h"
 #include "QMCOptimizationAlgorithm.h"
 #include "QMCLineSearchStepLengthSelectionAlgorithm.h"
+#include <sstream>
 
 /**
   Abstract implementation of a line search numerical optimization algorithm.
@@ -47,23 +48,39 @@ public:
     */
   virtual ~QMCEigenSearch(){};
 
+  double get_a_diag(QMCDerivativeProperties & dp, double factor);
+
+  void setupHalfStep();
+  Array1D<double> getParameters(QMCDerivativeProperties & dp, double a_diag, bool verbose);
+
   Array1D<double> optimize(Array1D<double> & initialGuess,
 			   QMCDerivativeProperties & dp,
 			   double a_diag_factor,
 			   int optStep);
 
 protected:
+  
+  static bool currentlyHalf;
 
   /**
     Gets the objective function for the calculation.
     */
   QMCObjectiveFunction * getObjectiveFunction();
 
+  int optStep;
   int dim;
+  stringstream stepinfo;
+
   vector<double> f;
   vector< Array1D<double> > x;
 
-private:  
+private:
+  static int orig_steps;
+  static vector<double> adiag_tests;
+  static Array1D<double> orig_params;
+  static Array2D<double> hamiltonian;
+  static Array2D<double> overlap;
+
   /**
      Objective function to optimize.
   */

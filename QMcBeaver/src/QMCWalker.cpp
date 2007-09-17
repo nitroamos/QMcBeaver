@@ -75,6 +75,8 @@ QMCWalker::~QMCWalker()
   fwKineticEnergy_grad.deallocate();
   fwPotentialEnergy.deallocate();
 
+  cs_Energies.deallocate();
+  cs_Weights.deallocate();
   p3_xxa.deallocate();
   rp_a.deallocate();
 
@@ -133,6 +135,8 @@ void QMCWalker::operator=( const QMCWalker & rhs )
     }
   }
 
+  cs_Energies.allocate(rhs.cs_Energies.dim1());
+  cs_Weights.allocate(rhs.cs_Weights.dim1());
   p3_xxa.allocate(rhs.p3_xxa.dim1());
   rp_a.allocate(rhs.rp_a.dim1());
        
@@ -1816,6 +1820,28 @@ void QMCWalker::calculateObservables()
              q * OriginalWalker->walkerData.eeEnergy;
 
 
+  if(globalInput.cs_Parameters.dim1() > 1)
+    {
+      cs_Energies.allocate(TrialWalker->walkerData.cs_LocalEnergy.dim1());
+      cs_Weights.allocate(TrialWalker->walkerData.cs_Weights.dim1());
+
+      if(OriginalWalker->walkerData.cs_LocalEnergy.dim1() ==
+	 TrialWalker->walkerData.cs_LocalEnergy.dim1())
+	{
+	  for(int cs=0; cs<cs_Energies.dim1(); cs++)
+	    {
+	      cs_Energies(cs) = p * TrialWalker->walkerData.cs_LocalEnergy(cs) +
+		q * OriginalWalker->walkerData.cs_LocalEnergy(cs);
+	      cs_Weights(cs) = p * TrialWalker->walkerData.cs_Weights(cs) +
+		q * OriginalWalker->walkerData.cs_Weights(cs);
+	      //cs_Weights(cs) = TrialWalker->walkerData.cs_Weights(cs);
+	    }
+	} else {
+	  cs_Energies = 0.0;
+	  cs_Weights = 0.0;
+	}
+    }
+
   if(globalInput.flags.calculate_Derivatives == 1)
     {
       p3_xxa.allocate(TrialWalker->walkerData.p3_xxa.dim1());
@@ -2148,7 +2174,25 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 	} 
     }
 
-  if(rel_diff < Input->flags.rel_cutoff)
+  //if rel diff is really bad, then we have no reason to collect statistics
+  if(rel_diff > Input->flags.rel_cutoff)
+    return;
+  
+  if(globalInput.cs_Parameters.dim1() > 1)
+    {	
+      for(int cs=0; cs<cs_Energies.dim1(); cs++)
+	{
+	  //printf("cs = %2i eng = %20.10f csw = %20.10e\n",cs,cs_Energies(cs),cs_Weights(cs));
+	  fwProps.cs_Energies(cs).newSample( cs_Energies(cs), getWeight() * cs_Weights(cs));
+	}
+    }
+  else
+    {
+      cs_Energies.deallocate();
+      cs_Weights.deallocate();
+    }
+
+  if(globalInput.flags.calculate_Derivatives == 1)
     {
       int numAI = rp_a.dim1();
       for(int ai=0; ai<numAI; ai++)
@@ -2167,11 +2211,11 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
       
       if(globalInput.flags.optimize_Psi_criteria == "analytical_energy_variance")
 	{
-
+	  
 	  for(int ai=0; ai<numAI; ai++)
 	    for(int aj=0; aj<=ai; aj++)
 	      (fwProps.hess(0))(ai,aj).newSample(p3_xxa(ai) * p3_xxa(aj), getWeight());
-
+	  
 	} else if(globalInput.flags.optimize_Psi_criteria == "generalized_eigenvector") {
 	  for(int ai=0; ai<numAI; ai++)
 	    for(int aj=0; aj<numAI; aj++)
@@ -2181,12 +2225,15 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 		(fwProps.hess(2))(ai,aj).newSample(rp_a(ai) * p3_xxa(aj),             getWeight());
 	      }
 	}
-
-      // Calculate the basis function densities
-      if (Input->flags.calculate_bf_density == 1)
-	for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
-	  fwProps.chiDensity(i).newSample( walkerData.chiDensity(i), getWeight() );
+    } else {
+      rp_a.deallocate();
+      p3_xxa.deallocate();
     }
+  
+  // Calculate the basis function densities
+  if (Input->flags.calculate_bf_density == 1)
+    for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
+      fwProps.chiDensity(i).newSample( walkerData.chiDensity(i), getWeight() );
 }
 
 void QMCWalker::resetFutureWalking(int whichBlock, int whichIsDone)

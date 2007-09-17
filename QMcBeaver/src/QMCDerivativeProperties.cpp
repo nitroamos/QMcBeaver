@@ -85,6 +85,32 @@ double QMCDerivativeProperties::getVirialRatioStandardDeviation(int whichFW)
   return sqrt( getVirialRatioVariance(whichFW) );
 }
 
+Array1D<double> QMCDerivativeProperties::getCorrelatedSamples(int whichKind)
+{
+  Array1D<double> samples;
+  int dim = fwProperties->cs_Energies.dim1();
+  if(dim <= 0) return samples;
+  samples.allocate(dim);
+  samples = 0.0;
+
+  for(int cs=0; cs<dim; cs++)
+    {
+      switch(whichKind)
+	{
+	case 0:
+	  samples(cs) = fwProperties->cs_Energies(cs).getAverage();
+	  break;
+	case 1:
+	  samples(cs) = fwProperties->cs_Energies(cs).getSeriallyCorrelatedVariance();
+	  break;
+	default:
+	  clog << "Error: unknown correlated sample type = " << whichKind << endl;
+	  break;
+	}
+    }
+  return samples;
+}
+
 double QMCDerivativeProperties::getParameterValue()
 {
   if(globalInput.flags.optimize_Psi_criteria == "generalized_eigenvector" ||
@@ -218,6 +244,7 @@ Array2D<double> QMCDerivativeProperties::getParameterHamiltonian()
 
   hamiltonian(0,0) = e;
 
+  //this is formula 54 from JCP 126, 084012 (2007)
   for(int ai=0; ai<numAI; ai++)
     {
       // < \frac{ \Psi_i }{ \Psi } E_L >
@@ -229,27 +256,27 @@ Array2D<double> QMCDerivativeProperties::getParameterHamiltonian()
       
       hamiltonian(ai+1,0) = pi_e - pi*e;
       hamiltonian(0,ai+1) = pi_e - pi*e + ei;
-
+      
       for(int aj=0; aj<numAI; aj++)
 	{
 	  // < \frac{ \Psi_i }{ \Psi } \frac{ \Psi_j }{ \Psi } E_L >
 	  double ppe  = (fwProperties->hess(0))(ai,aj).getAverage();
-
+	  
 	  // < \frac{ \Psi_i }{ \Psi } E_{L,j} >
 	  double pi_ej = (fwProperties->hess(2))(ai,aj).getAverage();
-
+	  
 	  // < \frac{ \Psi_j }{ \Psi } E_L >
 	  double pj_e = fwProperties->der(aj,1).getAverage();
-
+	  
 	  // < \frac{ \Psi_j }{ \Psi } >
 	  double pj  = fwProperties->der(aj,0).getAverage();
-
+	  
 	  // < E_{L,j} > (= 0 in limit) 
 	  double ej  = fwProperties->der(aj,3).getAverage();
 	  
 	  double val = ppe - pi*pj_e - pj*pi_e + pi*pj*e;
 	  val += pi_ej - pi*ej;
-
+	  
 	  hamiltonian(ai+1,aj+1) = val;
 	}
     }
@@ -277,21 +304,23 @@ Array2D<double> QMCDerivativeProperties::getParameterOverlap()
 
   overlap(0,0) = 1.0;
 
+  //this is formula 53 from JCP 126, 084012 (2007) 
   for(int ai=0; ai<numAI; ai++)
     {
+      
       overlap(0,ai+1) = 0.0;
       overlap(ai+1,0) = 0.0;
-
+      
       for(int aj=0; aj<=ai; aj++)
 	{
 	  // < \frac{ \Psi_i }{ \Psi } \frac{ \Psi_j }{ \Psi } >
 	  double pi_pj = (fwProperties->hess(1))(ai,aj).getAverage();
-
+	  
 	  // < \frac{ \Psi_i }{ \Psi } >
 	  double pi  = fwProperties->der(ai,0).getAverage();
 	  // < \frac{ \Psi_j }{ \Psi } >
 	  double pj  = fwProperties->der(aj,0).getAverage();
-
+	  
 	  double val = pi_pj - pi*pj;
 	  overlap(ai+1,aj+1) = val;
 	  overlap(aj+1,ai+1) = val;

@@ -64,6 +64,11 @@ class QMCWalkerData {
   Array2D<double> Uij_x;
   Array2D<double> Uij_xx;
 
+  //correlated sampling energies
+  Array1D<double> cs_LocalEnergy;
+  //correlated sampling weights
+  Array1D<double> cs_Weights;
+
   double localEnergy, kineticEnergy, potentialEnergy;
   double neEnergy, eeEnergy;
 
@@ -88,6 +93,7 @@ class QMCWalkerData {
   Array1D<double> p3_xxa;
   
   QMCGreensRatioComponent psi;
+  QMCGreensRatioComponent SCF_Psi;
   bool isSingular;
   
   double modificationRatio;
