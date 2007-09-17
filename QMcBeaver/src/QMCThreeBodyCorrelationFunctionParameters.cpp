@@ -181,7 +181,7 @@ bool QMCThreeBodyCorrelationFunctionParameters::read(istream & strm)
 
   NumberOfFreeParameters = TotalNumberOfParameters+1; 
 
-  if (globalInput.flags.optimize_NEE_cutoffs == 0)
+  if (globalInput.flags.optimize_L == 0)
     {
       NumberOfFreeParameters -= 1;
     }
@@ -481,7 +481,7 @@ void QMCThreeBodyCorrelationFunctionParameters::totalDerivativesToFree(int shift
 
   // If the cutoff distance is being optimized it is the 0th element of the
   // free parameter array
-  if (globalInput.flags.optimize_NEE_cutoffs == 1)
+  if (globalInput.flags.optimize_L == 1)
     {
       p_a(0) = pt_a.get(0);
       counter++;
@@ -542,7 +542,7 @@ void QMCThreeBodyCorrelationFunctionParameters::totalToFree(const Array1D<double
 
   // If the cutoff distance is being optimized it is the 0th element of the
   // free parameter array
-  if (globalInput.flags.optimize_NEE_cutoffs == 1)
+  if (globalInput.flags.optimize_L == 1)
     {
       free(0) = cutoff;
       counter++;
@@ -581,7 +581,7 @@ void QMCThreeBodyCorrelationFunctionParameters::freeToTotal(const Array1D<double
 
   // If the cutoff distance is being optimized it is the 0th element of the
   // free parameter array
-  if (globalInput.flags.optimize_NEE_cutoffs == 1)
+  if (globalInput.flags.optimize_L == 1)
     {
       cutoff = free.get(0);
       counter++;

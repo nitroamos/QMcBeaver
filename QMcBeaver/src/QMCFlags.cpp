@@ -137,6 +137,7 @@ void QMCFlags::read_flags(string InFileName)
   optimize_EE_Jastrows           = 1;
   optimize_EN_Jastrows           = 1;
   optimize_NEE_Jastrows          = 1;
+  optimize_L                     = 0;
   optimize_CI                    = 0;
   optimize_Orbitals              = 0;
   link_Jastrow_parameters        = 0;
@@ -144,7 +145,6 @@ void QMCFlags::read_flags(string InFileName)
   link_Determinant_parameters    = 1;
 
   use_three_body_jastrow         = 0;
-  optimize_NEE_cutoffs           = 0;
   reproduce_NE_with_NEE_jastrow  = 0;
   reproduce_EE_with_NEE_jastrow  = 0;
 
@@ -510,10 +510,10 @@ void QMCFlags::read_flags(string InFileName)
 	  input_file >> temp_string;
 	  reproduce_EE_with_NEE_jastrow = atoi(temp_string.c_str());
 	}
-      else if(temp_string == "optimize_NEE_cutoffs")
+      else if(temp_string == "optimize_L")
 	{
 	  input_file >> temp_string;
-	  optimize_NEE_cutoffs = atoi(temp_string.c_str());
+	  optimize_L = atoi(temp_string.c_str());
 	}
       else if(temp_string == "optimize_CI")
         {
@@ -1067,7 +1067,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "optimize_EE_Jastrows\n " << flags.optimize_EE_Jastrows << endl;
   strm << "optimize_EN_Jastrows\n " << flags.optimize_EN_Jastrows << endl;
   strm << "optimize_NEE_Jastrows\n " << flags.optimize_NEE_Jastrows << endl;
-  strm << "optimize_NEE_cutoffs\n " << flags.optimize_NEE_cutoffs << endl;
+  strm << "optimize_L\n " << flags.optimize_L << endl;
   strm << "optimize_CI\n " << flags.optimize_CI << endl;
   strm << "optimize_Orbitals\n " << flags.optimize_Orbitals << endl;
   strm << "optimize_Psi_method\n " << flags.optimize_Psi_method << endl;
@@ -1273,12 +1273,6 @@ bool QMCFlags::checkFlags()
 	      clog << "Warning: you probably want \"None\" as your line_search_step_length!" << endl;
 	      needPrintedConfigs = true;
 	    }	  
-
-	  if(a_diag <= 0.0 || a_diag > 1)
-	    {
-	      clog << "Error: bad value for a_diag = " << a_diag << endl;
-	      return false;
-	    }
 
 	  if(ksi < 0.0 || ksi > 1)
 	    {

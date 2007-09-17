@@ -38,8 +38,12 @@ void Cambridge2CorrelationFunction::initializeParameters(
   }
   
   L = Parameters(0);
-  optimizeL = false;
+  optimizeL = globalInput.flags.optimize_L;
 
+  /*
+    Give the user the option of overriding optimize_L for
+    individual Jastrows.
+  */
   if(Constants.dim1() >= 3)
     optimizeL = (int)(Constants(2)) == 1 ? true : false;
   if(Constants.dim1() >= 4)
