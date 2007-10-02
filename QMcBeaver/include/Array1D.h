@@ -14,6 +14,7 @@
 #define Array1D_H
 
 #include <iostream>
+#include <iomanip>
 #include <math.h>
 #include "cppblas.h"
 #include <assert.h>
@@ -428,6 +429,31 @@ template <class T> class Array1D
       pArray = 0; n_1 = 0; allocate(i);
     }
 
+  /**
+     Create a random array.
+     It uses the UNIX rand function, which will
+     produce a uniform random number, [0,1)
+     
+     @param shift will be added to the random value
+     @param range after adding shift, we'll multiply by range
+     @param iseed will be used to initialize srand, if iseed > 0
+  */
+  Array1D(int i, double shift, double range, long & iseed)
+    {
+      pArray = 0;
+      n_1 = 0;
+      allocate(i);
+      
+      if(iseed > 0) srand(iseed);
+      for(int idx=0; idx<n_1; idx++)
+        {
+          // between 0 and 1.0
+          double val = (double)(rand())/RAND_MAX;
+          val = range * (val + shift);
+          pArray[idx] = (T)val;
+        }
+    }
+  
     /**
     Creates an array and sets it equal to another array.
     @param rhs array to set this array equal to.
@@ -495,12 +521,34 @@ template <class T> class Array1D
 
     friend ostream& operator<<(ostream & strm, const Array1D<T> & rhs)
     {
-      for ( int i=0; i<rhs.n_1; i++ )
-        {
-          strm << rhs.pArray[i] << "\t";
-        }
-      strm << endl;
+      rhs.printArray1D(strm, 15, 5, 8, ',', false);
       return strm;
+    }
+
+  /**
+     This makes it easier to print out the Array1D
+     for input into Mathematica. In Mathematica, you will
+     still have to replace all the scientific notational "e" with "*^".
+  */
+  void printArray1D(ostream & strm, int numSigFig, int columnSpace, int maxI, char sep, bool sci) const
+    {
+      strm.precision(4);
+      if(maxI < 0) maxI = n_1;
+      strm << "{";
+      for(int i=0; i<n_1;i++)
+        {
+	  if(i % maxI == 0 && i != 0)
+	    strm << endl << " ";
+
+	  if(sci) strm.setf(ios::scientific);
+	  else strm.unsetf(ios::scientific);
+
+	  strm << setprecision(numSigFig)
+	       << setw(numSigFig+columnSpace)
+	       << pArray[i];
+	  if(i<n_1-1) strm << sep;
+        }
+      strm << " }";
     }
 
     /**
