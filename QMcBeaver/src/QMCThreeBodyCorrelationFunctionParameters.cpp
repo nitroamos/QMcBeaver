@@ -22,6 +22,7 @@ void QMCThreeBodyCorrelationFunctionParameters::operator = (const
 
   TotalNumberOfParameters = rhs.TotalNumberOfParameters;
   Parameters = rhs.Parameters;
+  isFree  = rhs.isFree;
 
   C = rhs.C;
   cutoff = rhs.cutoff;
@@ -150,12 +151,66 @@ bool QMCThreeBodyCorrelationFunctionParameters::read(istream & strm)
   TotalNumberOfParameters = NeN*NeN*Nee;
 
   // Load the parameters
-  
+
+  Array1D<double> fileParameters(TotalNumberOfParameters);
   Parameters.allocate(TotalNumberOfParameters);
+  isFree.allocate(TotalNumberOfParameters);
   strm >> temp;
 
-  int pi = Parameters.read(strm,0.0,"3 particle Jastrow");
+  int pi = fileParameters.read(strm,0.0,"3 particle Jastrow");
   
+  /**
+     It is convenient to be able to sort parameters in the input
+     file in such a way that increasing Nee or NeN will preserve optimized
+     parameters. To do this, the input file orders parameters according to
+     ascending powers.
+
+     In the input file, the no coefficient for a term with a power of 2
+     will appear ahead a term where the highest power is a 1. That is, the
+     order will look like:
+
+     terms with max power 0
+     terms with max power 1
+     terms with max power 2
+     ...
+     terms with max power max(NeN,Nee)
+
+     This way, if you increase Nee or NeN, the coefficients for all the new terms
+     will appear at the end of the list.
+
+     If you degrease Nee or NeN, then the terms will be messed up.
+
+     In summary, in order to keep the same coefficient for an independent (l,m,n) term
+     when you increase Nee or NeN, you will not have to change the input file.
+     The dependent parameters may change.
+  */
+  int counter = 0;
+  for(int p=0; p<max(NeN,Nee); p++)
+    for (int n=0; n<Nee; n++)
+      for (int l=0; l<NeN; l++)
+	for (int m=0; m<=l; m++)
+	  if( (l == p || m == p || n == p) &&
+	      (l <= p && m <= p && n <= p))
+	    {
+	      int index = map(l,m,n);
+	      Parameters(index) = fileParameters(counter);
+	      counter++;
+
+	      //If there are symmetric elements, make sure they show up right next to each other.
+	      if(l != m)
+		{
+		  index = map(m,l,n);
+		  Parameters(index) = fileParameters(counter);
+		  counter++;
+		}
+	    }
+  fileParameters.deallocate();
+  if(counter != TotalNumberOfParameters)
+    {
+      clog << "Error: TotalNumberOfParameters = " << TotalNumberOfParameters;
+      clog << " but counter = " << counter << endl;
+    }
+
   // Load the value for C, the exponent of the prefactor.
   strm >> temp >> temp;
   C = atoi(temp.c_str());
@@ -169,59 +224,14 @@ bool QMCThreeBodyCorrelationFunctionParameters::read(istream & strm)
   // generated will satisfy symmetry and the cusp conditions
   makeParamDepMatrix();
 
-  //cout << "param dep matrix:" << endl;  
-  //paramDepMatrix.printArray2D(cout,0,0,-1,' ',false);
-  //paramDepMatrix.printArray2D(cout,2,2,-1,' ',false);
-
-  // Now we calculate how many of the parameters are free to be optimized.  
-  // Some of the parameters are constrained by symmetry or cusp conditions.
-
-  // If everything was free to be optmized, we would have all of the parameters
-  // and the cutoff distance
-
-  NumberOfFreeParameters = TotalNumberOfParameters+1; 
-
-  if (globalInput.flags.optimize_L == 0)
-    {
-      NumberOfFreeParameters -= 1;
-    }
-  else
-    {
-      /*
-	until i can figure out a way to reliably optimize 2 particle cutoffs, i don't
-	see the point here.
-      */
-      cerr << "Error: sorry... I didn't program NEE cutoff derivatives! :-)" << endl;
-      exit(0);
-    }
-
-  // We subtract the number of elements with m>l
-  NumberOfFreeParameters -= Nee*NeN*(NeN-1)/2; 
-
-  // For every k from 0 to 2*NeN-2, there is one dependent parameter due to the
-  // electron-electron no-cusp condition
-  NumberOfFreeParameters -= 2*NeN-1;
-
-  // For every k from 0 to NeN+Nee-2, there is one dependent parameter due to
-  // the electron-nucleus no-cusp condition
-  NumberOfFreeParameters -= NeN+Nee-1;
-
-  // If we don't allow terms that are proportional to the two particle
-  // functions, the number of free parameters is reduced
-  if (globalInput.flags.reproduce_NE_with_NEE_jastrow == 0)
-    {
-      NumberOfFreeParameters -= NeN-1;
-      for (int l=1; l<NeN; l++)
-	Parameters(l*NeN*Nee) = 0.0;
-    }
-
-  if (globalInput.flags.reproduce_EE_with_NEE_jastrow == 0)
-    {
-      NumberOfFreeParameters -= Nee-2;
-      for (int n=2; n<Nee; n++)
-	Parameters(n) = 0.0;
-    }
-
+  //Count the number of free parameters
+  NumberOfFreeParameters = 0;
+  for(int p=0; p<isFree.dim1(); p++)
+    if(isFree(p)) NumberOfFreeParameters++;
+  
+  //and add one for the cutoff parameter
+  NumberOfFreeParameters++;
+  
   // if the correlation function type is "None"
   // then remove any parameters or constants
   // that were listed
@@ -232,6 +242,7 @@ bool QMCThreeBodyCorrelationFunctionParameters::read(istream & strm)
       TotalNumberOfParameters = 0;
       NumberOfParameters.deallocate();
       Parameters.deallocate();
+      isFree.deallocate();
       C = 0;
       cutoff = 0.0;
       NumberOfFreeParameters = 0;
@@ -408,6 +419,7 @@ QMCThreeBodyCorrelationFunctionParameters::~QMCThreeBodyCorrelationFunctionParam
 {
   NumberOfParameters.deallocate();
   Parameters.deallocate();
+  isFree.deallocate();
   freeParameters.deallocate();
   ParticleTypes.deallocate();
   
@@ -424,9 +436,9 @@ void QMCThreeBodyCorrelationFunctionParameters::
   ThreeBodyCorrelationFunction->initializeParameters(NeN,Nee,Parameters,C,
 						     cutoff);
 
-  pt_a.allocate(TotalNumberOfParameters);
-  pt2_xa.allocate(TotalNumberOfParameters);
-  pt3_xxa.allocate(TotalNumberOfParameters);
+  pt_a.allocate(TotalNumberOfParameters+1);
+  pt2_xa.allocate(TotalNumberOfParameters+1);
+  pt3_xxa.allocate(TotalNumberOfParameters+1);
 
   for(int i=0; i<pt2_xa.dim1(); i++)
     pt2_xa(i).allocate(globalInput.WF.getNumberElectrons(),3); 
@@ -435,6 +447,9 @@ void QMCThreeBodyCorrelationFunctionParameters::
 ostream & operator << (ostream & strm, 
 		       QMCThreeBodyCorrelationFunctionParameters & rhs)
 {
+  int Nee = rhs.Nee;
+  int NeN = rhs.NeN;
+
   strm << "ParticleTypes:\t" << rhs.ParticleTypes(0) << "\t" 
        << rhs.ParticleTypes(1) << "\t" << rhs.ParticleTypes(2) << endl;
 
@@ -451,16 +466,50 @@ ostream & operator << (ostream & strm,
 
   strm << "Parameters:" << endl;
 
-  for (int i = 0; i < rhs.TotalNumberOfParameters; i++)
+  int counter = 0;
+  int endlInd = 0;
+  for(int p=0; p<max(NeN,Nee); p++)
     {
-      if(i % (rhs.NeN) == 0 && i != 0)
-	strm << endl;
-      double val = rhs.Parameters(i);
-      if(val < 0.0) strm << " -";
-      else          strm << "  ";
-      strm << setw(20) << left << fabs(val);
+      for (int n=0; n<Nee; n++)
+	for (int l=0; l<NeN; l++)
+	  for (int m=0; m<=l; m++)
+	    if( (l == p || m == p || n == p) &&
+		(l <= p && m <= p && n <= p))
+	      {
+		int index = rhs.map(l,m,n);
+		if(endlInd % (NeN) == 0 && endlInd != 0)
+		  {
+		    strm << endl;
+		    endlInd = 0;
+		  }
+		double val = rhs.Parameters(index);
+		if(val < 0.0) strm << " -";
+		else          strm << "  ";
+		strm << setw(20) << left << fabs(val);	      
+		
+		counter++;
+		endlInd++;
+
+		if(l != m)
+		  {
+		    index = rhs.map(l,m,n);
+		    if(endlInd % (NeN) == 0 && endlInd != 0)
+		      {
+			strm << endl;
+			endlInd = 0;
+		      }
+		    val = rhs.Parameters(index);
+		    if(val < 0.0) strm << " -";
+		    else          strm << "  ";
+		    strm << setw(20) << left << fabs(val);	      
+		    
+		    counter++;
+		    endlInd++;
+		  }
+	      }
+      strm << endl << endl;
+      endlInd = 0;
     }
-  strm << endl;
 
   strm << "C:  " << rhs.C << endl;
   
@@ -477,15 +526,12 @@ void QMCThreeBodyCorrelationFunctionParameters::totalDerivativesToFree(int shift
 								       Array1D< Array2D<double> > & p2_xa,
 								       Array1D<double> & p3_xxa) const
 {
-  int counter = 0;
-
-  // If the cutoff distance is being optimized it is the 0th element of the
-  // free parameter array
-  if (globalInput.flags.optimize_L == 1)
-    {
-      p_a(0) = pt_a.get(0);
-      counter++;
-    }
+  p_a(shift) += pt_a.get(0);
+  for(int e=0; e<globalInput.WF.getNumberElectrons(); e++)
+    for(int xyz=0; xyz<3; xyz++)
+      (p2_xa(shift))(e,xyz) += (pt2_xa.get(0))(e,xyz);  
+  p3_xxa(shift) += pt3_xxa.get(0);
+  int counter = 1;
 
   /*
     The derivatives were calculated wrt the total parameters.
@@ -493,27 +539,21 @@ void QMCThreeBodyCorrelationFunctionParameters::totalDerivativesToFree(int shift
     we need to translate them.
   */
   for (int l=0; l<NeN; l++)
-    for (int m=0; m<=l; m++)
+    for (int m=0; m<NeN; m++)
       for (int n=0; n<Nee; n++)
-	if(isFree(l,m,n))
+	if(isFree.get(map(l,m,n)))
 	  {
-	    int index = l*NeN*Nee+m*Nee+n;
 	    for (int i=0; i<TotalNumberOfParameters; i++)
 	      {
-		/*
-		  pd is the coefficient in the linear combination
-		  of the dependence of this free parameter on
-		  this total parameter.
-		*/
-		double pd = paramDepMatrix.get(i,index);
+		double pd = paramDepMatrix.get(i,map(l,m,n));
 		if( fabs(pd) < 1.0e-50) continue;
-
-		p_a(shift+counter)    += pd * pt_a.get(i);
-		p3_xxa(shift+counter) += pd * pt3_xxa.get(i);
-
+		
+		p_a(shift+counter)    += pd * pt_a.get(i+1);
+		p3_xxa(shift+counter) += pd * pt3_xxa.get(i+1);
+		
 		for(int e=0; e<globalInput.WF.getNumberElectrons(); e++)
 		  for(int xyz=0; xyz<3; xyz++)
-		    (p2_xa(shift+counter))(e,xyz) += pd * (pt2_xa.get(i))(e,xyz);
+		    (p2_xa(shift+counter))(e,xyz) += pd * (pt2_xa.get(i+1))(e,xyz);
 	      }
 	    counter++;
 	  }
@@ -542,20 +582,17 @@ void QMCThreeBodyCorrelationFunctionParameters::totalToFree(const Array1D<double
 
   // If the cutoff distance is being optimized it is the 0th element of the
   // free parameter array
-  if (globalInput.flags.optimize_L == 1)
-    {
-      free(0) = cutoff;
-      counter++;
-    }
+  free(0) = cutoff;
+  counter++;
 
   // Because of the symmetry due to interchange of the electrons, we only 
   // write the parameters that have l>=m.
   for (int l=0; l<NeN; l++)
-    for (int m=0; m<=l; m++)
+    for (int m=0; m<NeN; m++)
       for (int n=0; n<Nee; n++)
-	if(isFree(l,m,n))
+	if(isFree.get(map(l,m,n)))
 	  {
-	    free(counter) = total.get(l*NeN*Nee+m*Nee+n);
+	    free(counter) = total.get(map(l,m,n));
 	    counter++;
 	  }
 
@@ -581,80 +618,85 @@ void QMCThreeBodyCorrelationFunctionParameters::freeToTotal(const Array1D<double
 
   // If the cutoff distance is being optimized it is the 0th element of the
   // free parameter array
-  if (globalInput.flags.optimize_L == 1)
-    {
-      cutoff = free.get(0);
-      counter++;
-    }
+  cutoff = free.get(0);
+  counter++;
 
   // We only consider the elements such that l>=m.  The others will be filled
   // in by symmetry
   for (int l=0; l<NeN; l++)
-    for (int m=0; m<=l; m++)
+    for (int m=0; m<NeN; m++)
       for (int n=0; n<Nee; n++)
-	if(isFree(l,m,n))
+	if(isFree(map(l,m,n)))
 	  {
-	    total(l*NeN*Nee+m*Nee+n) = free.get(counter);
+	    total(map(l,m,n)) = free.get(counter);
 	    counter++;
 	  }
 }
 
-inline bool QMCThreeBodyCorrelationFunctionParameters::isFree(int l, int m, int n) const
-{
-  if (m>l)
-    // These parameters are dependent by symmetry
-    return false;
-
-  if (l>0 && m==0 && n==0)
-    {
-      if (globalInput.flags.reproduce_NE_with_NEE_jastrow == 1)
-	return true;
-      return false;
-    }
-  else if (l==0 && n>1)
-    {
-      if (globalInput.flags.reproduce_EE_with_NEE_jastrow == 1)
-	return true;
-      return false;
-    }
-  // These parameters are dependent due to the EE no-cusp condition
-  else if (m==0 && n==1)
-    {
-      // Do nothing- these parameters are dependent
-      return false;
-    }
-  else if (l==NeN-1 && n==1)
-    {
-      // Do nothing- these parameters are dependent
-      return false;
-    }
-  // These parameters are dependent due to the EN no-cusp condition
-  else if (l==0 && n==0)
-    {
-      // Do nothing- this parameter is dependent
-      return false;
-    }
-  else if (l<NeN && m==1 && n==0)
-    {
-      // Do nothing- these parameters are dependent
-      return false;
-    }
-  else if (l==NeN-2 && m==1 && n==2)
-    {
-      // Do nothing- this parameter is dependent
-      return false;
-    }
-  else if (l==NeN-1 && m==1 && n>1)
-    {
-      // Do nothing- these parameters are dependent
-      return false;
-    }
-
-  return true;
-}
-
 bool QMCThreeBodyCorrelationFunctionParameters::checkCuspAndSymmetry()
 {
+  double tolerance = 1e-10;
+  int numFree = 0;
+  for (int l=0; l<NeN; l++)
+    for (int m=0; m<NeN; m++)
+      for (int n=0; n<Nee; n++)       
+	{
+	  int c = map(l,m,n);
+	  int label = 100*l + 10*m + n;
+	  //the variable is independent if the row is identity
+	  Array2D<double> tranPDM = paramDepMatrix;
+	  tranPDM.transpose();
+	  bool isInd = c == tranPDM.isDependent(c);
+	  if(isInd) numFree++;
+	  if(isInd != isFree(c))
+	    {
+	      cout << "Error for variable " << label << ": isFree = "
+		   << isFree(c) << " while paramDepMatrix says independent." << endl;
+	      cout << "paramDepMatrix is flawed..." << endl;
+	      return false;
+	    }
+	  //the variable is dependent if the column is all zero
+	  double sum = 0;
+	  int dependsOnDependent = -1;
+	  double dependVal = 0;
+	  for(int r=0; r<paramDepMatrix.dim1(); r++)
+	    for (int ll=0; ll<NeN; ll++)
+	      for (int mm=0; mm<NeN; mm++)
+		for (int nn=0; nn<Nee; nn++)       		  
+		  {
+		    int r = map(ll,mm,nn);
+		    int labelr = 100*ll + 10*mm + nn;
+		    if(!isFree(r) && fabs(paramDepMatrix(r,c)) > tolerance)
+		      {
+			dependsOnDependent = labelr;
+			dependVal = paramDepMatrix(r,c);
+		      }
+		    sum += fabs(paramDepMatrix(r,c));
+		  }
+	  
+	  if(!isFree(c) && dependsOnDependent != -1)
+	    {
+	      cout << "Error: dependent parameter " << label
+		   << " depends on dependent parameter " << dependsOnDependent
+		   << " with coefficient " << dependVal << endl;
+	    }
+	  
+	  if(sum < tolerance && isFree(c))
+	    {
+	      cout << "Error for variable " << label << ": isFree = "
+		   << isFree(c) << " while paramDepMatrix says dependent." << endl;
+	      cout << "paramDepMatrix is flawed..." << endl;
+	      return false;
+	    }
+	}
+
+  if(NumberOfFreeParameters - 1 != numFree)
+    {
+      cout << "Error: incorrect number of free parameters. We counted " << numFree;
+      //we're not including cutoff in the counting here
+      cout << " but there should have been " << (NumberOfFreeParameters-1) << endl;
+    }
+
   // This function makes sure that the parameters satisfy the cusp and 
   // symmetry conditions.
 
@@ -668,14 +710,19 @@ bool QMCThreeBodyCorrelationFunctionParameters::checkCuspAndSymmetry()
     for (int m=l+1; m<NeN; m++)
       for (int n=0; n<Nee; n++)
 	{
-	  index1 = l*NeN*Nee+m*Nee+n;
-	  index2 = m*NeN*Nee+l*Nee+n;
+	  index1 = map(l,m,n);
+	  index2 = map(m,l,n);
+	  double diff = Parameters(index1)-Parameters(index2);
 
-	  if ( fabs(Parameters(index1)-Parameters(index2)) > 1e-10 )
+	  //make it a relative measurement
+	  if(fabs(Parameters(index1)) > tolerance) diff /= Parameters(index1);
+
+	  if ( fabs(diff) > tolerance )
 	    {
 	      clog << "ERROR in QMCThreeBodyCorrelationFunctionParameters::"
-		   << "checkCuspAndSymmetry(): symmetry is not satisfied"
-		   << endl;
+		   << "checkCuspAndSymmetry(): symmetry is not satisfied, difference = " << diff << endl;
+	      clog << "   Parameters(map(" << l << "," << m << "," << n << ")) = " << setw(20) << Parameters(index1) << endl;
+	      clog << "   Parameters(map(" << m << "," << l << "," << n << ")) = " << setw(20) << Parameters(index2) << endl;
 	      return false;
 	    }
 	}
@@ -690,14 +737,15 @@ bool QMCThreeBodyCorrelationFunctionParameters::checkCuspAndSymmetry()
 	for (int m=0; m<NeN; m++)
 	  if (l+m == k)
 	    {
-	      index1 = l*NeN*Nee+m*Nee+1;
+	      index1 = map(l,m,1);
 	      sum += Parameters(index1);
 	    }
-      if (fabs(sum) > 1e-10)
+      if (fabs(sum) > tolerance)
 	{
 	  clog << "ERROR in QMCThreeBodyCorrelationFunctionParameters::"
-	       << "checkCuspAndSymmetry(): electron-electron cusp condition "
-	       << "is not satisfied" << endl;
+	       << "checkCuspAndSymmetry():" << endl
+	       << "(l+m=" << k << ") electron-electron cusp condition "
+	       << "is not satisfied, sum = " << sum << endl;
 	  return false;
 	}
     }
@@ -710,23 +758,331 @@ bool QMCThreeBodyCorrelationFunctionParameters::checkCuspAndSymmetry()
 	for (int n=0; n<Nee; n++)
 	  if (m+n == k)
 	    {
-	      index1 = m*Nee+n;
-	      index2 = NeN*Nee+m*Nee+n;
-	      sum += C*Parameters(index1) - cutoff*Parameters(index2);
+	      index1 = map(0,m,n);
+	      index2 = map(1,m,n);
+	      sum += C*Parameters(index1) - Parameters(index2);
 	    }
-      if (fabs(sum) > 1e-10)
+      if (fabs(sum) > tolerance)
 	{
 	  clog << "ERROR in QMCThreeBodyCorrelationFunctionParameters::"
-	       << "checkCuspAndSymmetry(): electron-nucleus cusp condition "
-	       << "is not satisfied" << endl;
+	       << "checkCuspAndSymmetry():" << endl
+	       << "(m+n=" << k << ") electron-nucleus cusp condition "
+	       << "is not satisfied, sum = " << sum << endl;
 	  return false;
 	}
     }
   return true;
 }
 
+void QMCThreeBodyCorrelationFunctionParameters::gaussianParamDepMatrix()
+{
+  /*
+    There is a difference between the definition of Nee and NeN as used
+    in this code, and as used in the PRB 2004 paper. In order to make the
+    connection clear, I'm going to use the definitions from the paper.
+
+    That is, NeN is the number of terms, nn is the highest power used.
+  */
+  int nn = NeN-1;
+  int ne = Nee-1;
+
+  double tolerance = 1e-50;
+  int numConstraints = 0;
+  int numVariables = Nee * NeN * Nee;
+  numConstraints += Nee*NeN*(NeN-1)/2; 
+  numConstraints += 2*nn + 1;
+  numConstraints += nn + ne + 1;
+
+  if (globalInput.flags.reproduce_NE_with_NEE_jastrow == 0)
+    numConstraints += nn;
+
+  if (globalInput.flags.reproduce_EE_with_NEE_jastrow == 0)
+    numConstraints += ne;
+
+  Array2D<double> constraints(numConstraints,numVariables);
+  Array1D<int> labels(numVariables);
+  Array1D<int> numbers(numVariables);
+
+  constraints = 0.0;
+  for (int l=0; l<NeN; l++)
+    for (int m=0; m<NeN; m++)
+      for (int n=0; n<Nee; n++)
+	{
+	  int index = map(l,m,n);
+	  labels(index) = 100*l + 10*m + n;
+	  numbers(index) = index;
+
+	  if(n == 1)
+	    {
+	      //this is equation 24
+	      int k = l + m;
+	      constraints(k,index) = 1.0;
+	    }
+	  int k0 = 2*nn+1;
+	  if(l == 0)
+	    {
+	      //this is equation 27, for ri cusp
+	      int k = m + n + k0;
+	      constraints(k,index) = C;
+	    }
+	  if(l == 1)
+	    {
+	      //this is equation 27, for ri cusp
+	      int k = m + n + k0;
+	      constraints(k,index) = -1.0;
+	    }
+	  k0 += nn+ne+1;
+	  int num = NeN * (NeN - 1) / 2;
+	  if(l > m)
+	    {
+	      //impose symmetry between l and m
+	      int k = l*(l-1)/2 + m + n*num + k0;
+	      constraints(k,index) = -1.0;
+	    }
+	  if(l < m)
+	    {
+	      //impose symmetry between l and m
+	      int k = m*(m-1)/2 + l + n*num + k0;
+	      constraints(k,index) = 1.0;
+	    }
+	  k0 += Nee * num;
+	  if(globalInput.flags.reproduce_EE_with_NEE_jastrow == 0)
+	    {
+	      int k = n - 1 + k0;
+	      if(l == 0 && m == 0 && n > 0)
+		{
+		  constraints(k,index) = 1.0;
+		}
+	      k0 += ne;
+	    }
+	  if(globalInput.flags.reproduce_NE_with_NEE_jastrow == 0)
+	    {
+	      int k = l - 1 + k0;
+	      if(l > 0 && m == 0 && n == 0)
+		{
+		  constraints(k,index) = 1.0;
+		}
+	      k0 += nn;
+	    }
+	}
+
+  /*
+    These are all the variables that we know will be zero, so solve for them
+    right away. There is some overlap already.
+  */
+  if (globalInput.flags.reproduce_NE_with_NEE_jastrow == 0)
+    for(int l=1; l<NeN; l++)
+      constraints.rref(map(l,0,0));
+
+  if (globalInput.flags.reproduce_EE_with_NEE_jastrow == 0)
+    for(int n=1; n<Nee; n++)
+      constraints.rref(map(0,0,n));
+
+  constraints.rref(map(0,0,1));
+  constraints.rref(map(1,0,1));
+  constraints.rref(map(nn,nn,1));
+  constraints.rref(map(nn,nn-1,1));
+
+  /*
+    Now solve for all the parameters that we know are
+    symmetric.
+  */
+  for (int n=0; n<Nee; n++)
+    for (int l=0; l<NeN; l++)
+      for (int m=0; m<NeN; m++)
+	{
+	  int index = map(l,m,n);
+	  if(l < m) constraints.rref(index);
+	}
+
+  /*
+    At this point, there are 3 nn + ne - 2 more
+    parameters to make dependent.
+
+    We can never choose terms lln (l > 1, n != 1) to be dependent.
+  */
+  if(NeN == 3 && Nee == 3)
+    {
+      //my goal here is to eliminate as many terms with zeros as i can
+      constraints.rref(map(1,0,0));
+      constraints.rref(map(2,0,0));
+      constraints.rref(map(2,0,2));
+      constraints.rref(map(2,0,1));
+      constraints.rref(map(1,1,0));
+      constraints.rref(map(1,0,2));
+      constraints.rref(map(0,1,2));
+    } else if(NeN == 4 && Nee == 4)
+      {
+	//these three are connected to 0,0,0
+	//so if we solve for these, 0,0,0 is guaranteed
+	//to be independent
+	constraints.rref(map(1,1,0));
+	constraints.rref(map(1,0,0));
+	constraints.rref(map(0,1,0));
+
+	constraints.rref(map(2,0,0));
+	constraints.rref(map(3,0,0));	
+	constraints.rref(map(1,1,0));
+	constraints.rref(map(3,0,1));
+	constraints.rref(map(2,0,1));
+	constraints.rref(map(3,0,2));
+	constraints.rref(map(3,0,3));
+	constraints.rref(map(2,0,2));
+      }
+
+  //this helps identify constraints that are available for solving for variables
+  for(int con=0; con<constraints.dim1(); con++)
+    {
+      if(constraints.constraintUsed(con) == -1)
+	printf("constraint %3i is available\n",con);
+    }
+
+  //negative zero is annoying in printouts
+  for(int i=0; i<constraints.dim1(); i++)
+    for(int j=0; j<constraints.dim2(); j++)
+      if(fabs(constraints(i,j)) < 1e-100) constraints(i,j) = 0.0;
+
+  int cs = 3;
+  if(false)
+    {
+      for(int i=0; i<constraints.dim2(); i++)
+	if(constraints.isDependent(i) == -1)
+	  printf("var L %3i N %3i is independent, has value = %20.10g\n",labels(i),i,Parameters(i));
+
+      cout << " ";
+      numbers.printArray1D(cout,2,cs,-1,' ',false);
+      cout << endl << " ";
+      labels.printArray1D(cout,2,cs,-1,' ',false);
+      cout << endl;
+      constraints.printArray2D(cout,2,cs,-1,' ',false);
+      cout << endl;
+    }
+
+  /*
+    Now convert these constraints into our parameter dependency
+    matrix. This matrix is defined by:
+    Look across the row, you'll see what this parameter depends on
+    or
+    Look down the column to see who uses this parameter
+    
+    If the parameter is independent, it will have a 1 on the diagonal, and
+    0 for the rest of the row.
+    If the parameter is dependent, it will have a 0 on the entire column.
+
+    Notice: for terms which have a symmetric counter part, we expect the 
+    l < m term to be dependent. Loops were programmed to scan only l > m for
+    independent parameters.
+  */
+  paramDepMatrix.allocate(TotalNumberOfParameters,TotalNumberOfParameters);
+  paramDepMatrix.setToIdentity();
+
+  for(int j=0; j<constraints.dim2(); j++)
+    {
+      //If it is a dependent variable, then it will tell us the row
+      //with the dependencies
+      int theOne = constraints.isDependent(j);
+      isFree(j) = theOne == -1 ? true : false;
+
+      if(!isFree(j))
+	{
+	  /*
+	    The dependency multiplied by -1 because the all the variables
+	    are on one side of the equation,
+	    depdendent variable + independent variables = 0
+	    so by negating it, we are solving
+	    dependent variable = - indepdendent variables
+	  */
+	  for(int d=0; d<constraints.dim2(); d++)
+	    if(fabs(constraints(theOne,d)) > tolerance)
+	      paramDepMatrix(j,d) = -1.0 * constraints(theOne,d);
+	  paramDepMatrix(j,j) = 0.0;
+	}
+    }
+
+  if(constraints.numDependent() != constraints.dim1())
+    {
+      cout << "Error: you didn't use up all the constraints! There are too few dependent variables." << endl;
+      cout << " number   dependent = " << constraints.numDependent() << endl;
+      cout << " number constraints = " << constraints.dim1() << endl;
+    }
+
+  if(false)
+    {
+      cs = 3;
+      cout << " ";
+      numbers.printArray1D(cout,2,cs,-1,' ',false);
+      cout << endl << " ";
+      isFree.printArray1D(cout,2,cs,-1,' ',false);
+      cout << endl << " ";
+      labels.printArray1D(cout,2,cs,-1,' ',false);
+      cout << endl;
+      paramDepMatrix.printArray2D(cout,2,cs,-1,' ',false);
+      cout << endl;
+    }
+}
+
 void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
 {
+  gaussianParamDepMatrix();
+  return;
+
+  for (int l=0; l<NeN; l++)
+    for (int m=0; m<NeN; m++)
+      for (int n=0; n<Nee; n++)
+	{
+	  bool free = true;
+
+	  if (m>l)
+	    {
+	      // These parameters are dependent by symmetry
+	      free = false;
+	    }
+	  else if (l>0 && m==0 && n==0)
+	    {
+	      if (globalInput.flags.reproduce_NE_with_NEE_jastrow != 1)
+		free = false;
+	    }
+	  else if (l==0 && n>1)
+	    {
+	      if (globalInput.flags.reproduce_EE_with_NEE_jastrow != 1)
+		free = false;
+	    }
+	  // These parameters are dependent due to the EE no-cusp condition
+	  else if (m==0 && n==1)
+	    {
+	      // Do nothing- these parameters are dependent
+	      free = false;
+	    }
+	  else if (l==NeN-1 && n==1)
+	    {
+	      // Do nothing- these parameters are dependent
+	      free = false;
+	    }
+	  // These parameters are dependent due to the EN no-cusp condition
+	  else if (l==0 && n==0)
+	    {
+	      // Do nothing- this parameter is dependent
+	      free = false;
+	    }
+	  else if (l<NeN && m==1 && n==0)
+	    {
+	      // Do nothing- these parameters are dependent
+	      free = false;
+	    }
+	  else if (l==NeN-2 && m==1 && n==2)
+	    {
+	      // Do nothing- this parameter is dependent
+	      free = false;
+	    }
+	  else if (l==NeN-1 && m==1 && n>1)
+	    {
+	      // Do nothing- these parameters are dependent
+	      free = false;
+	    }
+
+	  isFree(map(l,m,n)) = free;
+	}
+
   // This function will make the matrix of parameter dependencies.  The size of
   // the matrix will be TotalNumberOfParameters x TotalNumberOfParameters
   // The matrix depends on NeN, Nee, and the cusp conditions.  It is made when
@@ -820,14 +1176,20 @@ void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
 	    }
     }
 
+  //if the cutoff term looks like (r L - 1.0)
+  double shift = 1.0;
+
+  //if the cutoff term looks like (r - L)
+  //double shift = cutoff;
+
   // Now we do the electron-nucleus cusp
   // The parameter 000 depends on 100 due to the e-n cusp (k=0)
   paramDepMatrix(0,0) = 0.0;
-  paramDepMatrix(0,NeN*Nee) = cutoff/C;
+  paramDepMatrix(0,NeN*Nee) = shift/C;
 
   // The parameter 110 depends on 100 due to the e-n cusp (k=1)
   paramDepMatrix(NeN*Nee+Nee,NeN*Nee+Nee) = 0.0;
-  paramDepMatrix(NeN*Nee+Nee,NeN*Nee) = C/cutoff;
+  paramDepMatrix(NeN*Nee+Nee,NeN*Nee) = C/shift;
 
   for (int k=2; k<NeN+Nee-1; k++)
     {
@@ -858,7 +1220,7 @@ void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
 	{
 	  index1 = k;
 	  index2 = NeN*Nee+k;
-	  paramDepMatrix(index_dep,index1) = C/cutoff;
+	  paramDepMatrix(index_dep,index1) = C/shift;
 	  if (index_dep != index2)
 	    paramDepMatrix(index_dep,index2) = -1.0;
 	}
@@ -869,7 +1231,7 @@ void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
 	    {
 	      index1 = l*NeN*Nee + n;
 	      index2 = l*NeN*Nee + Nee + n;
-	      paramDepMatrix(index_dep,index1) = C/cutoff;
+	      paramDepMatrix(index_dep,index1) = C/shift;
 	      if (index_dep != index2)
 		paramDepMatrix(index_dep,index2) = -1.0;
 	    }
@@ -914,7 +1276,7 @@ void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
             {
               index1 = l*NeN*Nee + m*Nee + n;
               
-              if (isFree(l,m,n) == true)
+              if(isFree(map(l,m,n)))
                 {
                   // If this parameter is free, its diagonal element in the 
                   // matrix should be 1.0 and it should have nothing else in
@@ -941,7 +1303,7 @@ void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
                         exit(0);
                       }
                 }
-              else if (isFree(l,m,n) == false)
+              else if (isFree(map(l,m,n)) == false)
                 {
                   // If this parameter is dependent, its entire column should
                   // be zeros.  Any nonzero elements in its row should
@@ -971,7 +1333,7 @@ void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
                       for (int c=0; c<Nee; c++)
                         {
                           index2 = a*NeN*Nee + b*Nee + c;
-                          if (isFree(a,b,c) == false && 
+                          if (isFree(map(a,b,c)) == false && 
                               fabs(paramDepMatrix(index1,index2)) > 1e-10)
                             {
                               goodDefs = false;

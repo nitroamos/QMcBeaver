@@ -67,22 +67,13 @@ void QMCJastrowParameters::operator=( const QMCJastrowParameters & rhs )
 
 void QMCJastrowParameters::print(ostream & strm)
 {
+  //return;
   if(EupEdn.getCorrelationFunction() != 0)
     {
       strm << "EupEdn:" << endl;
       EupEdn.getCorrelationFunction()->print(strm);
       strm << endl;
     }
-  for(int i=0; i<EupEdnNuclear.dim1(); i++) 
-    {
-      strm << "EupEdnNuclear(" << NucleiTypes(i) << "): " << endl
-	   << " Total Parameters = " << EupEdnNuclear(i).getNumberOfTotalParameters() << endl
-	   << " Free Parameters = " << EupEdnNuclear(i).getNumberOfFreeParameters() 
-	   << endl;
-      EupEdnNuclear(i).getThreeBodyCorrelationFunction()->print(strm);
-      strm << endl;
-    }
-
 
   if(EupEup.getCorrelationFunction() != 0)
     {
@@ -105,6 +96,17 @@ void QMCJastrowParameters::print(ostream & strm)
       EupNuclear(i).getCorrelationFunction()->print(strm);    
       strm << endl;
     }
+
+  for(int i=0; i<EupEdnNuclear.dim1(); i++) 
+    {
+      strm << "EupEdnNuclear(" << NucleiTypes(i) << "):" << endl
+	   << " Total Parameters = " << EupEdnNuclear(i).getNumberOfTotalParameters() << endl
+	   << " Free Parameters = " << EupEdnNuclear(i).getNumberOfFreeParameters() 
+	   << endl;
+      EupEdnNuclear(i).getThreeBodyCorrelationFunction()->print(strm);
+      strm << endl;
+    }
+
   for(int i=0; i<EupEupNuclear.dim1(); i++) 
     {
       strm << "EupEupNuclear(" << NucleiTypes(i) << "):" << endl
@@ -548,7 +550,7 @@ void QMCJastrowParameters::getJWParameters(Array1D<double> & params, int shift)
 	      }
 	  }
 
-      if (globalInput.flags.use_three_body_jastrow == 1)
+      if (globalInput.flags.optimize_NEE_Jastrows == 1)
 	{
 	  if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
 	    for (int i=0; i<EupEdnNuclear.dim1(); i++)
@@ -652,7 +654,7 @@ void QMCJastrowParameters::getJWParameters(Array1D<double> & params, int shift)
 	    }
 	}
 
-      if (globalInput.flags.use_three_body_jastrow == 1)
+      if (globalInput.flags.optimize_NEE_Jastrows == 1)
 	{
 	  if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
 	    for (int i=0; i<EupEdnNuclear.dim1(); i++)

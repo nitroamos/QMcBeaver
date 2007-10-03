@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <sstream>
 #include "CubicSpline.h"
+#include "IeeeMath.h"
 
 bool QMCEigenSearch::currentlyHalf = true;
 int QMCEigenSearch::orig_steps = 0;
@@ -75,7 +76,7 @@ double QMCEigenSearch::get_a_diag(QMCDerivativeProperties & dp, double a_diag_fa
   xvals = 0.0;
   yvals = 0.0;
 
-  double eng_frac = 0.99;
+  double eng_frac = 0.95;
   double var_frac = 1.0 - eng_frac;
   printf("Correlated Sampling Results, Energy = %g\% Variance = %g\%:\n",100*eng_frac,100*var_frac);
   printf("       a_diag = %15s Energy %20.10g Sample Variance %20.10e\n",
@@ -93,18 +94,20 @@ double QMCEigenSearch::get_a_diag(QMCDerivativeProperties & dp, double a_diag_fa
       xvals(cs) = log(adiag_tests[cs]);
       yvals(cs) = obj;
       
-      if(obj < best || best_idx < 0)
-	{
-	  best_idx = cs;
-	  best     = obj;
-	  a_diag   = adiag_tests[cs];
-	}
+      if(!IeeeMath::isNaN(obj))
+	if(obj < best || best_idx < 0)
+	  {
+	    best_idx = cs;
+	    best     = obj;
+	    a_diag   = adiag_tests[cs];
+	  }
       
       printf("CS %3i a_diag = %15.5g Energy %20.10g Sample Variance %20.10e objE %15.5e objV %15.5e obj %15.5e\n",
 	     cs, adiag_tests[cs], samplesE(si), samplesV(si), obje, objv, obj);
     }
 
   cout << "Best a_diag = " << a_diag << " with objective value " << best << " idx = " << best_idx << endl;
+  return a_diag;
 
   CubicSpline findmin;
   findmin.initializeWithFunctionValues(xvals,yvals,0,0);
@@ -201,14 +204,15 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
       orig_steps = globalInput.flags.max_time_steps;
       hamiltonian = dp.getParameterHamiltonian();
       overlap = dp.getParameterOverlap();
-      int numTests = 12;
+      int numTests = 24;
       
       adiag_tests.clear();
+      double fac = sqrt(10.0);
       //this will be the guiding function
       //adiag_tests.push_back(get_a_diag(dp,a_diag_factor));
       adiag_tests.push_back(1.0e-8);
       while(adiag_tests.size() < (unsigned)numTests)
-	adiag_tests.push_back(10.0 * adiag_tests[adiag_tests.size()-1]);
+	adiag_tests.push_back(fac * adiag_tests[adiag_tests.size()-1]);
 
       //vector<double>::iterator last = unique(adiag_tests.begin(), adiag_tests.end());
       //adiag_tests.erase(last,adiag_tests.end());
@@ -260,7 +264,7 @@ Array1D<double> QMCEigenSearch::getParameters(QMCDerivativeProperties & dp, doub
       for(int d=1; d<dim+1; d++)
 	ham(d,d) = ham(d,d) + a_diag;
       
-      stepinfo << " a_diag = " << setw(10) << a_diag;
+      stepinfo << " a_diag = " << setw(20) << setprecision(10) << a_diag;
     }
 
   int largestPrintableMatrix = 10;
@@ -343,11 +347,21 @@ Array1D<double> QMCEigenSearch::getParameters(QMCDerivativeProperties & dp, doub
 					  ksi);
     }
   stepinfo << " rescaling factor = " << setw(20) << rescale;
-  
+
+  Array1D<double> x_new = orig_params;
+
+  if(IeeeMath::isNaN(rescale) || rescale < 0.05)
+    {
+      cout << "Warning: invalid rescale = " << rescale << endl;
+      x_new = 0.0;
+      return x_new;
+    } else {
+      //cout << "Warning: ok rescale = " << rescale << endl;
+    }
   // Calculate the next step
   delta_x *= rescale;
-  //Array1D<double> x_new = x.back();
-  Array1D<double> x_new = orig_params;
+
+
 
   if(verbose)
     globalInput.printAIParameters(cout,"Delta params",20,delta_x,true);

@@ -195,7 +195,7 @@ inline void QMCThreeBodyJastrow::collectForPair(int Electron1,
   U_Function->evaluate(xyz1,  dist1,
 		       xyz2,  dist2,
 		       xyz12, r12);
-  
+
   sum_U += U_Function->getFunctionValue();
 
   Array1D<double> * grad1 = U_Function->getElectron1Gradient();
@@ -212,11 +212,11 @@ inline void QMCThreeBodyJastrow::collectForPair(int Electron1,
   if(globalInput.flags.calculate_Derivatives == 1 &&
      globalInput.flags.optimize_NEE_Jastrows == 1)
     {
-      for(int ai=0; ai<paramset->getNumberOfTotalParameters(); ai++)
+      for(int ai=0; ai<paramset->getNumberOfTotalParameters()+1; ai++)
 	{
 	  paramset->pt_a(ai)    += U_Function->get_p_a(ai);
 	  paramset->pt3_xxa(ai) += U_Function->get_p3_xxa(ai);
-	  
+
 	  for(int i=0; i<3; i++)
 	    {
 	      (paramset->pt2_xa(ai))(Electron1,i) += U_Function->get_p2_xa(true,i,ai); 
@@ -228,11 +228,15 @@ inline void QMCThreeBodyJastrow::collectForPair(int Electron1,
 
 void QMCThreeBodyJastrow::packageDerivatives()
 {
+  if(globalInput.flags.calculate_Derivatives == 0 ||
+     globalInput.flags.optimize_NEE_Jastrows == 0)
+    return;
+
   int numNEE =
     globalInput.JP.getNumberNEupEdnParameters() +
     globalInput.JP.getNumberNEupEupParameters() + 
     globalInput.JP.getNumberNEdnEdnParameters();  
-  
+
   p_a.allocate(numNEE);
   p2_xa.allocate(numNEE);
   p3_xxa.allocate(numNEE);
