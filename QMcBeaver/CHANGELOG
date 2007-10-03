@@ -1,3 +1,15 @@
+Wed, Oct 3, 2007 Amos Anderson
+1.  I added the ability to optimize the cutoff parameter to the 3 body
+    Jastrow. Note that the cutoff parameter is counted as a free parameter,
+    even if it's not actually optimized.
+2.  I added the ability to choose which terms in the 3 body Jastrow we want
+    to optimize. You'll have to modify the code if you want to choose differently.
+    If you don't run a 3 3 or 4 4 with all possible terms included,
+    then it won't work, currently.
+3.  I changed the ordering of the 3 body terms in the input file. Old 3 body parameters
+    are completely incompatable. However, once you've optimized a 3 3 function, then you
+    can easily upgrade it to a 4 4 function, just change the NeN and Nee numbers.
+
 Mon, Sep 17, 2007 Amos Anderson
 1.  I added correlated sampling -- the real way. It doesn't require
     anything written to file. This is useful for choosing good
