@@ -32,6 +32,8 @@ class CambridgeThreeBodyCorrelationFunction : public QMCThreeBodyCorrelationFunc
   Array1D<double> p_a;
   Array2D<double> p2_x1a;
   Array2D<double> p2_x2a;
+  Array1D<double> p2_x1L;
+  Array1D<double> p2_x2L;
   Array1D<double> p3_xxa;
 
  private:
@@ -40,14 +42,21 @@ class CambridgeThreeBodyCorrelationFunction : public QMCThreeBodyCorrelationFunc
 
   int Nen, Nee, C;
   double cutoff;
+  double L;
 
-  double pre1, pre2;
+  double   pre1,   pre2;
   double d1pre1, d1pre2;
   double d2pre1, d2pre2;
 
+  double   pre1_L,   pre2_L;
+  double d1pre1_L, d1pre2_L;
+  double d2pre1_L, d2pre2_L;
+
+  double dU_L, dU_Lr, dU_Lrr;
   double dU_dr1, dU_dr2, dU_dr12;
 
   double r1, r2, r12;
+  double d1, d2;
   Array1D<double> r1v, r2v, r12v;
 
  public:
@@ -63,9 +72,13 @@ class CambridgeThreeBodyCorrelationFunction : public QMCThreeBodyCorrelationFunc
   double getFunctionValue();
   double get_p_a(int ai);
 
-  double getLapPoly(double sign, double lterm, double nterm,
-		    double l2term, double lnterm, double n2term,
-		    double dpre, double pre, double dist);
+  double getLapPoly(double term,
+		    double lterm, double mterm, double nterm,
+		    double l2term, double m2term, double n2term,
+		    double lnterm, double mnterm,
+		    double   p1, double   p2,
+		    double d1p1, double d1p2,
+		    double d2p1, double d2p2);
 
   Array1D<double> * getElectron1Gradient();
   Array1D<double> * getElectron2Gradient();

@@ -156,21 +156,11 @@ class QMCThreeBodyCorrelationFunctionParameters
   */
   double getCutoffDist();
 
-  void zeroOutDerivatives();
-  Array1D<double> pt_a;
-  Array1D< Array2D<double> > pt2_xa;
-  Array1D<double> pt3_xxa;
-
-  //private:
-  void initializeThreeBodyCorrelationFunctionParameters();    
-  void setThreeBodyCorrelationFunction();
-  
   /**
-     convert an array in the total basis into an array in the free basis
-     free -> total (transformed)
+     This function is used by QMCThreeBodyJastrow while calculating
+     parameter derivatives.
   */
-  void getFree(const Array1D<double> & total,
-	       Array1D<double> & free);
+  void zeroOutDerivatives();
 
   /**
      takes a new set of free parameters and recreates the total parameter array
@@ -183,6 +173,33 @@ class QMCThreeBodyCorrelationFunctionParameters
      total -> total (transformed) -> free
   */
   void setTotalParameters(const Array1D<double> & total);
+
+  /**
+     This function is used by QMCThreeBodyJastrow while calculating
+     parameter derivatives.
+  */
+  void totalDerivativesToFree(int shift,
+			      Array1D<double> & p_a,
+			      Array1D< Array2D<double> > & p2_xa,
+			      Array1D<double> & p3_xxa) const;
+
+  /**
+     The parameter derivatives are stored here.
+  */
+  Array1D<double> pt_a;
+  Array1D< Array2D<double> > pt2_xa;
+  Array1D<double> pt3_xxa;
+
+ private:
+  void initializeThreeBodyCorrelationFunctionParameters();    
+  void setThreeBodyCorrelationFunction();
+  
+  /**
+     convert an array in the total basis into an array in the free basis
+     free -> total (transformed)
+  */
+  void getFree(const Array1D<double> & total,
+	       Array1D<double> & free);
   
   /**
      maps the (transformed) total parameter array to the free array
@@ -191,16 +208,13 @@ class QMCThreeBodyCorrelationFunctionParameters
   void totalToFree(const Array1D<double> & total,
 		   Array1D<double> & free) const;
 
-  void totalDerivativesToFree(int shift,
-			      Array1D<double> & p_a,
-			      Array1D< Array2D<double> > & p2_xa,
-			      Array1D<double> & p3_xxa) const;
-
   /**
-     returns true if the coefficient associated with
-     this particular l, m, and n is free.
+     The position in the Array1Ds for this term.
   */
-  bool isFree(int l, int m, int n) const;
+  inline int map(int l, int m, int n) const
+    {
+      return l*NeN*Nee + m*Nee + n;
+    }
 
   /**
      maps the free parameter array to the total parameter array
@@ -215,9 +229,13 @@ class QMCThreeBodyCorrelationFunctionParameters
      total -> (transformed) total
   */
   void makeParamDepMatrix();
+  void gaussianParamDepMatrix();
 
   /**
-     verifies that total parameter array statisfies the cusp and symmetry conditions
+     Verifies that total parameter array statisfies the cusp and symmetry conditions.
+
+     It will also run some checks on the paramDepMatrix.
+
      (transformed) total -> true
      total -> false
   */
@@ -227,7 +245,19 @@ class QMCThreeBodyCorrelationFunctionParameters
 
   int NumberOfParameterTypes;
   Array1D<int> NumberOfParameters;
+  
+  /**
+     The current value of the parameters, it will change
+     each optimization step.
+  */
   Array1D<double> Parameters;
+
+  /**
+     If the parameter at this index is independent, the value
+     at the corresponding position in this array will be true.
+  */
+  Array1D<bool> isFree;
+
   Array1D<double> tempArray;
   int TotalNumberOfParameters;
 
