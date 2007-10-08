@@ -202,7 +202,8 @@ void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
 	    }
 	}
 
-      if (globalInput.flags.use_three_body_jastrow == 1)
+      if (globalInput.flags.use_three_body_jastrow == 1 &&
+	  globalInput.flags.optimize_NEE_Jastrows == 1)
 	{
 	  if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
 	    for (int i=0; i<EupEdnNuclear.dim1(); i++)
@@ -365,7 +366,8 @@ void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
 	    }
 	}
 
-      if (globalInput.flags.use_three_body_jastrow == 1)
+      if (globalInput.flags.use_three_body_jastrow == 1 &&
+	  globalInput.flags.optimize_NEE_Jastrows == 1)
 	{
 	  if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
 	    for (int i=0; i<EupEdnNuclear.dim1(); i++)
