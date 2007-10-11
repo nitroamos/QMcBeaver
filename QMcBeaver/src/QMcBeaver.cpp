@@ -153,7 +153,10 @@ int main(int argcTemp, char *argvTemp[])
       exit(1);
     }
 
+  //coyote will crash for some reason unless we explicitly exit:
+  exit(0);
 #endif
+
 
   // Added to make the code totally ansi compliant
   return 0;

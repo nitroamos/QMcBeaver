@@ -620,7 +620,7 @@ class MakeConfigBuilder:
         if self._inputs.sprng:
             text += ' -lsprng'
         if self._inputs.lapack:
-            text += ' -llapack'
+            text += ' -llapack -lg2c'
         if self._inputs.atlas:
             text += ' -lf77blas -latlas'
 	if self._inputs.goto:
