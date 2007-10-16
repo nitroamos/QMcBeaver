@@ -31,6 +31,21 @@ public:
      This is designed to go with the "generalized_eigenvector"
      optimization criteria.
   */
+  double rescalingJCP();
+
+  /**
+     This method is from the
+     JCP 126 084102 (2007)
+     paper. There are a couple variations on this method,
+     specifically on how to choose ksi. I have not fully
+     studied all the possibilities, and I'm not even 100%
+     sure that i programmed this correctly.
+
+     This is designed to go with the "generalized_eigenvector"
+     optimization criteria.
+  */
+  double rescalingPRL();
+
   double stepLength(QMCObjectiveFunction *function, 
 		    Array1D<double> & delta_x,
 		    Array1D<double> & unused1,
@@ -38,6 +53,10 @@ public:
 		    Array2D<double> & overlap,
 		    double ksi);  
  private:
+  bool verbose;
+  double ksi;
+  Array1D<double> dp;
+  Array2D<double> S;
 
 };
 
