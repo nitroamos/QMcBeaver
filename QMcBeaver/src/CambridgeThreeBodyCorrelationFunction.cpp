@@ -374,9 +374,9 @@ void CambridgeThreeBodyCorrelationFunction::print(ostream & strm)
 {
   strm.unsetf(ios::scientific);
   strm << "Cambridge 3 particle jastrow parameters:" << endl
-       << "Nen = " << Nen << endl
-       << "Nee = " << Nee << endl
-       << "  C = " << C << endl
+       << "  Nen = " << Nen
+       << "  Nee = " << Nee
+       << "  C = " << C
        << "  L = " << cutoff;
   if(globalInput.flags.optimize_L == 1)
     strm << " (optimized)" << endl;

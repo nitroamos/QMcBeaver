@@ -204,7 +204,19 @@ void qmcbeaver()
       stringstream save_opt;
       save_opt << globalInput.flags.checkout_file_name << "/"
 	       << globalInput.flags.base_file_name << ".step" << optloops << ".ckmf";
-      TheMan.writeRestart(save_opt.str());
+
+      if(globalInput.flags.a_diag < 0)
+	{
+	  //this method takes half optimization steps.
+	  //only the odd files represent new wavefunctions
+	  if(optloops % 2 == 1)
+	    TheMan.writeRestart(save_opt.str());
+	}
+      else
+	{
+	  TheMan.writeRestart(save_opt.str());
+	}
+
       TheMan.zeroOut();
 
       /*

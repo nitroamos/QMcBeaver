@@ -290,24 +290,40 @@ ostream& operator <<(ostream& strm, Cambridge2CorrelationFunction &rhs)
 {    
   strm.unsetf(ios::scientific);
   strm << "Cambridge 2 particle jastrow parameters:" << endl
-       << "  g = " << rhs.g << endl
-       << "  C = " << rhs.C << endl
-       << "  f = " << rhs.f << endl
-       << "  L = " << rhs.L;
+       << "  g = " << rhs.g
+       << "  C = " << rhs.C;
+  if(fabs(rhs.f-1.0) > 1e-10)
+    strm << "  f = " << rhs.f;
+  strm << "  L = " << rhs.L;
   if(rhs.optimizeL)
     strm << " (optimized)" << endl;
   else
     strm << " (not optimized)" << endl;
 
+  bool extraPrec = false;
+
+  int coWidth, coPrec;
+  if(extraPrec)
+    {
+      coPrec  = 15;
+      coWidth = 20;
+    } else {
+      coPrec  = 7;
+      coWidth = 10;
+    }
+
+  /*
   strm.setf(ios::scientific);
-  strm << "  a0 = " << setw(15) << rhs.alpha_0;
-  strm << "  a1 = " << setw(15) << rhs.alpha_1 << endl;
+  strm << "  a0 = " << setw(coWidth) << rhs.alpha_0;
+  strm << "  a1 = " << setw(coWidth) << rhs.alpha_1 << endl;
   Array1D<double> a = rhs.alpha.getCoefficients();
   for(int i=2; i<a.dim1(); i++)
-    strm << "  a" << i << " = " << setw(15) << a(i);
+    strm << "  a" << i << " = " << setw(coWidth) << a(i);
   strm << endl;
-  
+  */
+
   strm.unsetf(ios::scientific);
+  strm.precision(coPrec);
   strm << "x = r / " << (1.0 / rhs.fL) << endl;
   strm << "(x - 1)^" << rhs.C << " (";
   rhs.alpha.print(strm);
