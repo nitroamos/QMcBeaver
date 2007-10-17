@@ -19,6 +19,9 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 						    QMCFutureWalkingProperties & fwLastRun,
 						    int configsToSkip)
 {
+  double rel = 0;
+  double abs = 0;
+
   //put initial Jastrow parameters in as the guess
   Array1D<double> orig_parameters = globalInput.getAIParameters();
   Array1D<double> Guess_parameters(orig_parameters.dim1());
@@ -27,7 +30,8 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
   
   if(optStep == 0)
     {
-      clog << "Notice: CI norm = " << globalInput.WF.getCINorm() << endl;
+      if(fabs(globalInput.WF.getCINorm() - 1.0) > 1.0e-7)
+	clog << "Notice: CI norm = " << globalInput.WF.getCINorm() << endl;
       clog.precision(12);
       clog.width(20);
       clog.unsetf(ios::scientific);
@@ -56,10 +60,12 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 			   a_diag_factor,
 			   optStep);
 
-	double rel = 0;
-	double abs = 0;
+	rel = 0;
+	abs = 0;
+	double num = 0;
 	for(int i=0; i<Guess_parameters.dim1(); i++)
 	  {
+	    num += 1.0;
 	    double g = Guess_parameters(i);
 	    double o = orig_parameters(i);
 	    double v = g - o;
@@ -70,8 +76,8 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 		rel += v*v;	  
 	      }
 	  }
-	abs = sqrt(abs);
-	rel = sqrt(rel);
+	abs = sqrt(abs)/num;
+	rel = sqrt(rel)/num;
 
 	clog.unsetf(ios::scientific);
 	clog << "(Step = " << setw(3) << optStep << "):"
@@ -184,7 +190,12 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
   clog.width(20);
   clog.unsetf(ios::scientific);
   clog.unsetf(ios::fixed);
-  clog << left << dp.getParameterValue() << endl << right;
+  clog << left << dp.getParameterValue();
+  clog.precision(12);
+  clog.width(20);
+  clog.setf(ios::scientific);
+  clog << left << rel << endl << right;
+
   globalInput.printAIParameters(clog,"Best Step params:",20,Guess_parameters,false);
   clog << endl << endl;
 
