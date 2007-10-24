@@ -126,6 +126,16 @@ class QMCWalkerData {
   void zero();
   void writeConfigs(Array2D<double> & Positions, double weight);
   friend ostream& operator<<(ostream & strm, const QMCWalkerData & rhs);
+  
+  /**
+     Once we've moved an electron, we want to update the arrays
+     in QMCWalkerData which contain the interparticle distances,
+     as well as electron-electron unit vectors. The purpose is so that
+     we only have to calculate this stuff once, and then everybody
+     else just gets the saved data.
+  */
+  void updateDistances(Array2D<double> & R);
+
 };
 
 #endif

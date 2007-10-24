@@ -47,7 +47,7 @@ class QMCSurfer
   ~QMCSurfer();
 
   int mainMenu(QMCFunctions * QMF, int iteration,
-	       Array2D<double> & newR);
+	       Array2D<double> newR);
 
   void interparticleDistanceMatrix();
   void equipotentialSurface();

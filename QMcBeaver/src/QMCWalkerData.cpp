@@ -10,6 +10,7 @@
 //
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 #include "QMCWalkerData.h"
+#include "QMCPotential_Energy.h"
 
 using namespace std;
 
@@ -182,5 +183,49 @@ ostream& operator<<(ostream & strm, const QMCWalkerData & rhs)
   return strm;
 }
 
+void QMCWalkerData::updateDistances(Array2D<double> & R)
+{
+  if(whichE == -1)
+    {
+      for(int i=0; i<R.dim1(); i++)
+	{
+	  for(int j=0; j<i; j++)
+	    {
+	      rij(i,j) = 
+		QMCPotential_Energy::rij(R,i,j);
+	      for(int xyz=0; xyz<3; xyz++)
+		rij_uvec(i,j,xyz) = (R(i,xyz) - R(j, xyz)) / rij(i,j);
+	    }
+
+	  for(int j=0; j<Input->Molecule.getNumberAtoms(); j++)
+	    {
+	      double r = QMCPotential_Energy::rij(R,Input->Molecule.Atom_Positions,i,j);
+	      riI(i,j) = r;
+	      for(int xyz=0; xyz<3; xyz++)
+		riI_uvec(i,j,xyz) = (R(i,xyz) - Input->Molecule.Atom_Positions(j,xyz)) / r;
+	    }
+	}
+    } else {
+      for(int j=0; j<R.dim1(); j++)
+	{
+	  if(j == whichE) continue;
+	  double r = QMCPotential_Energy::rij(R,j,whichE);
+	  int e1 = max(whichE,j);
+	  int e2 = min(whichE,j);
+
+	  rij(e1,e2) = r;
+	  for(int xyz=0; xyz<3; xyz++)
+	    rij_uvec(e1,e2,xyz) = (R(e1,xyz) - R(e2, xyz)) / r;
+	}
+
+      for(int j=0; j<Input->Molecule.getNumberAtoms(); j++)
+	{
+	  riI(whichE,j) =
+	    QMCPotential_Energy::rij(R,Input->Molecule.Atom_Positions,whichE,j);
+	  for(int xyz=0; xyz<3; xyz++)
+	    riI_uvec(whichE,j,xyz) = (R(whichE,xyz) - Input->Molecule.Atom_Positions(j,xyz)) / riI(whichE,j);
+	}
+    }
+}
 
 
