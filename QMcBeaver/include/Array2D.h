@@ -1394,7 +1394,11 @@ template <class T> class Array2D
       
       det = 1.0;
       for(int i=0; i<n_1; i++)
-        det *= get(i,i);
+	{
+	  if(diINDX(i) != i+1)
+	    det *= -1;
+	  det *= get(i,i);
+	}
     }
   
   void determinant_and_inverse(Array2D<float> &inv, double& det, bool *calcOK)
@@ -1414,10 +1418,14 @@ template <class T> class Array2D
       
       if(info == 0) *calcOK = true;
       else *calcOK = false;
-      
+
       det = 1.0;
       for(int i=0; i<n_1; i++)
-        det *= get(i,i);
+	{
+	  if(diINDX(i) != i+1)
+	    det *= -1;
+	  det *= get(i,i);
+	}
     }
 #else
   /**

@@ -1,3 +1,8 @@
+Thu, Oct 25, 2007 Amos Anderson
+1.  I realized that Array2D was not accounting for permutations when
+    using dgesv to calculate determinants. This resulted in spurious nodes,
+    a problem which would affect fixed-node error.
+
 Wed, Oct 3, 2007 Amos Anderson
 1.  I added the ability to optimize the cutoff parameter to the 3 body
     Jastrow. Note that the cutoff parameter is counted as a free parameter,
