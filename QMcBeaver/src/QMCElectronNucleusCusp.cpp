@@ -162,9 +162,9 @@ void QMCElectronNucleusCusp::fitReplacementOrbitals()
 	  // orbital.  The deviation of the local energy of the replacement 
 	  // orbital is optimized with respect to its value at the nucleus.
 	  ORParams(i,m) = fitOrbitalParameters();
-	  cout << "Orbital replacement parameters for atom " << i;
-	  cout << " orbital " << m << endl;
-	  ORParams(i,m).printParameters();
+	  //	  cout << "Orbital replacement parameters for atom " << i;
+	  //	  cout << " orbital " << m << endl;
+	  //	  ORParams(i,m).printParameters();
 	}
     }
 }
