@@ -162,7 +162,9 @@ void QMCElectronNucleusCusp::fitReplacementOrbitals()
 	  // orbital.  The deviation of the local energy of the replacement 
 	  // orbital is optimized with respect to its value at the nucleus.
 	  ORParams(i,m) = fitOrbitalParameters();
-	  // ORParams(i,m).printParameters();
+	  cout << "Orbital replacement parameters for atom " << i;
+	  cout << " orbital " << m << endl;
+	  ORParams(i,m).printParameters();
 	}
     }
 }
@@ -310,13 +312,26 @@ void QMCElectronNucleusCusp::determineRc()
   // around the nodes, for the point where the deviation from the ideal
   // curve gets large.
 
+  double origGradientNearNucleus = getOrigGradient(rcmax/1000);
+  double origValueAtNucleus = evaluateOrigOrbital(0.0);
+
+  // The gradient of the original orbital at the nucleus is zero.  We find the 
+  // value of the gradient near the nucleus.  If it is positive, we place rc in
+  // a region where the original value has a greater value than it does at the
+  // nucleus.  If the gradient is negative, we place rc in a region where the
+  // original orbital has a value less than its value at the nucleus.
+
+  // This is to fix a problem that came up in fitting some orbitals that were
+  // decreasing from rc to the origin, but had a positive gradient at the
+  // origin.  The fit function ended up having the wrong cusp condition.
+
   rc = rcmax;
   double r_trial = rcmax;
   int rootIndex = -1;
   double r_bound = 0.0;
   const double ddr = dr/10;
   const double maxdev = Z*Z/50.0;
-
+  
   if (nRoots>0)
     {
       rootIndex = nRoots-1;
@@ -325,56 +340,62 @@ void QMCElectronNucleusCusp::determineRc()
 
   while (r_trial > 0.0)
     {
-      if (r_trial > r_bound)
+      if (origGradientNearNucleus*(evaluateOrigOrbital(r_trial)-origValueAtNucleus) > 0.0)
 	{
-	  idealCurve.evaluate(r_trial);
-	  old_value = getOrigLocalEnergy(r_trial);
-	  if (fabs(Z*Z*idealCurve.getFunctionValue()-old_value) > maxdev)
+	  if (r_trial > r_bound)
 	    {
-	      r_trial += dr;
-	      while (r_trial > 0.0)
+	      idealCurve.evaluate(r_trial);
+	      old_value = getOrigLocalEnergy(r_trial);
+	      if (fabs(Z*Z*idealCurve.getFunctionValue()-old_value) > maxdev)
 		{
-		  r_trial -= ddr;
-		  idealCurve.evaluate(r_trial);
-		  old_value = getOrigLocalEnergy(r_trial);
-		  if (fabs(Z*Z*idealCurve.getFunctionValue()-old_value)>maxdev)
+		  r_trial += dr;
+		  while (r_trial > 0.0)
 		    {
-		      rc = r_trial;
-		      break;
+		      r_trial -= ddr;
+		      if (origGradientNearNucleus*(evaluateOrigOrbital(r_trial)-origValueAtNucleus) > 0.0)
+			{
+			  idealCurve.evaluate(r_trial);
+			  old_value = getOrigLocalEnergy(r_trial);
+			  if (fabs(Z*Z*idealCurve.getFunctionValue()-old_value)>maxdev)
+			    {
+			      rc = r_trial;
+			      break;
+			    }
+			}
 		    }
+		  break;
 		}
-	      break;
 	    }
-	}
-      else
-	{
-	  idealCurve.evaluate(r_bound);
-	  old_value = getOrigLocalEnergy(r_bound);
-	  if (fabs(Z*Z*idealCurve.getFunctionValue()-old_value) > maxdev)
-	    {
-	      while (r_trial > 0.0)
-		{
-		  r_trial -= ddr;
-		  idealCurve.evaluate(r_trial);
-		  old_value = getOrigLocalEnergy(r_trial);
-		  if (fabs(Z*Z*idealCurve.getFunctionValue()-old_value)>maxdev)
-		    {
-		      rc = r_trial;
-		      break;
-		    }
-		}
-	      break;
-	    }	      
 	  else
 	    {
-	      r_trial = roots(rootIndex) - rcmax/5 + dr;
-	      if (rootIndex > 0)
+	      idealCurve.evaluate(r_bound);
+	      old_value = getOrigLocalEnergy(r_bound);
+	      if ( (origGradientNearNucleus*(evaluateOrigOrbital(r_trial)-origValueAtNucleus) > 0.0) && (fabs(Z*Z*idealCurve.getFunctionValue()-old_value) > maxdev) )
 		{
-		  rootIndex--;
-		  r_bound = roots(rootIndex) + rcmax/5;
+		  while (r_trial > 0.0)
+		    {
+		      r_trial -= ddr;
+		      idealCurve.evaluate(r_trial);
+		      old_value = getOrigLocalEnergy(r_trial);
+		      if (fabs(Z*Z*idealCurve.getFunctionValue()-old_value)>maxdev)
+			{
+			  rc = r_trial;
+			  break;
+			}
+		    }
+		  break;
+		}	      
+	      else
+		{
+		  r_trial = roots(rootIndex) - rcmax/5 + dr;
+		  if (rootIndex > 0)
+		    {
+		      rootIndex--;
+		      r_bound = roots(rootIndex) + rcmax/5;
+		    }
+		  else if (rootIndex == 0)
+		    r_bound = 0.0;
 		}
-	      else if (rootIndex == 0)
-		r_bound = 0.0;
 	    }
 	}
       r_trial -= dr;
@@ -644,6 +665,28 @@ double QMCElectronNucleusCusp::getOrigLocalEnergy(double r_orig)
   laplacian = laplacian/orig_value;
 
   return -0.5*laplacian - Z/r_orig;
+}
+
+double QMCElectronNucleusCusp::getOrigGradient(double r_orig)
+{
+  double r_sq = r_orig*r_orig;
+  int nGaussians = sTypeCoeffs.dim1();
+  
+  double term_gradient = 0.0;
+  double p0 = 0.0;
+  double p1 = 0.0;
+  
+  double orig_gradient = 0.0;
+
+  for (int i=0; i<nGaussians; i++)
+    {
+      p0 = sTypeCoeffs(i,0);
+      p1 = sTypeCoeffs(i,1);
+      term_gradient = -p0*2*r_orig*p1*exp(-p0*r_sq);
+
+      orig_gradient += term_gradient;
+    }
+  return orig_gradient;
 }
 
 double QMCElectronNucleusCusp::evaluateOrigOrbital(double r_orig)

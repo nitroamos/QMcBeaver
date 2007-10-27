@@ -129,6 +129,15 @@ class QMCElectronNucleusCusp
   double evaluateOrigOrbital(double r_orig);
 
   /**
+    Evaluates the gradient of the original orbital at r_orig and returns its 
+    value.
+
+    @param r_orig the distance from the nucleus
+    @return the gradient of the original orbital at r_orig
+  */
+  double getOrigGradient(double r_orig);
+
+  /**
     Fits the replacement orbital to the original orbital at rc.  Minimizes the 
     deviation of the local energy of the replacement orbital from the ideal 
     curve with respect to its value at the nucleus.

@@ -1,3 +1,16 @@
+Fri, Oct 26, 2007 Daniel R Fisher
+1.  Fixed a bug in QMCElectronNucleusCusp.  The function that fits the
+    exponential to the Gaussian orbital was having problems when the
+    gradient of the original orbital near the nucleus did not match its
+    overall shape.  For example, if an orbital was overall decreasing
+    between the radius of correction and the nucleus but had a negative
+    gradient at the nucleus, the fit orbital would not satisfy the cusp
+    condition.  Orbitals like this are very rare and have very little
+    density at the nucleus in question, so this problem was not very
+    important.  I fixed the problem by requiring that the radius of
+    correction always be placed in a region where the shape of the
+    original orbital matches its gradient near the origin.   
+
 Thu, Oct 25, 2007 Amos Anderson
 1.  I realized that Array2D was not accounting for permutations when
     using dgesv to calculate determinants. This resulted in spurious nodes,
