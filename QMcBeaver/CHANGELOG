@@ -1,3 +1,11 @@
+Mon, Oct 29, 2007 Amos Anderson
+1.  I changed the way Jastrows are read in. Old input files are still compatible.
+    Now you do not have to include Jastrow functions that will not be used. I added
+    a parameter link_NEE_Jastrows, which is analogous to link_Jastrow_parameters.
+    Setting link_NEE_Jastrows = 2 will use the same jastrow for NEupEdn, NEupEup,
+    and NEdnEdn, setting link_NEE_Jastrows = 1 will set NEdnEdn = NEupEup,
+    and link_NEE_Jastrows = 0 will use separate functions for all 3.
+
 Fri, Oct 26, 2007 Daniel R Fisher
 1.  Fixed a bug in QMCElectronNucleusCusp.  The function that fits the
     exponential to the Gaussian orbital was having problems when the
