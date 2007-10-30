@@ -141,10 +141,13 @@ void QMCFlags::read_flags(string InFileName)
   optimize_CI                    = 0;
   optimize_Orbitals              = 0;
   link_Jastrow_parameters        = 0;
+  link_NEE_Jastrows              = 2;
   link_Orbital_parameters        = 1;
   link_Determinant_parameters    = 1;
 
   use_three_body_jastrow         = 0;
+  use_jastrow = 1;
+  detailed_energies = -1;
   reproduce_NE_with_NEE_jastrow  = 0;
   reproduce_EE_with_NEE_jastrow  = 0;
 
@@ -597,6 +600,11 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
           link_Jastrow_parameters = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "link_NEE_Jastrows")
+        {
+          input_file >> temp_string;
+          link_NEE_Jastrows = atoi(temp_string.c_str());
         }
       else if(temp_string == "link_Orbital_parameters")
         {
@@ -1123,6 +1131,8 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "ndeterminants\n " << flags.Ndeterminants << endl;
   strm << "link_Jastrow_parameters\n "
        << flags.link_Jastrow_parameters << endl;
+  strm << "link_NEE_Jastrows\n "
+       << flags.link_NEE_Jastrows << endl;
   strm << "link_Orbital_parameters\n "
        << flags.link_Orbital_parameters << endl;
   strm << "link_Determinant_parameters\n "

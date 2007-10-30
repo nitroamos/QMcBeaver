@@ -49,18 +49,24 @@ bool QMCThreeBodyCorrelationFunctionParameters::read(istream & strm)
 {
   bool ok = true;
   string temp;
-  
+  int start = strm.tellg();   
   // Read the particle types
   
   string pt1, pt2, pt3;
-  strm >> temp >> pt1 >> pt2 >> pt3;
+  strm >> temp;
+
+  if(temp != "ParticleTypes:")
+    {
+      strm.seekg(start);
+      return false;
+    }
+
+  strm >> pt1 >> pt2 >> pt3;
   pt1 = StringManipulation::toFirstUpperRestLower(pt1);
   pt2 = StringManipulation::toFirstUpperRestLower(pt2);
   pt3 = StringManipulation::toFirstUpperRestLower(pt3);
 
   // Order the particle types
-
-  ParticleTypes.allocate(3);
   
   // The fist particle should be a nucleus, the the second two particles should
   // be electrons.  I am not going to go into all the reordering possibilities.
@@ -96,7 +102,16 @@ bool QMCThreeBodyCorrelationFunctionParameters::read(istream & strm)
   
   // Load the correlation function type
   
-  strm >> temp >> threeBodyCorrelationFunctionType;
+  strm >> temp;
+
+  if(temp != "threeBodyCorrelationFunctionType:")
+    {
+      //it's not a 3 particle jastrow
+      strm.seekg(start);
+      return false;
+    }
+
+  strm >> threeBodyCorrelationFunctionType;
   if (threeBodyCorrelationFunctionType != "Cambridge" && 
       threeBodyCorrelationFunctionType != "None")
     {
@@ -265,7 +280,7 @@ QMCThreeBodyCorrelationFunctionParameters::QMCThreeBodyCorrelationFunctionParame
 {
   threeBodyCorrelationFunctionType = "None";
   ThreeBodyCorrelationFunction = 0;
-
+  ParticleTypes.allocate(3);
   TotalNumberOfParameters = 0;
   NumberOfFreeParameters = 0;
 
@@ -273,6 +288,8 @@ QMCThreeBodyCorrelationFunctionParameters::QMCThreeBodyCorrelationFunctionParame
   Nee = 0;
   C = 0;
   cutoff = 0.0;
+
+  setThreeBodyCorrelationFunction();
 }
 
 QMCThreeBodyCorrelationFunctionParameters::QMCThreeBodyCorrelationFunctionParameters(const QMCThreeBodyCorrelationFunctionParameters & rhs)
@@ -413,6 +430,13 @@ QMCThreeBodyCorrelationFunction * QMCThreeBodyCorrelationFunctionParameters::
                                              getThreeBodyCorrelationFunction()
 {
   return ThreeBodyCorrelationFunction;
+}
+
+bool QMCThreeBodyCorrelationFunctionParameters::isUsed()
+{
+  if(threeBodyCorrelationFunctionType == "None")
+    return false;
+  return true;
 }
 
 QMCThreeBodyCorrelationFunctionParameters::~QMCThreeBodyCorrelationFunctionParameters()

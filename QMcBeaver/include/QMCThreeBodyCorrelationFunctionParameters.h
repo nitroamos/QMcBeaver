@@ -114,6 +114,11 @@ class QMCThreeBodyCorrelationFunctionParameters
   QMCThreeBodyCorrelationFunction * getThreeBodyCorrelationFunction();    
 
   /**
+     Is this correlation function "None"?
+  */
+  bool isUsed();
+
+  /**
     Sets the type of particle1 for the particular three body interaction 
     described by this object.
   */  

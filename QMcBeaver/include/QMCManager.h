@@ -95,6 +95,14 @@ class QMCManager
   void zeroOut();
 
   /**
+     Useful for resetting the timers for every optimization step.
+  */
+  void resetTimers()
+    {
+      localTimers.reset();
+    }
+
+  /**
      Writes the restart file for the calculation.
      @param filename the name of the file to write the input into
   */

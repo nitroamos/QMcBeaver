@@ -119,6 +119,10 @@ public:
 
   QMCCorrelationFunction * getCorrelationFunction();    
   
+  /**
+     Is this correlation function "None"?
+  */
+  bool isUsed();
 
   /**
     Sets the parameters describing the particle-particle interaction.

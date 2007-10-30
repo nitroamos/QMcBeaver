@@ -157,8 +157,15 @@ class QMCFlags
   /**
      Using QMCSurfer instead of QMCWalker. This will let you "surf"
      the wavefunction.
+
   */
   int use_surfer;
+
+  /*
+    These are debugging flags. They might be used in QMCSurfer.
+  */
+  int use_jastrow;
+  int detailed_energies;
 
   /**
      Scratch directory for the calculation.  Temporary files which will
@@ -773,6 +780,7 @@ class QMCFlags
      their electron-nucleus terms, and 0 otherwise.
   */
   int link_Jastrow_parameters;
+  int link_NEE_Jastrows;
 
   /**
      1 if up and down electrons use the same orbital parameters.

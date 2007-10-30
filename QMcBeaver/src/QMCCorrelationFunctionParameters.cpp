@@ -60,17 +60,23 @@ bool QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
 {
   bool ok = true;
   string temp;
-  
+  int start = strm.tellg();
   // Read the particle types
   
   string pt1, pt2;
-  strm >> temp >> pt1 >> pt2;
+  strm >> temp;
+  
+  if(temp != "ParticleTypes:")
+    {
+      strm.seekg(start);
+      return false;
+    }
+
+  strm >> pt1 >> pt2;
   pt1 = StringManipulation::toFirstUpperRestLower(pt1);
   pt2 = StringManipulation::toFirstUpperRestLower(pt2);
 
   // Order the particle types
-
-  ParticleTypes.allocate(2);
   
   if( pt1 == "Electron_up" )
     {
@@ -98,10 +104,19 @@ bool QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
 	   << endl;
       ok = false;
     }
-  
+
   // Load the correlation function type
   
-  strm >> temp >> CorrelationFunctionType;
+  strm >> temp;
+
+  if(temp != "CorrelationFunctionType:")
+    {
+      //it's not a 2 particle jastrow
+      strm.seekg(start);
+      return false;
+    }
+
+  strm >> CorrelationFunctionType;
 
   // Load the number of parameter types
   
@@ -262,6 +277,8 @@ QMCCorrelationFunctionParameters::QMCCorrelationFunctionParameters()
 {
   CorrelationFunctionType = "None";
   CorrelationFunction = 0;
+  ParticleTypes.allocate(2);
+  setCorrelationFunction();
 }
 
 QMCCorrelationFunctionParameters::QMCCorrelationFunctionParameters(const 
@@ -323,6 +340,13 @@ QMCCorrelationFunction * QMCCorrelationFunctionParameters::
                                              getCorrelationFunction()
 {
   return CorrelationFunction;
+}
+
+bool QMCCorrelationFunctionParameters::isUsed()
+{
+  if(CorrelationFunctionType == "None")
+    return false;
+  return true;
 }
 
 QMCCorrelationFunctionParameters::~QMCCorrelationFunctionParameters()

@@ -174,6 +174,7 @@ inline void QMCThreeBodyJastrow::collectForPair(int Electron1,
 						int Nuclei,
 						QMCThreeBodyCorrelationFunctionParameters * paramset)
 {
+  if(!paramset->isUsed()) return;
   QMCThreeBodyCorrelationFunction *U_Function = paramset->getThreeBodyCorrelationFunction();
 
   // Find the distances between the two electrons and the nucleus
@@ -200,13 +201,13 @@ inline void QMCThreeBodyJastrow::collectForPair(int Electron1,
 
   Array1D<double> * grad1 = U_Function->getElectron1Gradient();
   Array1D<double> * grad2 = U_Function->getElectron2Gradient();
-  
+
   for (int i=0; i<3; i++)
     {
       grad_sum_U(Electron1,i) += (*grad1)(i);
       grad_sum_U(Electron2,i) += (*grad2)(i);
     }
-  
+
   laplacian_sum_U += U_Function->getLaplacianValue();
 
   if(globalInput.flags.calculate_Derivatives == 1 &&
@@ -253,38 +254,47 @@ void QMCThreeBodyJastrow::packageDerivatives()
 
   if(EupEdnNuclear != 0)
     for(int nuc=0; nuc<EupEdnNuclear->dim1(); nuc++)
-      {
-	(*EupEdnNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
-	ai += (*EupEdnNuclear)(nuc).getNumberOfFreeParameters();
-      }
+      if((*EupEdnNuclear)(nuc).isUsed())
+	{
+	  (*EupEdnNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	  ai += (*EupEdnNuclear)(nuc).getNumberOfFreeParameters();
+	}
   upupstart = ai;
 
   if(EupEupNuclear != 0)
-    for(int nuc=0; nuc<EupEupNuclear->dim1(); nuc++)
-      {
-	(*EupEupNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
-	ai += (*EupEupNuclear)(nuc).getNumberOfFreeParameters();
-      }  
+    {
+      if(globalInput.flags.link_NEE_Jastrows == 2)
+	ai = 0;
 
-  /*
-    If upup and dndn are the same, then their derivatives
-    are added to the same accumulator.
-  */
-  if(globalInput.flags.link_Jastrow_parameters == 1)
-    ai = upupstart;
+      for(int nuc=0; nuc<EupEupNuclear->dim1(); nuc++)
+	if((*EupEupNuclear)(nuc).isUsed())
+	  {
+	    (*EupEupNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	    ai += (*EupEupNuclear)(nuc).getNumberOfFreeParameters();
+	  }  
+    }
 
   if(EdnEdnNuclear != 0)
-    for(int nuc=0; nuc<EdnEdnNuclear->dim1(); nuc++)
-      {
-	(*EdnEdnNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
-	ai += (*EdnEdnNuclear)(nuc).getNumberOfFreeParameters();
-      }
+    {
+      if(globalInput.flags.link_NEE_Jastrows == 1)
+	ai = upupstart;
+      else if(globalInput.flags.link_NEE_Jastrows == 2)
+	ai = 0;
+
+      for(int nuc=0; nuc<EdnEdnNuclear->dim1(); nuc++)
+	if((*EdnEdnNuclear)(nuc).isUsed())
+	  {
+	    (*EdnEdnNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	    ai += (*EdnEdnNuclear)(nuc).getNumberOfFreeParameters();
+	  }
+    }
 
   if(ai != numNEE)
     {
       clog << "Error: parameter counting went bad in packageDerivatives" << endl;
       clog << "     ai = " << ai << endl;
       clog << " numNEE = " << numNEE << endl;
+      exit(0);
     }
 }
 
