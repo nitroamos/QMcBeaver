@@ -198,8 +198,11 @@ void qmcbeaver()
          optloops < globalInput.flags.max_optimize_Psi_steps &&
 	 ok)
     {
+      TheMan.writeTimingData(clog);
       clog << "***************  Optimize iteration: "  << (optloops+1) << ";" << endl;
-      
+
+      if(optloops > 0) TheMan.resetTimers();
+
       TheMan.optimize();
       stringstream save_opt;
       save_opt << globalInput.flags.checkout_file_name << "/"

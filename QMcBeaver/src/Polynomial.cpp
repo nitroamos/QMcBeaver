@@ -220,9 +220,13 @@ void Polynomial::print(ostream & strm)
   strm.unsetf(ios::scientific);
   for(int i=0; i<coefficients.dim1(); i++)
     {
+      if(fabs(coefficients(i)) < 1e-40) continue;
       strm << coefficients(i);
-      if(i > 0)
+      if(i == 1)
+	strm << " x";
+      else if(i > 0)
 	strm << " x^" << i;
+
       if(i < coefficients.dim1() - 1 &&
 	 coefficients(i+1) >= 0)
 	strm << " +";
