@@ -99,21 +99,21 @@ void CambridgeThreeBodyCorrelationFunction::evaluate(Array1D<double> &xyz1,
     }
 
   //calculate powers of r1, r2, and r12
-  Array1D<double> d1pow(Nen);
-  d1pow = 1.0;
-  Array1D<double> d2pow(Nen);
-  d2pow = 1.0;
-  Array1D<double> r12pow(Nee);
-  r12pow = 1.0;
+  double d1pow[Nen];
+  d1pow[0] = 1.0;
+  double d2pow[Nen];
+  d2pow[0] = 1.0;
+  double r12pow[Nee];
+  r12pow[0] = 1.0;
   
   for (int i=1; i<Nen; i++)
     {
-      d1pow(i) = d1pow(i-1)*r1;
-      d2pow(i) = d2pow(i-1)*r2;
+      d1pow[i] = d1pow[i-1]*r1;
+      d2pow[i] = d2pow[i-1]*r2;
     }
   
   for (int i=1; i<Nee; i++)
-    r12pow(i) = r12pow(i-1)*r12;
+    r12pow[i] = r12pow[i-1]*r12;
   
   double polynomial_sum   = 0.0;
   
@@ -143,21 +143,21 @@ void CambridgeThreeBodyCorrelationFunction::evaluate(Array1D<double> &xyz1,
 	  coeff = coeffs(l,m,n);
 
 	  //the term in the polynomial
-	  term = d1pow(l)*d2pow(m)*r12pow(n);
+	  term = d1pow[l]*d2pow[m]*r12pow[n];
 	  
 	  //terms in the first derivative of the polynomial
-	  _l = l == 0 ? 0 : l*d1pow(l-1)*d2pow(m)*r12pow(n);
-	  _m = m == 0 ? 0 : d1pow(l)*m*d2pow(m-1)*r12pow(n);
-	  _n = n == 0 ? 0 : d1pow(l)*d2pow(m)*n*r12pow(n-1);
+	  _l = l == 0 ? 0 : l*d1pow[l-1]*d2pow[m]*r12pow[n];
+	  _m = m == 0 ? 0 : d1pow[l]*m*d2pow[m-1]*r12pow[n];
+	  _n = n == 0 ? 0 : d1pow[l]*d2pow[m]*n*r12pow[n-1];
 
 	  //cross terms in the second derivative of the polynomial
-	  ln = l == 0 || n == 0 ? 0 : l*d1pow(l-1)*d2pow(m)*r12pow(n-1)*n;
-	  mn = m == 0 || n == 0 ? 0 : d1pow(l)*m*d2pow(m-1)*n*r12pow(n-1);
+	  ln = l == 0 || n == 0 ? 0 : l*d1pow[l-1]*d2pow[m]*r12pow[n-1]*n;
+	  mn = m == 0 || n == 0 ? 0 : d1pow[l]*m*d2pow[m-1]*n*r12pow[n-1];
 
 	  //diagonal terms in the second derivative of the polynomial
-	  l2 = l < 2 ? 0 : l*(l-1)*d1pow(l-2)*d2pow(m)*r12pow(n);
-	  m2 = m < 2 ? 0 : d1pow(l)*m*(m-1)*d2pow(m-2)*r12pow(n);	  
-	  n2 = n < 2 ? 0 : d1pow(l)*d2pow(m)*n*(n-1)*r12pow(n-2);
+	  l2 = l < 2 ? 0 : l*(l-1)*d1pow[l-2]*d2pow[m]*r12pow[n];
+	  m2 = m < 2 ? 0 : d1pow[l]*m*(m-1)*d2pow[m-2]*r12pow[n];	  
+	  n2 = n < 2 ? 0 : d1pow[l]*d2pow[m]*n*(n-1)*r12pow[n-2];
 
 	  if(fabs(coeff) > 1.0e-100)
 	    {

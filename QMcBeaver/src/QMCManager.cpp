@@ -236,15 +236,11 @@ void QMCManager::sendAllProcessorsACommand( int itag )
 #endif
 }
 
-void QMCManager::gatherProperties()
+void QMCManager::gatherExtraProperties()
 {
-  Properties_total.zeroOut();
   fwProperties_total.zeroOut();
 #ifdef PARALLEL
   localTimers.getGatherPropertiesStopwatch()->start();
-
-  MPI_Reduce( QMCnode.getProperties(), &Properties_total, 1,
-              QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, 0, MPI_COMM_WORLD );
 
   int numCS = QMCnode.getFWProperties()->cs_Energies.dim1();
 
@@ -272,8 +268,6 @@ void QMCManager::gatherProperties()
 		QMCStatistic::MPI_REDUCE,
 		0,MPI_COMM_WORLD );
   
-  //reduce over QMCFutureWalkingProperties
-  //maybe this doesn't have to happen so often...
   for(int i=0; i<fwProperties_total.props.dim1(); i++)
     {
       MPI_Reduce( QMCnode.getFWProperties()->props[i].array(),
@@ -284,8 +278,24 @@ void QMCManager::gatherProperties()
 
   localTimers.getGatherPropertiesStopwatch()->stop();
 #else
-  Properties_total = *QMCnode.getProperties();
   fwProperties_total = *QMCnode.getFWProperties();
+#endif
+}
+
+void QMCManager::gatherProperties()
+{
+  synchronizationBarrier();
+
+  Properties_total.zeroOut();
+#ifdef PARALLEL  
+  localTimers.getGatherPropertiesStopwatch()->start();
+
+  MPI_Reduce( QMCnode.getProperties(), &Properties_total, 1,
+              QMCProperties::MPI_TYPE, QMCProperties::MPI_REDUCE, 0, MPI_COMM_WORLD );
+
+  localTimers.getGatherPropertiesStopwatch()->stop();
+#else
+  Properties_total = *QMCnode.getProperties();
 #endif
 
   if( equilibrating )
@@ -676,7 +686,6 @@ bool QMCManager::run(bool equilibrate)
 	   << setw(width) << "Num. Samples"
 	   << endl;
     }
-
  
   equilibrationProperties.zeroOut();
   
@@ -740,6 +749,17 @@ bool QMCManager::run(bool equilibrate)
   
   while( !done )
   {
+    if(globalInput.flags.calculate_Derivatives != 0)
+      if(!equilibrating)
+	{
+	  //only calculate derivatives if we're not equilibrating
+	  globalInput.flags.calculate_Derivatives = 1;
+	} else {
+	  //otherwise, -1 means that eventually, we will want to
+	  //calculate derivatives
+	  globalInput.flags.calculate_Derivatives = -1;
+	}
+
     //each process keeps track of an iteration counter
     iteration++;
 
@@ -921,9 +941,9 @@ bool QMCManager::run(bool equilibrate)
 	  writeEnergyResultsSummary( cout );
 	  writeEnergyResultsSummary( *qmcOut );
 
-	  synchronizationBarrier();
 	  gatherProperties();
-	      
+	  gatherExtraProperties();
+
 	  if (globalInput.flags.write_electron_densities == 1)
 	    {
 	      gatherHistograms();
@@ -960,6 +980,7 @@ bool QMCManager::run(bool equilibrate)
       if( iteration % globalInput.flags.mpireduce_interval == 0 )
 	{
 	  sendAllProcessorsACommand( QMC_REDUCE );
+
 	  gatherProperties();
 	  if ( globalInput.flags.write_electron_densities == 1)
 	    {
@@ -984,7 +1005,7 @@ bool QMCManager::run(bool equilibrate)
 	  sendAllProcessorsACommand( QMC_TERMINATE );
 	  
 	  gatherProperties();
-	  
+	  gatherExtraProperties();
 	  if (globalInput.flags.write_electron_densities == 1)
 	    {
 	      gatherHistograms();
@@ -1043,7 +1064,8 @@ bool QMCManager::run(bool equilibrate)
 	    done = true;
 	    
 	    gatherProperties();
-	    
+	    gatherExtraProperties();
+
 	    if (globalInput.flags.write_electron_densities == 1)
 	      gatherHistograms();
 	    
@@ -1069,9 +1091,9 @@ bool QMCManager::run(bool equilibrate)
 	      cout << "Rank " << globalInput.flags.my_rank << " received REDUCE_ALL_NOW."<< endl;
 	    QMCManager::REDUCE_ALL_NOW = false;
 	    
-	    synchronizationBarrier();
 	    gatherProperties();
-	    
+	    gatherExtraProperties();
+
 	    if (globalInput.flags.write_electron_densities == 1)
 	      gatherHistograms();
 	    
@@ -2151,6 +2173,13 @@ void QMCManager::updateEffectiveTimeStep( QMCProperties* Properties )
 void QMCManager::synchronizationBarrier()
 {
 #ifdef PARALLEL
+  /*
+    On average, this timer is a measurement of
+    (time per iteration) * mpipoll_interval * (number of times called)
+    
+    To make this take less time, make mpireduce_interval larger or make
+    mpipoll_interval smaller. Or of course, fewer walkers.
+  */
   localTimers.getCommunicationSynchronizationStopwatch() ->start();
   MPI_Barrier( MPI_COMM_WORLD );
   localTimers.getCommunicationSynchronizationStopwatch() ->stop();

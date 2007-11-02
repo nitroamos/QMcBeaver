@@ -201,19 +201,6 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
   wd      =  0;
   x       =  0;
   iWalker = -1;
-
-  if(globalInput.cs_Parameters.dim1() > 1)
-    {
-      calculate_CorrelatedSampling(walkerData,xData,num);
-    }
-  else
-    {
-      for(int i=0; i<num; i++)
-	{
-	  walkerData(i)->cs_LocalEnergy.deallocate();
-	  walkerData(i)->cs_Weights.deallocate();
-	}
-    }
 }
 
 void QMCSCFJastrow::evaluate(Array2D<double> &X, QMCWalkerData & data)

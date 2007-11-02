@@ -69,6 +69,15 @@ public:
 		Array1D<Array2D<double> * > &xData, int num) = 0;
 
   /**
+     This must be called after calculate_Psi_quantities.
+     It assumes that we're only interested Jastrow parameter modifications,
+     recalculate the energy for each set of parameters.
+  */
+  virtual void calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walkerData,
+				    Array1D<Array2D<double> * > &xData,
+				    int num){};
+
+  /**
     Sets two QMCFunctions objects equal.
 
     @param rhs object to set this object equal to

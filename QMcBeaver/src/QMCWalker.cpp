@@ -1801,13 +1801,28 @@ void QMCWalker::calculateObservables()
     {
       p3_xxa.allocate(TrialWalker->walkerData.p3_xxa.dim1());
       rp_a.allocate(TrialWalker->walkerData.rp_a.dim1());
-      for(int ai=0; ai<rp_a.dim1(); ai++)
+
+      if(iteration == 1)
 	{
-	  p3_xxa(ai) = p * TrialWalker->walkerData.p3_xxa(ai) +
-	    q * OriginalWalker->walkerData.p3_xxa(ai);
-	  
-	  rp_a(ai) = p * TrialWalker->walkerData.rp_a(ai) +
-	    q * OriginalWalker->walkerData.rp_a(ai);
+	  /*
+	    If we weren't calculating derivatives while equilibrating, then
+	    we need this special case in order to be consistent.
+	  */
+	  for(int ai=0; ai<rp_a.dim1(); ai++)
+	    {
+	      p3_xxa(ai) = TrialWalker->walkerData.p3_xxa(ai);
+	      
+	      rp_a(ai) = TrialWalker->walkerData.rp_a(ai);
+	    }
+	} else {
+	  for(int ai=0; ai<rp_a.dim1(); ai++)
+	    {     
+	      p3_xxa(ai) = p * TrialWalker->walkerData.p3_xxa(ai) +
+		q * OriginalWalker->walkerData.p3_xxa(ai);
+	      
+	      rp_a(ai) = p * TrialWalker->walkerData.rp_a(ai) +
+		q * OriginalWalker->walkerData.rp_a(ai);
+	    }
 	}
     }
 

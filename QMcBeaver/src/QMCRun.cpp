@@ -43,7 +43,28 @@ void QMCRun::propagateWalkers(bool writeConfigs, int iteration)
       count++;
       index = count%wpp;
       if(index == 0 || count == (int)(wlist.size()))
-	QMF->evaluate(dataPointers,rPointers,index==0?wpp:index);
+	{
+	  int num = index==0?wpp:index;
+	  QMF->evaluate(dataPointers,rPointers,num);
+
+
+	  if(globalInput.cs_Parameters.dim1() > 1)
+	    {
+	      //we don't need to do this if we're equilibrating, since we're just going
+	      //to throw the data away
+	      if(iteration >= 0)
+		QMF->calculate_CorrelatedSampling(dataPointers,rPointers,num);
+	    }
+	  else
+	    {
+	      for(int i=0; i<num; i++)
+		{
+		  dataPointers(i)->cs_LocalEnergy.deallocate();
+		  dataPointers(i)->cs_Weights.deallocate();
+		}
+	    }
+
+	}
     }
 
   /*At this point, all of the dataPointers have been filled, so we
@@ -955,7 +976,7 @@ bool QMCRun::step(bool writeConfigs, int iteration)
 
   int whichE = -1;
   if(globalInput.flags.one_e_per_iter != 0)
-    whichE = step & globalInput.WF.getNumberElectrons();
+    whichE = step % globalInput.WF.getNumberElectrons();
 
   if(whichE == -1 || whichE == 0)
     {

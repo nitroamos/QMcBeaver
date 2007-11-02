@@ -204,23 +204,25 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
       orig_steps = globalInput.flags.max_time_steps;
       hamiltonian = dp.getParameterHamiltonian();
       overlap = dp.getParameterOverlap();
-      int numTests = 26;
-      
       adiag_tests.clear();
-      double fac = sqrt(10.0);
-      //this will be the guiding function
-      //adiag_tests.push_back(get_a_diag(dp,a_diag_factor));
-      adiag_tests.push_back(0.0);
-      adiag_tests.push_back(1e-15);
-      adiag_tests.push_back(1e-12);
-      adiag_tests.push_back(1e-10);
-      adiag_tests.push_back(1.0e-8);
-      while(adiag_tests.size() < (unsigned)numTests)
-	adiag_tests.push_back(fac * adiag_tests[adiag_tests.size()-1]);
 
-      //vector<double>::iterator last = unique(adiag_tests.begin(), adiag_tests.end());
-      //adiag_tests.erase(last,adiag_tests.end());
-      
+      if(false)
+	{
+	  double fac = sqrt(10.0);
+	  adiag_tests.push_back(0.0);
+	  adiag_tests.push_back(1e-15);
+	  adiag_tests.push_back(1e-12);
+	  adiag_tests.push_back(1e-10);
+	  adiag_tests.push_back(1.0e-8);
+	  while(adiag_tests[adiag_tests.size()-1] < 1000)
+	    adiag_tests.push_back(fac * adiag_tests[adiag_tests.size()-1]);
+	} else {
+	  adiag_tests.push_back(1.0e-9);
+	  while(adiag_tests[adiag_tests.size()-1] < 1000)
+	    adiag_tests.push_back(100.0 * adiag_tests[adiag_tests.size()-1]);	  
+	}
+
+      int numTests = adiag_tests.size();
       globalInput.cs_Parameters.allocate(adiag_tests.size()+1);
       for(int cs=0; cs<numTests; cs++)
 	{
@@ -241,11 +243,15 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
       //to be at the 0th index
       params = globalInput.cs_Parameters(0);
       if(orig_steps < 10000)
-	globalInput.flags.max_time_steps = 2000;
+	{
+	  globalInput.flags.max_time_steps = min(2000,orig_steps);
+	  //globalInput.flags.max_time_steps = 2000;
+	}
       else
-	globalInput.flags.max_time_steps = min(20000,(int)(0.2*orig_steps));
+	{
+	  globalInput.flags.max_time_steps = min(20000,(int)(0.2*orig_steps));
+	}
       globalInput.flags.max_time_steps += globalInput.flags.equilibration_steps;
-
       globalInput.flags.calculate_Derivatives = 0;
     }
   else

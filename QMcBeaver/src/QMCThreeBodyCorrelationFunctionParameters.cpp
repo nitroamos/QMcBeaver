@@ -387,11 +387,16 @@ void QMCThreeBodyCorrelationFunctionParameters::setFreeParameters(const Array1D<
   
   Parameters = tempArray;
 
-  if(!checkCuspAndSymmetry())
-    {
-      clog << "Error: checkCuspAndSymmetry failed in setFreeParameters" << endl;
-      exit(0);
-    }
+  /*
+    When running correlated sampling, we don't need to run this every time.
+    So how about we only check it when we are doing something else.
+  */
+  if(globalInput.cs_Parameters.dim1() == 0)
+    if(!checkCuspAndSymmetry())
+      {
+	clog << "Error: checkCuspAndSymmetry failed in setFreeParameters" << endl;
+	exit(0);
+      }
   initializeThreeBodyCorrelationFunctionParameters();
 }
 

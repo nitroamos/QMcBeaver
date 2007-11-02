@@ -177,15 +177,10 @@ inline void QMCThreeBodyJastrow::collectForPair(int Electron1,
   if(!paramset->isUsed()) return;
   QMCThreeBodyCorrelationFunction *U_Function = paramset->getThreeBodyCorrelationFunction();
 
-  // Find the distances between the two electrons and the nucleus
-  double dist1 = wd->riI(Electron1,Nuclei);
-  double dist2 = wd->riI(Electron2,Nuclei);
-  double r12   = wd->rij(Electron1,Electron2);
-
   Array1D<double> xyz1(3);
   Array1D<double> xyz2(3);
   Array1D<double> xyz12(3);
-
+  
   for(int i=0; i<3; i++)
     {
       xyz1(i)  = wd->riI_uvec(Electron1,Nuclei,i);
@@ -193,10 +188,10 @@ inline void QMCThreeBodyJastrow::collectForPair(int Electron1,
       xyz12(i) = wd->rij_uvec(Electron1, Electron2,i);
     }
 
-  U_Function->evaluate(xyz1,  dist1,
-		       xyz2,  dist2,
-		       xyz12, r12);
-
+  U_Function->evaluate(xyz1,     wd->riI(Electron1,Nuclei),
+		       xyz2,     wd->riI(Electron2,Nuclei),
+		       xyz12, wd->rij(Electron1,Electron2));
+  
   sum_U += U_Function->getFunctionValue();
 
   Array1D<double> * grad1 = U_Function->getElectron1Gradient();
@@ -229,7 +224,7 @@ inline void QMCThreeBodyJastrow::collectForPair(int Electron1,
 
 void QMCThreeBodyJastrow::packageDerivatives()
 {
-  if(globalInput.flags.calculate_Derivatives == 0 ||
+  if(globalInput.flags.calculate_Derivatives != 1 ||
      globalInput.flags.optimize_NEE_Jastrows == 0)
     return;
 

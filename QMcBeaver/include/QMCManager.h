@@ -359,6 +359,15 @@ class QMCManager
   void gatherProperties();
 
   /**
+     Gathers the statistics of the calculated properties from all the 
+     processors.
+
+     These are the non-critical properties, no decisions are made based
+     on this data, so we shouldn't collect the data so often.
+  */ 
+  void gatherExtraProperties();
+
+  /**
      Gathers the statistics for the basis function densities from all the 
      processors and saves the result in Properties_total.
   */

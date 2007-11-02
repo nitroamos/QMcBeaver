@@ -153,7 +153,7 @@ void QMCFutureWalkingProperties::zeroOut()
 
   int numAI = globalInput.getNumberAIParameters();
 
-  if(globalInput.flags.calculate_Derivatives == 1)
+  if(globalInput.flags.calculate_Derivatives != 0)
     {
       //second parameter refers to the number of terms necessary
       //to calculate derivatives of the optimization objective function
