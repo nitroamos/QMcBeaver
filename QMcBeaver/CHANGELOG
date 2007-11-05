@@ -1,3 +1,12 @@
+Mon, Nov 5, 2007 Amos Anderson
+1.  I improved the performance of the 3 body jastrow calculations. I used a wide variety
+    of tricks, and for my test input file (which is mostly correlated sampling), the code
+    runs at 40-50% faster. There's no difference in the energies.
+
+    There was a *very* slight numerical difference in the results (8th
+    decimal place) for the correlated sampling energies. The derivatives themselves
+    differ in the 14th place. However, I think this difference is negligible.
+
 Mon, Oct 29, 2007 Amos Anderson
 1.  I changed the way Jastrows are read in. Old input files are still compatible.
     Now you do not have to include Jastrow functions that will not be used. I added
