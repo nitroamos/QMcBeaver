@@ -22,9 +22,12 @@ void ZeroThreeBodyCorrelationFunction::initializeParameters(int en, int ee,
   grad2 = 0.0;
 }
 
-void ZeroThreeBodyCorrelationFunction::evaluate(Array1D<double> &xyz1, double dist1,
-						Array1D<double> &xyz2, double dist2,
-						Array1D<double> &xyz12, double r12)
+bool ZeroThreeBodyCorrelationFunction::setElectron(bool first, Array1D<double> &xyz, double dist)
+{
+  return false;
+}
+
+void ZeroThreeBodyCorrelationFunction::evaluate(Array1D<double> &xyz12, double r12)
 {
   // Do nothing
 }

@@ -143,28 +143,54 @@ void QMCThreeBodyJastrow::evaluate(QMCJastrowParameters & JP,
 	    break;
 	  } 
 
+      Array1D<double> xyz(3);
+      
       // Now we do all opposite spin pairs with this nucleus	 
       if (nalpha > 0 && nbeta > 0)
-	for(int Electron1=0; Electron1<nalpha; Electron1++)
-	  for (int Electron2=nalpha; Electron2<nalpha+nbeta; Electron2++)
-	    collectForPair(Electron2, Electron1, Nuclei,
-			   & (*EupEdnNuclear)(NucleiType));
+	for (int Electron2=nalpha; Electron2<nalpha+nbeta; Electron2++)
+	  {
+	    bool used;
+	    for(int i=0; i<3; i++)
+	      xyz(i)  = wd->riI_uvec(Electron2,Nuclei,i);
+	    used = (*EupEdnNuclear)(NucleiType).getThreeBodyCorrelationFunction()->setElectron(true, xyz, wd->riI(Electron2,Nuclei));
+	    if(!used) continue;
+
+	    for(int Electron1=0; Electron1<nalpha; Electron1++)
+	      collectForPair(Electron2, Electron1, Nuclei,
+			     & (*EupEdnNuclear)(NucleiType));
+	  }
 
       // First we do all pairs of two alphas with this nucleus
+
       if (nalpha > 1)
-	for(int Electron1=0; Electron1<nalpha; Electron1++)
-	  for(int Electron2=0; Electron2<Electron1; Electron2++)	      
-	    collectForPair(Electron1, Electron2, Nuclei,
-			   & (*EupEupNuclear)(NucleiType));
-      
+	for(int Electron1=1; Electron1<nalpha; Electron1++)
+	  {
+	    bool used;
+	    for(int i=0; i<3; i++)
+	      xyz(i)  = wd->riI_uvec(Electron1,Nuclei,i);
+	    used = (*EupEupNuclear)(NucleiType).getThreeBodyCorrelationFunction()->setElectron(true, xyz, wd->riI(Electron1,Nuclei));
+	    if(!used) continue;
+
+	    for(int Electron2=0; Electron2<Electron1; Electron2++)	      
+	      collectForPair(Electron1, Electron2, Nuclei,
+			     & (*EupEupNuclear)(NucleiType));
+	  }
+
       // Finally we do all beta spin pairs with this nucleus
       if (nbeta > 1)
-	for(int Electron1=nalpha; Electron1<X.dim1(); Electron1++)
-	  for(int Electron2=nalpha; Electron2<Electron1; Electron2++)
-	    collectForPair(Electron1, Electron2, Nuclei,
-			   & (*EdnEdnNuclear)(NucleiType));
-    }
+	for(int Electron1=nalpha+1; Electron1<X.dim1(); Electron1++)
+	  {
+	    bool used;
+	    for(int i=0; i<3; i++)
+	      xyz(i)  = wd->riI_uvec(Electron1,Nuclei,i);
+	    used = (*EdnEdnNuclear)(NucleiType).getThreeBodyCorrelationFunction()->setElectron(true, xyz, wd->riI(Electron1,Nuclei));
+	    if(!used) continue;
 
+	    for(int Electron2=nalpha; Electron2<Electron1; Electron2++)
+	      collectForPair(Electron1, Electron2, Nuclei,
+			     & (*EdnEdnNuclear)(NucleiType));
+	  }
+    }
   packageDerivatives();
   wd = 0;
 }
@@ -177,20 +203,20 @@ inline void QMCThreeBodyJastrow::collectForPair(int Electron1,
   if(!paramset->isUsed()) return;
   QMCThreeBodyCorrelationFunction *U_Function = paramset->getThreeBodyCorrelationFunction();
 
-  Array1D<double> xyz1(3);
   Array1D<double> xyz2(3);
   Array1D<double> xyz12(3);
   
   for(int i=0; i<3; i++)
     {
-      xyz1(i)  = wd->riI_uvec(Electron1,Nuclei,i);
       xyz2(i)  = wd->riI_uvec(Electron2,Nuclei,i);
       xyz12(i) = wd->rij_uvec(Electron1, Electron2,i);
     }
 
-  U_Function->evaluate(xyz1,     wd->riI(Electron1,Nuclei),
-		       xyz2,     wd->riI(Electron2,Nuclei),
-		       xyz12, wd->rij(Electron1,Electron2));
+  bool used;
+  used = U_Function->setElectron(false,xyz2, wd->riI(Electron2,Nuclei));
+  if(!used) return;
+
+  U_Function->evaluate(xyz12, wd->rij(Electron1,Electron2));
   
   sum_U += U_Function->getFunctionValue();
 

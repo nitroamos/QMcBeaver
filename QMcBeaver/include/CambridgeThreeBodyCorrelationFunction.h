@@ -37,8 +37,19 @@ class CambridgeThreeBodyCorrelationFunction : public QMCThreeBodyCorrelationFunc
   Array1D<double> p3_xxa;
 
  private:
+  double * d1pow;
+  double * d2pow;
+  double * r12pow;
 
-  Array3D<double> coeffs;
+  double * d1pow1;
+  double * d2pow1;
+  double * r12pow1;
+
+  double * d1pow2;
+  double * d2pow2;
+  double * r12pow2;
+
+  double * coeffs;
 
   int Nen, Nee, C;
   double cutoff;
@@ -57,17 +68,19 @@ class CambridgeThreeBodyCorrelationFunction : public QMCThreeBodyCorrelationFunc
 
   double r1, r2, r12;
   double d1, d2;
-  Array1D<double> r1v, r2v, r12v;
-
+  
+  Array1D<double> r1v;
+  Array1D<double> r2v;
+  Array1D<double> r12v;
  public:
 
   void initializeParameters(int electron_nucleus, int electron_electron, 
 			    Array1D<double> &Parameters, int power, 
 			    double max_dist);
 
-  void evaluate(Array1D<double> &xyz1, double dist1,
-		Array1D<double> &xyz2, double dist2,
-		Array1D<double> &xyz12, double r12);
+  bool setElectron(bool first, Array1D<double> &xyz, double dist);
+
+  void evaluate(Array1D<double> &xyz12, double r12);
 
   double getFunctionValue();
   double get_p_a(int ai);

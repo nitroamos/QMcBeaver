@@ -27,9 +27,9 @@ class ZeroThreeBodyCorrelationFunction : public QMCThreeBodyCorrelationFunction
   void initializeParameters(int electron_nucleus, int electron_electron, 
 			    Array1D<double> &Parameters, int C, double max);
 
-  void evaluate(Array1D<double> &xyz1, double dist1,
-		Array1D<double> &xyz2, double dist2,
-		Array1D<double> &xyz12, double r12);
+  bool setElectron(bool first, Array1D<double> &xyz, double dist);
+
+  void evaluate(Array1D<double> &xyz12, double r12);
 
   double getFunctionValue();
   double get_p_a(int ai);

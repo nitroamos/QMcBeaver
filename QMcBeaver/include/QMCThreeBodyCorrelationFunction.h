@@ -41,13 +41,13 @@ class QMCThreeBodyCorrelationFunction
 				    Array1D<double> &Parameters,int power, 
 				    double max_dist) = 0;
 
+  virtual bool setElectron(bool first, Array1D<double> &xyz, double dist) = 0;
+
   /**
     Evaluates the correlation function and its first two derivatives at 
     \f$r\f$.
     */
-  virtual void evaluate( Array1D<double> &xyz1, double dist1,
-			 Array1D<double> &xyz2, double dist2,
-			 Array1D<double> &xyz12, double r12) = 0;
+  virtual void evaluate(Array1D<double> &xyz12, double r12) = 0;
   
   /**
     Gets the value of the correlation function for the last evaluated \f$r\f$.
