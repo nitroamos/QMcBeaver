@@ -222,11 +222,16 @@ bool QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
   
   Constants.allocate(TotalNumberOfConstants);
   strm >> temp;
-  
-  for (int i = 0; i < TotalNumberOfConstants; i++)
+
+  pi = Constants.read(strm,0.0,"2 particle Jastrow"); 
+  if(TotalNumberOfConstants != pi)
     {
-      strm >> temp;
-      Constants(i) = atof(temp.c_str());
+      clog << "Error: you didn't enter the right number of constants in 2 particle Jastrow";
+      clog << " (" << ParticleTypes(0) << "," << ParticleTypes(1) << "):" << endl;
+      clog << "  Number expected = " << TotalNumberOfConstants << endl;
+      clog << "  Number found =    " << pi << endl;
+      //we'll consider this to be an unrecoverable error
+      exit(0);
     }
 
   if( ParticleTypes(1) != "Electron_up" && ParticleTypes(1) != "Electron_down"
