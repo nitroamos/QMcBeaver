@@ -116,7 +116,7 @@ class QMCThreeBodyCorrelationFunctionParameters
   /**
      Is this correlation function "None"?
   */
-  bool isUsed();
+  bool isUsed() const;
 
   /**
     Sets the type of particle1 for the particular three body interaction 
@@ -183,10 +183,15 @@ class QMCThreeBodyCorrelationFunctionParameters
      This function is used by QMCThreeBodyJastrow while calculating
      parameter derivatives.
   */
-  void totalDerivativesToFree(int shift,
+  void totalDerivativesToFree(int & shift,
 			      Array1D<double> & p_a,
 			      Array1D< Array2D<double> > & p2_xa,
 			      Array1D<double> & p3_xxa) const;
+
+  /**
+     Add the derivative data from another object to ours.
+  */
+  void totalDerivativesAccumulate(QMCThreeBodyCorrelationFunctionParameters & rhs);
 
   /**
      The parameter derivatives are stored here.

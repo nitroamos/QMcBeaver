@@ -1,3 +1,9 @@
+Wed, Nov 7, 2007 Amos Anderson
+1.  I improved the performance of the 3 body jastrow parameter derivative calculations.
+    In QMCThreeBodyJastrow::packageDerivatives, the code will accumulate some of the
+    derivative data and apply the totalDerivativesToFree on the accumulated data, instead
+    of each entry individually.
+
 Mon, Nov 5, 2007 Amos Anderson
 1.  I improved the performance of the 3 body jastrow calculations. I used a wide variety
     of tricks, and for my test input file (which is mostly correlated sampling), the code

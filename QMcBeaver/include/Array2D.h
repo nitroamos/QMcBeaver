@@ -391,7 +391,19 @@ template <class T> class Array2D
       return sdot_(&n_1, pArray + whichElectron*n_2, &inc, rhs.pArray + whichElectron*n_2, &inc);
 #endif	
     }
-  
+
+  void operator+=( const Array2D<double> & rhs)
+    {
+#ifdef USE_CBLAS
+      cblas_daxpy(n_1*n_2, 1.0, rhs.pArray,1, pArray, 1);
+#else
+      int num = n_1*n_2;
+      int inc = 1;
+      double a = 1.0;
+      daxpy_(&num, &a, rhs.pArray, &inc, pArray, &inc);
+#endif
+    }
+
 #else
   void gemm(const Array2D<T> & rhs, Array2D<T> & result,
 	    const bool rhsIsTransposed) const
@@ -499,6 +511,13 @@ template <class T> class Array2D
         temp += l[i]*r[i];
       return temp;
     }
+
+  void operator+=( const Array2D<T> & rhs)
+    {
+      for(int i=0; i<n_1*n_2; i++)
+        pArray[i] += rhs.pArray[i];
+    }
+
 #endif
   
   Array2D<T> operator*(const Array2D<T> & rhs) const

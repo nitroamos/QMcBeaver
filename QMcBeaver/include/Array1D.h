@@ -189,6 +189,19 @@ template <class T> class Array1D
 #endif
       return A;
     }
+
+    //this method has not been tested with ATLAS
+    void operator+=( const Array1D & rhs)
+    {
+#ifdef USE_CBLAS
+      cblas_daxpy(n_1, 1.0, rhs.pArray,1, pArray, 1);
+#else
+      int inc = 1;
+      double a = 1.0;
+      daxpy_(&n_1, &a, rhs.pArray, &inc, pArray, &inc);
+#endif
+    }
+
 #else
     /**
     Returns the dot product of two arrays.
@@ -248,6 +261,13 @@ template <class T> class Array1D
         }
       return A;
     }
+
+    void operator+=( const Array1D<T> & rhs)
+      {
+	for(int i=0; i<n_1; i++)
+	  pArray[i] += rhs.pArray[i];
+      }
+    
 #endif
     /**
     Sets two arrays equal.
