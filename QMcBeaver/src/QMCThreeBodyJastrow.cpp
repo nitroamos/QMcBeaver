@@ -132,6 +132,7 @@ void QMCThreeBodyJastrow::evaluate(QMCJastrowParameters & JP,
   else
     EdnEdnNuclear = 0;
 
+  Array1D<double> xyz(3);
   for(int Nuclei=0; Nuclei<Input->Molecule.getNumberAtoms(); Nuclei++)
     {
       // Find the number of the current nucleus in the nuclei list
@@ -142,8 +143,6 @@ void QMCThreeBodyJastrow::evaluate(QMCJastrowParameters & JP,
 	    NucleiType = i;
 	    break;
 	  } 
-
-      Array1D<double> xyz(3);
       
       // Now we do all opposite spin pairs with this nucleus	 
       if (nalpha > 0 && nbeta > 0)
@@ -191,6 +190,7 @@ void QMCThreeBodyJastrow::evaluate(QMCJastrowParameters & JP,
 			     & (*EdnEdnNuclear)(NucleiType));
 	  }
     }
+  xyz.deallocate();
   packageDerivatives();
   wd = 0;
 }
@@ -269,53 +269,39 @@ void QMCThreeBodyJastrow::packageDerivatives()
     }
   p_a = 0.0;
   p3_xxa = 0.0;
-  
-  int ai = 0;
-  int upupstart;
 
-  if(EupEdnNuclear != 0)
-    for(int nuc=0; nuc<EupEdnNuclear->dim1(); nuc++)
-      if((*EupEdnNuclear)(nuc).isUsed())
+  int numNuc = EupEdnNuclear->dim1();
+  int ai;
+  int nucStart = 0;
+  for(int nuc=0; nuc<numNuc; nuc++)
+    {
+      ai = nucStart;
+      QMCThreeBodyCorrelationFunctionParameters * accum = & (*EupEdnNuclear)(nuc);
+      
+      switch(globalInput.flags.link_NEE_Jastrows)
 	{
-	  (*EupEdnNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
-	  ai += (*EupEdnNuclear)(nuc).getNumberOfFreeParameters();
+	case 0:
+	  accum->totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	  accum = & (*EupEupNuclear)(nuc);
+	  accum->totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	  accum = & (*EdnEdnNuclear)(nuc);
+	  accum->totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	  break;
+
+	case 1:
+	  accum->totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	  accum = & (*EupEupNuclear)(nuc);
+	  accum->totalDerivativesAccumulate((*EdnEdnNuclear)(nuc));
+	  accum->totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	  break;
+
+	case 2:
+	  accum->totalDerivativesAccumulate((*EupEupNuclear)(nuc));
+	  accum->totalDerivativesAccumulate((*EdnEdnNuclear)(nuc));
+	  accum->totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
+	  break;
 	}
-  upupstart = ai;
-
-  if(EupEupNuclear != 0)
-    {
-      if(globalInput.flags.link_NEE_Jastrows == 2)
-	ai = 0;
-
-      for(int nuc=0; nuc<EupEupNuclear->dim1(); nuc++)
-	if((*EupEupNuclear)(nuc).isUsed())
-	  {
-	    (*EupEupNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
-	    ai += (*EupEupNuclear)(nuc).getNumberOfFreeParameters();
-	  }  
-    }
-
-  if(EdnEdnNuclear != 0)
-    {
-      if(globalInput.flags.link_NEE_Jastrows == 1)
-	ai = upupstart;
-      else if(globalInput.flags.link_NEE_Jastrows == 2)
-	ai = 0;
-
-      for(int nuc=0; nuc<EdnEdnNuclear->dim1(); nuc++)
-	if((*EdnEdnNuclear)(nuc).isUsed())
-	  {
-	    (*EdnEdnNuclear)(nuc).totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
-	    ai += (*EdnEdnNuclear)(nuc).getNumberOfFreeParameters();
-	  }
-    }
-
-  if(ai != numNEE)
-    {
-      clog << "Error: parameter counting went bad in packageDerivatives" << endl;
-      clog << "     ai = " << ai << endl;
-      clog << " numNEE = " << numNEE << endl;
-      exit(0);
+      nucStart += ai;
     }
 }
 

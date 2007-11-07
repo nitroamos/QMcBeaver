@@ -327,80 +327,82 @@ void QMCJastrowParameters::setJWParameters(Array1D<double> & params, int shift)
   if (globalInput.flags.use_three_body_jastrow == 1 &&
       globalInput.flags.optimize_NEE_Jastrows == 1)
     {
-      if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
-	for (int i=0; i<EupEdnNuclear.dim1(); i++)
-	  {
-	    CurrentNumberOfParams = 
-	      EupEdnNuclear(i).getNumberOfFreeParameters();
-	    
-	    temp.allocate(CurrentNumberOfParams);
-	    
-	    for (int j=0; j<temp.dim1(); j++)
-	      {
-		temp(j) = params(Counter + shift);
-		Counter++;
-	      }
-	    
-	    EupEdnNuclear(i).setFreeParameters( temp );
-	  }
-      
-      if (NumberOfElectronsUp > 1)
-	if(globalInput.flags.link_NEE_Jastrows < 2)
-	  {
-	    for (int i=0; i<EupEupNuclear.dim1(); i++)
-	      {
-		CurrentNumberOfParams =
-		  EupEupNuclear(i).getNumberOfFreeParameters();
-		
-		temp.allocate(CurrentNumberOfParams);
-		
-		for (int j=0; j<temp.dim1(); j++)
-		  {
-		    temp(j) = params(Counter + shift);
-		    Counter++;
-		  }
-		
-		EupEupNuclear(i).setFreeParameters( temp );
-	      }
-	  }
-	else
-	  {
-	    EupEupNuclear = EupEupNuclear;
-	    for (int i=0; i<EdnEdnNuclear.dim1(); i++)
-	      {
-		EupEupNuclear(i).setParticle2Type("Electron_up");
-		EupEupNuclear(i).setParticle3Type("Electron_up");
-	      }
-	  }
-      
-      if(NumberOfElectronsDown > 1)
-	if(globalInput.flags.link_NEE_Jastrows < 1)
-	  {
-	    for (int i=0; i<EdnEdnNuclear.dim1(); i++)
-	      {
-		CurrentNumberOfParams =
-		  EdnEdnNuclear(i).getNumberOfFreeParameters();
-		
-		temp.allocate(CurrentNumberOfParams);
-		
-		for (int j=0; j<temp.dim1(); j++)
-		  {
-		    temp(j) = params(Counter + shift);
-		    Counter++;
-		  }
-		
-		EdnEdnNuclear(i).setFreeParameters( temp );
-	      }
-	  }
-	else
-	  {
-	    EdnEdnNuclear = EupEupNuclear;
-	    for (int i=0; i<EdnEdnNuclear.dim1(); i++)
-	      {
-		EdnEdnNuclear(i).setParticle2Type("Electron_down");
-		EdnEdnNuclear(i).setParticle3Type("Electron_down");
-	      }
-	  }
+      for (int nuc=0; nuc<EupEdnNuclear.dim1(); nuc++)
+	{
+	  if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
+	    {
+	      CurrentNumberOfParams = 
+		EupEdnNuclear(nuc).getNumberOfFreeParameters();
+	      
+	      temp.allocate(CurrentNumberOfParams);
+	      
+	      for (int j=0; j<temp.dim1(); j++)
+		{
+		  temp(j) = params(Counter + shift);
+		  Counter++;
+		}
+	      
+	      EupEdnNuclear(nuc).setFreeParameters( temp );
+	    }
+
+	  //up up electrons
+	  if (NumberOfElectronsUp > 1)
+	    {
+	      if(globalInput.flags.link_NEE_Jastrows < 2)
+		{
+		  CurrentNumberOfParams =
+		    EupEupNuclear(nuc).getNumberOfFreeParameters();
+		  
+		  temp.allocate(CurrentNumberOfParams);
+		  
+		  for (int j=0; j<temp.dim1(); j++)
+		    {
+		      temp(j) = params(Counter + shift);
+		      Counter++;
+		    }
+		  
+		  EupEupNuclear(nuc).setFreeParameters( temp );		
+		}
+	      else
+		{
+		  EupEupNuclear = EupEupNuclear;
+		  for (int i=0; i<EdnEdnNuclear.dim1(); i++)
+		    {
+		      EupEupNuclear(i).setParticle2Type("Electron_up");
+		      EupEupNuclear(i).setParticle3Type("Electron_up");
+		    }
+		}
+	    }
+
+	  //down down electrons
+	  if(NumberOfElectronsDown > 1)
+	    {
+	      if(globalInput.flags.link_NEE_Jastrows < 1)
+		{
+		  CurrentNumberOfParams =
+		    EdnEdnNuclear(nuc).getNumberOfFreeParameters();
+		  
+		  temp.allocate(CurrentNumberOfParams);
+		  
+		  for (int j=0; j<temp.dim1(); j++)
+		    {
+		      temp(j) = params(Counter + shift);
+		      Counter++;
+		    }
+		  
+		  EdnEdnNuclear(nuc).setFreeParameters( temp );
+		}
+	      else
+		{
+		  EdnEdnNuclear = EupEupNuclear;
+		  for (int i=0; i<EdnEdnNuclear.dim1(); i++)
+		    {
+		      EdnEdnNuclear(i).setParticle2Type("Electron_down");
+		      EdnEdnNuclear(i).setParticle3Type("Electron_down");
+		    }
+		}
+	    }
+	}
     }  
 }
 
@@ -611,41 +613,41 @@ void QMCJastrowParameters::getJWParameters(Array1D<double> & params, int shift)
 
   if (globalInput.flags.optimize_NEE_Jastrows == 1)
     {
-      if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
-	for (int i=0; i<EupEdnNuclear.dim1(); i++)
-	  {
-	    temp = EupEdnNuclear(i).getFreeParameters();
-	    
-	    for (int j=0; j<temp.dim1(); j++)
-	      {
-		params(Counter + shift) = temp(j);
-		Counter++;
-	      }
-	  }
+      for (int i=0; i<EupEdnNuclear.dim1(); i++)
+	{
+	  if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
+	    {
+	      temp = EupEdnNuclear(i).getFreeParameters();
+	      
+	      for (int j=0; j<temp.dim1(); j++)
+		{
+		  params(Counter + shift) = temp(j);
+		  Counter++;
+		}
+	    }
+	  
+	  if(globalInput.flags.link_NEE_Jastrows < 2 && NumberOfElectronsUp > 1)
+	    {
+	      temp = EupEupNuclear(i).getFreeParameters();
+	      
+	      for (int j=0; j<temp.dim1(); j++)
+		{
+		  params(Counter + shift) = temp(j);
+		  Counter++;
+		}
+	    }
       
-      if(globalInput.flags.link_NEE_Jastrows < 2 && NumberOfElectronsUp > 1)
-	for (int i=0; i<EupEupNuclear.dim1(); i++)
-	  {
-	    temp = EupEupNuclear(i).getFreeParameters();
-	    
-	    for (int j=0; j<temp.dim1(); j++)
-	      {
-		params(Counter + shift) = temp(j);
-		Counter++;
-	      }
-	  }
-      
-      if(globalInput.flags.link_NEE_Jastrows < 1 && NumberOfElectronsDown > 1)
-	for (int i=0; i<EdnEdnNuclear.dim1(); i++)
-	  {
-	    temp = EdnEdnNuclear(i).getFreeParameters();
-            
-	    for (int j=0; j<temp.dim1(); j++)
-	      {
-		params(Counter + shift) = temp(j);
-		Counter++;
-	      }
-	  }
+	  if(globalInput.flags.link_NEE_Jastrows < 1 && NumberOfElectronsDown > 1)
+	    {
+	      temp = EdnEdnNuclear(i).getFreeParameters();
+	      
+	      for (int j=0; j<temp.dim1(); j++)
+		{
+		  params(Counter + shift) = temp(j);
+		  Counter++;
+		}
+	    }
+	}
     }
 }
 

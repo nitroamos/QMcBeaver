@@ -437,7 +437,7 @@ QMCThreeBodyCorrelationFunction * QMCThreeBodyCorrelationFunctionParameters::
   return ThreeBodyCorrelationFunction;
 }
 
-bool QMCThreeBodyCorrelationFunctionParameters::isUsed()
+bool QMCThreeBodyCorrelationFunctionParameters::isUsed() const
 {
   if(threeBodyCorrelationFunctionType == "None")
     return false;
@@ -549,18 +549,41 @@ ostream & operator << (ostream & strm,
   return strm;
 }
 
+void QMCThreeBodyCorrelationFunctionParameters::totalDerivativesAccumulate(QMCThreeBodyCorrelationFunctionParameters & rhs)
+{
+  if(!isUsed()) return;
 
-void QMCThreeBodyCorrelationFunctionParameters::totalDerivativesToFree(int shift,
+#ifdef QMC_DEBUG
+  if(TotalNumberOfParameters != rhs.TotalNumberOfParameters)
+    {
+      cout << "Error: number parameters doesn't match!" << endl;
+      cout << " this = " << TotalNumberOfParameters << endl;
+      cout << "  rhs = " << rhs.TotalNumberOfParameters << endl;
+      exit(0);
+    }
+#endif
+
+  pt_a += rhs.pt_a;
+  pt3_xxa += rhs.pt3_xxa;
+  
+  for (int i=0; i<TotalNumberOfParameters+1; i++)
+    pt2_xa(i) += rhs.pt2_xa.get(i);
+}
+
+void QMCThreeBodyCorrelationFunctionParameters::totalDerivativesToFree(int & shift,
 								       Array1D<double> & p_a,
 								       Array1D< Array2D<double> > & p2_xa,
 								       Array1D<double> & p3_xxa) const
 {
+  if(!isUsed()) return;
+
   p_a(shift) += pt_a.get(0);
   for(int e=0; e<globalInput.WF.getNumberElectrons(); e++)
     for(int xyz=0; xyz<3; xyz++)
       (p2_xa(shift))(e,xyz) += (pt2_xa.get(0))(e,xyz);  
   p3_xxa(shift) += pt3_xxa.get(0);
-  int counter = 1;
+
+  shift++;
 
   /*
     The derivatives were calculated wrt the total parameters.
@@ -577,16 +600,17 @@ void QMCThreeBodyCorrelationFunctionParameters::totalDerivativesToFree(int shift
 		double pd = paramDepMatrix.get(i,map(l,m,n));
 		if( fabs(pd) < 1.0e-50) continue;
 		
-		p_a(shift+counter)    += pd * pt_a.get(i+1);
-		p3_xxa(shift+counter) += pd * pt3_xxa.get(i+1);
+		p_a(shift)    += pd * pt_a.get(i+1);
+		p3_xxa(shift) += pd * pt3_xxa.get(i+1);
 		
 		for(int e=0; e<globalInput.WF.getNumberElectrons(); e++)
 		  for(int xyz=0; xyz<3; xyz++)
-		    (p2_xa(shift+counter))(e,xyz) += pd * (pt2_xa.get(i+1))(e,xyz);
+		    (p2_xa(shift))(e,xyz) += pd * (pt2_xa.get(i+1))(e,xyz);
 	      }
-	    counter++;
+	    shift++;
 	  }
 
+  /*
   if (counter != NumberOfFreeParameters)
     {
       // We have miscalculated the number of free parameters.
@@ -596,6 +620,7 @@ void QMCThreeBodyCorrelationFunctionParameters::totalDerivativesToFree(int shift
 	   << "parameters, but we found " << counter << endl;
       exit(0);
     }
+  */
 }
 
 void QMCThreeBodyCorrelationFunctionParameters::totalToFree(const Array1D<double> & total,
