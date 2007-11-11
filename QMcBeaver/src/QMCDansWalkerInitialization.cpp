@@ -15,6 +15,18 @@ QMCDansWalkerInitialization::QMCDansWalkerInitialization(QMCInput * INPUT)
     }
 }
 
+QMCDansWalkerInitialization::~QMCDansWalkerInitialization()
+{
+  phiSplines.deallocate();
+  phiSplinesMade.deallocate();
+  thetaSplines.deallocate();
+  thetaSplinesMade.deallocate();
+  radialSplines.deallocate();
+  radialSplinesMade.deallocate();
+  x_array.deallocate();
+}
+
+
 bool QMCDansWalkerInitialization::arraysInitialized = false;
 
 Array1D<CubicSpline> QMCDansWalkerInitialization::phiSplines;

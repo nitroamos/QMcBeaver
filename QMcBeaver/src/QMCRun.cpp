@@ -12,6 +12,12 @@
 
 #include "QMCRun.h"
 
+QMCRun::~QMCRun()
+{
+  delete QMF;
+  QMF = 0;
+}
+
 QMCRun::QMCRun()
 {
   populationSizeBiasCorrectionFactor = 1.0;

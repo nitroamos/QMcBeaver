@@ -66,6 +66,56 @@ void CambridgeThreeBodyCorrelationFunction::initializeParameters(
   grad2.allocate(3);
 }
 
+CambridgeThreeBodyCorrelationFunction::~CambridgeThreeBodyCorrelationFunction()
+{
+  grad1.deallocate();
+  grad2.deallocate();
+
+  p_a.deallocate();
+  p2_x1a.deallocate();
+  p2_x2a.deallocate();
+  p2_x1L.deallocate();
+  p2_x2L.deallocate();
+  p3_xxa.deallocate();
+
+  delete [] d1pow;
+  d1pow = 0;
+
+  delete [] d2pow;
+  d2pow = 0;
+
+  delete [] r12pow;
+  r12pow = 0;
+
+  delete [] d1pow1;
+  d1pow1 = 0;
+  
+  delete [] d2pow1;
+  d2pow1 = 0;
+
+  delete [] r12pow1;
+  r12pow1 = 0;
+
+  delete [] d1pow2;
+  d1pow2 = 0;
+ 
+  delete [] d2pow2;
+  d2pow2 = 0;
+
+  delete [] r12pow2;
+  r12pow2 = 0;
+
+  delete [] coeffs;
+  coeffs = 0;
+
+  r1v.deallocate();
+  r2v.deallocate();
+  r12v.deallocate();
+}
+
+
+
+
 void CambridgeThreeBodyCorrelationFunction::evaluate(Array1D<double> &xyz12v,
 						     double dist12)
 {

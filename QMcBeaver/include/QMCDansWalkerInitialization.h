@@ -19,6 +19,8 @@ class QMCDansWalkerInitialization : public QMCInitializeWalker
 {
  public:
   
+  ~QMCDansWalkerInitialization();
+
   /** 
     Creates an instance of the class and initializes it.
     @param input input data for the calculation.

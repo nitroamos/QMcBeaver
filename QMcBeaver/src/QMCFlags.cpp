@@ -1251,6 +1251,9 @@ bool QMCFlags::checkFlags()
       QMCLineSearchStepLengthSelectionAlgorithm *stepAlg =
 	QMCLineSearchStepLengthSelectionFactory::factory(line_search_step_length);
       
+      delete stepAlg;
+      stepAlg = 0;
+
       if(optimize_Psi_method == "analytical_energy_variance" ||
 	 optimize_Psi_method == "automatic")
 	{

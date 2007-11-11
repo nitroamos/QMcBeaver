@@ -104,8 +104,7 @@ int QMCEquilibrationArray::getDecorrObjectIndex()
       // value for the objective function.
 
       double value = Eq_Array[0].getProperties()->energy.getAverage() +
-        3*Eq_Array[0].getProperties()->energy.getBlockStandardDeviation(0) +
-        9*Eq_Array[0].getProperties()->energy.getBlockStandardDeviationStandardDeviation(0);
+        Eq_Array[0].getProperties()->energy.getBlockStandardDeviation(0);
 
       // The objective function will generally be decreasing, so the plateau 
       // occurs when the value of object i is greater than the value of object 
@@ -114,8 +113,7 @@ int QMCEquilibrationArray::getDecorrObjectIndex()
       for (int i=1; i<decorr_objects; i++)
         {
           double test = Eq_Array[i].getProperties()->energy.getAverage() + 
-            3*Eq_Array[i].getProperties()->energy.getBlockStandardDeviation(0)+
-            9*Eq_Array[i].getProperties()->energy.getBlockStandardDeviationStandardDeviation(0);
+            Eq_Array[i].getProperties()->energy.getBlockStandardDeviation(0);
 
           if (IeeeMath::isNaN(test)) continue;
           if (test > value) 
@@ -132,14 +130,12 @@ int QMCEquilibrationArray::getDecorrObjectIndex()
       // expectation value for the objective function.
   
       double value = Eq_Array[0].getProperties()->energy.getAverage() -
-        3*Eq_Array[0].getProperties()->energy.getBlockStandardDeviation(0) -
-        9*Eq_Array[0].getProperties()->energy.getBlockStandardDeviationStandardDeviation(0);
+        Eq_Array[0].getProperties()->energy.getBlockStandardDeviation(0);
 
       for (int i=1; i<decorr_objects; i++)
         {
           double test = Eq_Array[i].getProperties()->energy.getAverage() -
-            3*Eq_Array[i].getProperties()->energy.getBlockStandardDeviation(0)-
-            9*Eq_Array[i].getProperties()->energy.getBlockStandardDeviationStandardDeviation(0);
+            Eq_Array[i].getProperties()->energy.getBlockStandardDeviation(0);
 
           if (IeeeMath::isNaN(test)) continue;
           if (test < value)
@@ -148,7 +144,20 @@ int QMCEquilibrationArray::getDecorrObjectIndex()
             value = test;
         }
     }
-  return 0;
+
+  // If we get to this point, the energy is changing monotonically through our
+  // array and has not equilibrated according to our algorithm.  We return
+  // the last element that has at least half as many samples as the one before
+  // it.  If the last element has a small number of samples and a crazy value, 
+  // this will prevent it from being chosen.
+
+  unsigned long nSamples_last = Eq_Array[decorr_objects-1].getProperties()->energy.getNumberSamples();
+  unsigned long nSamples_prev = Eq_Array[decorr_objects-2].getProperties()->energy.getNumberSamples();
+
+  if (nSamples_last > nSamples_prev/2.0)
+    return decorr_objects-1;
+  else
+    return decorr_objects-2;
 }
 
 Stopwatch * QMCEquilibrationArray::getPropagationStopwatch()

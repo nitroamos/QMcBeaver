@@ -36,6 +36,8 @@ class QMCRun
 {
  public:
  
+  ~QMCRun();
+
   /**
     Creates an uninitialized instance of this class.
   */
