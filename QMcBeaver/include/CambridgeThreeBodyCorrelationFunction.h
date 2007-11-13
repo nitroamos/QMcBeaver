@@ -73,7 +73,7 @@ class CambridgeThreeBodyCorrelationFunction : public QMCThreeBodyCorrelationFunc
   Array1D<double> r2v;
   Array1D<double> r12v;
  public:
-
+  CambridgeThreeBodyCorrelationFunction();
   ~CambridgeThreeBodyCorrelationFunction();
 
   void initializeParameters(int electron_nucleus, int electron_electron, 

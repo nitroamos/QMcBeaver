@@ -12,12 +12,12 @@ void CambridgeThreeBodyCorrelationFunction::initializeParameters(
   cutoff = max_dist;
   L = cutoff;
   C = power;
-
   Nen = electron_nucleus;
   Nee = electron_electron;
 
-  coeffs = new double[Nen*Nen*Nee];
-
+  if(coeffs == 0)
+    coeffs = new double[Nen*Nen*Nee];
+  
   if(globalInput.flags.calculate_Derivatives == 1)
     {
       int numParams = Parameters.dim1();
@@ -38,32 +38,50 @@ void CambridgeThreeBodyCorrelationFunction::initializeParameters(
 	  ai++;
 	}
 
-  d1pow = new double[Nen];
-  d1pow[0] = 1.0;
-  d2pow = new double[Nen];
-  d2pow[0] = 1.0;
-  r12pow = new double[Nee];
-  r12pow[0] = 1.0;
+  if(d1pow == 0)
+    {
+      d1pow = new double[Nen];
+      d1pow[0] = 1.0;
 
-  d1pow1 = new double[Nen];
-  d1pow1[0] = 0.0;
-  d2pow1 = new double[Nen];
-  d2pow1[0] = 0.0;
-  r12pow1 = new double[Nee];
-  r12pow1[0] = 0.0;
-
-  d1pow2 = new double[Nen];
-  d1pow2[0] = 0.0;
-  d1pow2[1] = 0.0;
-  d2pow2 = new double[Nen];
-  d2pow2[0] = 0.0;
-  d2pow2[1] = 0.0;
-  r12pow2 = new double[Nee];
-  r12pow2[0] = 0.0;
-  r12pow2[1] = 0.0;
+      d2pow = new double[Nen];
+      d2pow[0] = 1.0;
+      r12pow = new double[Nee];
+      r12pow[0] = 1.0;
+      
+      d1pow1 = new double[Nen];
+      d1pow1[0] = 0.0;
+      d2pow1 = new double[Nen];
+      d2pow1[0] = 0.0;
+      r12pow1 = new double[Nee];
+      r12pow1[0] = 0.0;
+      
+      d1pow2 = new double[Nen];
+      d1pow2[0] = 0.0;
+      d1pow2[1] = 0.0;
+      d2pow2 = new double[Nen];
+      d2pow2[0] = 0.0;
+      d2pow2[1] = 0.0;
+      r12pow2 = new double[Nee];
+      r12pow2[0] = 0.0;
+      r12pow2[1] = 0.0;
+    }
 
   grad1.allocate(3);
   grad2.allocate(3);
+}
+
+CambridgeThreeBodyCorrelationFunction::CambridgeThreeBodyCorrelationFunction()
+{
+  d1pow   = 0;
+  d2pow   = 0;
+  r12pow  = 0;
+  d1pow1  = 0;
+  d2pow1  = 0;
+  r12pow1 = 0;
+  d1pow2  = 0;
+  d2pow2  = 0;
+  r12pow2 = 0;
+  coeffs  = 0;
 }
 
 CambridgeThreeBodyCorrelationFunction::~CambridgeThreeBodyCorrelationFunction()
