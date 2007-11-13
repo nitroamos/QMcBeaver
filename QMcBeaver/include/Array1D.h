@@ -594,7 +594,10 @@ template <class T> class Array1D
 	  int pi = 0;
 	  strm >> ws;
 	  string temp;
-	  while(!isalpha(strm.peek()))
+	  while(isdigit(strm.peek()) ||
+		strm.peek() == '+' ||
+		strm.peek() == '-' ||
+		strm.peek() == '.')
 	    {
 	      strm >> temp;
 	      if(pi < n_1)
