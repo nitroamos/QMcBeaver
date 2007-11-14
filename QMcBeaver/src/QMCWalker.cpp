@@ -915,7 +915,10 @@ void QMCWalker::reweight_walker()
   if(getWeight() <= 0.0 || Input->flags.run_type == "variational")
     return;
 
-  return;
+  /*
+    Below this line are the statistical manipulations.
+  */
+  //return;
 
   double rel_diff;
   if(move_accepted)
@@ -1049,12 +1052,8 @@ void QMCWalker::reweight_walker()
 	  return;
 	}
 
-      if(rel_diff > 5.0)
+      if(rel_diff > globalInput.flags.rel_cutoff)
 	{
-	  /*
-	    Maybe this warning is unnecessary since it won't be included
-	    in the energy anyway....
-	   */
 	  cerr << "ERROR: Deleting walker with bad energy " << ID();
 	  cerr.flush();
 	  setWeight(0.0);
