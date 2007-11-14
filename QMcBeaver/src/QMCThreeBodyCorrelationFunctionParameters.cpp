@@ -551,7 +551,7 @@ ostream & operator << (ostream & strm,
 
 void QMCThreeBodyCorrelationFunctionParameters::totalDerivativesAccumulate(QMCThreeBodyCorrelationFunctionParameters & rhs)
 {
-  if(!isUsed()) return;
+  if(!isUsed() || !rhs.isUsed()) return;
 
 #ifdef QMC_DEBUG
   if(TotalNumberOfParameters != rhs.TotalNumberOfParameters)

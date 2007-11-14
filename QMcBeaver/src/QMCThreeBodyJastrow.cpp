@@ -105,32 +105,17 @@ void QMCThreeBodyJastrow::evaluate(QMCJastrowParameters & JP,
 
   Array1D<string> * NucleiTypes = JP.getNucleiTypes();
 
-  if (nalpha > 0 && nbeta > 0)
-    {
-      EupEdnNuclear = JP.getElectronUpElectronDownNuclearParameters();
-      for(int nuc=0; nuc<EupEdnNuclear->dim1(); nuc++)
-	(*EupEdnNuclear)(nuc).zeroOutDerivatives();
-    }
-  else
-    EupEdnNuclear = 0;    
+  EupEdnNuclear = JP.getElectronUpElectronDownNuclearParameters();
+  for(int nuc=0; nuc<EupEdnNuclear->dim1(); nuc++)
+    (*EupEdnNuclear)(nuc).zeroOutDerivatives();
 
-  if (nalpha > 1)
-    {
-      EupEupNuclear = JP.getElectronUpElectronUpNuclearParameters();
-      for(int nuc=0; nuc<EupEupNuclear->dim1(); nuc++)
-	(*EupEupNuclear)(nuc).zeroOutDerivatives();
-    }
-  else
-    EupEupNuclear = 0;    
+  EupEupNuclear = JP.getElectronUpElectronUpNuclearParameters();
+  for(int nuc=0; nuc<EupEupNuclear->dim1(); nuc++)
+    (*EupEupNuclear)(nuc).zeroOutDerivatives();
   
-  if (nbeta > 1)
-    {
-      EdnEdnNuclear = JP.getElectronDownElectronDownNuclearParameters();
-      for(int nuc=0; nuc<EdnEdnNuclear->dim1(); nuc++)
-	(*EdnEdnNuclear)(nuc).zeroOutDerivatives();
-    }
-  else
-    EdnEdnNuclear = 0;
+  EdnEdnNuclear = JP.getElectronDownElectronDownNuclearParameters();
+  for(int nuc=0; nuc<EdnEdnNuclear->dim1(); nuc++)
+    (*EdnEdnNuclear)(nuc).zeroOutDerivatives();
 
   Array1D<double> xyz(3);
   for(int Nuclei=0; Nuclei<Input->Molecule.getNumberAtoms(); Nuclei++)
@@ -272,12 +257,10 @@ void QMCThreeBodyJastrow::packageDerivatives()
 
   int numNuc = EupEdnNuclear->dim1();
   int ai;
-  int nucStart = 0;
   for(int nuc=0; nuc<numNuc; nuc++)
     {
-      ai = nucStart;
       QMCThreeBodyCorrelationFunctionParameters * accum = & (*EupEdnNuclear)(nuc);
-      
+
       switch(globalInput.flags.link_NEE_Jastrows)
 	{
 	case 0:
@@ -301,7 +284,6 @@ void QMCThreeBodyJastrow::packageDerivatives()
 	  accum->totalDerivativesToFree(ai,p_a,p2_xa,p3_xxa);
 	  break;
 	}
-      nucStart += ai;
     }
 }
 
