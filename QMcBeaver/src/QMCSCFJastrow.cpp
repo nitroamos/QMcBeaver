@@ -709,10 +709,19 @@ void QMCSCFJastrow::calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walke
 	  wd      = walkerData(iWalker);
 	  x       = xData(iWalker);
 
-
 	  if(globalInput.flags.optimize_CI == 1)
-	    update_SCF();
-	  
+	    {
+	      alphaPsi       = Alpha.getPsi(iWalker);
+	      alphaGrad      = Alpha.getGradPsiRatio(iWalker);
+	      alphaLaplacian = Alpha.getLaplacianPsiRatio(iWalker);
+	      
+	      betaPsi        = Beta.getPsi(iWalker);
+	      betaGrad       = Beta.getGradPsiRatio(iWalker);
+	      betaLaplacian  = Beta.getLaplacianPsiRatio(iWalker);
+	      
+	      update_SCF();
+	    }
+
 	  JastrowGrad    = Jastrow.getGradientLnJastrow(iWalker);
 	  
 	  QMCGreensRatioComponent Jastrow_Psi =
@@ -733,7 +742,7 @@ void QMCSCFJastrow::calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walke
 		// \nabla U \cdot \nabla U
 		cs_LPR += (*JastrowGrad)(i,j) * (*JastrowGrad)(i,j);
 	      }
-	  
+
 	  QMCGreensRatioComponent weight = cs_Psi / wd->psi;
 	  weight *= weight;
 
