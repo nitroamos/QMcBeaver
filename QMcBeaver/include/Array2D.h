@@ -1753,17 +1753,24 @@ template <class T> class Array2D
       for(int r = 0; r < n_1; r++) 
 	{
 	  scale = pArray[map(r,t)];
-	  if(r == s || fabs(scale) < tolerance) continue;
-	  for(int c = 0; c < n_2; c++) 
-	    pArray[map(r,c)] -= pArray[map(s,c)] * scale;
-	  
-	  /*
-	    Mathematically, this is already 0.0, so we set it
-	    to zero to eliminate roundoff error.
 
-	    This subtraction is highly vulnerable to
-	    "catastrophic cancellation".
-	  */
+	  if(r == s || fabs(scale) < tolerance) continue;
+
+	  for(int c = 0; c < n_2; c++) 
+	    {
+	      /*
+		This subtraction is highly vulnerable to
+		"catastrophic cancellation".
+	      */
+	      pArray[map(r,c)] -= pArray[map(s,c)] * scale;
+
+
+	      //So eliminate values that are near to zero
+	      if(fabs(pArray[map(r,c)]) < tolerance)
+		pArray[map(r,c)] = 0.0;
+	    }	  
+
+	  //Mathematically, this is already 0.0
 	  pArray[map(r,t)] = 0.0;
 	}
     }
