@@ -52,7 +52,7 @@ while($clean == 0)
     {
 	my $cur = $files[$index];
 	chomp($cur);
-	if(-d $cur && $cur !~ /src$/ && $cur !~ /bin$/ && $cur !~ /include$/)
+	if(-d $cur && $cur !~ /src$/ && $cur !~ /bin$/ && $cur !~ /include$/ && $cur !~ /hide$/)
 	{
 	    my @list = `ls $cur`;
 	    foreach $item (@list)
@@ -100,7 +100,9 @@ my $ave_result;
 
 my %dt_ave_results;
 my %dt_err_results;
+my %dt_num;
 my %dt_num_results;
+my %dt_nme_results;
 
 printf "%50s %7s %7s %20s %20s %10s %10s\n","File Name","dt","nw","HF Energy","Average","Errors","Warnings";
 my $lastlines = "";
@@ -212,7 +214,8 @@ for(my $index=0; $index<=$#files; $index++){
 	    $iteration   = $data[1];
 	    $eavg        = $data[2];
 	    $estd        = $data[3];
-	    $num_samples = $data[$#data];
+	    #$num_samples = $data[$#data];
+	    $num_samples = $data[8];
 	    #printf "$#data $more %20i %20.10f %20.10f %20i\n", $num_samples, $eavg, $estd, $iteration; 
 	    next if($num_samples <= 0);
 
@@ -228,9 +231,17 @@ for(my $index=0; $index<=$#files; $index++){
     $lastlines .= "$line";
     if($eavg < 0){
 	my $key = "$hfe&$dt";
-	$dt_ave_results{$key} += $eavg;
-	$dt_err_results{$key} += $estd;
-	$dt_num_results{$key} += 1;
+	my $weight = $num_samples/100000;
+
+	$dt_ave_results{$key} += $eavg * $weight;
+	$dt_num_results{$key} += $weight;
+	$dt_num{$key} += 1.0;
+
+	if($estd > 0){
+	    $dt_err_results{$key} += $estd * $estd * $weight;
+	    $dt_nme_results{$key} += $weight;
+	}
+
 	$ave_result += $eavg;
 	$num_results++;
     }
@@ -269,8 +280,9 @@ if($num_results > 0){
     $ave_result /= $num_results;
     #print "Average result = $ave_result\n";
     
-    printf "%10s %20s %20s %20s %20s %20s %20s %20s %10s\n",
-    "dt","HF Energy","Average","Error (kcal)","dt Diff. (kcal)","Diff. (kcal)","HF Diff. (kcal)","Corr. E.","Number";
+    printf "%10s %20s %20s %20s %20s %20s %20s %20s %10s %10s\n",
+    "dt","HF Energy","Average","Error (kcal)","dt Diff. (kcal)",
+    "Diff. (kcal)","HF Diff. (kcal)","Corr. E.","Number","Weight";
     my %qref;
     my %href;
     my $dtref = 0;
@@ -279,7 +291,7 @@ if($num_results > 0){
     {
 	my @keydata = split/&/,$key;
 	$dt_ave_results{$key} /= $dt_num_results{$key};
-	$dt_err_results{$key} /= $dt_num_results{$key};
+	$dt_err_results{$key} = sqrt($dt_err_results{$key}/$dt_nme_results{$key});
 
 	if(! exists $qref{$keydata[1]}){
 	    $qref{$keydata[1]} = $dt_ave_results{$key};
@@ -309,7 +321,7 @@ if($num_results > 0){
 	}
 	#print "ref = $qref{$keydata[1]}\n";
 
-	printf "%10s %20s %20.10f %20.10f %20.10f %20.10f %20.10f %20.10f %10i\n",
+	printf "%10s %20s %20.10f %20.10f %20.10f %20.10f %20.10f %20.10f %10i %10.5f\n",
 	"$keydata[1]", "$keydata[0]",
 	$dt_ave_results{$key},
 	$dt_err_results{$key}*$units,
@@ -317,6 +329,7 @@ if($num_results > 0){
 	($qref{$keydata[1]} - $dt_ave_results{$key})*$units,
 	($href{$keydata[1]} - $keydata[0])*$units,
 	($keydata[0]-$dt_ave_results{$key}),
+	$dt_num{$key},
 	$dt_num_results{$key};
     }
 
@@ -405,6 +418,14 @@ if($num_results > 0){
 	printf "| %9.4f %9s\n",$rowdata[0],$rowdata[1];
     }
     print "\n\n";
+}
+
+@gnutype = split/ +/,`gnuplot -V`;
+if($gnutype[1] < 4.3)
+{
+    #we need the gif support, and version 4.3 has it
+    #print "GNUPLOT version = $gnutype[1] is incompatible\n";
+    die;
 }
 
 #now it's time to generate gnuplot gifs
