@@ -1,3 +1,8 @@
+Wed, Nov 28, 2007 Daniel R Fisher
+1.  Fixed a bug in QMCWalker.  When a walker was read in from a
+    checkpoint file, the distances in QMCWalkerData were not updated,
+    so QMCFunctions could not evaluate the configuration.
+
 Sun, Nov 11, 2007 Daniel R Fisher
 1.  Fixed a memory leak in CambridgeThreeBodyJastrow.  Arrays for
     powers of the distances and other temp variables were being

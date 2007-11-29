@@ -1661,6 +1661,7 @@ bool QMCWalker::readXML(istream& strm, QMCFunctions & QMF)
   if (temp != "</QMCWalker>")
     return false;
 
+  walkerData.updateDistances(R);
   QMF.evaluate(R,walkerData);
   newID();
 
