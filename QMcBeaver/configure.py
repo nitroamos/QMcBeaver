@@ -65,12 +65,12 @@ class Compiler:
 class CompilerAIX(Compiler):
     def __init__(self,optimize,debug,profile):
         self.CXX = 'mpCC'
-        self.FLAGS = '-Wall'
+        self.FLAGS = ''
         self.INCLUDE = ''
-        self.DEPENDENCY = '-M'
+        self.DEPENDENCY = '-M -qsyntaxonly'
 
         if optimize:
-            self.OPTIMIZATION = '-O3'
+            self.OPTIMIZATION = '-O3 -qnostrict'
         else:
             self.OPTIMIZATION = ''
 

@@ -253,21 +253,24 @@ void QMCManager::gatherExtraProperties()
 		0,MPI_COMM_WORLD );
 
   int numAI = fwProperties_total.der.dim1();
-  MPI_Reduce( QMCnode.getFWProperties()->der.array(),
-              fwProperties_total.der.array(),
-	      numAI*fwProperties_total.der.dim2(),
-              QMCStatistic::MPI_TYPE,
-	      QMCStatistic::MPI_REDUCE,
-	      0,MPI_COMM_WORLD );
+  if(numAI > 0)
+    {
+      MPI_Reduce( QMCnode.getFWProperties()->der.array(),
+		  fwProperties_total.der.array(),
+		  numAI*fwProperties_total.der.dim2(),
+		  QMCStatistic::MPI_TYPE,
+		  QMCStatistic::MPI_REDUCE,
+		  0,MPI_COMM_WORLD );
 
-  for(int i=0; i<fwProperties_total.hess.dim1(); i++)  
-    MPI_Reduce( QMCnode.getFWProperties()->hess(i).array(),
-		fwProperties_total.hess(i).array(),
-		numAI * numAI,
-		QMCStatistic::MPI_TYPE,
-		QMCStatistic::MPI_REDUCE,
-		0,MPI_COMM_WORLD );
-  
+      for(int i=0; i<fwProperties_total.hess.dim1(); i++)  
+	MPI_Reduce( QMCnode.getFWProperties()->hess(i).array(),
+		    fwProperties_total.hess(i).array(),
+		    numAI * numAI,
+		    QMCStatistic::MPI_TYPE,
+		    QMCStatistic::MPI_REDUCE,
+		    0,MPI_COMM_WORLD );
+    }
+
   for(int i=0; i<fwProperties_total.props.dim1(); i++)
     {
       MPI_Reduce( QMCnode.getFWProperties()->props[i].array(),
@@ -1002,10 +1005,11 @@ bool QMCManager::run(bool equilibrate)
       if( done || QMCManager::SIGNAL_SAYS_QUIT )
 	{
 	  done = true;
+
 	  sendAllProcessorsACommand( QMC_TERMINATE );
-	  
 	  gatherProperties();
 	  gatherExtraProperties();
+
 	  if (globalInput.flags.write_electron_densities == 1)
 	    {
 	      gatherHistograms();
@@ -1062,8 +1066,8 @@ bool QMCManager::run(bool equilibrate)
 	    
 	  case QMC_TERMINATE:
 	    done = true;
-	    
-	    gatherProperties();
+
+	    gatherProperties();	    
 	    gatherExtraProperties();
 
 	    if (globalInput.flags.write_electron_densities == 1)
@@ -1077,7 +1081,6 @@ bool QMCManager::run(bool equilibrate)
 
 	    // Gather stopwatch data
 	    finalize();
-
 	    break;	
 	    
 	  case QMC_REDUCE_ALL:

@@ -39,25 +39,40 @@ all: $(DIROBJ).e
 #dependency files because the config dependent options are all different
 ifneq ($(MAKECMDGOALS),updateall)
 
+
 $(DIROBJ)/%.d: %.cpp ../include/%.h
 	@rm -f $@
 	@echo "Writing $*.d"
-	@$(CXX) $(INCLUDE) $(DEPENDENCY) $< | sed -e "s/$*\.o/$(DIROBJ)\/$*\.o/g" >> $@
+ifeq ($(COMPILER), mpCC)
+	@$(CXX) $(INCLUDE) $(DEPENDENCY) $<
+	@sed -e "s/$*\.o/$(DIROBJ)\/$*\.o/g" $(patsubst %.cpp,%.u,$<) >> $@
+	@rm $(patsubst %.cpp,%.u,$<)
+else
+	@$(CXX) $(INCLUDE) $(DEPENDENCY) $< | sed -e "s/$*\.o/$(DIROBJ)\/$*\.o/g" >> $@ 
+endif
 	@echo "	@echo Compiling $*.o" >> $@
 	@echo "	@$(CXX) $(OPTIMIZATION) $(INCLUDE) -c -o $(patsubst %.cpp,$(DIROBJ)/%.o,$<) $*.cpp" >> $@
 	@echo "" >> $@
 	@echo "" >> $@
 
+
 $(DIROBJ)/QMcBeaver.d: QMcBeaver.cpp
 	@rm -f $@
 	@echo "Writing QMcBeaver.d"
+ifeq ($(COMPILER), mpCC)
+	@$(CXX) $(INCLUDE) $(DEPENDENCY) $<
+	@sed -e "s/QMcBeaver\.o/$(DIROBJ)\/QMcBeaver\.o/g" $(patsubst %.cpp,%.u,$<) >> $@
+	@rm $(patsubst %.cpp,%.u,$<)
+else
 	@$(CXX) $(INCLUDE) $(DEPENDENCY) $< | sed -e "s/QMcBeaver\.o/$(DIROBJ)\/QMcBeaver\.o/g" >> $@
+endif
 	@echo "	@echo Compiling QMcBeaver.o" >> $@
 	@echo "	@$(CXX) $(OPTIMIZATION) $(INCLUDE) -c -o $(DIROBJ)/QMcBeaver.o QMcBeaver.cpp" >> $@
 	@echo "" >> $@
 	@echo "" >> $@
 
 $(DIROBJ)/Makefile.dep: $(DEPFILES) ../Makefile.config
+	@echo "Writing Makefile.dep"
 	@cat $(DEPFILES) > $(DIROBJ)/Makefile.dep
 	@echo "$(DIROBJ).e: $(OBJECTS)" >> $@
 	@echo "	@echo Creating $(EXE)..." >> $@
