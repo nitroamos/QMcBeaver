@@ -104,7 +104,7 @@ my %dt_num;
 my %dt_num_results;
 my %dt_nme_results;
 
-printf "%50s %7s %7s %20s %20s %10s %10s\n","File Name","dt","nw","HF Energy","Average","Errors","Warnings";
+printf "%50s %7s %7s %20s %5s %20s %10s %10s\n","File Name","dt","nw","HF Energy","NumBF","Average","Errors","Warnings";
 my $lastlines = "";
 for(my $index=0; $index<=$#files; $index++){
     my $cur = $files[$index];
@@ -122,6 +122,7 @@ for(my $index=0; $index<=$#files; $index++){
     my $opt = -1;
     my $isd = -1;
     my $hfe = 0;
+    my $numbf = 0;
     open (CKMFFILE, "$base.ckmf");
     while(<CKMFFILE>){
 	if($_ =~ m/^\s*run_type\s*$/){
@@ -153,6 +154,12 @@ for(my $index=0; $index<=$#files; $index++){
 	    chomp;
 	    my @line = split/[ ]+/;
 	    $hfe = $line[1];
+	}
+	if($_ =~ m/^\s*nbasisfunc\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $numbf = $line[1];
 	}
 	if($_ =~ m/&geometry$/){
 	    last;
@@ -247,7 +254,7 @@ for(my $index=0; $index<=$#files; $index++){
     }
     my $in_kcal = $eavg*$units;
     #printf "%50s %15s %15s E_h=%20.14f E_kcal=%20.10f Err=%i Warn=%i\n","$base","dt=$dt","nw=$nw",$eavg,$in_kcal,$numerrors,$numwarnings;
-    printf "%50s %7s %7s %20s %20.10f %10i %10i\n","$base","$dt","$nw","$hfe",$eavg,$numerrors,$numwarnings;
+    printf "%50s %7s %7s %20s %5i %20.10f %10i %10i\n","$base","$dt","$nw","$hfe",$numbf,$eavg,$numerrors,$numwarnings;
     #if we are in enhanced text mode, we need to double escape the "_"
     #$base =~ s/_/\\\\_/g;
     printf DATFILE "#%19s %20s %20s %20s\n", "dt=$dt","$base","E=$eavg","";
@@ -280,9 +287,9 @@ if($num_results > 0){
     $ave_result /= $num_results;
     #print "Average result = $ave_result\n";
     
-    printf "%10s %20s %20s %20s %20s %20s %20s %20s %10s %10s\n",
-    "dt","HF Energy","Average","Error (kcal)","dt Diff. (kcal)",
-    "Diff. (kcal)","HF Diff. (kcal)","Corr. E.","Number","Weight";
+    printf "%10s %20s %10s %20s %20s %20s %20s %20s %20s %10s\n",
+    "dt","HF Energy","Number","Average","Error (kcal)","dt Diff. (kcal)",
+    "Diff. (kcal)","HF Diff. (kcal)","Corr. E.","Weight";
     my %qref;
     my %href;
     my $dtref = 0;
@@ -321,15 +328,15 @@ if($num_results > 0){
 	}
 	#print "ref = $qref{$keydata[1]}\n";
 
-	printf "%10s %20s %20.10f %20.10f %20.10f %20.10f %20.10f %20.10f %10i %10.5f\n",
+	printf "%10s %20s %10i %20.10f %20.10f %20.10f %20.10f %20.10f %20.10f %10.5f\n",
 	"$keydata[1]", "$keydata[0]",
+	$dt_num{$key},
 	$dt_ave_results{$key},
 	$dt_err_results{$key}*$units,
 	($dtref - $dt_ave_results{$key})*$units,
 	($qref{$keydata[1]} - $dt_ave_results{$key})*$units,
 	($href{$keydata[1]} - $keydata[0])*$units,
 	($keydata[0]-$dt_ave_results{$key}),
-	$dt_num{$key},
 	$dt_num_results{$key};
     }
 
@@ -369,6 +376,93 @@ if($num_results > 0){
 		$print = 0 if($rowdata[1] <= $coldata[1]);
 	    }
 
+	    #Compare the energies in the keys
+	    my $r = $rowdata[0];
+	    my $c = $coldata[0];
+	    my $diff = $r - $c;
+
+	    my $intr = 0;
+	    if(abs($r/$c) > 1.5)
+	    {
+		#if the energies are different by more than 10 hartrees, assume we want to reset
+		$ratio = $r / $c;
+		$intr = int($ratio);
+		$intdiff = $ratio - $intr;
+
+		if($intr != 1 && $intdiff < 0.1)
+		{
+		    $diff = $r - $c * $intr;
+		}
+	    } elsif($c/$r > 1.5) {
+		#if the energies are different by more than 10 hartrees, assume we want to reset
+		$ratio = $c / $r;
+		$intr = int($ratio);
+		$intdiff = $ratio - $intr;
+
+		if($intr != 1 && $intdiff < 0.1)
+		{
+		    $diff = $intr * $r - $c;
+		}
+	    }
+	    
+	    $diff *= $units;
+
+	    if($print)
+	    {
+		if(abs($diff) > 1e3) {
+		    printf "%8.2fK   ",($diff/1000.0);
+		} else {
+		    if($intr > 1)
+		    {
+			printf "%9.3f %i ",$diff,$intr;
+		    } else {
+			printf "%9.3f   ",$diff;
+		    }
+		}
+	    } else {
+		printf "%9s   "," ";
+	    }
+	}
+	printf "| %9.4f %9s\n",$rowdata[0],$rowdata[1];
+    }
+    print "\n\n";
+    #matrix output
+    #the data is sorted according to dt first
+    #we calculate the difference for for all results available
+    #but we don't compare calculations if dt and energy are different
+    print "\n";
+    foreach $col (sort bydt keys %dt_ave_results)
+    {
+	my @coldata = split/&/,$col;
+	printf "%9.4f   ",$coldata[0];
+    }
+    print "\n";
+    foreach $col (sort bydt keys %dt_ave_results)
+    {
+	my @coldata = split/&/,$col;
+	printf "%9s   ",$coldata[1];
+    }
+    print "\n";
+    foreach $col (sort bydt keys %dt_ave_results)
+    {
+	printf "%9s-- ","---------";
+    }
+    print "\n";
+    foreach $row (sort bydt keys %dt_ave_results)
+    {
+	my @rowdata = split/&/,$row;
+	foreach $col (sort bydt keys %dt_ave_results)
+	{
+	    my @coldata = split/&/,$col;
+	    my $print = 1;
+	    if($rowdata[0] != $coldata[0]){
+		$print = 0 if($rowdata[0] <= $coldata[0] ||
+			      $rowdata[1] != $coldata[1]);
+	    } else {
+		$print = 0 if($rowdata[1] <= $coldata[1]);
+	    }
+
+	    #Compare the DMC energies
 	    my $r = $dt_ave_results{$row};
 	    my $c = $dt_ave_results{$col};
 	    my $diff = $r - $c;
