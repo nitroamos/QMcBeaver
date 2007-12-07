@@ -256,7 +256,7 @@ void QMCThreeBodyJastrow::packageDerivatives()
   p3_xxa = 0.0;
 
   int numNuc = EupEdnNuclear->dim1();
-  int ai;
+  int ai = 0;
   for(int nuc=0; nuc<numNuc; nuc++)
     {
       QMCThreeBodyCorrelationFunctionParameters * accum = & (*EupEdnNuclear)(nuc);
