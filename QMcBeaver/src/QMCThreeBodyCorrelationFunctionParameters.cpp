@@ -369,6 +369,8 @@ void QMCThreeBodyCorrelationFunctionParameters::setTotalParameters(const Array1D
 
 void QMCThreeBodyCorrelationFunctionParameters::setFreeParameters(const Array1D<double> & free)
 {
+  if(!isUsed()) return; 
+
   if( free.dim1() != NumberOfFreeParameters )
     {
       clog << "ERROR: Parameters of the incorrect size are trying to be set "
@@ -920,6 +922,8 @@ void QMCThreeBodyCorrelationFunctionParameters::gaussianParamDepMatrix()
 	    }
 	}
 
+  int cs = 3;
+
   /*
     These are all the variables that we know will be zero, so solve for them
     right away. There is some overlap already.
@@ -996,7 +1000,6 @@ void QMCThreeBodyCorrelationFunctionParameters::gaussianParamDepMatrix()
     for(int j=0; j<constraints.dim2(); j++)
       if(fabs(constraints(i,j)) < 1e-100) constraints(i,j) = 0.0;
 
-  int cs = 3;
   if(false)
     {
       for(int i=0; i<constraints.dim2(); i++)
