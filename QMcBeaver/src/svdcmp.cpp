@@ -313,17 +313,17 @@ template<typename T>int _SVDFwBackSubst(const Array2D<T> &U, const Array1D<T> &W
 	    //for(int j=0; j<n; j++)
 	    //  h+=U[j,i]*b[j];
 	    h = U.get(col,i);
-	    h/=W.get(i);
+	    h/= W.get(i);
 	  }
-	//tmp(i,col)=h;
-	tmp(col,i)=h;
+	tmp(i,col)=h;
+	//tmp(col,i)=h;
 
       }
   }
   
   // Matrix multiplication V * tmp: 
-  //V.gemm(tmp,inv,false);
-  tmp.gemm(V,inv,!false);
+  V.gemm(tmp,inv,false);
+  //tmp.gemm(V,inv,!false);
 
   return(0);
 }
