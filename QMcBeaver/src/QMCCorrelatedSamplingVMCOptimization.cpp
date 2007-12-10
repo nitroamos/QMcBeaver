@@ -32,10 +32,11 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
     {
       if(fabs(globalInput.WF.getCINorm() - 1.0) > 1.0e-7)
 	clog << "Notice: CI norm = " << globalInput.WF.getCINorm() << endl;
+      globalInput.WF.normalizeCI();
       clog.precision(12);
       clog.width(20);
-      clog.unsetf(ios::scientific);
       clog.unsetf(ios::fixed);
+      clog.setf(ios::scientific);
       globalInput.printAIParameters(clog,"Best Step params:",20,orig_parameters,false);
       clog << endl << endl;
     }
@@ -185,21 +186,44 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 
   globalInput.setAIParameters(Guess_parameters);
 
-  clog << "(Step = " << setw(3) << optStep << "):    Best Objective Value ";
-  clog.precision(12);
-  clog.width(20);
-  clog.unsetf(ios::scientific);
-  clog.unsetf(ios::fixed);
-  clog << left << dp.getParameterValue();
-  clog.precision(12);
-  clog.width(20);
+  if(globalInput.flags.a_diag > 0 ||
+     optStep%2 == 0)
+    {
+      clog << "(Step = " << setw(3) << optStep << "):    Best Objective Value ";
+      clog.precision(12);
+      clog.width(20);
+      clog.unsetf(ios::scientific);
+      clog.unsetf(ios::fixed);
+      clog << left << lastRun.energy.getAverage();
+
+      clog << " s^2 = ";
+      clog.precision(12);
+      clog.width(20);
+      clog << left << lastRun.energy.getSeriallyCorrelatedVariance();
+      clog << right;
+
+      clog << " ns = ";
+      clog.width(10);
+      clog << lastRun.energy.getNumberSamples();
+      clog << endl << endl;
+
+      /*
+      clog.precision(12);
+      clog.width(20);
+      clog.setf(ios::scientific);
+      clog << left << rel << endl << right;
+      */
+    }
+
   clog.setf(ios::scientific);
-  clog << left << rel << endl << right;
+  if(globalInput.flags.a_diag > 0 ||
+     optStep%2 == 1)
+    {  
+      globalInput.printAIParameters(clog,"Best Step params:",20,Guess_parameters,false);
+      clog << endl << endl;
 
-  globalInput.printAIParameters(clog,"Best Step params:",20,Guess_parameters,false);
-  clog << endl << endl;
-
-  globalInput.JP.print(clog);
+      globalInput.JP.print(clog);
+    }
 
   double penalty = globalInput.JP.calculate_penalty_function();
   if(penalty >= 1e10)

@@ -24,6 +24,9 @@ vector<double> QMCEigenSearch::adiag_tests;
 Array2D<double> QMCEigenSearch::hamiltonian;
 Array2D<double> QMCEigenSearch::overlap;
 
+vector<double> QMCEigenSearch::f;
+vector< Array1D<double> > QMCEigenSearch::x;
+
 QMCEigenSearch::QMCEigenSearch(QMCObjectiveFunction *function, 
 			       QMCLineSearchStepLengthSelectionAlgorithm * stepAlg,
 			       int MaxSteps, 
@@ -78,7 +81,7 @@ double QMCEigenSearch::get_a_diag(QMCDerivativeProperties & dp, double a_diag_fa
 
   double eng_frac = 0.95;
   double var_frac = 1.0 - eng_frac;
-  printf("Correlated Sampling Results, Energy = %g\% Variance = %g\%:\n",100*eng_frac,100*var_frac);
+  printf("Correlated Sampling Results, Energy = %g%% Variance = %g%%:\n",100*eng_frac,100*var_frac);
   printf("       a_diag = %15s Energy %20.10g Sample Variance %20.10e\n",
 	 "guide", samplesE(0), samplesV(0));
 
@@ -259,8 +262,48 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
       globalInput.cs_Parameters.deallocate();
       double a_diag = get_a_diag(dp,a_diag_factor);
       params = getParameters(dp,a_diag,true); 
-      globalInput.flags.max_time_steps = orig_steps;
       globalInput.flags.calculate_Derivatives = 1;
+
+      clog << "(Step = " << setw(3) << optStep << "):    Best Objective adiag ";
+      clog.precision(12);
+      clog.width(10);
+      clog.unsetf(ios::scientific);
+      clog.unsetf(ios::fixed);
+      clog << a_diag;
+      clog << " (" << dim;
+      if(globalInput.flags.optimize_L)
+	clog << "+L";
+      else
+	clog << "-L";
+      clog << " params)";
+
+      if(optStep >= 3 && f[optStep-1] > f[optStep-3])
+	{
+	  /*
+	    If our energy actually went up between two successive (full) optimization steps,
+	    then increase the number of time steps.
+	    
+	    The reason is that we need to be sure the noise level is low enough
+	    that the parameter derivatives have something to measure.
+	  */
+	  double frac = 2.0;
+	  globalInput.flags.max_time_steps = (long)(orig_steps * frac);
+
+	  //with a cutoff
+	  long cutoff = 1000*1000;
+	  if(globalInput.flags.max_time_steps > cutoff)
+	    globalInput.flags.max_time_steps = cutoff;
+
+	  clog << " new steps = " << globalInput.flags.max_time_steps << endl;
+	} else {
+	  /*
+	    But if it went down, then we'll assume the quality of the derivatives
+	    is still sufficient for optimization.
+	  */
+	  globalInput.flags.max_time_steps = orig_steps;
+	}
+      
+      clog << endl;
     }
 
   currentlyHalf = !currentlyHalf;

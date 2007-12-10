@@ -206,13 +206,21 @@ void qmcbeaver()
       TheMan.optimize();
       stringstream save_opt;
       save_opt << globalInput.flags.checkout_file_name << "/"
-	       << globalInput.flags.base_file_name << ".step" << optloops << ".ckmf";
+	       << globalInput.flags.base_file_name << ".opt" << optloops << ".ckmf";
 
       if(globalInput.flags.a_diag < 0)
 	{
-	  //this method takes half optimization steps.
-	  //only the odd files represent new wavefunctions
-	  if(optloops % 2 == 1)
+	  /*
+	    This method requires 2 optloops to complete one optimization cycle.
+
+	    When optloops % 2 == 1, we have a new wavefunction.
+	    When optloops % 2 == 0, we will have a VMC result to attach to that WF.
+
+	    So instead of writing it out every odd step, lets write the WF when
+	    we have a measurement of how good it is. If we really want the new WF,
+	    we still have the other restart file.
+	  */
+	  if(optloops % 2 == 0)
 	    TheMan.writeRestart(save_opt.str());
 	}
       else
@@ -221,56 +229,6 @@ void qmcbeaver()
 	}
 
       TheMan.zeroOut();
-
-      /*
-	The automatic proceedure is just a guide! There are no guarantees with
-	regards to how efficient it works.
-	You're responsible for making sure that it doesn't spin its wheels.
-      */
-      if(globalInput.flags.optimize_Psi_method == "automatic")
-	{
-	  if((optloops+1) % 10 == 0)
-	    {
-	      /*
-		Once the parameters are of a high enough quality, then
-		we'll just be optimizing against noise. To fight this,
-		we'll periodically increase the number of steps to increase
-		the "signal to noise" ratio.
-
-		To start the optimization, you only need O(1000) steps.
-
-		max_time_steps includes the equilibration steps. i'd rather
-		set up the multiplicative factor to be independent of the
-		number of equilibrtion steps
-	      */
-	      long ts = globalInput.flags.max_time_steps -
-		globalInput.flags.equilibration_steps;
-	      
-	      globalInput.flags.max_time_steps = ts*8 + globalInput.flags.equilibration_steps;
-	      
-	      clog << "Notice: max_time_steps increased to " << globalInput.flags.max_time_steps
-		   << " for optStep = " << optloops << endl;
-	    }
-
-	  /*
-	  if(optloops == 5)
-	    {
-	      globalInput.flags.optimize_CI          = 0;
-	      globalInput.flags.optimize_Orbitals    = 0;
-	    }
-	  if(optloops == 20)
-	    {
-	      globalInput.flags.optimize_CI          = 1;
-
-	      //I haven't propagated derivatives through the cusp replacements...
-	      if(globalInput.flags.replace_electron_nucleus_cusps == 0)
-		globalInput.flags.optimize_Orbitals    = 1;
-	      else
-		globalInput.flags.optimize_Orbitals    = 0;
-	    }
-	  */
-	}
-
       ok = TheMan.run(globalInput.flags.equilibrate_every_opt_step);
       TheMan.writeRestart();
 
@@ -333,7 +291,7 @@ void atSignalCallback(int signal)
     choice = SIG_INCREASE;
     break;
   case SIGTERM:
-    cout << "SIGTERM";
+    //cout << "SIGTERM";
     choice = SIG_QUIT;
     break;
   default:
