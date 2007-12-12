@@ -71,9 +71,9 @@ protected:
   int dim;
   stringstream stepinfo;
 
-  vector<double> f;
-  vector< Array1D<double> > x;
-
+  static vector<double> f;
+  static vector< Array1D<double> > x;
+  
 private:
   static int orig_steps;
   static vector<double> adiag_tests;
