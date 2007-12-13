@@ -1886,6 +1886,9 @@ bool QMCManager::readXML( istream & strm )
   if (!QMCnode.readXML( strm ))
     return false;
 
+  if (equilibrating == 0)
+    iteration = 0;
+
   return true;
 }
 

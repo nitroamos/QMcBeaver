@@ -1,3 +1,13 @@
+Thu, Dec 13, 2007 Daniel R Fisher
+1.  I added the option to include write only the energy data to
+    checkpoint files.  This makes the files much smaller and preserves the
+    data that is important for weighting, branching, and the equilibration
+    array.
+2.  I changed the objective function in QMCEquilibrationArray.  This
+    class now stores the statistics for the first ten thousand samples for
+    each set of properties and uses them to determine when the run has
+    equilibrated.
+
 Wed, Nov 28, 2007 Daniel R Fisher
 1.  Fixed a bug in QMCWalker.  When a walker was read in from a
     checkpoint file, the distances in QMCWalkerData were not updated,

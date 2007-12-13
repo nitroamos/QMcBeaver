@@ -4,16 +4,22 @@
 
 QMCEquilibrationArray::QMCEquilibrationArray()
 {
+  over_ten_thousand = 0;
   calc_density = false;
   nBasisFunc   = 0;
+
+  ten_thousand_samples.allocate(EQ,2);
   zeroOut();
 }
 
 void QMCEquilibrationArray::zeroOut()
 {
+  over_ten_thousand = 0;
+  ten_thousand_samples = 0.0;
   for (int i=0; i<EQ; i++)
     Eq_Array[i].zeroOut();
 
+  ZeroProperties.zeroOut();
   decorr_objects = 1;
   Eq_Array[0].setStartingStep(1);
 }
@@ -52,11 +58,19 @@ void QMCEquilibrationArray::newSample(QMCProperties * timeStepProps,
     Eq_Array[i].getProperties()->newSample(timeStepProps, totalWeights, 
 					   nWalkers);
 
+  if(Eq_Array[over_ten_thousand].getProperties()->energy.getNumberSamples() == 10000)
+    {
+      ten_thousand_samples(over_ten_thousand,0) = Eq_Array[over_ten_thousand].getProperties()->energy.getAverage();
+      ten_thousand_samples(over_ten_thousand,1) = Eq_Array[over_ten_thousand].getProperties()->energy.getBlockStandardDeviation(0);
+      over_ten_thousand++;
+    }
+
+  // Activates the ith element on the 2^ith step.
+
   // I want to eliminate elements 1, 2, 3, 4, 5, and 6 from the array.  The
   // reason is that element 7 has 128 equilibration steps, so the previous
   // contain mostly redundant data. 
 
-  // Activates the ith element on the 2^ith step.
   unsigned long check = power(2,decorr_objects+6);
 
   if (Eq_Array[0].getProperties()->energy.getNumberSamples() == check-1)
@@ -69,107 +83,64 @@ void QMCEquilibrationArray::newSample(QMCProperties * timeStepProps,
 QMCProperties * QMCEquilibrationArray::chooseDecorrObject()
 {
   int index = getDecorrObjectIndex();
-  return Eq_Array[index].getProperties();
+  if (index == -1)
+    return ZeroProperties.getProperties();
+  else
+    return Eq_Array[index].getProperties();
 }
 
 // Gets the index of the element of the array with the lowest variance for the 
 // energy.
 int QMCEquilibrationArray::getDecorrObjectIndex()
 {
-  int obj = 0;
-  while(true)
+  // We are basing equilibration on the first ten thousand samples.  We need
+  // the first element to have at least twenty thousand samples before we can
+  // tell if it is equilibrated.  Before then it will return zero samples.
+
+  if (Eq_Array[0].getProperties()->energy.getNumberSamples() < 20000)
+    return -1;
+
+  double init_hi, init_lo, final_hi, final_lo, final_avg;
+  int obj = -1;
+
+  for (int i=0; i<over_ten_thousand; i++)
     {
-      if (Eq_Array[obj].getProperties()->energy.getStandardDeviation() < 99)
-	break;
-      else
-        {
-	  obj++;
-	  if (obj == decorr_objects) return 0;
+      init_hi = ten_thousand_samples(i,0) + 2*ten_thousand_samples(i,1);
+      init_lo = ten_thousand_samples(i,0) - 2*ten_thousand_samples(i,1);
+
+      final_hi = Eq_Array[i].getProperties()->energy.getAverage() + 2*Eq_Array[i].getProperties()->energy.getBlockStandardDeviation(0);
+      final_lo = Eq_Array[i].getProperties()->energy.getAverage() - 2*Eq_Array[i].getProperties()->energy.getBlockStandardDeviation(0);
+      final_avg = Eq_Array[i].getProperties()->energy.getAverage();
+
+      if ((final_hi > init_lo && final_hi < init_hi) || (final_lo > init_lo && final_lo < init_hi) || (final_avg > init_lo && final_avg < init_hi))
+	{
+	  obj = i;
+	  break;
 	}
     }
 
-  // If there are less than 256 samples, return object 0.
-  if (decorr_objects < 3) return 0;
-
-  // Here we look for the plateau in the objective function.
-  // To decide which objective function to use, we compare the expectation 
-  // value with 128 equilibration steps to the expectation value with none.
-  double sgn = Eq_Array[1].getProperties()->energy.getAverage() - 
-    Eq_Array[0].getProperties()->energy.getAverage();
-
-  if (sgn < 0.0)
-    {
-      // If the expectation value decreases as the number of equilibration 
-      // steps increases, we add the standard deviation to the expectation 
-      // value for the objective function.
-
-      double value = Eq_Array[0].getProperties()->energy.getAverage() +
-        Eq_Array[0].getProperties()->energy.getBlockStandardDeviation(0);
-
-      // The objective function will generally be decreasing, so the plateau 
-      // occurs when the value of object i is greater than the value of object 
-      // i-1.
-
-      for (int i=1; i<decorr_objects; i++)
-        {
-          double test = Eq_Array[i].getProperties()->energy.getAverage() + 
-            Eq_Array[i].getProperties()->energy.getBlockStandardDeviation(0);
-
-          if (IeeeMath::isNaN(test)) continue;
-          if (test > value) 
-            return i-1;
-          else
-            value = test;
-        }
-    }
-
-  else if (sgn > 0.0)
-    {
-      // If the expectation value increases as the number of equilibration
-      // steps increases, we subtract the standard deviation from the 
-      // expectation value for the objective function.
-  
-      double value = Eq_Array[0].getProperties()->energy.getAverage() -
-        Eq_Array[0].getProperties()->energy.getBlockStandardDeviation(0);
-
-      for (int i=1; i<decorr_objects; i++)
-        {
-          double test = Eq_Array[i].getProperties()->energy.getAverage() -
-            Eq_Array[i].getProperties()->energy.getBlockStandardDeviation(0);
-
-          if (IeeeMath::isNaN(test)) continue;
-          if (test < value)
-            return i-1;
-          else
-            value = test;
-        }
-    }
-
-  // If we get to this point, the energy is changing monotonically through our
-  // array and has not equilibrated according to our algorithm.  We return
-  // the last element that has at least half as many samples as the one before
-  // it.  If the last element has a small number of samples and a crazy value, 
-  // this will prevent it from being chosen.
-
-  unsigned long nSamples_last = Eq_Array[decorr_objects-1].getProperties()->energy.getNumberSamples();
-  unsigned long nSamples_prev = Eq_Array[decorr_objects-2].getProperties()->energy.getNumberSamples();
-
-  if (nSamples_last > nSamples_prev/2.0)
-    return decorr_objects-1;
+  if ((obj == -1) || (Eq_Array[obj].getProperties()->energy.getNumberSamples() < 20000))
+    return -1;
   else
-    return decorr_objects-2;
+    return obj;
 }
 
 Stopwatch * QMCEquilibrationArray::getPropagationStopwatch()
 {
   int index = getDecorrObjectIndex();
-  return Eq_Array[index].getPropagationStopwatch();
+  if (index == -1)
+    return ZeroProperties.getPropagationStopwatch();
+  else
+    return Eq_Array[index].getPropagationStopwatch();
 }
 
 Stopwatch * QMCEquilibrationArray::getEquilibrationStopwatch()
 {
   int index = getDecorrObjectIndex();
-  return Eq_Array[index].getEquilibrationStopwatch();
+  if (index == -1)
+    return ZeroProperties.getEquilibrationStopwatch();
+  else
+    return Eq_Array[index].getEquilibrationStopwatch();
 }
 
 void QMCEquilibrationArray::startTimers()
@@ -178,6 +149,7 @@ void QMCEquilibrationArray::startTimers()
     Eq_Array[i].getPropagationStopwatch()->start();
   for (int j=decorr_objects; j<EQ; j++)
     Eq_Array[j].getEquilibrationStopwatch()->start();
+  ZeroProperties.getEquilibrationStopwatch()->start();
 }
 
 void QMCEquilibrationArray::stopTimers()
@@ -189,6 +161,8 @@ void QMCEquilibrationArray::stopTimers()
       else if (Eq_Array[i].getEquilibrationStopwatch()->isRunning())
 	Eq_Array[i].getEquilibrationStopwatch()->stop();
     }
+  if (ZeroProperties.getEquilibrationStopwatch()->isRunning())
+    ZeroProperties.getEquilibrationStopwatch()->stop();
 }
 
 void QMCEquilibrationArray::toXML(ostream& strm)
@@ -196,6 +170,11 @@ void QMCEquilibrationArray::toXML(ostream& strm)
   // Open XML
   strm << "<QMCEquilibrationArray>" << endl;
   strm << "<decorr_objects>\n" << decorr_objects << "\n</decorr_objects>\n";
+  strm << "<over_ten_thousand>\n" << over_ten_thousand << "\n</over_ten_thousand>\n";
+  strm << "<ten_thousand_samples>\n";
+  for (int i=0; i<over_ten_thousand; i++)
+    strm << ten_thousand_samples(i,0) << "\t" << ten_thousand_samples(i,1) << "\n";
+  strm << "</ten_thousand_samples>\n";
   for (int i=0; i<decorr_objects; i++) 
     Eq_Array[i].getProperties()->toXML(strm);
   strm << "</QMCEquilibrationArray>" << endl;
@@ -219,6 +198,29 @@ bool QMCEquilibrationArray::readXML(istream& strm)
   if (temp != "</decorr_objects>")
     return false;
 
+  strm >> temp;
+  if (temp != "<over_ten_thousand>")
+    return false;
+  strm >> temp;
+  over_ten_thousand = atoi(temp.c_str());
+  strm >> temp;
+  if (temp != "</over_ten_thousand>")
+    return false;
+
+  strm >> temp;
+  if (temp != "<ten_thousand_samples>")
+    return false;
+  for (int i=0; i<over_ten_thousand; i++)
+    {
+      strm >> temp;
+      ten_thousand_samples(i,0) = atof(temp.c_str());
+      strm >> temp;
+      ten_thousand_samples(i,1) = atof(temp.c_str());
+    }
+  strm >> temp;
+  if (temp != "</ten_thousand_samples>")
+    return false;
+
   for (int i=0; i<decorr_objects; i++) 
     if (!Eq_Array[i].getProperties()->readXML(strm))
       return false;
@@ -238,6 +240,8 @@ bool QMCEquilibrationArray::readXML(istream& strm)
   for (int i=decorr_objects; i<EQ; i++)
     Eq_Array[i].getProperties()->zeroOut();
   
+  ZeroProperties.zeroOut();
+
   return true;
 }
 

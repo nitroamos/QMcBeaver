@@ -135,57 +135,63 @@ void QMCProperties::toXML(ostream& strm)
   energy.toXML(strm);
   strm << "</Energy>" << endl;
 
-  // Kinetic energy
-  strm << "<KineticEnergy>" << endl;
-  kineticEnergy.toXML(strm);
-  strm << "</KineticEnergy>" << endl;
+  if (globalInput.flags.checkpoint_energy_only == 0)
+    {
+      // Kinetic energy
+      strm << "<KineticEnergy>" << endl;
+      kineticEnergy.toXML(strm);
+      strm << "</KineticEnergy>" << endl;
 
-  // Potential energy
-  strm << "<PotentialEnergy>" << endl;
-  potentialEnergy.toXML(strm);
-  strm << "</PotentialEnergy>" << endl;
+      // Potential energy
+      strm << "<PotentialEnergy>" << endl;
+      potentialEnergy.toXML(strm);
+      strm << "</PotentialEnergy>" << endl;
 
-  // nuc-elec energy
-  strm << "<NucElecEnergy>" << endl;
-  neEnergy.toXML(strm);
-  strm << "</NucElecEnergy>" << endl;
+      // nuc-elec energy
+      strm << "<NucElecEnergy>" << endl;
+      neEnergy.toXML(strm);
+      strm << "</NucElecEnergy>" << endl;
 
-  // elec-elec energy;
-  strm << "<ElecElecEnergy>" << endl;
-  eeEnergy.toXML(strm);
-  strm << "</ElecElecEnergy>" << endl;
+      // elec-elec energy;
+      strm << "<ElecElecEnergy>" << endl;
+      eeEnergy.toXML(strm);
+      strm << "</ElecElecEnergy>" << endl;
 
-  // log weights
-  strm << "<LogWeights>" << endl;
-  logWeights.toXML(strm);
-  strm << "</LogWeights>" << endl;
+      // log weights
+      strm << "<LogWeights>" << endl;
+      logWeights.toXML(strm);
+      strm << "</LogWeights>" << endl;
 
-  // Acceptance probability
-  strm << "<AcceptanceProbability>" << endl;
-  acceptanceProbability.toXML(strm);
-  strm << "</AcceptanceProbability>" << endl;
+      // Acceptance probability
+      strm << "<AcceptanceProbability>" << endl;
+      acceptanceProbability.toXML(strm);
+      strm << "</AcceptanceProbability>" << endl;
 
-  // Distance Moved Accepted
-  strm << "<DistanceMovedAccepted>" << endl;
-  distanceMovedAccepted.toXML(strm);
-  strm << "</DistanceMovedAccepted>" << endl;
+      // Distance Moved Accepted
+      strm << "<DistanceMovedAccepted>" << endl;
+      distanceMovedAccepted.toXML(strm);
+      strm << "</DistanceMovedAccepted>" << endl;
 
-  // Distance Moved Trial
-  strm << "<DistanceMovedTrial>" << endl;
-  distanceMovedTrial.toXML(strm);
-  strm << "</DistanceMovedTrial>" << endl;
+      // Distance Moved Trial
+      strm << "<DistanceMovedTrial>" << endl;
+      distanceMovedTrial.toXML(strm);
+      strm << "</DistanceMovedTrial>" << endl;
 
-  strm << "<walkerAge>" << endl;
-  walkerAge.toXML(strm);
-  strm << "</walkerAge>" << endl;
+      // Walker Age
+      strm << "<walkerAge>" << endl;
+      walkerAge.toXML(strm);
+      strm << "</walkerAge>" << endl;
+      
+      // Weight Change
+      strm << "<weightChange>" << endl;
+      weightChange.toXML(strm);
+      strm << "</weightChange>" << endl;
 
-  strm << "<weightChange>" << endl;
-  weightChange.toXML(strm);
-  strm << "</weightChange>" << endl;
-
-  strm << "<growthRate>" << endl;
-  growthRate.toXML(strm);
-  strm << "</growthRate>" << endl;
+      // Growth Rate
+      strm << "<growthRate>" << endl;
+      growthRate.toXML(strm);
+      strm << "</growthRate>" << endl;
+    }
 
   // Close XML
   strm << "</QMCProperties>" << endl;
@@ -210,111 +216,118 @@ bool QMCProperties::readXML(istream& strm)
   if (temp != "</Energy>")
     return false;
 
-  // Read kinetic energy
-  strm >> temp;
-  if (temp != "<KineticEnergy>")
-    return false;
-  if (!kineticEnergy.readXML(strm))
-    return false;
-  strm >> temp;
-  if (temp != "</KineticEnergy>")
-    return false;
+  if (globalInput.flags.checkpoint_energy_only == 0)
+    {
+      // Read kinetic energy
+      strm >> temp;
+      if (temp != "<KineticEnergy>")
+	return false;
+      if (!kineticEnergy.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</KineticEnergy>")
+	return false;
 
-  // Read potential energy
-  strm >> temp;
-  if (temp != "<PotentialEnergy>")
-    return false;
-  if (!potentialEnergy.readXML(strm))
-    return false;
-  strm >> temp;
-  if (temp != "</PotentialEnergy>")
-    return false;
+      // Read potential energy
+      strm >> temp;
+      if (temp != "<PotentialEnergy>")
+	return false;
+      if (!potentialEnergy.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</PotentialEnergy>")
+	return false;
 
-  // Read nuc-elec energy
-  strm >> temp;
-  if (temp != "<NucElecEnergy>")
-    return false;
-  if (!neEnergy.readXML(strm))
-    return false;
-  strm >> temp;
-  if (temp != "</NucElecEnergy>")
-    return false;
+      // Read nuc-elec energy
+      strm >> temp;
+      if (temp != "<NucElecEnergy>")
+	return false;
+      if (!neEnergy.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</NucElecEnergy>")
+	return false;
 
-  // Read elec-elec energy
-  strm >> temp;
-  if (temp != "<ElecElecEnergy>")
-    return false;
-  if (!eeEnergy.readXML(strm))
-    return false;
-  strm >> temp;
-  if (temp != "</ElecElecEnergy>")
-    return false;
+      // Read elec-elec energy
+      strm >> temp;
+      if (temp != "<ElecElecEnergy>")
+	return false;
+      if (!eeEnergy.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</ElecElecEnergy>")
+	return false;
 
-  // Read log weights
-  strm >> temp;
-  if (temp != "<LogWeights>")
-    return false;
-  if (!logWeights.readXML(strm))
-    return false;
-  strm >> temp;
-  if (temp != "</LogWeights>")
-    return false;
+      // Read log weights
+      strm >> temp;
+      if (temp != "<LogWeights>")
+	return false;
+      if (!logWeights.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</LogWeights>")
+	return false;
 
-  // Acceptance probability
-  strm >> temp;
-  if (temp != "<AcceptanceProbability>")
-    return false;
-  if (!acceptanceProbability.readXML(strm))
-    return false;
-  strm >> temp;
-  if (temp != "</AcceptanceProbability>")
-    return false;
+      // Acceptance probability
+      strm >> temp;
+      if (temp != "<AcceptanceProbability>")
+	return false;
+      if (!acceptanceProbability.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</AcceptanceProbability>")
+	return false;
 
-  // Distance Moved Accepted
-  strm >> temp;
-  if (temp != "<DistanceMovedAccepted>")
-    return false;
-  if (!distanceMovedAccepted.readXML(strm))
-    return false;
-  strm >> temp;
-  if (temp != "</DistanceMovedAccepted>")
-    return false;
+      // Distance Moved Accepted
+      strm >> temp;
+      if (temp != "<DistanceMovedAccepted>")
+	return false;
+      if (!distanceMovedAccepted.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</DistanceMovedAccepted>")
+	return false;
 
-  // Distance Moved Trial
-  strm >> temp;
-  if (temp != "<DistanceMovedTrial>")
-    return false;
-  if (!distanceMovedTrial.readXML(strm))
-    return false;
-  strm >> temp;
-  if (temp != "</DistanceMovedTrial>")
-    return false;
+      // Distance Moved Trial
+      strm >> temp;
+      if (temp != "<DistanceMovedTrial>")
+	return false;
+      if (!distanceMovedTrial.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</DistanceMovedTrial>")
+	return false;
 
-  strm >> temp;
-  if (temp != "<walkerAge>")
-    return false;
-  if (!walkerAge.readXML(strm));
-  strm >> temp;
-  if (temp != "</walkerAge>")
-    return false;
-  
-  strm >> temp;
-  if (temp != "<weightChange>")
-    return false;
-  if (!weightChange.readXML(strm))
-    return false;
-  strm >> temp;
-  if (temp != "</weightChange>")
-    return false;
+      // Walker Age
+      strm >> temp;
+      if (temp != "<walkerAge>")
+	return false;
+      if (!walkerAge.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</walkerAge>")
+	return false;
 
-  strm >> temp;
-  if (temp != "<growthRate>")
-    return false;
-  if (!growthRate.readXML(strm))
-    return false;
-  strm >> temp;
-  if (temp != "</growthRate>")
-    return false;
+      // Weight Change
+      strm >> temp;
+      if (temp != "<weightChange>")
+	return false;
+      if (!weightChange.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</weightChange>")
+	return false;
+
+      // Growth Rate
+      strm >> temp;
+      if (temp != "<growthRate>")
+	return false;
+      if (!growthRate.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</growthRate>")
+	return false;
+    }
 
   // Close XML
   strm >> temp;

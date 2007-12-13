@@ -1,7 +1,7 @@
 #ifndef QMCEquilibrationArray_H
 #define QMCEquilibrationArray_H
 
-#define EQ 30
+#define EQ 15
 
 #include "QMCExtendedProperties.h"
 #include "IeeeMath.h"
@@ -23,6 +23,12 @@ class QMCEquilibrationArray
     The array of QMCExtendedProperties objects.
   */
   QMCExtendedProperties Eq_Array[EQ];
+
+  /**
+    This object has no samples in it.  It is returned if the algorithm doesn't 
+    think any of the objects are equilibrated yet.
+  */
+  QMCExtendedProperties ZeroProperties;
 
   /**
     The number of active objects in the array.
@@ -60,6 +66,14 @@ class QMCEquilibrationArray
   */
   bool calc_forces;
   
+  /**
+     This array stores the expectation value and standard deviation of each
+     object after it has been active for 10000 samples.
+  */
+  Array2D<double> ten_thousand_samples;
+
+  int over_ten_thousand;
+
  public:
 
   /**

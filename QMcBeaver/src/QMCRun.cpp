@@ -844,11 +844,12 @@ void QMCRun::toXML(ostream& strm)
   
   // writes out the properties
   if (Input->flags.use_equilibration_array == 1)
+    EquilibrationArray.toXML(strm);
+  else 
     {
-      EquilibrationArray.toXML(strm);
-    } else {
       Properties.toXML(strm);
-      fwProperties.toXML(strm);
+      if (Input->flags.future_walking.size() > 1)
+	fwProperties.toXML(strm);
     }
 
   //prints all the walkers
@@ -886,8 +887,9 @@ bool QMCRun::readXML(istream& strm)
     {
       if (!Properties.readXML(strm))
 	return false;
-      if (!fwProperties.readXML(strm))
-	return false;
+      if (Input->flags.future_walking.size() > 1)
+	if (!fwProperties.readXML(strm))
+	  return false;
     }
   
   // read the walkers

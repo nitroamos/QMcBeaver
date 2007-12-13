@@ -98,6 +98,7 @@ void QMCFlags::read_flags(string InFileName)
   checkin_file_name              = "";
   checkout_file_name             = "";
   zero_out_checkpoint_statistics = 0;
+  checkpoint_energy_only         = 0;
   print_transient_properties     = 0;
   print_transient_properties_interval = 10000;
   print_configs                  = 0;
@@ -380,6 +381,11 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> checkout_file_name;
         }
+      else if(temp_string == "checkpoint_energy_only")
+	{
+	  input_file >> temp_string;
+	  checkpoint_energy_only = atoi(temp_string.c_str());
+	}
       else if(temp_string == "equilibration_steps")
         {
           input_file >> temp_string;
@@ -1020,6 +1026,7 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
        << flags.checkout_file_name << endl;
   strm << "zero_out_checkpoint_statistics\n "
        << flags.zero_out_checkpoint_statistics << endl;
+  strm << "checkpoint_energy_only\n " << flags.checkpoint_energy_only << endl;
   strm << "print_configs\n " << flags.print_configs << endl;
   strm << "print_config_frequency\n " << flags.print_config_frequency << endl;
   strm << "temp_dir\n " << flags.temp_dir << endl;

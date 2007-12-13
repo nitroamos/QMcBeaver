@@ -510,6 +510,11 @@ class QMCFlags
   int use_available_checkpoints;
 
   /**
+     To make them smaller, write only the energy data to the checkpoint files.
+  */
+  int checkpoint_energy_only;
+
+  /**
      Number of time steps between printing the global properties as
      the calculation progresses.
   */
