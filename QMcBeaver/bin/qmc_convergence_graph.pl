@@ -104,7 +104,7 @@ my %dt_num;
 my %dt_num_results;
 my %dt_nme_results;
 
-printf "%50s %7s %7s %20s %5s %20s %10s %10s\n","File Name","dt","nw","HF Energy","NumBF","Average","Errors","Warnings";
+printf "%50s %7s %7s %20s %20s %5s %5s %20s %10s %10s\n","File Name","dt","nw","HF Energy","Var. Energy","NumBF","NumJW","Average","Errors","Warnings";
 my $lastlines = "";
 for(my $index=0; $index<=$#files; $index++){
     my $cur = $files[$index];
@@ -117,19 +117,30 @@ for(my $index=0; $index<=$#files; $index++){
     } else {
 	next;
     }
+
+    my $vare = 0;
+
     my $dt = 0;
     my $nw = 0;
     my $opt = -1;
     my $isd = -1;
     my $hfe = 0;
     my $numbf = 0;
+    my $use3 = 0;
     open (CKMFFILE, "$base.ckmf");
     while(<CKMFFILE>){
+	if($_ =~ /^\#/ && $_ !~ /[A-DF-Za-df-z]+/ && $vare == 0){
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $vare    = $line[2];
+	}
+
 	if($_ =~ m/^\s*run_type\s*$/){
 	    $_ = <CKMFFILE>;
 	    chomp;
 	    my @line = split/[ ]+/;
 	    $isd = $line[1];
+	    last if($isd eq "variational");
 	}
 	if($_ =~ m/^\s*dt\s*$/){
 	    $_ = <CKMFFILE>;
@@ -161,14 +172,32 @@ for(my $index=0; $index<=$#files; $index++){
 	    my @line = split/[ ]+/;
 	    $numbf = $line[1];
 	}
+	if($_ =~ m/^\s*use_three_body_jastrow\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $use3 = $line[1];
+	}
 	if($_ =~ m/&geometry$/){
 	    last;
 	}
     }
 
-    #next if($dt ne "0.001");
     next if($opt == 1);
     next if($isd eq "variational");
+
+    while(<CKMFFILE> !~ /Jastrow/){}
+    my $numjw = 0;
+    while(<CKMFFILE>){
+	if(/NumberOfParametersOfEachType/){
+	    my @line = split/\s+/;
+	    my $numthis = $line[1];
+	    for($i=2; $i<=$#line; $i++){
+		$numthis *= $line[$i];
+	    }
+	    $numjw += $numthis;
+	}
+    }
 
     if($all_dt == 0){
 	$all_dt = $dt;
@@ -212,11 +241,15 @@ for(my $index=0; $index<=$#files; $index++){
 	    $numerrors++;
 	}
 
-	next if($_ =~ /[=]/ && $_ !~ /Results/);
+	#this is to avoid processing warnings
+	next if( $_ =~ /[=:]/ && $_ !~ /Results/);
+
 	chomp;
 	@data = split/[ ]+/;
+
         #this is the number of data elements per line
-	if($#data >= 8 && $more){
+	#it can have the letter 'e' or 'E' since scientific notation uses them
+	if($#data >= 8 && $_ !~ /[A-DF-Za-df-z]+/ && $more){
 	    $counter++;
 	    $iteration   = $data[1];
 	    $eavg        = $data[2];
@@ -237,7 +270,12 @@ for(my $index=0; $index<=$#files; $index++){
     close OUTFILE;
     $lastlines .= "$line";
     if($eavg < 0){
-	my $key = "$hfe&$dt";
+	my $key;
+	if($vare == 0){
+	    $key = "$hfe&$dt&$numbf&$numjw";
+	} else {
+	    $key = "$vare&$dt&$numbf&$numjw";
+	}
 	my $weight = $num_samples/100000;
 
 	$dt_ave_results{$key} += $eavg * $weight;
@@ -254,7 +292,7 @@ for(my $index=0; $index<=$#files; $index++){
     }
     my $in_kcal = $eavg*$units;
     #printf "%50s %15s %15s E_h=%20.14f E_kcal=%20.10f Err=%i Warn=%i\n","$base","dt=$dt","nw=$nw",$eavg,$in_kcal,$numerrors,$numwarnings;
-    printf "%50s %7s %7s %20s %5i %20.10f %10i %10i\n","$base","$dt","$nw","$hfe",$numbf,$eavg,$numerrors,$numwarnings;
+    printf "%50s %7s %7s %20s %20s %5i %5i %20.10f %10i %10i\n","$base","$dt","$nw","$hfe","$vare",$numbf,$numjw,$eavg,$numerrors,$numwarnings;
     #if we are in enhanced text mode, we need to double escape the "_"
     #$base =~ s/_/\\\\_/g;
     printf DATFILE "#%19s %20s %20s %20s\n", "dt=$dt","$base","E=$eavg","";
@@ -288,7 +326,7 @@ if($num_results > 0){
     #print "Average result = $ave_result\n";
     
     printf "%10s %20s %10s %20s %20s %20s %20s %20s %20s %10s\n",
-    "dt","HF Energy","Number","Average","Error (kcal)","dt Diff. (kcal)",
+    "dt","ID Energy","Number","Average","Error (kcal)","dt Diff. (kcal)",
     "Diff. (kcal)","HF Diff. (kcal)","Corr. E.","Weight";
     my %qref;
     my %href;
@@ -307,8 +345,9 @@ if($num_results > 0){
 	} elsif(abs($qref{$keydata[1]} - $dt_ave_results{$key}) > 5){
 	    #if the energies are different by more than 10 hartrees, assume we want to reset
 	    $ratio = $dt_ave_results{$key} / $qref{$keydata[1]};
-	    $intr = int($ratio);
-	    $intdiff = $ratio - $intr;
+	    $intr = int($ratio + 0.5);
+	    $intdiff = abs($ratio - $intr);
+
 	    #print "int = $intr diff = $intdiff\n";
 	    if($intr != 1 && $intdiff < 0.01)
 	    {
@@ -344,26 +383,10 @@ if($num_results > 0){
     #the data is sorted according to dt first
     #we calculate the difference for for all results available
     #but we don't compare calculations if dt and energy are different
-    print "\n";
-    foreach $col (sort bydt keys %dt_ave_results)
-    {
-	my @coldata = split/&/,$col;
-	printf "%9.4f   ",$coldata[0];
-    }
-    print "\n";
-    foreach $col (sort bydt keys %dt_ave_results)
-    {
-	my @coldata = split/&/,$col;
-	printf "%9s   ",$coldata[1];
-    }
-    print "\n";
-    foreach $col (sort bydt keys %dt_ave_results)
-    {
-	printf "%9s-- ","---------";
-    }
-    print "\n";
+    print "VMC results:\n";
     foreach $row (sort bydt keys %dt_ave_results)
     {
+	my $newrow = 1;
 	my @rowdata = split/&/,$row;
 	foreach $col (sort bydt keys %dt_ave_results)
 	{
@@ -371,7 +394,8 @@ if($num_results > 0){
 	    my $print = 1;
 	    if($rowdata[0] != $coldata[0]){
 		$print = 0 if($rowdata[0] <= $coldata[0] ||
-			      $rowdata[1] != $coldata[1]);
+			      $rowdata[1] != $coldata[1] ||
+			      $rowdata[3] != $coldata[3]);
 	    } else {
 		$print = 0 if($rowdata[1] <= $coldata[1]);
 	    }
@@ -382,74 +406,65 @@ if($num_results > 0){
 	    my $diff = $r - $c;
 
 	    my $intr = 0;
-	    if(abs($r/$c) > 1.5)
+	    if(abs($r/$c) > 1.0)
 	    {
 		#if the energies are different by more than 10 hartrees, assume we want to reset
 		$ratio = $r / $c;
-		$intr = int($ratio);
-		$intdiff = $ratio - $intr;
-
+		$intr = int($ratio + 0.5);
+		$intdiff = abs($ratio - $intr);
+		
 		if($intr != 1 && $intdiff < 0.1)
 		{
 		    $diff = $r - $c * $intr;
 		}
-	    } elsif($c/$r > 1.5) {
+
+		$bfratio = $rowdata[2] / $coldata[2];
+		if($bfratio != $intr){
+		    $print = 0;
+		}
+
+	    } elsif(abs($r/$c) < 1.0) {
 		#if the energies are different by more than 10 hartrees, assume we want to reset
 		$ratio = $c / $r;
-		$intr = int($ratio);
-		$intdiff = $ratio - $intr;
+		$intr = int($ratio + 0.5);
+		$intdiff = abs($ratio - $intr);
 
 		if($intr != 1 && $intdiff < 0.1)
 		{
 		    $diff = $intr * $r - $c;
 		}
+
+		$bfratio = $coldata[2] / $rowdata[2];
+		if($bfratio != $intr){
+		    $print = 0;
+		}
 	    }
 	    
-	    $diff *= $units;
+	    $diff *= -$units;
 
 	    if($print)
 	    {
-		if(abs($diff) > 1e3) {
-		    printf "%8.2fK   ",($diff/1000.0);
+		if($newrow == 1) {
+		    printf "%15.10f %9s %9s %9s | ",$rowdata[0],$rowdata[1],$rowdata[2],$rowdata[3];
+		    $newrow = 0;
 		} else {
-		    if($intr > 1)
-		    {
-			printf "%9.3f %i ",$diff,$intr;
-		    } else {
-			printf "%9.3f   ",$diff;
-		    }
+		    printf "%45s | "," ";
 		}
-	    } else {
-		printf "%9s   "," ";
+		printf "%15.10f %9s %9s %9s | ",$coldata[0],$coldata[1],$coldata[2],$coldata[3];
+		printf "%9.3f %i ",$diff,$intr;
+		printf "\n";
 	    }
 	}
-	printf "| %9.4f %9s\n",$rowdata[0],$rowdata[1];
     }
     print "\n\n";
     #matrix output
     #the data is sorted according to dt first
     #we calculate the difference for for all results available
     #but we don't compare calculations if dt and energy are different
-    print "\n";
-    foreach $col (sort bydt keys %dt_ave_results)
-    {
-	my @coldata = split/&/,$col;
-	printf "%9.4f   ",$coldata[0];
-    }
-    print "\n";
-    foreach $col (sort bydt keys %dt_ave_results)
-    {
-	my @coldata = split/&/,$col;
-	printf "%9s   ",$coldata[1];
-    }
-    print "\n";
-    foreach $col (sort bydt keys %dt_ave_results)
-    {
-	printf "%9s-- ","---------";
-    }
-    print "\n";
+    print "DMC results:\n";
     foreach $row (sort bydt keys %dt_ave_results)
     {
+	my $newrow = 1;
 	my @rowdata = split/&/,$row;
 	foreach $col (sort bydt keys %dt_ave_results)
 	{
@@ -457,7 +472,8 @@ if($num_results > 0){
 	    my $print = 1;
 	    if($rowdata[0] != $coldata[0]){
 		$print = 0 if($rowdata[0] <= $coldata[0] ||
-			      $rowdata[1] != $coldata[1]);
+			      $rowdata[1] != $coldata[1] ||
+			      $rowdata[3] != $coldata[3]);
 	    } else {
 		$print = 0 if($rowdata[1] <= $coldata[1]);
 	    }
@@ -468,48 +484,55 @@ if($num_results > 0){
 	    my $diff = $r - $c;
 
 	    my $intr = 0;
-	    if(abs($r/$c) > 1.5)
+	    if(abs($r/$c) > 1.0)
 	    {
 		#if the energies are different by more than 10 hartrees, assume we want to reset
 		$ratio = $r / $c;
-		$intr = int($ratio);
-		$intdiff = $ratio - $intr;
+		$intr = int($ratio + 0.5);
+		$intdiff = abs($ratio - $intr);
 
 		if($intr != 1 && $intdiff < 0.1)
 		{
 		    $diff = $r - $c * $intr;
 		}
-	    } elsif($c/$r > 1.5) {
+
+		$bfratio = $rowdata[2] / $coldata[2];
+		if($bfratio != $intr){
+		    $print = 0;
+		}
+
+	    } elsif(abs($r/$c) < 1.0) {
 		#if the energies are different by more than 10 hartrees, assume we want to reset
 		$ratio = $c / $r;
-		$intr = int($ratio);
-		$intdiff = $ratio - $intr;
+		$intr = int($ratio + 0.5);
+		$intdiff = abs($ratio - $intr);
 
 		if($intr != 1 && $intdiff < 0.1)
 		{
 		    $diff = $intr * $r - $c;
 		}
+
+		$bfratio = $coldata[2] / $rowdata[2];
+		if($bfratio != $intr){
+		    $print = 0;
+		}
 	    }
 	    
-	    $diff *= $units;
+	    $diff *= -$units;
 
 	    if($print)
 	    {
-		if(abs($diff) > 1e3) {
-		    printf "%8.2fK   ",($diff/1000.0);
+		if($newrow == 1){
+		    printf "%15.10f %9s %9s %9s | ",$r,$rowdata[1],$rowdata[2],$rowdata[3];
+		    $newrow = 0;
 		} else {
-		    if($intr > 1)
-		    {
-			printf "%9.3f %i ",$diff,$intr;
-		    } else {
-			printf "%9.3f   ",$diff;
-		    }
+		    printf "%45s | "," ";
 		}
-	    } else {
-		printf "%9s   "," ";
+		printf "%15.10f %9s %9s %9s | ",$c,$coldata[1],$coldata[2],$coldata[3];
+		printf "%9.3f %i ",$diff,$intr;
+		printf "\n";
 	    }
 	}
-	printf "| %9.4f %9s\n",$rowdata[0],$rowdata[1];
     }
     print "\n\n";
 }
