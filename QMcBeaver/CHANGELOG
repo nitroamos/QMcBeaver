@@ -1,3 +1,18 @@
+Mon, Dec 17, 2007 Amos Anderson
+1.  I added skewness and kurtosis to the statistics gathering. It doesn't
+    appear to add significant expense to calculations, and the results seem
+    interesting.
+
+2.  Restart ckmf files will preserve all comments from parent ckmf file.
+    Also, the code will add some data about the optimization to the restart file.
+    My intent is to embed some data into the restart file containing info about
+    the wavefunction. This is important to know which calculations are supposed
+    to represent different or the same calculation, so the optimization energy
+    is supposed to represent a wavefunction ID.
+
+3.  I added a new file, bin/ckmf.pl. This script helps you examine a bunch of ckmf
+    files at once.
+
 Thu, Dec 13, 2007 Daniel R Fisher
 1.  I added the option to include write only the energy data to
     checkpoint files.  This makes the files much smaller and preserves the
