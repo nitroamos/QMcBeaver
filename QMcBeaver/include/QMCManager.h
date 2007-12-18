@@ -411,6 +411,7 @@ class QMCManager
      @param strm output stream to write the energy statistics summary to.
   */
   void writeEnergyResultsSummary(ostream & strm);
+  void writeEnergyResultsHeader(ostream & strm);
 
   /**
      Checks to see if any of the termination criteria for the calculation have

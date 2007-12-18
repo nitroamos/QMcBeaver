@@ -76,6 +76,38 @@ double QMCProperty::getStandardDeviation()
   else return getBlockStandardDeviation(decorr_depth);
 }
 
+double QMCProperty::getSkewness()
+{
+  int decorr_depth = getDecorrDepth();
+  if (decorr_depth == -2)
+  {
+    // return infinity
+    return 1.0e300;
+  }
+  else if (decorr_depth == -1)
+  {
+    // DDDA has not converged.
+    return 99;
+  }
+  else return getBlockSkewness(decorr_depth);
+}
+
+double QMCProperty::getKurtosis()
+{
+  int decorr_depth = getDecorrDepth();
+  if (decorr_depth == -2)
+  {
+    // return infinity
+    return 1.0e300;
+  }
+  else if (decorr_depth == -1)
+  {
+    // DDDA has not converged.
+    return 99;
+  }
+  else return getBlockKurtosis(decorr_depth);
+}
+
 int QMCProperty::getDecorrDepth()
 {
   /*
@@ -643,9 +675,16 @@ void QMCProperty::printAll(ostream & strm)
 {
   strm << *this;
   int width = 19;
-  strm << setw(width) << "DeCorr_depth" << setw(width) << "samples" << setw(width) << "Ave" 
-       << setw(width) << "Std" << setw(width) << "StdStd" << setw(width) << "Var" 
-       << setw(width) << "VarStd" << endl;
+  strm << setw(width) << "DeCorr_depth"
+       << setw(width) << "samples"
+       << setw(width) << "Ave" 
+       << setw(width) << "Std"
+       << setw(width) << "StdStd"
+       << setw(width) << "Var" 
+       << setw(width) << "VarStd"
+       << setw(width) << "Skew"
+       << setw(width) << "Kurtosis"
+       << endl;
   strm.precision(10);
   
   for(int i=0;i<DCL;i++)
@@ -660,7 +699,9 @@ void QMCProperty::printAll(ostream & strm)
 	      strm << setw(width) << getBlockStandardDeviation(i)
 		   << setw(width) << getBlockStandardDeviationStandardDeviation(i)
 		   << setw(width) << getBlockVariance(i)
-		   << setw(width) << getBlockVarianceStandardDeviation(i);
+		   << setw(width) << getBlockVarianceStandardDeviation(i)
+		   << setw(width) << getBlockSkewness(i)
+		   << setw(width) << getBlockKurtosis(i);
 	    }
 	  
 	  strm << endl;
@@ -707,6 +748,22 @@ double QMCProperty::getBlockVariance(int i)
   double n = DeCorr[i].getNumberSamples();
 
   return v/(n-1);
+}
+
+double QMCProperty::getBlockSkewness(int i)
+{
+  double v = DeCorr[i].getSkewness();
+  //double n = DeCorr[i].getNumberSamples();
+
+  return v;
+}
+
+double QMCProperty::getBlockKurtosis(int i)
+{
+  double v = DeCorr[i].getKurtosis();
+  //double n = DeCorr[i].getNumberSamples();
+
+  return v;
 }
 
 double QMCProperty::getBlockVarianceStandardDeviation(int i)

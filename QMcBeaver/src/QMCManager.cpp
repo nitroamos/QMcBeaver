@@ -1,3 +1,4 @@
+
 //            QMcBeaver
 //
 //         Constructed by
@@ -670,24 +671,11 @@ bool QMCManager::run(bool equilibrate)
       QMCnode.initializeFunction();
     }
 
-  int width = 16;
   if( globalInput.flags.my_rank == 0 )
     {
       clog << "***************  TheMan.run();" << endl;
-      clog << setw(10)    << "iteration"
-	   << setw(width) << "Eavg"
-	   << setw(width) << "Estd"
-	   << setw(width) << "Num. Walkers";
-
-      if( globalInput.flags.run_type == "diffusion" )
-	{
-	  clog << setw(width) << "Weights"
-	       << setw(width) << "Trial Energy";
-	}
-      
-      clog << setw(width) << "Eff. dt"
-	   << setw(width) << "Num. Samples"
-	   << endl;
+      writeEnergyResultsHeader(clog);  
+      writeEnergyResultsHeader(*qmcOut);  
     }
  
   equilibrationProperties.zeroOut();
@@ -1624,6 +1612,27 @@ void QMCManager::writeElectronDensityHistograms()
 #undef PI
 }
 
+void QMCManager::writeEnergyResultsHeader( ostream & strm )
+{
+  int width = 16;
+  strm << setw(10)    << "iteration"
+       << setw(width) << "Eavg"
+       << setw(width) << "Estd"
+       << setw(width) << "Num. Walkers";
+  
+  if( globalInput.flags.run_type == "diffusion" )
+    {
+      strm << setw(width) << "Weights"
+	   << setw(width) << "Trial Energy";
+    }
+  
+  strm << setw(width) << "Eff. dt"
+       << setw(width) << "Num. Samples"
+       << setw(width) << "Skew"
+       << setw(width) << "Kurtosis"
+       << endl;
+}
+
 void QMCManager::writeEnergyResultsSummary( ostream & strm )
 {
   int width = 15;
@@ -1679,7 +1688,11 @@ void QMCManager::writeEnergyResultsSummary( ostream & strm )
   strm << setw(width) << Properties_total.weightChange.getAverage() << " ";
   strm << setw(width) << Properties_total.growthRate.getAverage() << " ";
   */
-  strm << setw(width) << Properties_total.energy.getNumberSamples();
+  strm << setw(width) << Properties_total.energy.getNumberSamples() << " ";
+
+  strm.setf(ios::fixed,ios::floatfield);
+  strm << setw(width) << Properties_total.energy.getBlockSkewness(0) << " ";
+  strm << setw(width) << Properties_total.energy.getBlockKurtosis(0) << " ";
   
   strm << endl << setprecision( 15 );
   strm.flush();
@@ -1746,7 +1759,38 @@ void QMCManager::writeRestart(string filename)
   if(globalInput.flags.my_rank != 0)
     return;
 
+  time_t rawtime;
+  struct tm * timeinfo;
+  time ( &rawtime );
+  timeinfo = localtime ( &rawtime );
+
   ofstream restart( filename.c_str() );
+
+  if(globalInput.flags.optimize_Psi == 1)
+    {
+      // I intend to use this as a tag to ID this wavefunction.
+      restart << "# Optimization tag written " << asctime(timeinfo);
+      restart << "# ";
+      writeEnergyResultsHeader(restart);
+      restart << "# ";
+      writeEnergyResultsSummary(restart);
+    }
+
+  /*
+    This will copy all the comments over to the restart file.
+    It will copy all the lines until we reach '&flags'
+  */
+  ifstream input_file(globalInput.flags.input_file_name.c_str());
+  string temp_string;
+  getline(input_file,temp_string);
+  while((temp_string.find("&",0) == string::npos)
+	&& (input_file.eof() != 1))
+    {
+      restart << temp_string << endl;
+      getline(input_file,temp_string);
+    }
+  input_file.close();
+
   restart.setf( ios::scientific,ios::floatfield );
   restart.precision( 15 );
   

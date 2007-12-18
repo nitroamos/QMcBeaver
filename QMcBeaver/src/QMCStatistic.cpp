@@ -52,6 +52,27 @@ double QMCStatistic::getVariance() const
   return (sum2/weights-getAverage()*getAverage());
 }
 
+double QMCStatistic::getSkewness() const
+{
+  if( nsamples == 0) return 0;
+  double skew = sum3/weights;
+  skew -= 3.0 * getAverage() * sum2/weights;
+  skew += 2.0 * getAverage() * getAverage() * getAverage();
+  double var = getVariance();
+  return skew / pow(var,1.5);
+}
+
+double QMCStatistic::getKurtosis() const
+{
+  if( nsamples == 0) return 0;
+  double kurt = sum4/weights;
+  kurt -= 4.0 * getAverage() * sum3/weights;
+  kurt += 6.0 * getAverage() * getAverage() * sum2/weights;
+  kurt -= 3.0 * getAverage() * getAverage() * getAverage() * getAverage();
+  double var = getVariance();
+  return kurt / (var * var) - 3.0;
+}
+
 double QMCStatistic::getStandardDeviation() const
 {
   return sqrt(getVariance());
@@ -61,13 +82,17 @@ void QMCStatistic::newSample(long double s, long double weight)
 {
   if(nsamples == 0)
     {
-      weights = weight;
-      sum     = s*weight;
-      sum2    = s*s*weight;
+      weights =         weight;
+      sum     =       s*weight;
+      sum2    =     s*s*weight;
+      sum3    =   s*s*s*weight;
+      sum4    = s*s*s*s*weight;
     } else {
-      weights += weight;
-      sum     += s*weight;
-      sum2    += s*s*weight;
+      weights +=         weight;
+      sum     +=       s*weight;
+      sum2    +=     s*s*weight;
+      sum3    +=   s*s*s*weight;
+      sum4    += s*s*s*s*weight;
     }
   nsamples++;
 }
@@ -77,6 +102,8 @@ void QMCStatistic::operator = ( const QMCStatistic & rhs )
   weights = rhs.weights;
   sum = rhs.sum;
   sum2 = rhs.sum2;
+  sum3 = rhs.sum3;
+  sum4 = rhs.sum4;
   nsamples = rhs.nsamples;
 }
 
@@ -90,6 +117,8 @@ QMCStatistic QMCStatistic::operator + (const QMCStatistic &rhs)
       result.weights  = weights+rhs.weights;
       result.sum      = sum+rhs.sum;
       result.sum2     = sum2+rhs.sum2;
+      result.sum3     = sum3+rhs.sum3;
+      result.sum4     = sum4+rhs.sum4;
       result.nsamples = nsamples+rhs.nsamples;
     }
   return result;
@@ -100,6 +129,8 @@ void QMCStatistic::reWeight(double w)
   //weights *= w;
   sum     *= w;
   sum2    *= w;
+  sum3    *= w;
+  sum4    *= w;
 }
 
 void QMCStatistic::toXML(ostream& strm)
@@ -218,35 +249,43 @@ void QMCStatistic::buildMpiReduce()
 void QMCStatistic::buildMpiType()
 {
   QMCStatistic indata;
-
-  int          block_lengths[4];
-  MPI_Aint     displacements[4];
-  MPI_Aint     addresses[5];
-  MPI_Datatype typelist[4];
+  int num = 6;
+  int          block_lengths[num];
+  MPI_Aint     displacements[num];
+  MPI_Aint     addresses[num+1];
+  MPI_Datatype typelist[num];
 
   typelist[0] = MPI_LONG_DOUBLE; //this is the weights 
                                  //(roughly the # of samples)
   typelist[1] = MPI_LONG_DOUBLE; //this is the sum
   typelist[2] = MPI_LONG_DOUBLE; //this is the sum2
-  typelist[3] = MPI_LONG;        //this is nsamples
+  typelist[3] = MPI_LONG_DOUBLE; //this is the sum3
+  typelist[4] = MPI_LONG_DOUBLE; //this is the sum4
+  typelist[5] = MPI_LONG;        //this is nsamples
   
   block_lengths[0] = 1;
   block_lengths[1] = 1;
   block_lengths[2] = 1;
   block_lengths[3] = 1;
+  block_lengths[4] = 1;
+  block_lengths[5] = 1;
   
   MPI_Address(&indata, &addresses[0]);
   MPI_Address(&(indata.weights), &addresses[1]);
   MPI_Address(&(indata.sum), &addresses[2]);
   MPI_Address(&(indata.sum2), &addresses[3]);
-  MPI_Address(&(indata.nsamples), &addresses[4]);
+  MPI_Address(&(indata.sum3), &addresses[4]);
+  MPI_Address(&(indata.sum4), &addresses[5]);
+  MPI_Address(&(indata.nsamples), &addresses[6]);
 
   displacements[0] = addresses[1] - addresses[0];
   displacements[1] = addresses[2] - addresses[0];
   displacements[2] = addresses[3] - addresses[0];
   displacements[3] = addresses[4] - addresses[0];
+  displacements[4] = addresses[5] - addresses[0];
+  displacements[5] = addresses[6] - addresses[0];
   
-  MPI_Type_struct(4, block_lengths, displacements, typelist, 
+  MPI_Type_struct(num, block_lengths, displacements, typelist, 
                   &MPI_TYPE);
   MPI_Type_commit(&MPI_TYPE);
 }

@@ -98,6 +98,9 @@ public:
   */
   double getVariance();
 
+  double getSkewness();
+  double getKurtosis();
+
   /**
     Gets the serially correlated variance of the data entered into the object.
     @return serially correlated variance of the data in the object.
@@ -186,6 +189,8 @@ public:
     @return variance for block.
   */
   double getBlockVariance(int i);
+  double getBlockSkewness(int i);
+  double getBlockKurtosis(int i);
 
   /**
     Gets the correct standard deviation for the block.  Where the standard

@@ -33,6 +33,8 @@ class QMCStatistic
 private:
   long double sum;
   long double sum2;
+  long double sum3;
+  long double sum4;
   long double weights;
   unsigned long nsamples;
 
@@ -79,6 +81,8 @@ public:
 
   double getStandardDeviation() const;
 
+  double getSkewness() const;
+  double getKurtosis() const;
 
   /**
     Adds a new data sample to the object.

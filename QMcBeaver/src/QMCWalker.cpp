@@ -1133,7 +1133,7 @@ bool QMCWalker::branchRecommended()
   if(getWeight() > 2.0*Input->flags.branching_threshold)
     {
       shouldRecommend = false;
-      if(iteration%10 == 0 &&
+      if(iteration%50 == 0 &&
 	 getWeight() > 2.0*Input->flags.branching_threshold &&
 	 dW > 1.0)
 	shouldWarn = true;
@@ -1154,6 +1154,8 @@ bool QMCWalker::branchRecommended()
   double rel_diff = fabs( (TrialWalker->walkerData.localEnergy -
 			   Input->flags.energy_estimated_original)/
 			  Input->flags.energy_estimated_original);
+
+  //should I use rel_diff > globalInput.flags.rel_cutoff here?
   if(rel_diff > 1.0)
     {
       shouldRecommend = false;
