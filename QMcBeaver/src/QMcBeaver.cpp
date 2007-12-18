@@ -193,17 +193,20 @@ void qmcbeaver()
       *TheMan.getResultsOutputStream() << TheMan;
     }
 
-  int optloops = 0;
+  int optloops = 1;
   while( globalInput.flags.optimize_Psi &&
-         optloops < globalInput.flags.max_optimize_Psi_steps &&
+         optloops <= globalInput.flags.max_optimize_Psi_steps &&
 	 ok)
     {
       TheMan.writeTimingData(clog);
-      clog << "***************  Optimize iteration: "  << (optloops+1) << ";" << endl;
+      clog << "***************  Optimize iteration: "  << optloops << ";" << endl;
 
-      if(optloops > 0) TheMan.resetTimers();
+      if(optloops > 1) TheMan.resetTimers();
 
       TheMan.optimize();
+      TheMan.zeroOut();
+      ok = TheMan.run(globalInput.flags.equilibrate_every_opt_step);
+
       stringstream save_opt;
       save_opt << globalInput.flags.checkout_file_name << "/"
 	       << globalInput.flags.base_file_name << ".opt" << optloops << ".ckmf";
@@ -221,16 +224,16 @@ void qmcbeaver()
 	    we still have the other restart file.
 	  */
 	  if(optloops % 2 == 0)
-	    TheMan.writeRestart(save_opt.str());
+	    {
+	      TheMan.writeRestart(save_opt.str());
+	      TheMan.writeRestart();
+	    }
 	}
       else
 	{
 	  TheMan.writeRestart(save_opt.str());
+	  TheMan.writeRestart();
 	}
-
-      TheMan.zeroOut();
-      ok = TheMan.run(globalInput.flags.equilibrate_every_opt_step);
-      TheMan.writeRestart();
 
       if( globalInput.flags.my_rank == 0 )
         {

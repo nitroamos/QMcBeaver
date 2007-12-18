@@ -952,7 +952,8 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "run_type\n " << flags.run_type << endl;
   strm << "dt\n " << flags.dt_run << endl;
   strm << "number_of_walkers\n " << flags.number_of_walkers_initial<< endl;
-  strm << "max_time_steps\n " << flags.original_max_time_steps << endl;
+  //strm << "max_time_steps\n " << flags.original_max_time_steps << endl;
+  strm << "max_time_steps\n " << flags.max_time_steps << endl;
   strm << "max_time\n " << flags.max_time << endl;
   strm << "one_e_per_iter\n " << flags.one_e_per_iter << endl;
   strm << "desired_convergence\n " << flags.desired_convergence << endl;
@@ -1190,17 +1191,13 @@ bool QMCFlags::checkFlags()
 
   if(dt > dt_equilibration)
     {
-      clog << "Warning: dt > dt_equilibration" << endl;
-    }
-
-  if(mpireduce_interval < output_interval)
-    {
-      clog << "Warning: mpireduce_interval < output_interval!" << endl;
+      clog << "Warning: dt (" << dt << ") > dt_equilibration (" << dt_equilibration << "), setting dt_equilibration = dt." << endl;
+      dt_equilibration = dt;
     }
 
   if(rel_cutoff < 10.0)
     {
-      clog << "Warning: rel_cutoff = " << rel_cutoff << " is too low..." << endl;
+      clog << "Warning: the filter rel_cutoff = " << rel_cutoff << " might be too low..." << endl;
     }
 
   /**
