@@ -58,15 +58,15 @@ static const bool USE_KAHAN = false;
 */
 extern "C"
 {
-  void dgesv_(int* N, int* NRHS,
+  void FORTRAN_FUNC(dgesv)(int* N, int* NRHS,
 	      double *A, int* lda, int* ipiv,
 	      double *B, int* ldb,
 	      int* info);
-  void sgesv_(int* N, int* NRHS,
+  void FORTRAN_FUNC(sgesv)(int* N, int* NRHS,
 	      float *A, int* lda, int* ipiv,
 	      float *B, int* ldb,
 	      int* info);
-  void dggev_(const char* jobvl, const char* jobvr, int* n,
+  void FORTRAN_FUNC(dggev)(const char* jobvl, const char* jobvr, int* n,
 	      double *a, int* lda, double *b, int* ldb,
 	      double *alphar, double *alphai, double *beta,
 	      double *vl, int* ldvl,
@@ -282,7 +282,7 @@ template <class T> class Array2D
       char transa = rhsIsTransposed ? 'T' : 'N';
       char transb = 'N';
       
-      dgemm_(&transa, &transb,		    
+      FORTRAN_FUNC(dgemm)(&transa, &transb,		    
 	     &M, &N, &K,
 	     &alpha,
 	     rhs.pArray, &lda,
@@ -332,7 +332,7 @@ template <class T> class Array2D
       char transa = rhsIsTransposed ? 'T' : 'N';
       char transb = 'N';
       
-      sgemm_(&transa, &transb,		    
+      FORTRAN_FUNC(sgemm)(&transa, &transb,		    
 	     &M, &N, &K,
 	     &alpha,
 	     rhs.pArray, &lda,
@@ -353,7 +353,7 @@ template <class T> class Array2D
 #else
       int inc = 1;
       int num = n_1 * n_2;
-      return ddot_(&num, pArray, &inc, rhs.pArray, &inc);
+      return FORTRAN_FUNC(ddot)(&num, pArray, &inc, rhs.pArray, &inc);
 #endif
     }
   
@@ -364,7 +364,7 @@ template <class T> class Array2D
 #else
       int inc = 1;
       int num = n_1 * n_2;
-      return sdot_(&num, pArray, &inc, rhs.pArray, &inc);
+      return FORTRAN_FUNC(sdot)(&num, pArray, &inc, rhs.pArray, &inc);
 #endif
     }
   
@@ -378,7 +378,7 @@ template <class T> class Array2D
       return cblas_ddot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
 #else
       int inc = 1;
-      return ddot_(&n_1, pArray + whichElectron*n_2, &inc, rhs.pArray + whichElectron*n_2, &inc);
+      return FORTRAN_FUNC(ddot)(&n_1, pArray + whichElectron*n_2, &inc, rhs.pArray + whichElectron*n_2, &inc);
 #endif
     }
   
@@ -388,7 +388,7 @@ template <class T> class Array2D
       return cblas_sdot(n_1, pArray + whichElectron*n_2, 1, rhs.pArray + whichElectron*n_2, 1);
 #else
       int inc = 1;
-      return sdot_(&n_1, pArray + whichElectron*n_2, &inc, rhs.pArray + whichElectron*n_2, &inc);
+      return FORTRAN_FUNC(sdot)(&n_1, pArray + whichElectron*n_2, &inc, rhs.pArray + whichElectron*n_2, &inc);
 #endif	
     }
 
@@ -400,7 +400,7 @@ template <class T> class Array2D
       int num = n_1*n_2;
       int inc = 1;
       double a = 1.0;
-      daxpy_(&num, &a, rhs.pArray, &inc, pArray, &inc);
+      FORTRAN_FUNC(daxpy)(&num, &a, rhs.pArray, &inc, pArray, &inc);
 #endif
     }
 
@@ -1406,7 +1406,7 @@ template <class T> class Array2D
       int LDB  = n_1;
       
       //Warning: this will destroy pArray
-      dgesv_(&N, &NRHS, pArray, &LDA, diINDX.array(), inv.array(), &LDB, &info);
+      FORTRAN_FUNC(dgesv)(&N, &NRHS, pArray, &LDA, diINDX.array(), inv.array(), &LDB, &info);
       
       if(info == 0) *calcOK = true;
       else *calcOK = false;
@@ -1433,7 +1433,7 @@ template <class T> class Array2D
       int LDB  = n_1;
       
       //Warning: this will destroy pArray
-      sgesv_(&N, &NRHS, pArray, &LDA, diINDX.array(), inv.array(), &LDB, &info);
+      FORTRAN_FUNC(sgesv)(&N, &NRHS, pArray, &LDA, diINDX.array(), inv.array(), &LDB, &info);
       
       if(info == 0) *calcOK = true;
       else *calcOK = false;
@@ -1870,7 +1870,7 @@ template <class T> class Array2D
       
       Array1D<double> work(8*n);
       int lwork = work.dim1();
-      dggev_(&vl,&vr,&n,
+      FORTRAN_FUNC(dggev)(&vl,&vr,&n,
              A.array(), &lda, B.array(), &ldb,
              alphar.array(), alphai.array(), beta.array(),
              (double*)0,&ldvl,

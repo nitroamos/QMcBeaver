@@ -28,7 +28,7 @@
 #include "Array2D.h"
 #include "math.h"
 
-template<typename T>static inline T SignOfNeg(T a,T b)
+template<typename T>inline T SignOfNeg(T a,T b)
 	{  return(b<0.0 ? fabs(a) : -fabs(a));  }
 
 template<typename T>

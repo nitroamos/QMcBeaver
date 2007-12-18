@@ -157,7 +157,7 @@ template <class T> class Array1D
       return cblas_ddot(n_1, pArray, 1,rhs.pArray, 1);
 #else
       int inc = 1;
-      return ddot_(&n_1, pArray, &inc, rhs.pArray, &inc);
+      return FORTRAN_FUNC(ddot)(&n_1, pArray, &inc, rhs.pArray, &inc);
 #endif
     }
 
@@ -172,7 +172,7 @@ template <class T> class Array1D
       return cblas_sdot(n_1, pArray, 1,rhs.pArray, 1);
 #else
       int inc = 1;
-      return sdot_(&n_1, pArray, &inc, rhs.pArray, &inc);
+      return FORTRAN_FUNC(sdot)(&n_1, pArray, &inc, rhs.pArray, &inc);
 #endif
     }
 
@@ -185,7 +185,7 @@ template <class T> class Array1D
 #else
       int inc = 1;
       double a = 1.0;
-      daxpy_(&n_1, &a, pArray, &inc, A.pArray, &inc);
+      FORTRAN_FUNC(daxpy)(&n_1, &a, pArray, &inc, A.pArray, &inc);
 #endif
       return A;
     }
@@ -198,7 +198,7 @@ template <class T> class Array1D
 #else
       int inc = 1;
       double a = 1.0;
-      daxpy_(&n_1, &a, rhs.pArray, &inc, pArray, &inc);
+      FORTRAN_FUNC(daxpy)(&n_1, &a, rhs.pArray, &inc, pArray, &inc);
 #endif
     }
 
