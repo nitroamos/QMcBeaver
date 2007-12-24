@@ -272,6 +272,8 @@ for line in gamess_output:
         nbasisfunc = string.atoi(string.split(line)[7])
     if string.find(line,'CHARGE OF MOLECULE') !=-1 :
         charge = string.atoi(string.split(line)[4])
+#we'll rely on orbital occupations to indicate charge
+	charge = 0
     if string.find(line,'TOTAL NUMBER OF ATOMS') !=-1 :
         atoms = string.atoi(string.split(line)[5])
     if string.find(line,'NUMBER OF OCCUPIED ORBITALS (ALPHA)') != -1 :
@@ -359,11 +361,12 @@ elif scf_type == "UHF":
 elif scf_type == "GVB":
     #the CI Coefficients in the dat file are more precise, so we want them
     #this might have a problem if too many GVB pairs are used
+    cicoef=[]
     for i in range(len(gamess_data)):
         if string.find(gamess_data[i],'CICOEF') != -1:
 	    line = gamess_data[i]
 	    line = string.replace(line,',',' ')
-            cicoef = string.split(line)
+            cicoef += string.split(line)
 
     for i in range(len(gamess_data)):
         if string.find(gamess_data[i],'E(GVB)=') != -1:
@@ -536,45 +539,63 @@ elif scf_type == "GVB":
 	if len(ci_line) != 9:
 	    end_ci = i
 	    break
-	
-    ndeterminants = 2*(end_ci - start_ci)
     
-    AlphaOccupation = range(ndeterminants)
-    BetaOccupation = range(ndeterminants)
-    CI_coeffs = range(ndeterminants)
-
-    for i in range(ndeterminants):
+    AlphaOccupation = range(1)
+    CI_coeffs = range(1)
+    CI_coeffs[0] = 1.0
+    
+    for i in range(len(AlphaOccupation)):
         AlphaOccupation[i] = range(norbitals)
-        BetaOccupation[i] = range(norbitals)
 
-    for i in range(ndeterminants):
+    for i in range(len(AlphaOccupation)):
         for j in range(norbitals):
 	    if j < ncore:
 		AlphaOccupation[i][j] = 1
-		BetaOccupation[i][j]  = 1
 	    else:
 		AlphaOccupation[i][j] = 0
-		BetaOccupation[i][j]  = 0
-		
 
+    # we need to expand out the geminal pairs into separate determinants
+    # the start in the form (c1 + c2) * (c3 + c4) * (c5 + c6)...
+    # expanding to (c1*c3 + c1*c4 + c2*c3 + c2*c4)*(c5 * c6)*(...)
+    # I've implemented a recursion in a loop.
+    index = 3
     idet = 0
-    for i in range(start_ci,end_ci):
-        ci_line = string.split(gamess_output[i])
-        CI_coeffs[idet]   = ci_line[3]
-	CI_coeffs[idet+1] = ci_line[4]
+    for p in range(end_ci-start_ci):
+	old = len(CI_coeffs)
+	coef1 = string.atof(cicoef[index])
+	index += 1
+	coef2 = string.atof(cicoef[index])
+	index += 3
 
+	ci_line = string.split(gamess_output[p+start_ci])
 	orb1 = string.atoi(ci_line[1]) - 1
 	orb2 = string.atoi(ci_line[2]) - 1
-	
-	AlphaOccupation[  idet][orb1] = 1
-	BetaOccupation[   idet][orb1] = 1
-	AlphaOccupation[idet+1][orb2] = 1
-	BetaOccupation[ idet+1][orb2] = 1
 
-    for i in range(ndeterminants):
-	print "Replacing coefficient ", CI_coeffs[i], " with ", cicoef[i+3], " from the .dat file"
-	CI_coeffs[i] = cicoef[i+3]
-	
+	pairCI    = range(old*2)
+	pairAlpha = range(old*2)
+	for i in range(len(pairAlpha)):
+	    pairAlpha[i] = range(norbitals)
+	    
+	for orb in range(len(pairCI)):
+	    for i in range(len(AlphaOccupation[orb%old])):
+		pairAlpha[orb][i] = AlphaOccupation[orb%old][i]
+	    
+	    if orb < old:
+		pairCI[orb] = CI_coeffs[orb%old] * coef1
+		pairAlpha[orb][orb1] = 1
+	    else:
+		pairCI[orb] = CI_coeffs[orb%old] * coef2
+		pairAlpha[orb][orb2] = 1
+
+	print "Geminal ",p," with coeffs ",coef1, ", ",coef2, " uses orbitals ", orb1, " and ", orb2
+	print "Determinant CI coefficients = ",pairCI	
+
+	CI_coeffs = pairCI
+	AlphaOccupation = pairAlpha
+    BetaOccupation = AlphaOccupation
+    ndeterminants = 2*(end_ci - start_ci)
+    assert(ndeterminants == len(CI_coeffs))
+
 elif scf_type == "NONE" and ci_type == "ALDET":
     core_line_number = -1
     for i in range(len(gamess_output)):
@@ -673,7 +694,7 @@ elif (ci_type != "ALDET"):
 my_path, my_name = os.path.split(__file__)
 
 #A couple default placed to look for "ckmft" files
-templatedir = [".","..","../examples","/ul/amosa/qmc_setup/ckmf_creation",my_path]
+templatedir = [".","..","../..","../examples","/ul/amosa/ckmf_origs",my_path]
 
 templates = []
 for dir in templatedir:
@@ -694,8 +715,9 @@ except:
 print "You chose ckmf template: ", templates[choice]
 myStandardFlags=open(templates[choice],'r')
 
-OUT.write('#Created on %s'%(time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime())))
-OUT.write(' by '+my_name+' using %s\n'%Infile);
+OUT.write('# Created on %s\n'%(time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime())))
+OUT.write('# Using gamess output file:  %s\n'% os.path.abspath(Infile))
+OUT.write('# Using ckmft template file: %s\n'% templates[choice])
 
 #let's save some of the important info from a GAMESS calculation
 for i in range(len(gamess_output)):
@@ -709,6 +731,8 @@ for i in range(len(gamess_output)):
     if string.find(gamess_output[i],'CCSD(T) ENERGY:') != -1:
 	    line = i
     if string.find(gamess_output[i],'FINAL') != -1:
+	    line = i
+    if string.find(gamess_output[i],'$BASIS') != -1:
 	    line = i
     if line > 0:
 	    OUT.write('#%s' % gamess_output[line])
@@ -923,7 +947,9 @@ OUT.write("Alpha Occupation\n")
 for i in range(ndeterminants):
     for j in range(norbitals):
         OUT.write('%i\t'%AlphaOccupation[i][j])
+	print '%i\t'%AlphaOccupation[i][j],
     OUT.write('\n')
+    print '\n',
 OUT.write('\n')
 
 OUT.write("Beta Occupation\n")
@@ -967,71 +993,75 @@ for atom in geometry:
 # write out the jastrow
 OUT.write('\n&Jastrow\n\n')
 
-# up down jastrow
-if nalpha > 0 and nbeta > 0:
-    OUT.write('ParticleTypes: Electron_Up Electron_Down\n')
-    OUT.write('CorrelationFunctionType: FixedCuspPade\n')
-    OUT.write('NumberOfParameterTypes: 2\n')
-    OUT.write('NumberOfParametersOfEachType: 0 1\n')
-    OUT.write('Parameters: 2.0\n')
-    OUT.write('NumberOfConstantTypes: 1\n')
-    OUT.write('NumberOfConstantsOfEachType: 1\n')
-    OUT.write('Constants: 0.5\n')
-    OUT.write('\n')
+if 0:
+    # up down jastrow
+    if nalpha > 0 and nbeta > 0:
+	OUT.write('ParticleTypes: Electron_Up Electron_Down\n')
+	OUT.write('CorrelationFunctionType: Cambridge2\n')
+	OUT.write('NumberOfParameterTypes: 2\n')
+	OUT.write('NumberOfParametersOfEachType: 1 8\n')
+	OUT.write('Parameters: 0.30 0.3\n')
+	OUT.write('NumberOfConstantTypes: 2\n')
+	OUT.write('NumberOfConstantsOfEachType: 1  1\n')
+	OUT.write('Constants: 0.5  3\n')
+	OUT.write('\n')
+	
+	# up up jastrow
+	if nalpha > 1:
+	    OUT.write('ParticleTypes: Electron_Up Electron_Up\n')
+	    OUT.write('CorrelationFunctionType: Cambridge2\n')
+	    OUT.write('NumberOfParameterTypes: 2\n')
+	    OUT.write('NumberOfParametersOfEachType: 1 8\n')
+	    OUT.write('Parameters: 0.30 0.1\n')
+	    OUT.write('NumberOfConstantTypes: 2\n')
+	    OUT.write('NumberOfConstantsOfEachType: 1  1\n')
+	    OUT.write('Constants: 0.25  3\n')
+	    OUT.write('\n')
+	    
+	# down down jastrow
+	if nbeta > 1:
+	    OUT.write('ParticleTypes: Electron_Down Electron_Down\n')
+	    OUT.write('CorrelationFunctionType: Cambridge2\n')
+	    OUT.write('NumberOfParameterTypes: 2\n')
+	    OUT.write('NumberOfParametersOfEachType: 1 8\n')
+	    OUT.write('Parameters: 0.30 0.1\n')
+	    OUT.write('NumberOfConstantTypes: 2\n')
+	    OUT.write('NumberOfConstantsOfEachType: 1  1\n')
+	    OUT.write('Constants: 0.25  3\n')
+	    OUT.write('\n')
 
-# up up jastrow
-if nalpha > 1:
-    OUT.write('ParticleTypes: Electron_Up Electron_Up\n')
-    OUT.write('CorrelationFunctionType: FixedCuspPade\n')
-    OUT.write('NumberOfParameterTypes: 2\n')
-    OUT.write('NumberOfParametersOfEachType: 0 1\n')
-    OUT.write('Parameters: 2.0\n')
-    OUT.write('NumberOfConstantTypes: 1\n')
-    OUT.write('NumberOfConstantsOfEachType: 1\n')
-    OUT.write('Constants: 0.25\n')
-    OUT.write('\n')
-
-# down down jastrow
-if nbeta > 1:
-    OUT.write('ParticleTypes: Electron_Down Electron_Down\n')
-    OUT.write('CorrelationFunctionType: FixedCuspPade\n')
-    OUT.write('NumberOfParameterTypes: 2\n')
-    OUT.write('NumberOfParametersOfEachType: 0 1\n')
-    OUT.write('Parameters: 2.0\n')
-    OUT.write('NumberOfConstantTypes: 1\n')
-    OUT.write('NumberOfConstantsOfEachType: 1\n')
-    OUT.write('Constants: 0.25\n')
-    OUT.write('\n')
-
-# up nuclear jastrow
-if nalpha > 0:
-    for i in range(len(atom_types)):
-        OUT.write('ParticleTypes: Electron_Up ' + atom_types[i] + '\n')
-        OUT.write('CorrelationFunctionType: FixedCuspPade\n')
-        OUT.write('NumberOfParameterTypes: 2\n')
-        OUT.write('NumberOfParametersOfEachType: 0 1\n')
-        OUT.write('Parameters: 100.0\n')
-        OUT.write('NumberOfConstantTypes: 1\n')
-        OUT.write('NumberOfConstantsOfEachType: 1\n')
-        OUT.write('Constants: -' + atom_type_charges[i] + '\n')
-        OUT.write('\n')
-
-# down nuclear jastrow
-if nbeta > 0:
-    for i in range(len(atom_types)):
-        OUT.write('ParticleTypes: Electron_Down ' + atom_types[i] + '\n')
-        OUT.write('CorrelationFunctionType: FixedCuspPade\n')
-        OUT.write('NumberOfParameterTypes: 2\n')
-        OUT.write('NumberOfParametersOfEachType: 0 1\n')
-        OUT.write('Parameters: 100.0\n')
-        OUT.write('NumberOfConstantTypes: 1\n')
-        OUT.write('NumberOfConstantsOfEachType: 1\n')
-        OUT.write('Constants: -' + atom_type_charges[i] + '\n')
-        OUT.write('\n')
-
+	# up nuclear jastrow
+	if nalpha > 0:
+	    for i in range(len(atom_types)):
+		OUT.write('ParticleTypes: Electron_Up ' + atom_types[i] + '\n')
+		OUT.write('CorrelationFunctionType: Cambridge2\n')
+		OUT.write('NumberOfParameterTypes: 2\n')
+		OUT.write('NumberOfParametersOfEachType: 1 8\n')
+		OUT.write('Parameters: 0.30 -0.3\n')
+		OUT.write('NumberOfConstantTypes: 2\n')
+		OUT.write('NumberOfConstantsOfEachType: 1  1\n')
+		OUT.write('Constants: 0  3\n')
+		#        OUT.write('Constants: -' + atom_type_charges[i] + '\n')
+		OUT.write('\n')
+		
+	# down nuclear jastrow
+       	if nbeta > 0:
+	    for i in range(len(atom_types)):
+		OUT.write('ParticleTypes: Electron_Down ' + atom_types[i] + '\n')
+		OUT.write('CorrelationFunctionType: Cambridge2\n')
+		OUT.write('NumberOfParameterTypes: 2\n')
+		OUT.write('NumberOfParametersOfEachType: 1 8\n')
+		OUT.write('Parameters: 0.30 -0.3\n')
+		OUT.write('NumberOfConstantTypes: 2\n')
+		OUT.write('NumberOfConstantsOfEachType: 1  1\n')
+		OUT.write('Constants: 0  3\n')
+		OUT.write('\n')
+else:
+    print "\nDont forget to add jastrows!"
+    
 OUT.write('&Jastrow\n')
 
 ################## PRINT JASTROW: END ################################
 
-
+print "\nFinished writing file ", Outfile
 
