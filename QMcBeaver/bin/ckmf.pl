@@ -1,57 +1,16 @@
 #!/usr/bin/perl
+#this script will help you examine many ckmf files simultaneously
 
-my @files;
+my $path = `dirname $0`;
+chomp($path);
+require "$path/utilities.pl";
+
+my @files = @ARGV;
 if($#files < 0)
 {
     push(@files,".");
-    #if the first argument is a plotfile.dat, then we'll add new data to it
-    #otherwise, we'll create a new plotfile.dat
-    
-    #print "Usage: qmc_convergence_graph.pl {plotfile.dat || output1.out} [output2.out ...]\n";
-    #print "Will produce a graph of energy vs num samples or iterations.\n";
-    #die;
 }
-
-#this will scan through all the subdirectories looking for .out files
-my $clean = 0;
-my $loops = 0;
-while($clean == 0)
-{
-    $loops++;
-    $clean = 1;
-    my @newfiles;
-
-    for(my $index=0; $index<=$#files; $index++)
-    {
-	my $cur = $files[$index];
-	chomp($cur);
-	if(-d $cur && $cur !~ /src$/ && $cur !~ /bin$/ && $cur !~ /include$/ && $cur !~ /hide$/)
-	{
-	    my @list = `ls $cur`;
-	    foreach $item (@list)
-	    {
-		#we have a directory in the list, so we're going to need to loop again
-		$clean = 0;
-		chomp($item);
-		if($cur eq ".")
-		{
-		    push(@newfiles,"$item");
-		} else {
-		    push(@newfiles,"$cur/$item");
-		}
-	    }	    
-	} elsif($cur =~ /.ckmf$/ && $cur !~ /.step[\d]+./ && $cur !~ /.opt[\d]+./){
-	    push(@newfiles,$cur);
-	}
-    }
-    @files = @newfiles;
-
-
-    if($loops > 8)
-    {
-	print "Stopping recursion at $loops.\n";
-    }
-}
+getFileList(".ckmf",\@files);
 
 for(my $index=0; $index<=$#files; $index++){
     open (CKMFFILE, "$files[$index]");
@@ -66,6 +25,7 @@ for(my $index=0; $index<=$#files; $index++){
     $optl = 0;
     $steps=0;
     $eqsteps=0;
+    $iseed=0;
     $searchdata = "";
 
     while(<CKMFFILE>){
@@ -123,6 +83,12 @@ for(my $index=0; $index<=$#files; $index++){
 	    my @line = split/[ ]+/;
 	    $eqsteps = $line[1];
 	}
+	if($_ =~ m/^\s*iseed\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $iseed = $line[1];
+	}
 
 	if($ARGV[0] != "" && $_ =~ m/$ARGV[0]/ && $_ !~ /\#/){
 	    $name = $_;
@@ -172,11 +138,17 @@ for(my $index=0; $index<=$#files; $index++){
 	$rt = "d";
     }
 
-    printf "%-40s %2s nw=%3i steps=%5s/%-5s dt=%-7s nbf=%-4i opt=%i optl=%i HF= %-20s\n",
+    printf "%-40s %2s nw=%3i steps=%5s/%-5s dt=%-7s nbf=%-4i opt=%i optl=%i HF= %-20s",
     $files[$index],$rt,
     $nw,$eqsteps_str,$steps_str,
     $dt,
     $numbf,$opt,$optl,$hfe;
+
+    if($iseed != 0){
+	print " iseed = $iseed";
+    }
+    print "\n";
+
     print "$searchdata";
     close(CKMFFILE);
 }
