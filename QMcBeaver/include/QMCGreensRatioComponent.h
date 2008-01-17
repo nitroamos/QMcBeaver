@@ -141,7 +141,18 @@ class QMCGreensRatioComponent
      @return total value of this object.
   */
   double getValue() const;
-  
+
+  /**
+     If the QMCGreensRatioComponent is bad (e.g. inf, nan, etc)
+     then this will return false.
+  */
+  bool isNotValid() const;
+
+  /**
+     To test whether we can divide by this number.
+  */
+  bool isZero() const;
+
  private:
   
   /** 
