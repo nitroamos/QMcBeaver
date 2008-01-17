@@ -166,6 +166,24 @@ double QMCGreensRatioComponent::getValue() const
   return k*t1*t2;
 }
 
+bool QMCGreensRatioComponent::isNotValid() const
+{
+  if (IeeeMath::isNaN(k) || IeeeMath::isNaN(a) || IeeeMath::isNaN(b) || IeeeMath::isNaN(c) )
+    {
+      return true;
+    }
+  return false;
+}
+
+bool QMCGreensRatioComponent::isZero() const
+{
+  if(fabs(k) <  1e-250 || c < -690.0 )
+    {
+      return true;
+    }
+  return false;
+}
+
 QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatioComponent & denom)
 {
   // Handle pow(a,b)/pow(d.a,d.b)
@@ -203,7 +221,7 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatio
       b = 0.0;
     }
 
-  if (IeeeMath::isNaN(k) || IeeeMath::isNaN(a) || IeeeMath::isNaN(b) || IeeeMath::isNaN(c) )
+  if (isNotValid())
     {
       cerr << "Error in QMCGreensRatioComponent::divideBy():" << endl;
       cerr << *this;
@@ -222,6 +240,13 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRat
       cerr << "*this = " << *this << endl;
       cerr << "    X = " << X << endl;
       exit(1);
+    }
+
+  if (isNotValid() || X.isNotValid())
+    {
+      cerr << "Error in QMCGreensRatioComponent::multiplyBy():" << endl;
+      cerr << *this << endl;
+      cerr << X << endl;
     }
 
   double temp_k, temp_a, temp_b;
@@ -354,13 +379,12 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRat
       b = 0.0;
     }
 
-  if (IeeeMath::isNaN(k) || IeeeMath::isNaN(a) || IeeeMath::isNaN(b) || IeeeMath::isNaN(c) ||
-      IeeeMath::isNaN(X.k) || IeeeMath::isNaN(X.a) || IeeeMath::isNaN(X.b) || IeeeMath::isNaN(X.c))
+  if (isNotValid() || X.isNotValid())
     {
       cerr << "Error in QMCGreensRatioComponent::multiplyBy():" << endl;
       cerr << *this << endl;
       cerr << X << endl;
-      exit(1);
+      *this = 0.0;
     }
   
   return *this;
@@ -371,7 +395,7 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::add(const QMCGreensRatioCompo
   // This function has been causing a lot of problems on QSC.
   // First we make sure that none of the elements is NaN.
 
-  if (IeeeMath::isNaN(k) || IeeeMath::isNaN(a) || IeeeMath::isNaN(b) || IeeeMath::isNaN(c))
+  if (isNotValid())
     {
       cerr << "Error in QMCGreensRatioComponent::add():" << endl;
       cerr << "k:\t" << k << "\ta:\t" << a << "\tb:\t" << b << "\tc:\t" << c;
@@ -379,7 +403,7 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::add(const QMCGreensRatioCompo
       exit(1);
     }
 
-  if (IeeeMath::isNaN(X.k) || IeeeMath::isNaN(X.a) || IeeeMath::isNaN(X.b) || IeeeMath::isNaN(X.c))
+  if (X.isNotValid())
     {
       cerr << "Error in QMCGreensRatioComponent::add():" << endl;
       cerr << "X.k\t" << X.k << "\tX.a:\t" << X.a << "\tX.b:\t" << X.b;

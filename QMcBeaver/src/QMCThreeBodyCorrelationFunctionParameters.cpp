@@ -1080,8 +1080,12 @@ void QMCThreeBodyCorrelationFunctionParameters::gaussianParamDepMatrix()
 
 void QMCThreeBodyCorrelationFunctionParameters::makeParamDepMatrix()
 {
-  gaussianParamDepMatrix();
-  return;
+  if (globalInput.flags.reproduce_NE_with_NEE_jastrow == 1 &&
+      globalInput.flags.reproduce_EE_with_NEE_jastrow == 1)
+    {
+      gaussianParamDepMatrix();
+      return;
+    }
 
   for (int l=0; l<NeN; l++)
     for (int m=0; m<NeN; m++)

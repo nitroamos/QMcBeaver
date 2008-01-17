@@ -19,10 +19,11 @@ void Cambridge2CorrelationFunction::initializeParameters(
   g = Constants(0);
   C = (int)(Constants(1));
 
-  if( C != 2 && C != 3 )
+  if( C < 2 )
     {
       /*
-	Anything less than 3 will produce a discontinuity in the local energy.
+	Anything less than 3 will produce a discontinuity in the local energy,
+	but the papers say that C = 2 is the best.
       */
       cerr << "ERROR: Cambridge 2 particle Jastrow requires C = 2 or C = 3, "
 	   << "but you set C = " << C << endl;

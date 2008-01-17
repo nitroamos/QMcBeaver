@@ -1,3 +1,16 @@
+Thu, Jan 17, 2008 Amos Anderson
+1.  I fixed a bug that occurred when optimizing ci coefficients. I was
+    getting sets of ci coefficients where all of them were zero, this
+    was causing problems when update_SCF divides by the wavefunction.
+
+2.  I fixed a minor bug preventing QMCEigenSearch from looking at the correct
+    energies when deciding whether to increase the number of steps.
+
+3.  I set QMCThreeBodyCorrelationFunctionParameters to use Dan's
+    gaussianParamDepMatrix whenever we're not reproducing NE && EE
+    Jastrows with NEE. The regular method was not producing a
+    matrix.
+
 Fri, Jan 11, 2008 Amos Anderson
 1.  I uploaded all the scripts I've been working on. They'll plot
     jastrows and convergence data. Unfortunately, I haven't bothered

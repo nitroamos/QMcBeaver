@@ -184,7 +184,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 #endif
 
   globalInput.setAIParameters(Guess_parameters);
-  globalInput.WF.normalizeCI();
+  //globalInput.WF.normalizeCI();
 
   if(globalInput.flags.a_diag > 0 ||
      optStep%2 == 1)

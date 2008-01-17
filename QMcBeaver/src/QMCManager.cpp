@@ -1145,9 +1145,11 @@ bool QMCManager::run(bool equilibrate)
   updateEstimatedEnergy(&Properties_total);
 
   /**
-     Whether the run was successfully completed.
+     Whether the run was successfully completed. If we got an energy greater
+     than zero, then we'll assume that the optimization failed. If we kept running,
+     the output files would explode with error messages.
   */
-  if(QMCManager::SIGNAL_SAYS_QUIT)
+  if(QMCManager::SIGNAL_SAYS_QUIT || Properties_total.energy.getAverage() > 0)
     return false;
   return true;
 }

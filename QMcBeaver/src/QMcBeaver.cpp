@@ -246,6 +246,11 @@ void qmcbeaver()
       optloops++;
     }
 
+  if(!ok)
+    {
+      clog << "Error: somehow the calculation is not ok. Check your wavefunction.\n";
+    }
+
   clog << "***************  Finalize" << endl;
   TheMan.finalize();
 

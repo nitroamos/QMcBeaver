@@ -318,7 +318,7 @@ void QMCSCFJastrow::update_SCF()
   termPR.allocate(Input->WF.getNumberDeterminants());
 
   wd->SCF_Psi = 0.0;
-  
+
   for (int ci=0; ci<Input->WF.getNumberDeterminants(); ci++)
     {
       termPsiRatio(ci) = QMCGreensRatioComponent(Input->WF.CI_coeffs(ci));
@@ -327,7 +327,8 @@ void QMCSCFJastrow::update_SCF()
       wd->SCF_Psi += termPsiRatio(ci);
     }
   
-  termPsiRatio /= wd->SCF_Psi;
+  if(!wd->SCF_Psi.isZero())
+    termPsiRatio /= wd->SCF_Psi;
   
   for(int ci=0; ci<termPR.dim1(); ci++)
     termPR(ci) = (double)termPsiRatio(ci);
@@ -726,7 +727,7 @@ void QMCSCFJastrow::calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walke
 	  
 	  QMCGreensRatioComponent Jastrow_Psi =
 	    QMCGreensRatioComponent(1.0,1.0,0.0,Jastrow.getLnJastrow(iWalker));	 
-	  
+
 	  QMCGreensRatioComponent cs_Psi = wd->SCF_Psi * Jastrow_Psi;
 
 	  // \frac{\nabla^2 D}{D} + \nabla^2 U

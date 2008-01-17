@@ -277,11 +277,13 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 	clog << "-L";
       clog << " params)";
 
-      if(optStep >= 3 && f[optStep-1] > f[optStep-3])
+      if(optStep >= 4 && f[optStep-2] > f[optStep-4] && f[optStep-2] < globalInput.flags.energy_trial)
 	{
 	  /*
 	    If our energy actually went up between two successive (full) optimization steps,
 	    then increase the number of time steps.
+
+	    We will only make this advance if we're already lower than the trial energy.
 	    
 	    The reason is that we need to be sure the noise level is low enough
 	    that the parameter derivatives have something to measure.
