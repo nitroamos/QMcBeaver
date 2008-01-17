@@ -5,6 +5,8 @@ my $path = `dirname $0`;
 chomp($path);
 require "$path/utilities.pl";
 
+my $includeRestarts = 0;
+
 my @files = @ARGV;
 if($#files < 0)
 {
@@ -12,7 +14,16 @@ if($#files < 0)
 }
 getFileList(".ckmf",\@files);
 
+my $curTime = qx! date +%s !;
+
+printf "%-30s %2s %3s %11s %-7s %-4s %4s %4s  %-15s %8s %8s\n",
+    "Name","  ","NW","EQ/Steps","dt","nbf","opt","optl","HF","Age","Size";
+my $base = "";
 for(my $index=0; $index<=$#files; $index++){
+    if(!$includeRestarts){
+	next if($files[$index] =~ /.\d\d.ckmf$/);
+    }
+    $base = substr($files[$index],0,-5);
     open (CKMFFILE, "$files[$index]");
 
     while(<CKMFFILE> !~ /&flags/){};
@@ -138,12 +149,67 @@ for(my $index=0; $index<=$#files; $index++){
 	$rt = "d";
     }
 
-    printf "%-40s %2s nw=%3i steps=%5s/%-5s dt=%-7s nbf=%-4i opt=%i optl=%i HF= %-20s",
-    $files[$index],$rt,
+    my $outModTime = "";
+    my $outSize    = "";
+    my $ovData     = "";
+    my $failed     = 0;
+
+    if(-e "$base.out"){
+	my $data = `/bin/ls -lh --time-style=+%s $base.out`;
+	my @list = split/ +/,$data;
+
+	$data = `grep failed $base.out`;
+	$failed = 1 if(length($data) > 0);
+
+	$outSize = $list[4];
+	$outModTime = $curTime - $list[5];
+	$char = " ";
+
+	if($outModTime > 3600){
+	    $outModTime /= 3600;
+	    $char = "h";
+	    if($outModTime > 24){
+		$outModTime /= 24;
+		$char = "d";
+	    }
+	}
+	if($char eq " "){
+	    $outModTime = sprintf "%5.0f $char", $outModTime;
+	} else {
+	    $outModTime = sprintf "%5.1f $char", $outModTime;
+	}
+	#$outModTime .= sprintf " %3s", $list[5];
+	#$outModTime .= sprintf " %2s", $list[6];
+	#$outModTime .= sprintf " %5s", $list[7];
+
+	if($failed == 1){
+	    $outModTime .= "*";
+	} else {
+	    $outModTime .= " ";
+	}
+
+	@list = `grep "Objective Value" $base.out`;
+	$ovData = $list[$#list];
+	chomp($ovData);
+
+	@list = split/[ =]+/,$ovData;
+	$ovData = "";
+	if($#list == 9){
+	    $ovData .= sprintf "%2i",$list[1];
+	    $ovData .= sprintf " %15.10f",$list[5];
+	    $ovData .= sprintf " %8.5f",$list[7];
+	    $ovData .= sprintf " %10s",$list[9];
+	}
+    }
+
+    printf "%-30s %2s %3i %5s/%-5s %-7s %-4i %4i %4i %-15s",
+    $base,$rt,
     $nw,$eqsteps_str,$steps_str,
     $dt,
     $numbf,$opt,$optl,$hfe;
-
+    printf " %10s", $outModTime;
+    printf " %7s", $outSize;
+    printf " %40s", $ovData;
     if($iseed != 0){
 	print " iseed = $iseed";
     }

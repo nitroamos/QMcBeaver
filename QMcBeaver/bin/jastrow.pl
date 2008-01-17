@@ -25,6 +25,7 @@ if($#files < 0)
     push(@files,".");
 } elsif($#files == 0 && $files[0] =~ /out/){
     $showOpt = 1;
+    $useVar  = 1;
     print "Showing optimization steps\n";
 }
 
@@ -36,14 +37,16 @@ if($showOpt != 1){
 %plotters;
 my @optEnergies;
 my $base = "";
+my $numjw = "";
+my $numjwID = 0;
+my $numbf = 0;
+my $numci = 1;
 for(my $index=0; $index<=$#files; $index++){
     $base = substr($files[$index],0,-4);
     #print "base = $base\n";
     open (CKMFFILE, "$base.ckmf");
     my $isd = "";
-    my $numbf = 0;
-    my $numci = 1;
-    while(<CKMFFILE>){
+    while(<CKMFFILE>){	
 	if($_ =~ m/^\s*run_type\s*$/){
 	    $_ = <CKMFFILE>;
 	    chomp;
@@ -71,13 +74,11 @@ for(my $index=0; $index<=$#files; $index++){
 	}
     }
 
-    if($useVar == 0 && $showOpt == 0){
+    if($useVar == 0){
 	next if($isd eq "variational");
     }
 
     while(<CKMFFILE> !~ /Jastrow/){}
-    my $numjw = "";
-    my $numjwID = 0;
     while(<CKMFFILE>){
 	if(/NumberOfParametersOfEachType/){
 	    if(!($numjw eq "")){
@@ -134,7 +135,7 @@ for(my $index=0; $index<=$#files; $index++){
 	    $name =~ s/[:()]//g;
 	    my $val = "";
 	    if($showOpt){
-		$val = "$name&$numbf&$L&$step&$func";
+		$val = "$name&$numci,$numbf&$L&$step&$func";
 	    } else {
 		$val = "$name&$numci,$numbf&$L&$numjw&$func";
 	    }
@@ -147,7 +148,7 @@ for(my $index=0; $index<=$#files; $index++){
 	if($line =~ /Obj/ && $line !~ /params/){
 	    $energy = (split/ +/,$line)[6];
 	    push(@optEnergies,$energy);
-	    print "Energy is $energy, num = $#optEnergy\n";
+	    print "Energy is $energy, num = $#optEnergies\n";
 	}
 	$line = <FILE>;
 	last if( eof FILE );
@@ -156,8 +157,14 @@ for(my $index=0; $index<=$#files; $index++){
     close(FILE);
 }
 
-printf "%-30s %-15s %-30s %5s   %-40s\n",
+if($showOpt){
+    printf "Jastrow = $numjw; NumCI = $numci; NumBF = $numbf\n";
+    printf "%-30s %-15s %-30s %5s   %-40s\n",
+    "Type","L (bohr)","Step","NumBF","File Name";
+} else {
+    printf "%-30s %-15s %-30s %5s   %-40s\n",
     "Type","L (bohr)","Jastrow","NumBF","File Name";
+}
 foreach $key (sort a1n2 keys %jastrows)
 {
     my @keydata = split/&/,$key;
@@ -180,7 +187,7 @@ foreach $key (sort a1n2 keys %jastrows)
 }
 
 my $gnuplot = "/ul/amosa/bin/gnuplot";
-$base =~ s/_[\d]+$//g;
+$base =~ s/_[\d]+$//g if(!$showOpt);
 my $modbase = $base;
 $modbase =~ s/_/\\\\_/g;
 my $printedHeader = 0;
@@ -322,6 +329,9 @@ gnuplot_Commands_Done
 
 	$func =~ s/\^/**/g;
 	$func =~ s/ +//g;
+	
+	#a polynomial might not be completed. it might end with a +)
+	$func =~ s/\+\)/\)/g;
 
 	#add in the implicit multiplications
 	#this line confuses emacs' indentation algorithm...
