@@ -45,10 +45,18 @@ ostream& operator << (ostream& strm, const QMCGreensRatioComponent &rhs)
 {
   int w = 15;
   strm.setf(ios::scientific);
+  //*
+  //k (a^b) Exp[c]
+  strm << setw(w) << rhs.k;
+  strm << " ( " << setw(w) << rhs.a;
+  strm << " ^ " << setw(w) << rhs.b;
+  strm << " ) Exp[ " << setw(w) << rhs.c << " ]";
+  /*/
   strm << "k: " << setw(w) << rhs.k;
   strm << " a: " << setw(w) << rhs.a;
   strm << " b: " << setw(w) << rhs.b;
   strm << " c: " << setw(w) << rhs.c;
+  //*/
   return strm;
 }
 
@@ -148,12 +156,8 @@ double QMCGreensRatioComponent::getValue() const
   if (a<0.0)
     {
       cerr << "Error in QMCGreensRatioComponent::getValue():" << endl;
-      cerr << "attempting to take a power of a negative number.";
-      cerr << endl;
-      cerr << "k:\t" << k << endl;
-      cerr << "a:\t" << a << endl;
-      cerr << "b:\t" << b << endl;
-      cerr << "c:\t" << c << endl;
+      cerr << "attempting to take a power of a negative number." << endl;
+      cerr << "value = " << *this << endl;
       exit(1);
     }      
   double t1 = 1.0;
@@ -168,10 +172,22 @@ double QMCGreensRatioComponent::getValue() const
 
 bool QMCGreensRatioComponent::isNotValid() const
 {
-  if (IeeeMath::isNaN(k) || IeeeMath::isNaN(a) || IeeeMath::isNaN(b) || IeeeMath::isNaN(c) )
+  //k a^b exp(c)  
+  if(IeeeMath::isNaN(k) || IeeeMath::isNaN(a) || IeeeMath::isNaN(b) || IeeeMath::isNaN(c))
     {
       return true;
     }
+#ifdef QMC_DEBUG
+  if(a < 0.0)
+    {
+      /*
+	Unless b is an integer, a^b is imaginary.
+	It's almost certainly a programming error, so let's
+	not waste time explicitly checking it.
+      */
+      return true;
+    }
+#endif
   return false;
 }
 
@@ -186,6 +202,9 @@ bool QMCGreensRatioComponent::isZero() const
 
 QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatioComponent & denom)
 {
+  if(isZero())
+    return *this;
+
   // Handle pow(a,b)/pow(d.a,d.b)
   double POW_A, POW_B;
   SimplifyRatioPowers(a,b,denom.a,denom.b,POW_A,POW_B);
@@ -224,7 +243,8 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatio
   if (isNotValid())
     {
       cerr << "Error in QMCGreensRatioComponent::divideBy():" << endl;
-      cerr << *this;
+      cerr << "dividend = " << *this << endl;
+      cerr << " divisor = " << denom << endl;
       exit(1);
     }      
 
@@ -233,20 +253,11 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatio
 
 QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRatioComponent &X)
 {
-  if (a < 0.0 || X.a < 0.0)
-    {
-      cerr << "Error in QMCGreensRatioComponent::multiplyBy():" << endl;
-      cerr << "Attempting to take a power of a negative number." << endl;
-      cerr << "*this = " << *this << endl;
-      cerr << "    X = " << X << endl;
-      exit(1);
-    }
-
   if (isNotValid() || X.isNotValid())
     {
       cerr << "Error in QMCGreensRatioComponent::multiplyBy():" << endl;
-      cerr << *this << endl;
-      cerr << X << endl;
+      cerr << "multiplicand = " << *this << endl;
+      cerr << "  multiplier = " << X << endl;
     }
 
   double temp_k, temp_a, temp_b;
@@ -382,8 +393,8 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRat
   if (isNotValid() || X.isNotValid())
     {
       cerr << "Error in QMCGreensRatioComponent::multiplyBy():" << endl;
-      cerr << *this << endl;
-      cerr << X << endl;
+      cerr << "multiplicand = " << *this << endl;
+      cerr << "  multiplier = " << X << endl;
       *this = 0.0;
     }
   
@@ -395,28 +406,12 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::add(const QMCGreensRatioCompo
   // This function has been causing a lot of problems on QSC.
   // First we make sure that none of the elements is NaN.
 
-  if (isNotValid())
+  if (isNotValid() || X.isNotValid())
     {
       cerr << "Error in QMCGreensRatioComponent::add():" << endl;
-      cerr << "k:\t" << k << "\ta:\t" << a << "\tb:\t" << b << "\tc:\t" << c;
-      cerr << endl;
+      cerr << "augend = " << *this << endl;
+      cerr << "addend = " << X << endl;
       exit(1);
-    }
-
-  if (X.isNotValid())
-    {
-      cerr << "Error in QMCGreensRatioComponent::add():" << endl;
-      cerr << "X.k\t" << X.k << "\tX.a:\t" << X.a << "\tX.b:\t" << X.b;
-      cerr << "\tX.c:\t" << X.c << endl;      
-      exit(1);
-    }
-
-  if (a < 0.0 || X.a < 0.0)
-    {
-      cerr << "Error in QMCGreensRatioComponent::add():" << endl;
-      cerr << "Attempting to take a power of a negative number." << endl;
-      cerr << "a:\t" << a << "\tb:\t" << b << endl;
-      cerr << "X.a\t" << X.a << "\tX.b:\t" << X.b << endl;
     }
 
   if(k == 0.0)
@@ -505,6 +500,8 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::add(const QMCGreensRatioCompo
 	{
 	  cerr << "Error in QMCGreensRatioComponent::add()" << endl;
 	  cerr << "Attempting to calculate exp(" << temp << ")" << endl;
+	  cerr << "augend = " << *this << endl;
+	  cerr << "addend = " << X << endl;
 	  exit(1);
 	}
       else if(fabs(temp - expArg) < 34)
@@ -548,6 +545,8 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::add(const QMCGreensRatioCompo
 	{
 	  cerr << "Error in QMCGreensRatioComponent::add()" << endl;
 	  cerr << "Attempting to calculate exp(" << expArg << ")" << endl;
+	  cerr << "augend = " << *this << endl;
+	  cerr << "addend = " << X << endl;
 	  exit(1);
 	}
       k += X.k * exp(expArg);
