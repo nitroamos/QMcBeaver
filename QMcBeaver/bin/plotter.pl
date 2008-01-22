@@ -6,11 +6,11 @@ require "$path/utilities.pl";
 
 my $calcDiff = 1;
 my $useAvg   = 1;
-my $withErr  = 1;
+my $withErr  = 0;
 
 #add lines with these values:
-#my @exact_titles    = ("exp" , "ccsdt");
-#my @exact           = (-21.5539 , -22.5373);
+my @exact_titles    = ("exp" , "ccsdt");
+my @exact           = (-21.5539 , -22.5373);
 
 my $every    = 1;
 if($withErr){
@@ -26,6 +26,7 @@ my $shift = 1;
 
 #should the x axis be samples (=1) or iterations (=0)?
 my $xaxis_samples = 0;
+my $mult_dt       = 1;
 
 my $d = qx! date +%F.%H-%M-%S !;
 chomp($d);
@@ -386,6 +387,7 @@ if($calcDiff){
 #now it's time to generate gnuplot gifs
 my @titles;
 my @energies;
+my @dt_values;
 my @keys;
 
 my $all_dt   = 0;
@@ -430,7 +432,9 @@ while($line){
     
     if($line =~ "dt="){
 	push(@energies,"$data[5]"); 
+	push(@dt_values,"$data[2]"); 
 	push(@keys,"$data[6]"); 
+
 	my @td = split/:/,$data[3];
 	my $ti = $td[0];
 	if($all_dt == -1 && $data[2] != 0){
@@ -523,7 +527,10 @@ my $xlabel = "Num Iterations";
 if($xaxis_samples == 1){
     $xindex = 1;
     $xlabel = "Num Samples";
+} elsif($mult_dt){
+    $xlabel = "Time (Hartrees^{-1})";
 }
+
 $file_name .= "_$#{titles}_$d.pdf";
 #$file_name .= "_$#{titles}.pdf";
 
@@ -576,7 +583,10 @@ for(my $i=0; $i<=$#titles; $i++){
 	}
     }
 
-    my $plotline = " \"plotfile.dat\" index $i every $every using $xindex:(\$2*$units*$factor-$shift):(\$3*$units) title \"$titles[$i]\"";
+    my $xfactor = 1;
+    $xfactor = $dt_values[$i] if($mult_dt);
+
+    my $plotline = " \"plotfile.dat\" index $i every $every using (\$$xindex * $xfactor):(\$2*$units*$factor-$shift):(\$3*$units) title \"$titles[$i]\"";
     if($withErr){
 	print GNUPLOT "$plotline with yerrorlines";
     } else {

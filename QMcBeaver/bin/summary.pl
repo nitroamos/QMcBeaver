@@ -30,9 +30,6 @@ if($drop != 1){
     print "Keeping only 1 line in $drop\n";
 }
 
-#should the x axis be samples (=1) or iterations (=0)?
-my $xaxis_samples = 0;
-
 my $d = qx! date +%F.%H-%M-%S !;
 chomp($d);
 #my $gnuplot = "/usr/local/bin/gnuplot";
