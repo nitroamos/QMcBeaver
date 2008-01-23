@@ -15,6 +15,19 @@ void CambridgeThreeBodyCorrelationFunction::initializeParameters(
   Nen = electron_nucleus;
   Nee = electron_electron;
 
+  if( L <= 0.0)
+    {
+      if(globalInput.flags.a_diag < 0.0)
+	{
+	  //hopefully this isn't the guiding function...
+
+	} else {
+	  cerr << "Error: You can not have L = " << L << " in Cambridge 2 particle Jastrows!\n";
+	  print(cerr);
+	  exit(0);
+	}
+    }
+
   if(coeffs == 0)
     coeffs = new double[Nen*Nen*Nee];
   
