@@ -248,7 +248,12 @@ void qmcbeaver()
 
   if(!ok)
     {
-      clog << "Error: somehow the calculation is not ok. Check your wavefunction.\n";
+      clog << "Error: the calculation was terminated prematurely.\n";
+      /*
+      clog << "Some possible problems:\n";
+      clog << "   1) You didn't request enough time from your queuing system.\n";
+      clog << "   2) Your wavefunction has a problem.\n";
+      */
     }
 
   clog << "***************  Finalize" << endl;
