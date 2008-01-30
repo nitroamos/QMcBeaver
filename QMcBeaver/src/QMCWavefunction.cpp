@@ -605,7 +605,7 @@ double QMCWavefunction::getCINorm()
   double norm = 0;
   for(int ci=0; ci<Ndeterminants; ci++)
     norm += CI_coeffs(ci)*CI_coeffs(ci);
-  return norm;
+  return sqrt(norm);
 }
 
 void QMCWavefunction::normalizeCI()
