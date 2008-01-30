@@ -57,7 +57,6 @@ void Cambridge2CorrelationFunction::initializeParameters(
 
   if( L <= 0.0 || fL > 100.0)
     {
-      //hopefully this isn't a guiding function...
       /*
       cerr << "Warning: bad value for L in Cambridge2CorrelationFunction." << endl
 	   << "    you set L = " << L << endl
@@ -65,7 +64,15 @@ void Cambridge2CorrelationFunction::initializeParameters(
 	   << "         1/fL = " << (1.0/fL) << endl;
       cerr << " This Jastrow will be inactivated." << endl;
       */
-      active = false;
+      if(globalInput.flags.a_diag < 0.0)
+	{
+	  //hopefully this isn't the guiding function...
+	  active = false;
+	} else {
+	  cerr << "Error: You can not have L = " << L << " in Cambridge 2 particle Jastrows!\n";
+	  cerr << *this;
+	  exit(0);
+	}
     }
 
   int N = Parameters.dim1() - 1;  
