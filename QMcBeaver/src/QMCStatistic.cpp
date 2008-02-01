@@ -42,19 +42,19 @@ unsigned long QMCStatistic::getNumberSamples() const
 
 double QMCStatistic::getAverage() const
 {
-  if( nsamples == 0) return 0;
+  if( nsamples == 0 || weights == 0 ) return 0;
   return (sum/weights);
 }
 
 double QMCStatistic::getVariance() const
 {
-  if( nsamples == 0) return 0;
+  if( nsamples == 0 || weights == 0 ) return 0;
   return (sum2/weights-getAverage()*getAverage());
 }
 
 double QMCStatistic::getSkewness() const
 {
-  if( nsamples == 0) return 0;
+  if( nsamples == 0 || weights == 0 ) return 0;
   double skew = sum3/weights;
   skew -= 3.0 * getAverage() * sum2/weights;
   skew += 2.0 * getAverage() * getAverage() * getAverage();
@@ -64,7 +64,7 @@ double QMCStatistic::getSkewness() const
 
 double QMCStatistic::getKurtosis() const
 {
-  if( nsamples == 0) return 0;
+  if( nsamples == 0 || weights == 0 ) return 0;
   double kurt = sum4/weights;
   kurt -= 4.0 * getAverage() * sum3/weights;
   kurt += 6.0 * getAverage() * getAverage() * sum2/weights;
