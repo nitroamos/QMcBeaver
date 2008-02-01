@@ -1,3 +1,8 @@
+Fri, Feb 1, 2008 Daniel R Fisher
+1.  I changed the way that gamess2qmcbeaver.py gets the basis function
+    and wavefunction parameters.  The old script was not working when
+    there was more than 100 contracted basis functions.
+
 Thu, Jan 17, 2008 Amos Anderson
 1.  I fixed a bug that occurred when optimizing ci coefficients. I was
     getting sets of ci coefficients where all of them were zero, this

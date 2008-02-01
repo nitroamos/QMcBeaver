@@ -236,30 +236,45 @@ basis = []
 atom = []
 bf = []
 atomnumber = -1
-oldbfnumber = 0
+bfnumber = 0
 for line in basisdata:
-    if line[0] != '\n' and line[1] != ' ':
-        if bf != [] :
-            atom = atom + [bf]
-            bf = []
-        if atom != [] : basis = basis + [atom]
-        atom = []
-        line = string.split(line)
-        atom = atom + [line]
-
-    elif line != '\n':
+    if line != '\n':
         line = string.replace(line,')',' ')
         line = string.replace(line,'(',' ')
         line = string.split(line)
-        newbfnumber = string.atoi(line[0])
-        temp = [line[1]] + line[3:]
-        if len(line) > 6 : temp = temp + [line[6]]
-        line = temp
-        if newbfnumber > oldbfnumber :
-            if bf != [] : atom = atom + [bf]
+        if len(line) == 1 and line[0] != str(bfnumber) and line[0] != str(bfnumber+1):
+            # We are starting a new atom
+            if bf != []:
+                # We add the old contracted basis function to the atom and clear the temp
+                atom = atom + [bf]
+                bf = []
+            if atom != []:
+                # We add the old atom to the basis and clear the temp space
+                basis = basis + [atom]
+                atom = []
+            # We start the new atom with the label
+            atom = atom + [line]
+            
+        elif len(line) > 1 and line[0] == str(bfnumber+1):
+            # We are starting a new contracted basis function for this atom
+            if bf != []:
+                # We add the old contracted basis function to the atom and clear the temp
+                atom = atom + [bf]
+                bf = []
+            # We start the new contracted basis function
+            temp = [line[1]] + line[3:]
+            if len(line) > 6:
+                temp = temp + [line[6]]
+            line = temp
             bf = [line]
-            oldbfnumber = newbfnumber
-        else :
+            bfnumber = bfnumber+1
+
+        elif len(line) > 1 and line[0] == str(bfnumber):
+            # We are continuing to add primitive basis functions to the contracted one
+            temp = [line[1]] + line[3:]
+            if len(line) > 6:
+                temp = temp + [line[6]]
+            line = temp
             bf = bf + [line]
 atom = atom + [bf]
 basis = basis + [atom]
@@ -421,7 +436,7 @@ for n in range(start_wavefunction, end_wavefunction):
                    gamess_data[n][len_line-15*(i+1)-1:len_line-15*i-1]
     for j in range(len(line_data)):
         line_data[j] = string.atof(line_data[j])
-    orbital_coeffs.append(line_data)
+        orbital_coeffs.append(line_data[j])
 
 wavefunction = []
 alpha_orbitals = []
@@ -431,23 +446,16 @@ trialFunctionType = "restricted"
 
 if scf_type != "UHF":
 
-    current_index = 1
-    m = start_wavefunction+1
-    temp_coeffs = orbital_coeffs[0]
-    while 1:
-        wavefunction_line = string.split(gamess_data[m])
-        if string.atoi(wavefunction_line[0]) == current_index % 100:
-            temp_coeffs = temp_coeffs + orbital_coeffs[m-start_wavefunction]
-        else:
-            wavefunction.append(temp_coeffs)
-            current_index = current_index+1
-            temp_coeffs = orbital_coeffs[m-start_wavefunction]
-        if m == end_wavefunction-1:
-            wavefunction.append(temp_coeffs)
-            break
-        else:
-            m = m+1
-    norbitals = len(wavefunction)
+    norbitals = len(orbital_coeffs)/nbasisfunc
+
+    wavefunction = range(norbitals)
+    temp_coeffs = []
+    
+    for i in range(norbitals):
+        temp_coeffs = range(nbasisfunc)
+        for j in range(nbasisfunc):
+            temp_coeffs[j] = orbital_coeffs[i*nbasisfunc+j]
+        wavefunction[i] = temp_coeffs
 
 elif scf_type == "UHF":
 
