@@ -109,7 +109,7 @@ void QMCPotential_Energy::calc_P_en(Array2D<double> &R)
 void QMCPotential_Energy::calc_P_ee(Array2D<double> &R)
 {
   P_ee = 0.0;
-  double r;
+
   double chargei, chargej;
 
   if (Input->flags.use_hf_potential == 1)

@@ -292,11 +292,13 @@ evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
                        Array2D<qmcfloat>& chi_grz,
                        Array2D<qmcfloat>& chi_laplacian)
 {
+  /*
 #if defined SINGLEPRECISION || defined QMC_GPU
   const float TOOSMALL = 1e-35;
 #else
   const double TOOSMALL = 1e-306;
 #endif
+  */
 
   int el = 0, bf;
   int a, b, c, nGaussians;

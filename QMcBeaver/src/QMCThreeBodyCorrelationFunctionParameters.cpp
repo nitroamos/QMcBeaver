@@ -172,7 +172,7 @@ bool QMCThreeBodyCorrelationFunctionParameters::read(istream & strm)
   isFree.allocate(TotalNumberOfParameters);
   strm >> temp;
 
-  int pi = fileParameters.read(strm,0.0,"3 particle Jastrow");
+  fileParameters.read(strm,0.0,"3 particle Jastrow");
   
   /**
      It is convenient to be able to sort parameters in the input

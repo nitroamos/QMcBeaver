@@ -1,3 +1,8 @@
+Wed, Feb 6, 2008 Amos Anderson
+1.  I eliminated all the "unused variable" warnings.
+
+2.  QMCProperty includes the correlation length in printAll
+
 Fri, Feb 1, 2008 Daniel R Fisher
 1.  I changed the way that gamess2qmcbeaver.py gets the basis function
     and wavefunction parameters.  The old script was not working when

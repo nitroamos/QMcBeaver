@@ -21,7 +21,6 @@ QMCLineSearchStepLengthSelectionAlgorithm *
 {
   QMCLineSearchStepLengthSelectionAlgorithm * algorithm = 0;
 
-  bool isValue = false;
   double value = 0;
 
   char ** ptr = 0;

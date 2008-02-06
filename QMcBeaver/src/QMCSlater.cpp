@@ -636,7 +636,6 @@ bool QMCSlater::calculate_DerivativeRatios(int ci, int row,
     {
       int numE = getNumberElectrons();
       int numO = numE;
-      double en = 0;
       double &   lap_PR = lapPR[ci];
       double ** grad_PR = gradPR.array()[ci];
       lap_PR = 0.0;

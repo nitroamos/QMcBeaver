@@ -93,7 +93,7 @@ void QMCInput::printArray(ostream & strm,
   if(num <= 0) return;
 
   strm << setw(margin) << name;
-  int len = name.length();
+
   for(int ai=0; ai<num; ai++)
     {
       if(ai%numPerRow == 0 && ai != 0)
@@ -121,7 +121,6 @@ void QMCInput::printAIParameters(ostream & strm,
     There are obviously quite a few Orbital parameters, so we probably
     don't want to print all of them.
   */
-  int numAI = getNumberAIParameters();
   int width = 20;
   int prec  = 12;
   margin += 7;

@@ -10,7 +10,7 @@ bool QMCLinearizeStepLength::isLinear(int ai)
 {
   int numJW = globalInput.JP.getNumberJWParameters();
   int numCI = globalInput.WF.getNumberCIParameters();
-  int numOR = globalInput.WF.getNumberORParameters();
+  //int numOR = globalInput.WF.getNumberORParameters();
 
   if(ai >= numJW && ai < (numJW + numCI))
     return true;
@@ -131,7 +131,7 @@ double QMCLinearizeStepLength::stepLength(QMCObjectiveFunction *function,
     }
 
   double jcp_scale = rescalingJCP();
-  double prl_scale = rescalingPRL();
+  //double prl_scale = rescalingPRL();
   double scale = jcp_scale;
   //double scale = prl_scale;
 

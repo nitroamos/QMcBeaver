@@ -248,7 +248,7 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
   bool allKE    = true;
   bool printPE  = false;
 
-  double sq2 = sqrt(2.0);
+  //double sq2 = sqrt(2.0);
   double pi = acos(-1.0);
   double r=0, theta=0, phi=0;
   double x, y, z;
@@ -436,8 +436,8 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
 	  cout << "\033[0;33m";
 	}
 
-      double sum = 0.0;
-      int numE = globalInput.WF.getNumberElectrons();
+      //double sum = 0.0;
+      //int numE = globalInput.WF.getNumberElectrons();
 
       /*
       for(int i=0; i<numE; i++)
@@ -523,7 +523,7 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
       printf(" %20.10e",
 	     (double)walkerData.psi);
 
-      //*
+      /*
       //double f = (78.278 + 0.5*walkerData.SCF_Laplacian_PsiRatio + 0.5*walkerData.lnJ)/grade;
       double f = (-77.91660515676719
 		  - walkerData.potentialEnergy

@@ -292,7 +292,7 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 	  globalInput.flags.max_time_steps = (long)(orig_steps * frac);
 
 	  //with a cutoff
-	  long cutoff = 1000*1000;
+	  unsigned long cutoff = 1000*1000;
 	  if(globalInput.flags.max_time_steps > cutoff)
 	    globalInput.flags.max_time_steps = cutoff;
 
@@ -367,7 +367,9 @@ Array1D<double> QMCEigenSearch::getParameters(QMCDerivativeProperties & dp, doub
   cout.precision(12);
   for(int i=0; i<dim+1; i++)
     {
-      //cout << "Eigenvalue(" << setw(3) << i << "): " << eigval(i) << endl;
+      if(verbose){
+	cout << "Eigenvalue(" << setw(3) << i << "): " << eigval(i) << endl;
+      }
       double val = eigval(i).real();
       if( fabs(eigval(i).imaginary()) < 1e-50 &&
 	  val < best_val &&
@@ -378,6 +380,11 @@ Array1D<double> QMCEigenSearch::getParameters(QMCDerivativeProperties & dp, doub
 	  best_idx = i;
 	}
     }
+
+  if(verbose){
+    cout << "Lowest Eigenvalue = " << best_val << endl;
+  }
+
   stepinfo << " lowest eigenvalue = " << setw(20) << best_val;
   
   Array1D<double> delta_x(dim);
