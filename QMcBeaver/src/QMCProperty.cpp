@@ -674,7 +674,9 @@ bool QMCProperty::readXML(istream& strm)
 void QMCProperty::printAll(ostream & strm)
 {
   strm << *this;
-  int width = 19;
+  int width = 14;
+  strm.precision(6);
+
   strm << setw(width) << "DeCorr_depth"
        << setw(width) << "samples"
        << setw(width) << "Ave" 
@@ -682,24 +684,34 @@ void QMCProperty::printAll(ostream & strm)
        << setw(width) << "StdStd"
        << setw(width) << "Var" 
        << setw(width) << "VarStd"
+       << setw(width) << "Corr. Len."
+       << setw(width) << "Variance"
        << setw(width) << "Skew"
        << setw(width) << "Kurtosis"
        << endl;
-  strm.precision(10);
   
   for(int i=0;i<DCL;i++)
     {
       if( DeCorr[i].getNumberSamples() > 0 )
 	{
+	  strm.setf(ios::fixed);
+	  strm.unsetf(ios::scientific);
 	  strm << setw(width) << i << setw(width) << DeCorr[i].getNumberSamples() 
 	       << setw(width) << DeCorr[i].getAverage();
 	  
 	  if( DeCorr[i].getNumberSamples() > 1 )
 	    {
+	      strm.unsetf(ios::fixed);
+	      strm.setf(ios::scientific);
 	      strm << setw(width) << getBlockStandardDeviation(i)
 		   << setw(width) << getBlockStandardDeviationStandardDeviation(i)
 		   << setw(width) << getBlockVariance(i)
-		   << setw(width) << getBlockVarianceStandardDeviation(i)
+		   << setw(width) << getBlockVarianceStandardDeviation(i);
+
+	      strm.setf(ios::fixed);
+	      strm.unsetf(ios::scientific);
+	      strm << setw(width) << getBlockVariance(i) / getBlockVariance(0)
+		   << setw(width) << DeCorr[i].getVariance()
 		   << setw(width) << getBlockSkewness(i)
 		   << setw(width) << getBlockKurtosis(i);
 	    }
