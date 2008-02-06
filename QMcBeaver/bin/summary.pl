@@ -5,7 +5,8 @@ my $path = `dirname $0`;
 chomp($path);
 require "$path/utilities.pl";
 
-my $useVar = 0;
+my $useVar = 1;
+#my $extraTag  = "trail_eps2";
 
 # This script will create a gnuplot graph
 # showing the convergence + error bars for a
@@ -73,6 +74,7 @@ if($ARGV[0] =~ /.dat$/)
 
 my $num_results;
 my $ave_result;
+my $headerLine = "";
 
 my %dt_ave_results;
 my %label;
@@ -106,6 +108,7 @@ for(my $index=0; $index<=$#files; $index++){
     my $numbf = 0;
     my $numci = 0;
     my $use3 = 0;
+    my $extraVal = 0;
     open (CKMFFILE, "$base.ckmf");
     while(<CKMFFILE>){
 	if($_ =~ /^\#/ && $_ !~ /[A-DF-Za-df-z]+/ && $vare eq ""){
@@ -165,6 +168,14 @@ for(my $index=0; $index<=$#files; $index++){
 	    my @line = split/[ ]+/;
 	    $use3 = $line[1];
 	}
+	if($extraTag ne ""){
+	    if($_ =~ m/^\s*$extraTag\s*$/){
+		$_ = <CKMFFILE>;
+		chomp;
+		my @line = split/[ ]+/;
+		$extraVal = $line[1];
+	    }
+	}
 	if($_ =~ m/&geometry$/){
 	    last;
 	}
@@ -208,6 +219,17 @@ for(my $index=0; $index<=$#files; $index++){
 	$all_nw = -1;
     }
     close CKMFFILE;
+    
+    open(RUNFILE, "$base.run");
+    my $machine = "";
+    while(<RUNFILE>){
+	if(/lamboot/){
+	    $machine = "m";
+	} elsif(/machinefile/){
+	    $machine = "h";
+	}
+    }
+    close(RUNFILE);
 
     open (OUTFILE,  "$cur");
     my $line;
@@ -223,7 +245,10 @@ for(my $index=0; $index<=$#files; $index++){
     my $numerrors = 0;
     my $wallclock = "";
     my $totalclock = "";
+    my $sampleclock = "";
     my $effdt = 0;
+    my $sampleVar = 0;
+    my $sampleVarCorLen = 0;
 
     while(<OUTFILE>){
 	if(/WARNING/)
@@ -244,6 +269,9 @@ for(my $index=0; $index<=$#files; $index++){
 	}
 	$wallclock = (split/[ ]+/)[11] if(/Wallclock/);
 	$totalclock = (split/[ ]+/)[11] if(/Total Time/);
+	$sampleclock = (split/[ ]+/)[8] if(/Average microseconds per sample per num initial walkers/);
+	$sampleVar = (split/[ ]+/)[3] if(/Sample variance/ && $sampleVar == 0);	    
+	$headerLine = $_ if(/iteration/ && /Eavg/ && /Samples/);
 
 	#this is to avoid processing warnings
 	next if( $_ =~ /[=:]/ && $_ !~ /Results/);
@@ -259,9 +287,19 @@ for(my $index=0; $index<=$#files; $index++){
 	    $eavg        = $data[2];
 	    $estd        = $data[3];
 	    $effnw       = $data[4];
-	    $effdt       = $data[7];
+	    if($isd eq "variational"){
+		$effdt       = $data[5];
+		$num_samples = $data[6];
+	    } else {
+		$effdt       = $data[7];
+		$num_samples = $data[8];
+	    }
+	    
+	    #this is equal to sample variance * correlation length
+	    $sampleVarCorLen = $estd * $estd * $num_samples;
+
 	    #$num_samples = $data[$#data];
-	    $num_samples = $data[8];
+
 	    #printf "$#data $more %20i %20.10f %20.10f %20i\n", $num_samples, $eavg, $estd, $iteration; 
 	    next if($num_samples <= 0);
 
@@ -269,7 +307,12 @@ for(my $index=0; $index<=$#files; $index++){
 	    next if($counter%$drop != 0 && $counter != 1 && $iteration%100 == 0);
 	    next if($iteration < 0);
 	    $fordatfile .= sprintf "%20i %20.10f %20.10f %20i\n", $num_samples, $eavg, $estd, $iteration;
-	    $line = sprintf "%30s $_\n","$base";
+	    if($extraTag ne ""){
+		$line = sprintf "%30s $_ %15s\n","$base","$extraVal";
+	    } else {
+		$line = sprintf "%30s $_\n","$base";
+	    }
+	    
 	} elsif(/Results/) {
 	    $more = 0;
 	}
@@ -302,12 +345,39 @@ for(my $index=0; $index<=$#files; $index++){
     my $in_kcal = $eavg*$units;
     #printf "%50s %15s %15s E_h=%20.14f E_kcal=%20.10f Err=%i Warn=%i\n","$base","dt=$dt","nw=$nw",$eavg,$in_kcal,$numerrors,$numwarnings;
 
+    chomp($sampleclock);
+    chomp($sampleVar);
     $summary{$key} .= 
-	sprintf "..  %-30s %7s %5s  %-15s %20s %5i %5i %20.10f %4i %5i %10s %10s %10s %15.5f\n",
-	"$base","$dt","$effnw","$hfe","$vare",
+	sprintf "..  %-30s%1s%7s %5s  %10.5f %10.5f %5i %5i %16.10f %4i %5i",
+	"$base","$machine","$dt","$effnw","$hfe","$vare",
 	$numbf,$numjw,$eavg,
-	$numerrors,$numwarnings,$wallclock,$totalclock,
-	$iteration,($effdt*$iteration);
+	$numerrors,$numwarnings;
+
+    if($wallclock ne ""){
+	#the calculation completed, and some extra data is available
+
+	#my $corLength = $dt * $sampleVarCorLen / $sampleVar;
+	my $corLength = $sampleVarCorLen / $sampleVar;
+
+	#this is supposed to represent the quality of the wavefunction.
+	#the higher it is, the worse
+	#my $wfEfficiency = $sampleVarCorLen * $sampleclock / 100.0;
+	#my $wfEfficiency = $sampleVar * $sampleclock / 10.0;
+	my $wfEfficiency = $sampleVar * $sampleclock * $dt / $effdt;
+
+	$summary{$key} .= 
+	    sprintf " %10.3e %10.2f %10.2f %10s %10s %10s %15.5f\n",
+	    $sampleVar,
+	    $corLength,
+	    $wfEfficiency,
+	    $wallclock,$totalclock,
+	    $iteration,($effdt*$iteration);
+    } else {
+	$summary{$key} .= 
+	    sprintf " %10s %10s %10s %10s %10s %10s %15.5f\n",
+	    "", "", "", "", "",
+	    $iteration,($effdt*$iteration);
+    }
 
     #if we are in enhanced text mode, we need to double escape the "_"
     #$base =~ s/_/\\\\_/g;
@@ -315,7 +385,13 @@ for(my $index=0; $index<=$#files; $index++){
     print DATFILE "$fordatfile\n\n";
 } 
 close DATFILE;
-print "$lastlines";
+
+chomp($headerLine);
+if($extraTag ne ""){
+    printf "%30s $headerLine  %15s\n$lastlines"," ",$extraTag;
+} else {
+    printf "%30s $headerLine \n$lastlines"," ";
+}
 
 foreach $key (sort byenergy keys %dt_ave_results)
 {
@@ -324,11 +400,12 @@ foreach $key (sort byenergy keys %dt_ave_results)
 	$label{$key} = sprintf "%2i", (scalar keys %label) + 1;
     }
 }
-printf "ID  %-30s %7s %5s  %-15s %20s %5s %5s %20s %4s %5s %10s %10s %10s %15s\n",
-    "File Name","dt","nw","HF Energy",
-    "Var. Energy","NumBF",
-    "NumJW","Average","Err","Warn",
-    "Wall","Total","Iter","effdt*iters";
+printf "ID  %-30s %7s %5s  %10s %10s %5s %5s %16s %4s %5s %10s %10s %10s %10s %10s %10s %15s\n",
+    "File Name","dt","nw","HF E",
+    "Var E","NumBF",
+    "NumJW","Avg E","Err","Warn",
+    "Variance",
+    "Corr Len","WF Eff","Wall","Total","Iter","effdt*iters";
 
 foreach $sum (sort bydt keys %summary)
 {

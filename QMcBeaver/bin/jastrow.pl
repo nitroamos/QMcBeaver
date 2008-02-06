@@ -159,18 +159,23 @@ for(my $index=0; $index<=$#files; $index++){
 
 if($showOpt){
     printf "Jastrow = $numjw; NumCI = $numci; NumBF = $numbf\n";
-    printf "%-30s %-15s %-30s %5s   %-40s\n",
-    "Type","L (bohr)","Step","NumBF","File Name";
+    printf "%-30s %-15s %6s %-30s %5s   %-40s\n",
+    "Type","L (bohr)","% diff","Step","NumBF","File Name";
 } else {
-    printf "%-30s %-15s %-30s %5s   %-40s\n",
-    "Type","L (bohr)","Jastrow","NumBF","File Name";
+    printf "%-30s %-15s %6s %-30s %5s   %-40s\n",
+    "Type","L (bohr)","% diff","Jastrow","NumBF","File Name";
 }
+
+my $lastL = 0;
 foreach $key (sort a1n2 keys %jastrows)
 {
     my @keydata = split/&/,$key;
-    printf "%-30s %-15s %-30s %5s   %-40s",
-	$keydata[0],$keydata[2],$keydata[3],$keydata[1],
-	$jastrows{$key};
+    printf "%-30s %-15s", $keydata[0], $keydata[2];
+
+    printf " %6.2f", 100.0*($keydata[2] - $lastL)/$keydata[2];
+    $lastL = $keydata[2];
+
+    printf " %-30s %5s   %-40s", $keydata[3], $keydata[1], $jastrows{$key};
 
     #printf " $keydata[4]";
     printf "\n";

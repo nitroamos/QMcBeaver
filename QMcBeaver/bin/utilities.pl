@@ -255,9 +255,6 @@ sub getCKMFSummary
 	my $data = `/bin/ls -lh --time-style=+%s $base.out`;
 	my @list = split/ +/,$data;
 
-	$data = `grep failed $base.out`;
-	$failed = 1 if(length($data) > 0);
-
 	$outSize = $list[4];
 	$outModTime = $curTime - $list[5];
 	$char = " ";
@@ -278,6 +275,11 @@ sub getCKMFSummary
 	#$outModTime .= sprintf " %3s", $list[5];
 	#$outModTime .= sprintf " %2s", $list[6];
 	#$outModTime .= sprintf " %5s", $list[7];
+    }
+
+    if(-e "$base.out" && $opt){
+	$data = `grep failed $base.out`;
+	$failed = 1 if(length($data) > 0);
 
 	if($failed == 1){
 	    $outModTime .= "*";
@@ -359,7 +361,7 @@ sub getFileList
 {
     my ($ext, $files) = @_;
 
-    #this will scan through all the subdirectories looking for .out files
+    #this will scan through all the subdirectories in the $files array looking for $ext files
     my $clean = 0;
     my $loops = 0;
     while($clean == 0)
@@ -372,7 +374,11 @@ sub getFileList
 	{
 	    my $cur = ${@$files}[$index];
 	    chomp($cur);
-	    if(-d $cur && $cur !~ /src$/ && $cur !~ /bin$/ && $cur !~ /include$/ && $cur !~ /hide$/)
+
+	    #there are some obvious directories we don't need to search.
+	    #we also don't look in folders that end in 'hide', unless it was specified on the command line
+	    if(-d $cur && $cur !~ /src$/ && $cur !~ /bin$/ && $cur !~ /include$/ && 
+	       ($cur !~ /hide$/ || $loops <= 1))
 	    {
 		my @list = `ls $cur`;
 		foreach $item (@list)
