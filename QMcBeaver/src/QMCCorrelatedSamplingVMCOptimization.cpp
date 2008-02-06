@@ -225,6 +225,13 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
       globalInput.JP.print(clog);
     }
 
+  for(int i=0; i<Guess_parameters.dim1(); i++)
+    if(IeeeMath::isNaN(Guess_parameters[i]))
+      {
+	clog << "Error: wavefunction has nans.\n";
+	exit(0);
+      }
+  
   double penalty = globalInput.JP.calculate_penalty_function();
   if(penalty >= 1e10)
     {
