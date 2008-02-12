@@ -97,10 +97,12 @@ int main(int argcTemp, char *argvTemp[])
   argv = argvTemp;
   atexit(atExitCallback);
 
+#ifndef QMC_DEBUG
   signal(CHANNEL1,atSignalCallback);
   signal(CHANNEL2,atSignalCallback);
   signal(SIGTERM,atSignalCallback);
   signal(SIGHUP,SIG_IGN);
+#endif
  
 #ifdef PARALLEL
 
