@@ -43,27 +43,25 @@ void QMCWalkerData::initialize(QMCInput * INPUT, int numDimensions,
     {
       int na = Input->WF.getNumberAlphaElectrons();
       int nb = Input->WF.getNumberBetaElectrons();
+      int no = Input->WF.OrbitalCoeffs.dim1();
 
       D_invA.allocate(numCI);
       D_invB.allocate(numCI);
-      Laplacian_DA.allocate(numCI);
-      Laplacian_DB.allocate(numCI);
-      Grad_DA.allocate(numCI);
-      Grad_DB.allocate(numCI);
 
       for(int ci=0; ci<numCI; ci++)
 	{
 	  D_invA(ci).allocate(na,na);
 	  D_invB(ci).allocate(nb,nb);
-	  Laplacian_DA(ci).allocate(na,na);
-	  Laplacian_DB(ci).allocate(nb,nb);
-	  Grad_DA(ci).allocate(3);
-	  Grad_DB(ci).allocate(3);
-	  for(int i=0; i<3; i++)
-	    {
-	      (Grad_DA(ci))(i).allocate(na,na);
-	      (Grad_DB(ci))(i).allocate(nb,nb);
-	    }
+	}
+	 
+      Laplacian_DA.allocate(na,no);
+      Laplacian_DB.allocate(nb,no);
+      Grad_DA.allocate(3);
+      Grad_DB.allocate(3);
+      for(int i=0; i<3; i++)
+	{
+	  Grad_DA(i).allocate(na,no);
+	  Grad_DB(i).allocate(nb,no);
 	}
 
       PsiA.allocate(numCI);

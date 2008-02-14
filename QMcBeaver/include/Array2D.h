@@ -1544,6 +1544,67 @@ template <class T> class Array2D
       
       return detRatio;
     }
+
+  /*
+    Call this function on D^(-1) to update it given
+    the new column in D.
+    
+    The return value will be |D new| / |D|.
+    
+    This is slightly different from the Sherman-Morrison
+    formula because here we are replacing a column, as opposed
+    to adding values to the column.
+    
+    @param column which we are updating the inverse with
+    @param newD the matrix which has the new column
+    @param columnInD which column in newD to use for the update
+    @return the ratio of new to old determinants
+  */
+  template <class _RHS>
+    double inverseUpdateOneColumn(int column, Array2D<_RHS> & newD, int columnInD)
+    {
+      int d = n_2;
+#ifdef QMC_DEBUG
+      if( columnInD >= newD.dim2() || column >= n_2 ||
+	  columnInD < 0 || column < 0 ||
+	  n_1 != newD.dim1())
+        {
+          cout << "Error: dimensions don't match in inverse update." << endl;
+          cout << "     n_1 = " << n_1 << endl;
+          cout << "     n_2 = " << n_2 << endl;
+          cout << "  column = " << column << endl;
+          cout << "   D.n_1 = " << newD.dim1() << endl;
+          cout << "   D.n_2 = " << newD.dim2() << endl;
+          cout << "D column = " << columnInD << endl;
+          assert(0);
+        }
+#endif
+      double detRatio = 0;
+      for(int c=0; c<d; c++)
+        detRatio += (T)(newD.get(c,columnInD)) * pArray[map(column,c)];
+      double q = 1.0/detRatio;
+      
+      for(int r=0; r<d; r++)
+        {
+          //We need to preserve this row for the moment
+          if(r == column)
+            continue;
+	  
+          double val = 0.0;
+          for(int l=0; l<d; l++)
+            val += (T)(newD.get(l,columnInD)) * pArray[map(r,l)];
+          val *= q;
+	  
+          for(int c=0; c<d; c++)
+            pArray[map(r,c)] -= val * pArray[map(column,c)];
+        }
+      
+      //Lastly, we update the row
+      for(int c=0; c<d; c++)
+        pArray[map(column,c)] *= q;
+      
+      return detRatio;
+    }
   
   /**
      Interpret this Array2D has a system of equations,

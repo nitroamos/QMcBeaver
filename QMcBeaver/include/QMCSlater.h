@@ -128,7 +128,7 @@ public:
   */
   template <class T>
     bool calculate_DerivativeRatios(int ci, int row,
-				    Array2D<double> & psi,
+				    Array2D<T> & psi,
 				    Array2D<double> & inv,
 				    Array2D<T> & lap,
 				    Array2D<T> & gradx,
@@ -295,7 +295,7 @@ public:
   int Start;
   int Stop;
 
-  Array1D< QMCElectronNucleusCusp > ElectronNucleusCusp;
+  QMCElectronNucleusCusp ElectronNucleusCusp;
 
   /** 
     The dimensions of these data are numWalkers x numDeterminants then 
@@ -307,9 +307,10 @@ public:
     D_inv is the only one that can be in double since we'll explicitly
     typecast D before inversion.
   */
-  Array2D< Array2D<qmcfloat> > D;
-  Array3D< Array2D<qmcfloat> > Grad_D;
-  Array2D< Array2D<qmcfloat> > Laplacian_D;
+  Array2D< double > * ciDet;
+  Array1D< Array2D<qmcfloat> > D;
+  Array2D< Array2D<qmcfloat> > Grad_D;
+  Array1D< Array2D<qmcfloat> > Laplacian_D;
   Array2D< Array2D<double>   > D_inv;
 
 #ifdef QMC_GPU
@@ -321,10 +322,10 @@ public:
     only the results that were calculated on the GPU
   */
 
-  Array2D< Array2D<float> > gpu_D;
+  Array1D< Array2D<float> > gpu_D;
   Array2D< Array2D<float> > gpu_D_inv;
-  Array2D< Array2D<float> > gpu_Laplacian_D;
-  Array3D< Array2D<float> > gpu_Grad_D;
+  Array1D< Array2D<float> > gpu_Laplacian_D;
+  Array2D< Array2D<float> > gpu_Grad_D;
 
   /**
     This holds pointers to the GPU data. It is currently

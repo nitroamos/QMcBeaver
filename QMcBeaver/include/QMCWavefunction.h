@@ -31,7 +31,6 @@ using namespace std;
 class QMCWavefunction
 {
  private:
-
   int Norbitals;
   int Nbasisfunc;
   int Nalpha;
@@ -45,12 +44,20 @@ class QMCWavefunction
   int unusedIndicator;
 
   /**
-     For the matrix multiplications, we'll want to have
-     the coefficients separated into matrices, one for
-     each determinant.
+     A matrix with all the orbital coefficients
+     used by all determinants used by Alpha electrons.
+     Dimensions numActiveOrbitals x numBF
   */
-  Array1D< Array2D<qmcfloat> > AlphaCoeffs;
-  Array1D< Array2D<qmcfloat> > BetaCoeffs;
+  Array2D<qmcfloat> AlphaCoeffs;
+
+  /**
+     This matrix indicates which orbitals are used by each CI.
+     Dimensions numCI x numOrbitals
+  */
+  Array2D<int> AlphaOrbitals;
+
+  Array2D<qmcfloat> BetaCoeffs;
+  Array2D<int> BetaOrbitals;
 
   /**
      This function will convert the orbital occupation
@@ -108,6 +115,13 @@ class QMCWavefunction
   int getNumberOrbitals();
 
   /**
+    Gets the number of orbitals.
+    @param Occupation where to count orbitals
+    @return number of orbitals.
+  */
+  int getNumberOrbitals(Array2D<int> & Occupation);
+
+  /**
      The number of active orbitals
      is the number actually used. This
      number might be useful to prevent
@@ -118,18 +132,12 @@ class QMCWavefunction
   int getNumberActiveOrbitals();
 
   /**
-     The number of orbitals used by
-     alpha electrons.
+     The number of unique orbitals used in all CI
+     determinants, for a given spin.
+     @param Occupation a spin-dependent table
      @return number of active orbitals.
   */
-  int getNumberActiveAlphaOrbitals();
-
-  /**
-     The number of orbitals used by beta
-     electrons.
-     @return number of active orbitals.
-  */
-  int getNumberActiveBetaOrbitals();
+  int getNumberActiveOrbitals(Array2D<int> & Occupation);
 
   /**
     Gets the number of basis functions.
@@ -169,17 +177,53 @@ class QMCWavefunction
 
   /**
      Break apart the OrbitalCoeffs array into
-     individual AlphaCoeffs and BetaCoeffs matrices,
-     one for each determinant.
+     individual AlphaCoeffs and BetaCoeffs matrices, also
+     counting the orbital indices.
   */
-  void makeCoefficients();
-
+  void makeCoefficients(Array2D<int> & TypeOccupations,
+			Array2D<qmcfloat> & AllCoeffs,
+			Array2D<int> & TypeIndices,
+			Array2D<qmcfloat> & TypeCoeffs);
+  
   /**
      Return a matrix with all the coefficients
      Since we broke apart the matrices, this is
      how we request them.
   */
-  Array2D<qmcfloat> * getCoeff(int ci, bool isAlpha);
+  Array2D<qmcfloat> * getCoeff(bool isAlpha);
+  Array2D<int> * getOccupations(bool isAlpha);
+
+  /**
+     Break apart all the orbital data into individual determinant data.
+     Will convert to double precision at this stage.
+     @param from the matrix representing all determinants
+     @param to the matrix where the desired determinantal data will be put
+  */
+  template <class T>
+    void getDataForCI(int ci, bool isAlpha, Array2D<T> & from, Array2D<double> & to)
+    {
+#ifdef QMC_DEBUG
+      if(to.dim1() != from.dim1())
+	{
+	  cout << "Error: dim1 (num electrons) doesn't match in QMCWavefunction::getDataForCI\n";
+	  cout << "     to.n_1 = " << to.dim1() << endl;
+	  cout << "     to.n_2 = " << to.dim2() << endl;
+	  cout << "   from.n_1 = " << from.dim1() << endl;
+	  cout << "   from.n_2 = " << from.dim2() << endl;
+	  assert(0);
+	}
+#endif
+
+      Array2D<int> * occ;
+      if(isAlpha) occ = & AlphaOrbitals;
+      else        occ = & BetaOrbitals;
+      
+      for(int o = 0; o<to.dim2(); o++){
+	int orb = occ->get(ci,o);
+	for(int e = 0; e<to.dim1(); e++)
+	  to(e,o) = from(e,orb);
+      }
+    }
 
   /**
      This scales all the values in the orbitals by a constant factor.
@@ -206,7 +250,7 @@ class QMCWavefunction
     be identical.
   */
   Array2D<qmcfloat> OrbitalCoeffs;
-
+  
   /**
     Array containing the CI coefficients for a multideterminant wavefunction.
   */

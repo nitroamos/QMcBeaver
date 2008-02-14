@@ -33,6 +33,26 @@ int QMCWavefunction::getNumberOrbitals()
   return Norbitals;
 }
 
+int QMCWavefunction::getNumberOrbitals(Array2D<int> & Occupation)
+{
+  Array1D<int> count(Occupation.dim1());
+  count = 0;
+  for(int ci=0; ci<Occupation.dim1(); ci++)
+    for(int o=0; o<Occupation.dim2(); o++)
+      if(Occupation(ci,o) != unusedIndicator)
+	count(ci) = count(ci) + 1;
+
+  for(int ci=0; ci<count.dim1(); ci++)
+    if(count(ci) != count(0))
+      {
+	clog << "Error: number of orbitals doesn't match\n";
+	clog << " count = " << count << endl;
+	exit(0);
+      }
+
+  return count(0);
+}
+
 int QMCWavefunction::getNumberActiveOrbitals()
 {
   int Nactiveorbs  = 0;
@@ -52,36 +72,20 @@ int QMCWavefunction::getNumberActiveOrbitals()
   return Nactiveorbs;
 }
 
-int QMCWavefunction::getNumberActiveAlphaOrbitals()
+int QMCWavefunction::getNumberActiveOrbitals(Array2D<int> & Occupation)
 {
-  int NactiveorbsA = 0;
+  int Nactiveorbs = 0;
   for(int o=0; o<Norbitals; o++)
     {
-      bool Aused = false;
+      bool used = false;
       for(int ci=0; ci<Ndeterminants; ci++)
 	{
-	  if(AlphaOccupation(ci,o) != unusedIndicator)
-	    Aused = true;
+	  if(Occupation(ci,o) != unusedIndicator)
+	    used = true;
 	}
-      if(Aused)          NactiveorbsA++;
+      if(used)          Nactiveorbs++;
     }
-  return NactiveorbsA;
-}
-
-int QMCWavefunction::getNumberActiveBetaOrbitals()
-{
-  int NactiveorbsB = 0;
-  for(int o=0; o<Norbitals; o++)
-    {
-      bool Bused = false;
-      for(int ci=0; ci<Ndeterminants; ci++)
-	{
-	  if(BetaOccupation(ci,o) != unusedIndicator)
-	    Bused = true;
-	}
-      if(Bused)          NactiveorbsB++;
-    }
-  return NactiveorbsB;
+  return Nactiveorbs;
 }
 
 int QMCWavefunction::getNumberBasisFunctions()
@@ -487,7 +491,14 @@ void QMCWavefunction::read(int charge, int numberOrbitals, int numberBasisFuncti
   else
     sortOccupations(false);
 
-  makeCoefficients();
+  makeCoefficients(AlphaOccupation,
+		   OrbitalCoeffs,
+		   AlphaOrbitals,
+		   AlphaCoeffs);
+  makeCoefficients(BetaOccupation,
+		   OrbitalCoeffs,
+		   BetaOrbitals,
+		   BetaCoeffs);
   /*
   cout << "AlphaOccupation\n" << AlphaOccupation << endl;
   cout << "BetaOccupation\n" << BetaOccupation << endl;
@@ -690,55 +701,83 @@ void QMCWavefunction::setORParameters(Array1D<double> & params, int shift)
 	}
     }  
 
-  makeCoefficients();
+  makeCoefficients(AlphaOccupation,
+		   OrbitalCoeffs,
+		   AlphaOrbitals,
+		   AlphaCoeffs);
+  makeCoefficients(BetaOccupation,
+		   OrbitalCoeffs,
+		   BetaOrbitals,
+		   BetaCoeffs);
 }
 
-Array2D<qmcfloat> * QMCWavefunction::getCoeff(int ci, bool isAlpha)
+Array2D<qmcfloat> * QMCWavefunction::getCoeff(bool isAlpha)
 {
   if(isAlpha)
     {
-      return & AlphaCoeffs(ci);
+      return & AlphaCoeffs;
     } else {
-      return & BetaCoeffs(ci);
+      return & BetaCoeffs;
     }
 }
 
-void QMCWavefunction::makeCoefficients()
+Array2D<int> * QMCWavefunction::getOccupations(bool isAlpha)
 {
-  AlphaCoeffs.allocate(Ndeterminants);
-  BetaCoeffs.allocate(Ndeterminants);
-
-  for(int ci=0; ci<Ndeterminants; ci++)
+  if(isAlpha)
     {
-      AlphaCoeffs(ci).allocate(Nalpha, Nbasisfunc);
-      BetaCoeffs(ci).allocate(Nbeta, Nbasisfunc);
+      return & AlphaOrbitals;
+    } else {
+      return & BetaOrbitals;
+    }
+}
 
-      int idxa = 0;
-      int idxb = 0;
-      for(int o=0; o<Norbitals; o++)
-	{
-	  if(AlphaOccupation(ci,o) != unusedIndicator)
-	    {
-	      AlphaCoeffs(ci).setRows(idxa,o,1,OrbitalCoeffs);
-	      idxa++;
-	    }
-	  if(BetaOccupation(ci,o) != unusedIndicator)
-	    {
-	      BetaCoeffs(ci).setRows(idxb,o,1,OrbitalCoeffs);
-	      idxb++;
-	    }
-	}
+void QMCWavefunction::makeCoefficients(Array2D<int> & TypeOccupations,
+				       Array2D<qmcfloat> & AllCoeffs,
+				       Array2D<int> & TypeIndices,
+				       Array2D<qmcfloat> & TypeCoeffs)
+{
+  int numOR = getNumberOrbitals(TypeOccupations);
+  int numAC = getNumberActiveOrbitals(TypeOccupations);
+  int numCI = Ndeterminants;
 
-      if(idxa != Nalpha || idxb != Nbeta)
+  TypeCoeffs.allocate(numAC,Nbasisfunc);
+  TypeIndices.allocate(numCI,numOR);
+
+  int idxAct = 0;
+  Array1D<int> count(numCI);
+  count = 0;
+  for(int o=0; o<AllCoeffs.dim1(); o++)
+    {
+      bool used = false;
+      for(int ci=0; ci<numCI; ci++)
+	if(TypeOccupations(ci,o) != unusedIndicator)
+	  {
+	    used = true;
+	    TypeIndices(ci,count(ci)) = idxAct;
+	    count(ci) = count(ci) + 1;
+	  }
+
+      if(used)
 	{
-	  clog << "Error: we failed to make the coefficient matrices\n"
-	       << "        ci = " << ci << endl
-	       << " Norbitals = " << Norbitals << endl
-	       << "    Nalpha = " << Nalpha << endl
-	       << "      idxa = " << idxa << endl
-	       << "     Nbeta = " << Nbeta << endl
-	       << "      idxb = " << idxb << endl;
-	  exit(0);
+	  TypeCoeffs.setRows(idxAct,o,1,OrbitalCoeffs);
+	  idxAct++;
 	}
+    }
+
+  bool goodCI = true;
+  for(int ci=0; ci<count.dim1(); ci++)
+    if(count(ci) != numOR)
+      goodCI = false;
+
+  if(idxAct != numAC || !goodCI)
+    {
+      clog << "Error: we failed to make the coefficient matrices\n"
+	   << " numCI = " << numCI << endl
+	   << " numOR = " << numOR << endl
+	   << " numAC = " << numAC << endl
+	   << "idxAct = " << idxAct << endl;
+      if(!goodCI)
+	clog << " CI count = \n" << count << endl;
+      exit(0);
     }
 }

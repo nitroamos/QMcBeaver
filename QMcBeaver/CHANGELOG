@@ -1,3 +1,10 @@
+Thu, Feb 14, 2008 Amos Anderson
+1.  I "fixed" the way multiple determinants are handled by QMCSlater.
+    Instead of making N determinants, and multiplying all of them individually,
+    the code will now only separate the data into individual determinants
+    after matrix multiplication. The addition of determinants now has a much
+    smaller impact on run time.
+
 Wed, Feb 6, 2008 Amos Anderson
 1.  I eliminated all the "unused variable" warnings.
 
