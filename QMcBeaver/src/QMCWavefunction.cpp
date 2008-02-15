@@ -552,7 +552,7 @@ ostream& operator <<(ostream& strm, QMCWavefunction& rhs)
       for (int j=0; j<rhs.Norbitals; j++)
 	{
 	  //since the output will only be 1 or 0
-	  if(rhs.AlphaOccupation(i,j) == -1)
+	  if(rhs.AlphaOccupation(i,j) == rhs.unusedIndicator)
 	    strm << setw(4) << 0;
 	  else
 	    strm << setw(4) << 1;
@@ -566,7 +566,7 @@ ostream& operator <<(ostream& strm, QMCWavefunction& rhs)
       for (int j=0; j<rhs.Norbitals; j++)
 	{
 	  strm.width(2);
-	  if(rhs.BetaOccupation(i,j) == -1)
+	  if(rhs.BetaOccupation(i,j) == rhs.unusedIndicator)
 	    strm << setw(4) << 0;
 	  else
 	    strm << setw(4) << 1;
