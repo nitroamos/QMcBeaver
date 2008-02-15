@@ -151,6 +151,11 @@ void Random::writeXML(ostream & strm)
 #else
   //Note: this doesn't fully save the state of ran1
   strm << "<iseed>\n" << current << "\n</iseed>" << endl;
+  strm << "<internal>\n";
+  strm << iy << " ";
+  for(int i=0; i<NTAB; i++)
+    strm << iv[i] << " ";
+  strm << "\n</internal>" << endl;
 #endif
 }
 
@@ -185,9 +190,18 @@ bool Random::readXML(istream & strm)
     return false;
   strm >> temp;
   long iseed = atoi( temp.c_str() );
-  initialize(iseed,0);
+  current = iseed;
+  //initialize(iseed,0);
   strm >> temp;
   if (temp != "</iseed>")
+    return false;
+
+  strm >> temp;
+  strm >> iy;
+  for(int i=0; i<NTAB; i++)
+    strm >> iv[i];
+  strm >> temp;
+  if(temp != "</internal>")
     return false;
 
   return true;
