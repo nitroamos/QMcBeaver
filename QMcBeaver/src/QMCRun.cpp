@@ -399,10 +399,17 @@ void QMCRun::randomlyInitializeWalkers()
       w.initialize(Input);
 
       temp_R = IW->initializeWalkerPosition();
+      int numtries = 0;
       while(w.setR(temp_R) == false){
-	cerr << "Error: initial walker " << i << " position is bad, retrying..." << endl;
+	if(numtries > 10){
+	  cerr << "Error: initial walker " << i << " electronic position is bad, and we've tried " << numtries << " times." << endl;
+	  exit(0);
+	} else {
+	  cerr << "Error: initial walker " << i << " electronic position is bad, retrying..." << endl;
+	}
 	cerr.flush();
 	temp_R = IW->initializeWalkerPosition();
+	numtries++;
       }
 
       QMF->evaluate(*w.getR(),*w.getWalkerData());

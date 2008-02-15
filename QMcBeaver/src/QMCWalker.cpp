@@ -1737,7 +1737,7 @@ bool QMCWalker::setR(Array2D<double> temp_R)
     for(int j=0; j<temp_R.dim2(); j++)
       if(IeeeMath::isNaN(temp_R(i,j)) || temp_R(i,j) == 0 || fabs(temp_R(i,j)) > 500.0 )
 	{
-	  cout << "(" << i << "," << j << ") = " << temp_R(i,j) << endl;
+	  //cout << "Error: setting electron position (" << i << "," << j << ") = " << temp_R(i,j) << endl;
 	  ok = false;
 	}
   if(ok)
