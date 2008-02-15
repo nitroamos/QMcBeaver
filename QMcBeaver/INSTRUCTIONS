@@ -12,28 +12,88 @@
 drkent@users.sourceforge.net
 mtfeldmann@users.sourceforge.net
 madmartigan81@user.sourceforge.net
-frozenflip@user.sourceforge.net
+nitroamos@yahoo.com
 ---------------------------------------------
 
-This is a quick and dirty description for how to run QMcBeaver. This code
-has been recently tested on Linux (Red Hat), OSX (10.4.5), Windows XP (cygwin),
+This is a quick and dirty description for how to run QMcBeaver, which
+was probably obtained at this website:
+
+http://qmcbeaver.sourceforge.net/
+
+This code has been recently tested on Linux (Red Hat), OSX (10.4.5), Windows XP (cygwin),
 Dec Alpha Tru64, AIX, and IRIX, among others.  The MPI implementation has recently
-been tested with both LAM/MPI and MPICH. Our configure.py script has
+been tested with LAM/MPI, MPICH, and OpenMPI. Our configure.py script has
 settings for quite a few systems. See docs/beaver.pdf for a more complete
 description on how to run QMcBeaver.
 
-1) Read the file 'lib/README' for library options
+***************************************************** 0) Download the code.
+You've probably already done this somehow, but it's worth mentioning
+that you might want to use CVS to stay up-to-date. Sourceforge has
+instructions for this.
 
-2) Run './configure.py' to configure your system
+***************************************************** 1) Read the file 'lib/README'
+You'll almost certainly want to use the BLAS and LAPACK libraries
+to get fast matrix multiplication and matrix inversion routines.
 
-3) Type 'gmake'
+***************************************************** 2) Run './configure.py'
+If you run ./configure.py with no parameters, then it will
+print a list of options. Once you have the libgoto.a library in
+your lib directory, then a typical configuration on Linux might look like
 
-4)
+./configure.py GCC --goto --lapack
+
+for a serial executable, or 
+
+./configure.py MPICC --goto --lapack
+
+for a parallel executable.
+
+***************************************************** 3) Type 'gmake'
+When it's done, your executable should show up in the bin directory.
+
+If it failed in the linking stage, the one configuration that you
+might have to do by hand for your system is to tell QMcBeaver
+how fortran bindings work, since we link directly to the fortran versions
+of BLAS and LAPACK. The question is whether the fortran functions
+have an underscore after their names or not. The default behavior
+works with gcc, but you might need to take a look at FORTRAN_FUNC in
+
+include/cppblas.h
+
+if your compile is complaining.
+
+***************************************************** 4) Make an input file
+This step requires a fair amount of Quantum Chemistry intuition
+if you want to use anything beyond Hartree-Fock orbitals.
+We have some old sample files in our test and examples directories.
+
+Essentially, you'll need to start by modeling your molecule in Jaguar
+or GAMESS. Use the output from one of those calculations as input to our
+bin/gamess2qmcbeaver.py
+or
+bin/jaguar2qmcbeaver.py
+scripts, and it will produce a ckmf file for you.
+
+You'll probably want to manually add Jastrows to the ckmf file
+based on whatever you can find in our test or examples directories.
+You will want to optimize those Jastrows by setting optimize_Psi = 1
+before attempting any science.
+
+***************************************************** 5) Run the program.
+You'll almost certainly need to submit calculations to
+a queue. In our bin directory, we have included scripts
+to submit jobs using bsub (LSF), qsub (PBS), and psub (LCRM),
+but you'll almost certainly need to modify these scripts for
+your own system. Basically, the scripts produce a .run
+file, and will start the run with commands like these:
+
 for serial:
 ./bin/QMcBeaver.<params>.<version>.x input.ckmf >& input.out &
 
 for parallel:
 mpirun -np <num procs> ./bin/QMcBeaver.<params>.<version>.x input.ckmf >& input.out & 
+
+***************************************************** 6) Make the help files
 
 To generate API documentations:
 
