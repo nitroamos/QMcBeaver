@@ -5,7 +5,10 @@ my $path = `dirname $0`;
 chomp($path);
 require "$path/utilities.pl";
 
-my $useVar = 1;
+my $useVar     = 0;
+my $dtFilter   = 0.01;
+my @fileFilters;
+
 #my $extraTag  = "trail_eps2";
 
 # This script will create a gnuplot graph
@@ -42,6 +45,28 @@ my $gnuplot = "gnuplot";
 
 my $date = `date`;
 chomp $date;
+
+while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
+    $type = shift(@ARGV);
+    $param = "";
+
+    if($type eq "-v"){
+	$param = shift(@ARGV);
+	$useVar = $param if($param == 1 || $param == 0);
+	print "Using useVar = $useVar  $useVar\n";
+    } elsif($type eq "-t"){
+	$param = shift(@ARGV);
+	$dtFilter = $param if($param >= 0);
+	print "Using dt filter $dtFilter\n";
+    } elsif($type eq "-f"){
+	$param = shift(@ARGV);
+	push(@fileFilters,$param);
+	print "Adding file filter $param\n";
+    } else {
+	print "Unrecognized option: $type\n";
+	die;
+    }
+}
 
 my @files = @ARGV;
 if($#ARGV < 0)
@@ -83,11 +108,20 @@ my %dt_num;
 my %dt_num_results;
 my %dt_nme_results;
 my %summary;
+my %shortnames;
 
 my $lastlines = "";
 for(my $index=0; $index<=$#files; $index++){
     my $cur = $files[$index];
     next if(!(-f $cur));
+
+    my $isIncluded = 0;
+    foreach $filter (@fileFilters){
+	#we only include a file if it matches one of the filters
+	$isIncluded = 1 if($cur =~ /$filter/);
+    }
+    next if($isIncluded == 0 && $#fileFilters >= 0);
+
     my $base = "";
     if($cur =~ /.out$/){
 	$base = substr($cur,0,-4);
@@ -96,6 +130,12 @@ for(my $index=0; $index<=$#files; $index++){
     } else {
 	next;
     }
+    my $short = `basename $base`;
+    chomp($short);
+    #remove the restart index
+    $short = $1 if($short =~ /([\w\d]+)\.\d\d$/);
+    #remove any _\d at the end
+    $short = $1 if($short =~ /([\w\d]+)_[\d]+$/);
 
     my $vare = "";
 
@@ -186,7 +226,7 @@ for(my $index=0; $index<=$#files; $index++){
 	next if($isd eq "variational");
     }
     next if($nw != 100);
-    next if($dt != 0.01);
+    next if($dtFilter != 0 && $dt != $dtFilter);
     
     while(<CKMFFILE> !~ /Jastrow/){}
     my $numjw = "";
@@ -327,6 +367,13 @@ for(my $index=0; $index<=$#files; $index++){
 	$key = "$vare&$dt&$numbf&$numjw&$nw&$numci";
     }
 
+    if(exists $shortnames{$key}){
+	my $orig = $shortnames{$key};
+	$shortnames{$key} = $short if(length $orig > length $short);
+    } else {
+	$shortnames{$key} = $short;
+    }
+
     if($eavg < 0){
 	my $weight = $num_samples/100000;
 
@@ -417,8 +464,8 @@ if($num_results > 0){
     $ave_result /= $num_results;
     #print "Average result = $ave_result\n";
     
-    printf "%5s %10s %20s %5s %5s   %-25s %5s %20s %20s %20s %10s\n",
-    "ID",
+    printf "%5s %10s %10s %20s %5s %5s   %-25s %5s %20s %20s %20s %10s\n",
+    "ID","Label",
     "dt","Ref. Energy","Num","NumBF","NumJW","NumW","Average","Error (kcal)","Corr. E.","Weight";
     my %qref;
     my %href;
@@ -430,8 +477,9 @@ if($num_results > 0){
 	$dt_ave_results{$key} /= $dt_num_results{$key};
 	$dt_err_results{$key} = sqrt($dt_err_results{$key}/$dt_nme_results{$key});
 
-	printf "%5i %10s %20s %5i %5i   %-25s %5i %20.10f %20.10f %20.10f %10.5f\n",
+	printf "%5i %10s %10s %20s %5i %5i   %-25s %5i %20.10f %20.10f %20.10f %10.5f\n",
 	$label{$key},
+	$shortnames{$key},
 	"$keydata[1]", "$keydata[0]",
 	$dt_num{$key},
 	$keydata[2],
@@ -449,6 +497,8 @@ if($num_results > 0){
     #we calculate the difference for for all results available
     #but we don't compare calculations if dt and energy are different
     print "DMC comparisons:\n";
+    my %comparisons;
+
     foreach $row (sort bydt keys %dt_ave_results)
     {
 	my $newrow = 1;
@@ -475,18 +525,33 @@ if($num_results > 0){
 	    
 	    $diff *= -$units;
 	    $diffe *= $units;
-	    
-	    if($newrow == 1){
-		printf "%3i) %15.10f x $rMult %9s %5s %5s %2i | ",$label{$row},$r,$rowdata[1],$rowdata[2],$rowJW,$rowdata[5];
+
+	    my $comparison = "";
+	    if($newrow == 1 || true){
+		$comparison .= sprintf "%3i) %10s %15.10f x $rMult %9s %5s %5s %2i | ",
+		$label{$row},
+		$shortnames{$row},
+		$r,$rowdata[1],$rowdata[2],
+		$rowJW,$rowdata[5];
 		$newrow = 0;
 	    } else {
-		printf "%49s | "," ";
+		$comparison .= sprintf "%49s | "," ";
 	    }
-	    printf "%3i) %15.10f x $cMult %9s %5s %5s %2i | ",$label{$col},$c,$coldata[1],$coldata[2],$colJW,$coldata[5];
-	    printf " %9.3f",$diff;
-	    printf " +/- %-9.3f", $diffe;
-	    printf "\n";	    
+	    $comparison .= sprintf "%3i) %10s %15.10f x $cMult %9s %5s %5s %2i | ",
+	    $label{$col},
+	    $shortnames{$col},
+	    $c,$coldata[1],$coldata[2],$colJW,$coldata[5];
+	    $comparison .= sprintf " %9.3f",$diff;
+	    $comparison .= sprintf " +/- %-9.3f", $diffe;
+	    $comparison .= sprintf "\n";
+	    $comparisons{$comparison} = $diff;
 	}
+    }
+
+    print "sorted\n";
+    #foreach $key (sort {$comparisons{a} <=> $comparisons{$b}} keys %comparisons){
+    foreach $key (sort {$comparisons{$a} <=> $comparisons{$b}} keys %comparisons){
+	print "$key";
     }
     print "\n\n";
 }
