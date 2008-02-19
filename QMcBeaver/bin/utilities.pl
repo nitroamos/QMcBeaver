@@ -139,7 +139,18 @@ sub getCKMFSummary
     my ($ckmf) = @_;
 
     $base = substr($ckmf,0,-5);
+    my $dirname   = `dirname $base`;
+    chomp($dirname);
     my $shortbase = `basename $base`;
+
+    if($dirname eq "."){
+
+    } else {
+	my $nextbase = `basename $dirname`;
+	chomp($nextbase);
+	$shortbase = "$nextbase/$shortbase";
+    }
+
     chomp ($shortbase);
     my $curTime = qx! date +%s !; 
     open (CKMFFILE, "$ckmf");
