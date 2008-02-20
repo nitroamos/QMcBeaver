@@ -103,7 +103,7 @@ void QMCFlags::read_flags(string InFileName)
   print_transient_properties_interval = 10000;
   print_configs                  = 0;
   print_config_frequency         = 50;
-  temp_dir                       = "/temp1/";
+  temp_dir                       = "./";
   write_all_energies_out         = 0;
   write_electron_densities       = 0;
   max_pair_distance              = -1;
@@ -858,20 +858,6 @@ void QMCFlags::set_filenames(string runfile)
       checkout_file_name = base_file_name;
     }
 
-  /*
-    This may or may not work... The goal is to try to make
-    the checkpoint directory before all the different processors
-    all try to make it themselves at the same time.
-
-    We'll save the optimization step files in this directory
-    as well.
-   */
-  if(checkpoint == 1 || optimize_Psi == 1)
-    {
-      string command = "mkdir -p " + checkout_file_name;
-      system(command.c_str());
-    }
-
   char my_rank_string[32];
 #ifdef _WIN32
   _snprintf( my_rank_string, 32, "%d", my_rank );
@@ -1021,8 +1007,14 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "output_interval\n " << flags.output_interval << endl;
   strm << "checkpoint\n " << flags.checkpoint << endl;
   strm << "checkpoint_interval\n " << flags.checkpoint_interval << endl;
-  strm << "use_available_checkpoints\n "
-       << flags.use_available_checkpoints << endl;
+
+  if(flags.checkpoint)
+      strm << "use_available_checkpoints\n "
+	   << 1 << endl;
+  else
+      strm << "use_available_checkpoints\n "
+	   << flags.use_available_checkpoints << endl;
+
   strm << "checkpoint_input_name\n "
        << flags.checkout_file_name << endl;
   strm << "zero_out_checkpoint_statistics\n "
@@ -1198,6 +1190,16 @@ bool QMCFlags::checkFlags()
   if(rel_cutoff < 10.0)
     {
       clog << "Warning: the filter rel_cutoff = " << rel_cutoff << " might be too low..." << endl;
+    }
+
+  if(checkpoint == 1)
+    {
+      string filename =
+	globalInput.flags.temp_dir
+	+ "/"
+	+ globalInput.flags.checkout_file_name;
+
+      clog << "Notice: checkpoint files will be written into " << filename << endl;
     }
 
   /**
