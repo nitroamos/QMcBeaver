@@ -1,3 +1,28 @@
+Wed, Feb 20, 2008 Amos Anderson
+1.  I changed the way checkpoints are handled. Previously, QMcBeaver was responsible
+    for creating the subdirectory to place the checkpoints into. Now, it will look
+    in temp_dir/checkpoint_input_name for the location of checkpoints to read in, and
+    it will write checkpoints into the temp_dir/checkout_file_name directory.
+
+    Typically, checkpoint_input_name is the name of the run that generated checkpoint files.
+    So if I ran a calculation called start.ckmf, then it would be a good idea to set
+	checkout_file_name = start
+    Then when I run start.01.ckmf,
+	checkin_file_name = start
+	checkout_file_name = start.01
+    etc.
+
+    The problem with the previous set up was that it was taking too long to write checkpoints
+    on some systems when accessing checkout_file_name meant communication over a network. It still
+    makes sense to store checkpoint files in the working directory along with the .out etc files,
+    but we need to actually write checkpoints in a scratch directory which has faster access time.
+
+    The difference now is that we expect the batch script to handle copying the old checkpoint files
+    into the temp_dir at the start of the run, and then copying the new checkpoint files back to
+    the working directory at the end of the calculation. I've modified bsubqmcbeaverrun.py to
+    do this, and it seems to work well on Coyote. bsubqmcbeaverrun.py needs to be told
+    where the scratch directories are, and then it will actually modify the ckmf file.
+
 Thu, Feb 14, 2008 Amos Anderson
 1.  I "fixed" the way multiple determinants are handled by QMCSlater.
     Instead of making N determinants, and multiplying all of them individually,
