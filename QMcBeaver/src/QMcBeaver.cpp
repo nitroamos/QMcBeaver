@@ -14,6 +14,13 @@
 #include <string>
 #include <signal.h>
 
+#ifdef USING_UP
+extern "C" {
+#include <liblrm.h>
+#include <lrmerrno.h>
+}
+#endif
+
 #include "QMCManager.h"
 
 static const bool showExtraHeaders = !false;
@@ -96,6 +103,17 @@ int main(int argcTemp, char *argvTemp[])
   argc = argcTemp;
   argv = argvTemp;
   atexit(atExitCallback);
+
+#ifdef USING_UP
+  int warn, status;
+  long stoptime;
+
+  /*
+    This registers a signal. The system will send us a
+    CHANNEL1 signal 60 seconds before we run out of time
+  */
+  lrmwarn(CHANNEL1,60,&warn,&stoptime,&status);
+#endif
 
 #ifndef QMC_DEBUG
   signal(CHANNEL1,atSignalCallback);
