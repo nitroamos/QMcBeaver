@@ -3,19 +3,21 @@
 run_type
  variational
 dt
- 0.001
+ 0.01
 number_of_walkers
  100
 max_time_steps
- 10000
+ 5000
 max_time
  -1
+one_e_per_iter
+ 0
 desired_convergence
  0
 warn_verbosity
  0
 rel_cutoff
- 5.0
+ 100
 limit_branching
  1
 
@@ -27,6 +29,8 @@ QF_modification_type
 umrigar93_equalelectrons_parameter
  0.5
 energy_modification_type
+ umrigar93
+energy_cutoff_type
  umrigar93
 lock_trial_energy
  0
@@ -53,11 +57,11 @@ old_walker_acceptance_parameter
 
 # Parameters for initialization
 dt_equilibration
- -0.005
+ 0.01
 use_equilibration_array
  0
 equilibration_steps
- 1000
+ 2000
 equilibration_function
  ramp
 CKAnnealingEquilibration1_parameter
@@ -90,6 +94,8 @@ checkpoint_interval
  100000
 use_available_checkpoints
  0
+checkpoint_input_name
+ ne_5
 zero_out_checkpoint_statistics
  1
 print_configs
@@ -98,6 +104,8 @@ print_config_frequency
  50
 temp_dir
  /temp2/amosa/
+write_all_energies_out
+ 0
 write_electron_densities
  0
 max_pair_distance
@@ -106,6 +114,42 @@ print_transient_properties
  0
 print_transient_properties_interval
  10000
+writePllxCorrelationDiagram
+ 0
+pllxCorrelationDiagramMin
+ 0
+pllxCorrelationDiagramMax
+ 0
+writePllyCorrelationDiagram
+ 0
+pllyCorrelationDiagramMin
+ 0
+pllyCorrelationDiagramMax
+ 0
+writePllzCorrelationDiagram
+ 0
+pllzCorrelationDiagramMin
+ 0
+pllzCorrelationDiagramMax
+ 0
+writeOppxCorrelationDiagram
+ 0
+oppxCorrelationDiagramMin
+ 0
+oppxCorrelationDiagramMax
+ 0
+writeOppyCorrelationDiagram
+ 0
+oppyCorrelationDiagramMin
+ 0
+oppyCorrelationDiagramMax
+ 0
+writeOppzCorrelationDiagram
+ 0
+oppzCorrelationDiagramMin
+ 0
+oppzCorrelationDiagramMax
+ 0
 
 # Parameters for wavefunction optimization
 optimize_Psi
@@ -114,16 +158,22 @@ optimize_EE_Jastrows
  1
 optimize_EN_Jastrows
  1
+optimize_NEE_Jastrows
+ 1
+optimize_L
+ 1
 optimize_CI
- 0
+ 1
 optimize_Orbitals
  0
-a_diag
- 1e-7
 optimize_Psi_method
- analytical_energy_variance
+ automatic
 optimize_Psi_criteria
- analytical_energy_variance
+ generalized_eigenvector
+a_diag
+ -1e-5
+ksi
+ 0.5
 max_optimize_Psi_steps
  30
 equilibrate_first_opt_step
@@ -141,7 +191,7 @@ optimize_Psi_barrier_parameter
 numerical_derivative_surface
  umrigar88
 line_search_step_length
- None
+ Linearize
 ck_genetic_algorithm_1_population_size
  1000
 ck_genetic_algorithm_1_mutation_rate
@@ -155,9 +205,9 @@ iseed
 parallelization_method
  manager_worker
 mpireduce_interval
- 1000
+ 100
 mpipoll_interval
- 10
+ 5
 walkers_per_pass
  1
 use_basis_function_interpolation
@@ -175,4 +225,16 @@ chip_and_mike_are_cool
 trial_function_type
  restricted
 link_Jastrow_parameters
+ 1
+link_NEE_Jastrows
+ 2
+link_Orbital_parameters
+ 1
+link_Determinant_parameters
+ 1
+use_three_body_jastrow
+ 1
+reproduce_NE_with_NEE_jastrow
+ 1
+reproduce_EE_with_NEE_jastrow
  1
