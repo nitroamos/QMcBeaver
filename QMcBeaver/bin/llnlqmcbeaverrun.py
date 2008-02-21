@@ -68,20 +68,23 @@ file.write("#!/bin/csh         # Sets your shell\n")
 file.write("#PSUB -ln " + str(nodes) + "        # Number of nodes you want to use\n")
 file.write("#PSUB -g " + str(processors) + "         # Number of tasks to use\n")
 file.write("#PSUB  -eo         # Send std error & std out to the same file\n")
-file.write("#PSUB -tM 1h       # Select your time limit.\n")
+file.write("#PSUB  -ro\n")
+file.write("#PSUB -tM 12:00       # Select your time limit.\n")
 file.write("#PSUB -b " + queue + "\n")
 file.write("#PSUB -me          # mail at end of calc\n")
 file.write("#PSUB -mb          # mail at begining of calc\n")
 file.write("\n")
 file.write("cd " + os.getcwd() + "\n")
-file.write("poe " + exe + " " + filename + " >& " + base + "out\n")
-file.close()
+file.write("rm " + base + "out\n")
+file.write("poe " + exe + " " + filename + " >& " + base + "out -coredir none -labelio no \n")
+#file.write("./" + exe + " " + filename + " >& " + base + "out\n")
 
-if emailaddress != "your@address.edu":
-	file.write("csh -c \"cat " + base + "run; cat " + base + "out;\" | /bin/mailx -s \"[up] " + base + "out\" " + emailaddress + "\n\n\n")
+#if emailaddress != "your@address.edu":
+#	file.write("csh -c \"cat " + base + "run; cat " + base + "out;\" | /bin/mailx -s \"[up] " + base + "out\" " + emailaddress + "\n\n\n")
 file.close()
 
 print "Submitting " + filename + " to " + str(processors) + " processors."
 command = "psub " + base +"run"
 print command
+os.system("echo; cat " + base + "run")
 os.system(command)
