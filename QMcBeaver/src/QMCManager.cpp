@@ -1025,6 +1025,12 @@ bool QMCManager::run(bool equilibrate)
 	  writeEnergyResultsSummary( cout );
 	  writeEnergyResultsSummary( *qmcOut );
 	}
+
+      if( iteration%(100*globalInput.flags.output_interval) == 0 )
+	{
+	  *getResultsOutputStream() << *this;
+	  writeTimingData( *getResultsOutputStream() );
+	}
     }
     else //else this is a worker node
     {
@@ -1640,7 +1646,7 @@ void QMCManager::writeEnergyResultsSummary( ostream & strm )
   int width = 15;
   double Eave = Properties_total.energy.getAverage();
   double Estd = Properties_total.energy.getStandardDeviation();
-  
+
   if(  Estd > 1.0e6 )
     Estd = 0.0;
 
@@ -1663,7 +1669,12 @@ void QMCManager::writeEnergyResultsSummary( ostream & strm )
   int scienPrec = 7;
 
   strm.setf(ios::fixed,ios::floatfield);
-  strm << setw(width) << setprecision(fixedPrec) << Eave << " ";
+  if(fabs(Eave) >= 1000)
+    {
+      strm << setw(width) << setprecision(fixedPrec-1) << Eave << " ";
+    } else {
+      strm << setw(width) << setprecision(fixedPrec) << Eave << " ";
+    }
 
   if( fabs(Estd - 99) < 1e-20)
     {
@@ -1695,7 +1706,7 @@ void QMCManager::writeEnergyResultsSummary( ostream & strm )
   strm.setf(ios::fixed,ios::floatfield);
   strm << setw(width) << Properties_total.energy.getBlockSkewness(0) << " ";
   strm << setw(width) << Properties_total.energy.getBlockKurtosis(0) << " ";
-  
+
   strm << endl << setprecision( 15 );
   strm.flush();
 }
@@ -1954,7 +1965,10 @@ void QMCManager::initializeCalculationState(long int iseed)
       localTimers.getInitializationStopwatch()->start();
       ran.initialize(iseed,globalInput.flags.my_rank);
       QMCnode.randomlyInitializeWalkers();
-      equilibrating = globalInput.flags.equilibrate_first_opt_step;
+      if(globalInput.flags.optimize_Psi == 1)
+	equilibrating = globalInput.flags.equilibrate_first_opt_step;
+      else
+	equilibrating = true;
       localTimers.getInitializationStopwatch()->stop();
     }
   else
