@@ -47,15 +47,15 @@ def generate_zip_file(version):
 
 def generate_docs(version):
     # make doxygen documents
-    command = "cd QMcBeaver-%d && doxygen | tee doxy.log"%version
+    command = "cd QMcBeaver-%d/docs && doxygen | tee doxy.log"%version
     os.system(command)
     # build doxygen API manual
-    command = "cd QMcBeaver-%d/docs/latex && make ps"%version
+    command = "cd QMcBeaver-%d/docs/latex && make"%version
     os.system(command)
-    command = "mv QMcBeaver-%d/docs/latex/refman.ps QMcBeaver-API_manual-%d.ps"%(version,version)
+    command = "mv QMcBeaver-%d/docs/latex/refman.pdf QMcBeaver-API_manual-%d.pdf"%(version,version)
     os.system(command)
     # build user guide
-    command = "cd QMcBeaver-%d/docs && latex beaver && ps2pdf beaver"%version
+    command = "cd QMcBeaver-%d/docs && pdflatex beaver"%version
     os.system(command)
     command = "mv QMcBeaver-%d/docs/beaver.pdf QMcBeaver-user_guide-%d.pdf"%(version,version)
     os.system(command)
