@@ -1779,6 +1779,12 @@ void QMCManager::writeRestart(string filename)
 
   ofstream restart( filename.c_str() );
 
+  if(! restart)
+    {
+      clog << "WARNING: we were unable to open restart file " << filename << endl;
+      return;
+    }
+
   if(globalInput.flags.optimize_Psi == 1)
     {
       // I intend to use this as a tag to ID this wavefunction.
