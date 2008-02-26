@@ -663,8 +663,7 @@ def __getMostRecentCVSDateLocalDirectory(directory):
 
         for datum in data:
             temp = string.split(datum,"/")
-
-            if len(temp) > 3:
+            if len(temp) > 3 and string.find(datum,'dummy') == -1:
 
                 date = temp[-3]
                 date = string.split(date)
@@ -674,7 +673,9 @@ def __getMostRecentCVSDateLocalDirectory(directory):
                     	day   = string.atoi(date[2])
 		    	month = date[1]
                     	year  = string.atoi(date[4])
-		    except ValueError:			
+		    except :
+			print "Error: directory = ",directory, " date =",date, " datum = ",datum
+			continue
 			break
                     if month == 'Jan': month = 1
                     elif month == 'Feb': month = 2
