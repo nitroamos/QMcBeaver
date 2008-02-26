@@ -642,7 +642,6 @@ bool QMCSlater::calculate_DerivativeRatios(int ci, int row,
       ciDet->allocate(psi.dim1(),inv.dim1());
       WF->getDataForCI(ci,isAlpha,psi,*ciDet);
     }
-  Array2D<T> copy = *ciDet;
 
   if(ciDet->dim1() > 1 || row < 0)
     {
