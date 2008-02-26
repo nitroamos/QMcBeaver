@@ -1202,15 +1202,18 @@ string QMCWalker::ID()
 
   id << "::" << Input->flags.my_rank << ")" << endl;
 
-  id << "     weight = ";
-  id.precision(15);
-  id.width(20);
-  id << getWeight() << endl;
-
-  id << "         dW = ";
-  id.precision(15);
-  id.width(20);
-  id << dW << endl;
+  if(globalInput.flags.run_type != "variational")
+    {
+      id << "     weight = ";
+      id.precision(15);
+      id.width(20);
+      id << getWeight() << endl;
+      
+      id << "         dW = ";
+      id.precision(15);
+      id.width(20);
+      id << dW << endl;
+    }
 
   id << "     energy = ";
   id.precision(15);

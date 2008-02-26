@@ -429,7 +429,9 @@ void QMCRun::randomlyInitializeWalkers()
       initialization_try = 1;
       while( (w.isSingular() || rel_diff > globalInput.flags.rel_cutoff) && initialization_try < 1000)
 	{
-	  cerr << "Regenerating Walker " << i << ", rel_diff = " << rel_diff <<  "..." << endl;
+	  cerr << "Regenerating Walker " << i
+	       << " with energy " << w.getWalkerData()->localEnergy
+	       << ", rel_diff = " << rel_diff <<  "..." << endl;
 	  cerr.flush();
         
 	  temp_R = IW->initializeWalkerPosition();
