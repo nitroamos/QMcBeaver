@@ -1,3 +1,16 @@
+Mon, Feb 25, 2008 Amos Anderson
+1.  I added a new, unified submission script, qmcsub.py. I merged everything from the qsub,
+    bsub, and llnl qmcbeaverrun.py scripts so that now it's much easier to make
+    changes and let everybody benefit. The reason for doing this was that all the scripts
+    needed to be changed to reflect the new directory handling, so instead of updating all of them,
+    I merged them. It should be easier to add new machines.
+
+2.  I fixed a bug relating to the way determinants are updated. In QMCSlater, there is a part where
+    we use Array2D::inverseUpdateOneColumn to avoid recalculating the entire determinant when multiple
+    determinants are used. The bug was that sometimes sequential determinants used the same orbital, but
+    in different positions. This meant that there was a possibility that the same orbital (temporarily) showed
+    up twice in the same determinant, resulting in a linear dependency.
+
 Wed, Feb 20, 2008 Amos Anderson
 1.  I changed the way checkpoints are handled. Previously, QMcBeaver was responsible
     for creating the subdirectory to place the checkpoints into. Now, it will look
