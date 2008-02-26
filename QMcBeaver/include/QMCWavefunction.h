@@ -183,7 +183,8 @@ class QMCWavefunction
   void makeCoefficients(Array2D<int> & TypeOccupations,
 			Array2D<qmcfloat> & AllCoeffs,
 			Array2D<int> & TypeIndices,
-			Array2D<qmcfloat> & TypeCoeffs);
+			Array2D<qmcfloat> & TypeCoeffs,
+			Array2D<int> & TypeOccupations);
   
   /**
      Return a matrix with all the coefficients
@@ -192,6 +193,7 @@ class QMCWavefunction
   */
   Array2D<qmcfloat> * getCoeff(bool isAlpha);
   Array2D<int> * getOccupations(bool isAlpha);
+  Array2D<int> * getDeterminantSwaps(bool isAlpha);
 
   /**
      Break apart all the orbital data into individual determinant data.
@@ -265,12 +267,24 @@ class QMCWavefunction
   Array2D<int> AlphaOccupation;
 
   /**
+     A data structure indicating a series of orbital updates used
+     to update determinant ci-1 into determinant ci
+  */
+  Array2D<int> AlphaSwaps;
+
+  /**
     Array which indicates how many \f$\beta\f$ spin electron are in each
     orbital for each determinant.
 
     The dimmensions are Ndeterminants x Norbitals
   */
   Array2D<int> BetaOccupation;
+
+  /**
+     A data structure indicating a series of orbital updates used
+     to update determinant ci-1 into determinant ci
+  */
+  Array2D<int> BetaSwaps;
 
   /**
     Sets two QMCWavefunction objects equal.

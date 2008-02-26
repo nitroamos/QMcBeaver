@@ -214,12 +214,14 @@ void QMCSlater::allocate()
 
 void QMCSlater::allocateIteration(int whichE, int & start, int & stop)
 {
-  int nOE = getNumberElectrons();
+  int nOR = WF->getNumberOrbitals();
+  int nEL = getNumberElectrons();
   int nBF = WF->getNumberBasisFunctions();
   int wpp = Input->flags.walkers_per_pass;
 
-  //nEl is the number of electrons updated per iteration.
-  int nEl = whichE == -1 ? nOE : 1;
+  //nUp is the number of electrons updated per iteration.
+  int nUP = whichE == -1 ? nEL : 1;
+
   if(whichE == -1)
     {
       start = Start;
@@ -255,23 +257,23 @@ void QMCSlater::allocateIteration(int whichE, int & start, int & stop)
 
   for(int w=0; w<Chi.dim1(); w++)
     {
-      Chi(w).allocate(nEl,nBF);
-      Chi_laplacian(w).allocate(nEl,nBF);
+      Chi(w).allocate(nUP,nBF);
+      Chi_laplacian(w).allocate(nUP,nBF);
       Chi_gradient(w).allocate(3);
       for(int xyz=0; xyz<3; xyz++)
-	(Chi_gradient(w))(xyz).allocate(nEl,nBF);
+	(Chi_gradient(w))(xyz).allocate(nUP,nBF);
     }
 
   for(int w=0; w<D.dim1(); w++)
     {
       for (int ci=0; ci<WF->getNumberDeterminants(); ci++)
-	D_inv(w,ci).allocate(nEl,nOE);
+	D_inv(w,ci).allocate(nEL,nEL);
       
-      D(w).allocate(nEl,nOE);
+      D(w).allocate(nUP,nOR);
       
-      Laplacian_D(w).allocate(nEl,nOE);
+      Laplacian_D(w).allocate(nUP,nOR);
       for(int xyz=0; xyz<3; xyz++)
-	Grad_D(w,xyz).allocate(nEl,nOE);
+	Grad_D(w,xyz).allocate(nUP,nOR);
     }
 }
 
@@ -384,7 +386,7 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
 {
   int whichE = walkerData(0)->whichE;
   int gpp = Input->flags.getNumGPUWalkers();
-  int wpp = Input->flags.walkers_per_pass;
+  int wpp = walkerData.dim1();
 
   if(getNumberElectrons() == 0)
     return;
@@ -491,14 +493,15 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
 		  else        (*inv) = walkerData(off)->D_invB(ci-1);
 		}
 	    } else {
-	      //this might only be used by oribital derivatives...
-	      inv =   & D_inv(w,ci);	      
+	      //this might only be used by orbital derivatives...
+	      inv =   & D_inv(w,ci);
 	      
 	      //this part is used when updating the inverse,
 	      //as opposed to calculating all of it
 	      if(ci > 0)
 		(*inv) = D_inv(w,ci-1);
 	    }
+
 	  (Singular(off))(ci) = calculate_DerivativeRatios(ci,whichE - Start,
 							   D(w),*inv,*lap,
 							   *gradx, *grady, *gradz,
@@ -625,6 +628,7 @@ bool QMCSlater::calculate_DerivativeRatios(int ci, int row,
 					   Array1D<double> & lapPR)
 {
   Array2D<int> * occ = WF->getOccupations(isAlpha);
+  Array2D<int> * swap = WF->getDeterminantSwaps(isAlpha);
 
   bool calcOK = true;
   double ratio = 0;
@@ -635,9 +639,10 @@ bool QMCSlater::calculate_DerivativeRatios(int ci, int row,
       ciDet = & psi;
     } else {
       //or as storage for each ci matrix
-      ciDet->allocate(psi.dim1(),inv.dim1());      
+      ciDet->allocate(psi.dim1(),inv.dim1());
       WF->getDataForCI(ci,isAlpha,psi,*ciDet);
     }
+  Array2D<T> copy = *ciDet;
 
   if(ciDet->dim1() > 1 || row < 0)
     {
@@ -655,14 +660,24 @@ bool QMCSlater::calculate_DerivativeRatios(int ci, int row,
 	     Note: In order for this to work, inv needs to already be set to the previous inv
 	  */
 	  det(ci) = det(ci-1);
-	  for(int o=0; o<occ->dim2(); o++)
-	    if(occ->get(ci,o) != occ->get(ci-1,o))
-	      {
-		ratio = inv.inverseUpdateOneColumn(o,*ciDet,o);	       
-		det[ci] *= ratio;
-	      }
+	  for(int o=0; o<swap->dim2(); o++)	  
+	    {
+	      int so = swap->get(ci,o);
+	      if(so != -1)
+		{				
+		  ratio = inv.inverseUpdateOneColumn(so,*ciDet,so);
+		  
+		  det[ci] *= ratio;
+		  if(ratio == 0) break;
+		}
+	    }
+	  
+	  //The update might have failed, so we could try inverting from scratch...
 	  if(det(ci) == 0)
-	    calcOK = false;
+	    {
+	      calcOK = false;
+	      ciDet->determinant_and_inverse(inv,det(ci),&calcOK);
+	    }
 	}
     }
   else

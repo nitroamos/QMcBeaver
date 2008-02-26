@@ -494,20 +494,13 @@ void QMCWavefunction::read(int charge, int numberOrbitals, int numberBasisFuncti
   makeCoefficients(AlphaOccupation,
 		   OrbitalCoeffs,
 		   AlphaOrbitals,
-		   AlphaCoeffs);
+		   AlphaCoeffs,
+		   AlphaSwaps);
   makeCoefficients(BetaOccupation,
 		   OrbitalCoeffs,
 		   BetaOrbitals,
-		   BetaCoeffs);
-  /*
-  cout << "AlphaOccupation\n" << AlphaOccupation << endl;
-  cout << "BetaOccupation\n" << BetaOccupation << endl;
-  cout << "numT = " << Norbitals << endl;
-  cout << "numO = " << getNumberActiveOrbitals() << endl;
-  cout << "numA = " << getNumberActiveAlphaOrbitals() << endl;
-  cout << "numB = " << getNumberActiveBetaOrbitals() << endl;
-  exit(0);
-  //*/
+		   BetaCoeffs,
+		   BetaSwaps);
 }
 
 ostream& operator <<(ostream& strm, QMCWavefunction& rhs)
@@ -704,11 +697,13 @@ void QMCWavefunction::setORParameters(Array1D<double> & params, int shift)
   makeCoefficients(AlphaOccupation,
 		   OrbitalCoeffs,
 		   AlphaOrbitals,
-		   AlphaCoeffs);
+		   AlphaCoeffs,
+		   AlphaSwaps);
   makeCoefficients(BetaOccupation,
 		   OrbitalCoeffs,
 		   BetaOrbitals,
-		   BetaCoeffs);
+		   BetaCoeffs,
+		   BetaSwaps);
 }
 
 Array2D<qmcfloat> * QMCWavefunction::getCoeff(bool isAlpha)
@@ -731,10 +726,21 @@ Array2D<int> * QMCWavefunction::getOccupations(bool isAlpha)
     }
 }
 
+Array2D<int> * QMCWavefunction::getDeterminantSwaps(bool isAlpha)
+{
+  if(isAlpha)
+    {
+      return & AlphaSwaps;
+    } else {
+      return & BetaSwaps;
+    }
+}
+
 void QMCWavefunction::makeCoefficients(Array2D<int> & TypeOccupations,
 				       Array2D<qmcfloat> & AllCoeffs,
 				       Array2D<int> & TypeIndices,
-				       Array2D<qmcfloat> & TypeCoeffs)
+				       Array2D<qmcfloat> & TypeCoeffs,
+				       Array2D<int> & TypeSwaps)
 {
   int numOR = getNumberOrbitals(TypeOccupations);
   int numAC = getNumberActiveOrbitals(TypeOccupations);
@@ -779,5 +785,60 @@ void QMCWavefunction::makeCoefficients(Array2D<int> & TypeOccupations,
       if(!goodCI)
 	clog << " CI count = \n" << count << endl;
       exit(0);
+    }
+
+  /*
+    We want to figure out a procedure for updating determinant
+    ci by swapping orbitals out of determinant ci-1. A problem
+    would occur if the same orbital occurs in both determinants,
+    but in different positions.
+
+    To avoid this, we need to swap orbitals in an order such that
+    no intermediate stage of updating has the same orbital twice.
+  */
+  TypeSwaps.allocate(numCI,numOR);
+  Array2D<int> IndexUpdater = TypeIndices;
+  TypeSwaps = -1;
+  for(int ci=1; ci<numCI; ci++)
+    {
+      int swap = 0;
+      bool badSwap = false;
+
+      /*
+	We scan through all the orbitals, looking for orbitals we can update. If
+	we ever ran into a bad update, then we ignore it for the moment.
+
+	Once we've completed a scan, then hopefully the bad dependencies will be
+	gone.
+      */
+      do {
+	badSwap = false;
+	for(int o=0; o<numOR; o++)
+	  {
+	    // Check to see if the orbitals already match, and in the same
+	    // position; no update necessary
+	    if(IndexUpdater(ci,o) == IndexUpdater(ci-1,o))
+	      continue;
+
+	    // Figure out if swapping this orbital would introduce a
+	    // linear dependency in the determinant
+	    bool goodSwap = true;
+	    for(int o2=0; o2<numOR; o2++)
+	      if(o != o2 && IndexUpdater(ci,o) == IndexUpdater(ci-1,o2))
+		{
+		  badSwap = true;
+		  goodSwap = false;
+		  break;		
+		}
+	    
+	    //We're allowed to update this orbital
+	    if(goodSwap)
+	      {
+		IndexUpdater(ci-1,o) = IndexUpdater(ci,o);
+		TypeSwaps(ci,swap) = o;
+		swap++;
+	      }    
+	  }
+      } while(badSwap);
     }
 }

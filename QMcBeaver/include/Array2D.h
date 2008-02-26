@@ -220,22 +220,38 @@ template <class T> class Array2D
     {
       if(rhsIsTransposed)
 	{
+#ifdef QMC_DEBUG
 	  if(n_2 != rhs.n_2)
 	    {
 	      cerr << "ERROR: Transposed Matrix multiplication: " << n_1 << "x"
 		   << n_2 << " * " << rhs.n_2 << "x" << rhs.n_1 << endl;
 	      exit(1);
 	    }
+	  if(result.dim1() != n_1 || result.dim2() != rhs.n_1)
+	    {
+	      cerr << "Warning: we had to reallocate result: "
+		   << result.dim1() << "x" << result.dim2() << " to "
+		   << n_1 << "x" << rhs.n_1 << endl;
+	    }
+#endif
 	  result.allocate(n_1,rhs.n_1);
 	}
       else
 	{
+#ifdef QMC_DEBUG
 	  if(n_2 != rhs.n_1)
 	    {
 	      cerr << "ERROR: Matrix multiplication: " << n_1 << "x"
 		   << n_2 << " * " << rhs.n_1 << "x" << rhs.n_2 << endl;
 	      exit(1);
 	    }
+	  if(result.dim1() != n_1 || result.dim2() != rhs.n_2)
+	    {
+	      cerr << "Warning: we had to reallocate result: "
+		   << result.dim1() << "x" << result.dim2() << " to "
+		   << n_1 << "x" << rhs.n_2 << endl;
+	    }
+#endif
 	  result.allocate(n_1,rhs.n_2);
 	}
     }
