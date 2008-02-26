@@ -184,7 +184,7 @@ class QMCWavefunction
 			Array2D<qmcfloat> & AllCoeffs,
 			Array2D<int> & TypeIndices,
 			Array2D<qmcfloat> & TypeCoeffs,
-			Array2D<int> & TypeOccupations);
+			Array2D<int> & TypeSwaps);
   
   /**
      Return a matrix with all the coefficients
