@@ -1,276 +1,377 @@
+# Optimization tag written Mon Feb 25 11:22:06 2008
+#  iteration            Eavg            Estd    Num. Walkers         Eff. dt    Num. Samples            Skew        Kurtosis
+#     506707   -2.9035840183   1.5568263e-05             100   9.9096997e-03         1045532       0.2144397       0.4076963 
+# Created on Thu, 21 Feb 2008 19:31:17
+# Using gamess output file:  /net/hulk/home5/amosa/ckmf_origs/he_17s/he.log
+# Using ckmft template file: ../optimize.ckmft
+# Huzinaga 17s basis                                                              
+# FINAL RHF ENERGY IS       -2.8616799749 AFTER   7 ITERATIONS
+#      REFERENCE ENERGY:       -2.8616799749
+#        CCSD(T) ENERGY:       -2.8790276502   CORR.E=  -0.0173476753
+
 &flags
+# Parameters for QMC
 run_type
  variational
-parallelization_method
- manager_worker
-temp_dir
- ./
-walker_initialization_method
- mikes_jacked_initialization
-walker_initialization_combinations
- 3
-iseed
- -1961964851
+dt
+ 0.01
+number_of_walkers
+ 100
+max_time_steps
+ 1000000
+max_time
+ -1
+one_e_per_iter
+ 0
+desired_convergence
+ 0
+warn_verbosity
+ 0
+rel_cutoff
+ 100
+limit_branching
+ 1
+
+# Parameters specific to the Green's function
 sampling_method
  umrigar93_importance_sampling
 QF_modification_type
  umrigar93_unequalelectrons
+umrigar93_equalelectrons_parameter
+ 0.5
 energy_modification_type
  umrigar93
-umrigar93_equalelectrons_parameter
- 5.000000000000000e-01
+energy_cutoff_type
+ umrigar93
+lock_trial_energy
+ 0
+synchronize_dmc_ensemble
+ 0
+synchronize_dmc_ensemble_interval
+ 1000
+
+# Parameters specific to weights, branching, and fusion
 walker_reweighting_method
  umrigar93_probability_weighted
 branching_method
  nonunit_weight_branching
 branching_threshold
- 2.000000000000000e+00
+ 2
+fusion_threshold
+ 0.45
+population_control_parameter
+ 1
+correct_population_size_bias
+ 1
 old_walker_acceptance_parameter
+ 30
+
+# Parameters for initialization
+dt_equilibration
+ 0.01
+use_equilibration_array
+ 0
+equilibration_steps
+ 2000
+equilibration_function
+ ramp
+CKAnnealingEquilibration1_parameter
+ 500
+walker_initialization_method
+ dans_walker_initialization
+walker_initialization_combinations
+ 3
+
+# Parameters for added functionality/improvements
+calculate_bf_density
+ 0
+use_hf_potential
+ 0
+hf_num_average
+ 100
+replace_electron_nucleus_cusps
+ 1
+nuclear_derivatives
+ none
+future_walking
+ 0
+
+# Parameters relating to output
+output_interval
+ 1000
+checkpoint
+ 0
+checkpoint_interval
+ 100000
+use_available_checkpoints
+ 0
+checkpoint_input_name
+ he_1
+zero_out_checkpoint_statistics
+ 1
+checkpoint_energy_only
+ 0
+print_configs
+ 0
+print_config_frequency
  50
+temp_dir
+ /temp1/amosa/he_1.01
+write_all_energies_out
+ 0
+write_electron_densities
+ 0
+max_pair_distance
+ -1
+print_transient_properties
+ 0
+print_transient_properties_interval
+ 10000
+writePllxCorrelationDiagram
+ 0
+pllxCorrelationDiagramMin
+ 0
+pllxCorrelationDiagramMax
+ 0
+writePllyCorrelationDiagram
+ 0
+pllyCorrelationDiagramMin
+ 0
+pllyCorrelationDiagramMax
+ 0
+writePllzCorrelationDiagram
+ 0
+pllzCorrelationDiagramMin
+ 0
+pllzCorrelationDiagramMax
+ 0
+writeOppxCorrelationDiagram
+ 0
+oppxCorrelationDiagramMin
+ 0
+oppxCorrelationDiagramMax
+ 0
+writeOppyCorrelationDiagram
+ 0
+oppyCorrelationDiagramMin
+ 0
+oppyCorrelationDiagramMax
+ 0
+writeOppzCorrelationDiagram
+ 0
+oppzCorrelationDiagramMin
+ 0
+oppzCorrelationDiagramMax
+ 0
+
+# Parameters for wavefunction optimization
+optimize_Psi
+ 1
+optimize_EE_Jastrows
+ 1
+optimize_EN_Jastrows
+ 1
+optimize_NEE_Jastrows
+ 1
+optimize_L
+ 1
+optimize_CI
+ 0
+optimize_Orbitals
+ 0
+optimize_Psi_method
+ automatic
+optimize_Psi_criteria
+ generalized_eigenvector
+a_diag
+ -1e-05
+ksi
+ 0.5
+max_optimize_Psi_steps
+ 30
+equilibrate_first_opt_step
+ 1
+equilibrate_every_opt_step
+ 1
+optimization_max_iterations
+ 1
+optimization_error_tolerance
+ 0.001
+singularity_penalty_function_parameter
+ 1e-06
+optimize_Psi_barrier_parameter
+ 1
+numerical_derivative_surface
+ umrigar88
+line_search_step_length
+ Linearize
+ck_genetic_algorithm_1_population_size
+ 1000
+ck_genetic_algorithm_1_mutation_rate
+ 0.2
+ck_genetic_algorithm_1_initial_distribution_deviation
+ 1
+
+# Parameters for computation/MPI
+iseed
+ 0
+parallelization_method
+ manager_worker
+mpireduce_interval
+ 100
+mpipoll_interval
+ 5
+walkers_per_pass
+ 1
 use_basis_function_interpolation
  0
 number_basis_function_interpolation_grid_points
  1000
 basis_function_interpolation_first_point
- 1.000000000000000e-10
-fusion_threshold
- 5.000000000000000e-01
-dt
- 1.000000000000000e-03
-desired_convergence
- 0.000000000000000e+00
-max_time_steps
- 500000
-dt_equilibration
- 2.000000000000000e-03
-equilibration_steps
- 20000
-equilibration_function
- ramp
-CKAnnealingEquilibration1_parameter
- 500
-use_equilibration_array
- 0
-number_of_walkers
- 100
-output_interval
- 2000
-mpireduce_interval
- 2000
-mpipoll_interval
- 1
-checkpoint_interval
- 1000
-checkpoint
- 0
-use_available_checkpoints
- 0
+ 1e-10
+
+# Parameters for the molecule and wavefunction
 atoms
  1
 charge
  0
+energy
+ -2.8616799749
+trial_function_type
+ restricted
 norbitals
- 11
+ 1
 nbasisfunc
- 15
+ 17
 ndeterminants
  1
-energy
- -2.860332035962216e+00
-correct_population_size_bias
- 0
-print_transient_properties
- 0
-print_transient_properties_interval
- 10000
-print_configs
- 0
-print_config_frequency
- 50
-optimize_Psi
- 0
-max_optimize_Psi_steps
- 10
-optimize_Psi_criteria
- energy_variance
-optimize_Psi_method
- BFGSQuasiNewton
-singularity_penalty_function_parameter
- 1.000000000000000e-06
-optimize_Psi_barrier_parameter
- 1.000000000000000e+00
-numerical_derivative_surface
- umrigar88
-line_search_step_length
- Wolfe
-optimization_max_iterations
- 100
-optimization_error_tolerance
- 1.000000000000000e-03
-ck_genetic_algorithm_1_population_size
- 30
-ck_genetic_algorithm_1_mutation_rate
- 2.000000000000000e-01
-ck_genetic_algorithm_1_initial_distribution_deviation
- 1.000000000000000e+00
 link_Jastrow_parameters
- 0
-equilibrate_first_opt_step
  1
-equilibrate_every_opt_step
- 0
-population_control_parameter
- 1.000000000000000e+00
-write_all_energies_out
- 0
-zero_out_checkpoint_statistics
+link_NEE_Jastrows
+ 2
+link_Orbital_parameters
  1
+link_Determinant_parameters
+ 1
+use_three_body_jastrow
+ 1
+reproduce_NE_with_NEE_jastrow
+ 1
+reproduce_EE_with_NEE_jastrow
+ 1
+
+# Other parameters
 chip_and_mike_are_cool
  Yea_Baby!
 & 
 &geometry
-He	2	0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
+He   2      0                     0                     0                   
 &
 &basis
-He	15	4
-4	s
-	2.340000000000000e+02	3.109111499770000e-01
-	3.516000000000000e+01	5.665439094119999e-01
-	7.989000000000000e+00	8.686186278860000e-01
-	2.212000000000000e+00	9.912097088360000e-01
-1	s
-	6.669000000000000e-01	5.259635285660000e-01
-1	s
-	2.089000000000000e-01	2.202236326720000e-01
-1	px
-	3.044000000000000e+00	5.731204405620000e+00
-1	py
-	3.044000000000000e+00	5.731204405620000e+00
-1	pz
-	3.044000000000000e+00	5.731204405620000e+00
-1	px
-	7.580000000000000e-01	1.008153343850000e+00
-1	py
-	7.580000000000000e-01	1.008153343850000e+00
-1	pz
-	7.580000000000000e-01	1.008153343850000e+00
-1	dxx
-	1.965000000000000e+00	5.367770348250000e+00
-1	dyy
-	1.965000000000000e+00	5.367770348250000e+00
-1	dzz
-	1.965000000000000e+00	5.367770348250000e+00
-1	dxy
-	1.965000000000000e+00	9.297250966520000e+00
-1	dxz
-	1.965000000000000e+00	9.297250966520000e+00
-1	dyz
-	1.965000000000000e+00	9.297250966520000e+00
+He    17    1
+  1 s    
+           293113.11    8978.14313323       
+  1 s    
+           55231.274    2567.72723787       
+  1 s    
+           12413.215    838.152993369       
+  1 s    
+           3284.5401    309.2188912         
+  1 s    
+           1006.2242    127.330123629       
+  1 s    
+           349.90692    57.6599804542       
+  1 s    
+           135.15749    28.2514134325       
+  1 s    
+           56.730644    14.7323957793       
+  1 s    
+           25.346385    8.05094968908       
+  1 s    
+           11.838633    4.54868916597       
+  1 s    
+           5.6964472    2.62792610722       
+  1 s    
+           2.7925021    1.53959050314       
+  1 s    
+           1.3837553    0.909294502104      
+  1 s    
+           0.6895619    0.539311940093      
+  1 s    
+           0.3445152    0.320491402051      
+  1 s    
+           0.1722927    0.190594449916      
+  1 s    
+           0.0861868    0.11336804552       
 &
 &wavefunction
--3.547932796357530e-01	-4.781673284555680e-01	-3.076209526263020e-01	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-
--1.604794460466320e-01	-1.156125107789478e+00	1.532266099673872e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-6.409044795809400e-02	0.000000000000000e+00	0.000000000000000e+00	
--1.035193128065247e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	6.409044795809400e-02	0.000000000000000e+00	
-0.000000000000000e+00	-1.035193128065247e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	6.409044795809400e-02	
-0.000000000000000e+00	0.000000000000000e+00	-1.035193128065248e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-
-1.491567889721144e+00	-1.953194847339456e+00	8.494705200088160e-01	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	1.000000000000000e+00	0.000000000000000e+00	
-
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-1.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	1.000000000000000e+00	
-
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
--5.000000000000000e-01	-5.000000000000000e-01	1.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
-8.660254037844380e-01	-8.660254037844380e-01	0.000000000000000e+00	
-0.000000000000000e+00	0.000000000000000e+00	0.000000000000000e+00	
+  3.09931002e-07             1.94510305e-06             1.14430077e-05           
+  5.34350301e-05             0.000208867627             0.000698890085           
+  0.00206869828              0.00556002902              0.0138668294             
+  0.0322104915               0.0688076682               0.130285337              
+  0.211214257                0.28031275                 0.271806473              
+  0.137337722                0.0192779849             
 
 Alpha Occupation
-1	0	0	0	0	0	0	0	0	0	0	
+1   
 
 Beta Occupation
-1	0	0	0	0	0	0	0	0	0	0	
+1   
 
 CI Coeffs
-1.000000000000000e+00	
+  1                        
 
 &
+
 &Jastrow
 ParticleTypes:	Electron_up	Electron_down
-CorrelationFunctionType:	FixedCuspPade
+CorrelationFunctionType:	Cambridge2
 NumberOfParameterTypes:	2
-NumberOfParametersOfEachType:	0	1
-Parameters:	3
-NumberOfConstantTypes:	1
-NumberOfConstantsOfEachType:	1
-Constants:	5.000000000000000e-01
+NumberOfParametersOfEachType:	1	8
+Parameters:	0.133479527303	0.50607535959	5.67378442319	-26.6370866077	72.8428190098	-79.8726113523	-23.7831279957	15.144888752	28.9553744421
+NumberOfConstantTypes:	2
+NumberOfConstantsOfEachType:	1	2
+Constants:	0.5	3	0
 
 ParticleTypes:	Electron_up	He
-CorrelationFunctionType:	FixedCuspPade
+CorrelationFunctionType:	Cambridge2
 NumberOfParameterTypes:	2
-NumberOfParametersOfEachType:	0	1
-Parameters:	100
-NumberOfConstantTypes:	1
-NumberOfConstantsOfEachType:	1
-Constants:	-2.000000000000000e+00
+NumberOfParametersOfEachType:	1	8
+Parameters:	0.373882098502	-0.582737706296	-1.8671371969	-4.4404798956	25.5277864259	-61.6196477986	21.1285385695	78.9002525616	-76.6637604428
+NumberOfConstantTypes:	2
+NumberOfConstantsOfEachType:	1	2
+Constants:	0	3	0
 
-ParticleTypes:	Electron_down	He
-CorrelationFunctionType:	FixedCuspPade
+ParticleTypes:	He	Electron_up	Electron_down
+threeBodyCorrelationFunctionType:	Cambridge
 NumberOfParameterTypes:	2
-NumberOfParametersOfEachType:	0	1
-Parameters:	100
-NumberOfConstantTypes:	1
-NumberOfConstantsOfEachType:	1
-Constants:	-2.000000000000000e+00
+NumberOfParametersOfEachType:  4  4
+Parameters:
+ -0.490107998585      
+
+ -1.47032399575        -1.47032399575        -4.41097198726         0                   
+  0                     0                     25.5323708799       
+
+  0.691756138967        0.691756138967       -27.1350814561        -27.1350814561       
+  64.1404912455        -12.7661854399        -12.7661854399         11.2890652408       
+  11.2890652408        -14.519700303         -1.69385751283        -1.40359354531       
+ -1.40359354531        -15.1895618278         18.3502177943         18.3502177943       
+  0.739624188664        0.739624188664        35.7797244028       
+
+  10.8218631883         10.8218631883         12.4981138989         12.4981138989       
+ -78.8934229192        -78.8934229192         8.27662888634        -11.2890652408       
+ -11.2890652408         7.25985015148         7.25985015148         0                   
+  0                     0                     10.0168545353         10.0168545353       
+ -46.1535823724        -46.1535823724         59.7101049149         59.7101049149       
+  26.4990558902         5.33739086371        -2.62919211167        -2.62919211167       
+  5.29640698517        -24.5699541877        -24.5699541877         2.49428341534       
+  2.49428341534         9.23113150403         17.4053386149         17.4053386149       
+  52.2160158446         52.2160158446         14.7310683424         14.7310683424       
+  6.34406909445       
+
+C:  3
+Cutoff:  0.303364960963
+
 
 &Jastrow
 
