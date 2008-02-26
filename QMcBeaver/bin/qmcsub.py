@@ -123,7 +123,7 @@ file.write("#!/bin/csh    \n")
 if qserver == "qsub":
     file.write("#PBS -N " + jobname + " \n")
     file.write("#PBS -j oe -k n         \n") # -j oe merge std out and std err, -k n don't keep the file
-    file.write("#PBS -l nodes=" + str(nodes) + ":ppn=" + str(ppn) + ",walltime=" + time+"\n")
+    file.write("#PBS -l nodes=" + str(nodes) + ":ppn=" + str(ppn) + ",walltime=" + time+":00\n")
 
     if emailme > 0:
 	file.write("#PBS -M "+emailaddress+" \n")
