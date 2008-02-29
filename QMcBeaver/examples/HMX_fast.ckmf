@@ -107,7 +107,7 @@ print_config_frequency
 temp_dir
  /temp1/
 write_all_energies_out
- 1
+ 0
 write_electron_densities
  0
 max_pair_distance
