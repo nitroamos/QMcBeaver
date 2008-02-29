@@ -1,4 +1,11 @@
+To test your QMcBeaver.x, step into this directory and run:
 
+../bin/test.pl ../bin/QMcBeaver.x
+
+And it will compare the results from QMcBeaver.x with the original
+results.
+
+Here are some results from the literature.
 To use jaguar, use:
    ip164=2
 -------------------------------------------

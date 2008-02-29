@@ -365,6 +365,39 @@ sub getCKMFSummary
     return $oneliner;
 }
 
+sub getEnergies
+{
+    my ($filename, $energies) = @_;
+    open(FILE,"$filename");
+
+    $more = 1;
+    while(<FILE>){
+	$sampleclock = (split/[ ]+/)[8] if(/Average microseconds per sample per num initial walkers/);
+	$sampleVar = (split/[ ]+/)[3] if(/Sample variance/ && $sampleVar == 0);	    
+
+	#this is to avoid processing warnings
+	next if( $_ =~ /[=:]/ && $_ !~ /Results/);
+
+	chomp;
+	@data = split/[ ]+/;
+
+        #this is the number of data elements per line
+	#it can have the letter 'e' or 'E' since scientific notation uses them
+	if($#data >= 8 && $_ !~ /[A-DF-Za-df-z]+/ && $more){
+	    $counter++;
+	    $iteration   = $data[1];
+	    $eavg        = $data[2];
+	    $estd        = $data[3];
+	    if(abs($eavg) > 1e-10){
+		push(@$energies,$eavg);
+	    }
+	} elsif(/Results/) {
+	    #$more = 0;
+	}
+    }    
+    close(FILE);
+}
+
 # this function will fill in the files array with
 # all files that have the extension ext. there are
 # a few known directories it will not descend into

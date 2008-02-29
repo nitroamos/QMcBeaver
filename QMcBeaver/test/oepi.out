@@ -1,0 +1,135 @@
+QMcBeaver version 20080227 was compiled in double precision.
+Compiled on Feb 28 2008 19:59:02
+Compiler version 3.4.6 20060404 (Red Hat 3.4.6-8)
+With the libraries: MPI BLAS LAPACK
+Signaling: CHANNEL1 = 23 CHANNEL2 = 40
+
+
+EupEdn:
+Cambridge 2 particle jastrow parameters:
+  g = 0.5  C = 3  L = 0.132296 (not optimized)
+x = r / 7.558796
+(x - 1)^3 (0.8405165 -1.257848 x +3.21626 x^2 -5.816737 x^3 +16.66292 x^4 -2.55757 x^5 +0.4881917 x^6 -39.4811 x^7 +37.63657 x^8 )
+
+EupEup:
+Cambridge 2 particle jastrow parameters:
+  g = 0.25  C = 3  L = 0.1650514 (not optimized)
+x = r / 6.058719
+(x - 1)^3 (0.5673431 +0.1873495 x -4.979518 x^2 +14.87349 x^3 -8.49391 x^4 -2.106899 x^5 -3.162035 x^6 -1.597686 x^7 +17.71202 x^8 )
+
+EupNuclear(C):
+Cambridge 2 particle jastrow parameters:
+  g = 0  C = 3  L = 0.1432064 (not optimized)
+x = r / 6.982926
+(x - 1)^3 (-2.511211 -7.533634 x +10.66134 x^2 -9.43975 x^3 +23.58467 x^4 -71.95954 x^5 +12.47256 x^6 +44.69709 x^7 -25.23846 x^8 )
+
+EupNuclear(H):
+Cambridge 2 particle jastrow parameters:
+  g = 0  C = 3  L = 0.2285841 (not optimized)
+x = r / 4.374758
+(x - 1)^3 (-0.2007082 -0.6021245 x -1.393993 x^2 +6.308656 x^3 -26.9595 x^4 +56.72875 x^5 -30.03145 x^6 -56.71393 x^7 +64.12862 x^8 )
+
+EupEdnNuclear(C):
+ Total Parameters = 64
+ Free Parameters = 27
+Cambridge 3 particle jastrow parameters:
+  Nen = 4  Nee = 4  C = 3  L = 0.2623644 (not optimized)
+r1  = x1  / 3.811493
+r2  = x2  / 3.811493
+r12 = x12 / 3.811493
+(r1 - 1)^3 (r2 - 1)^3 (
++0.09158602                              +0.274758  (r1 + r2)                     +0.8242741 r1 r2                         +32.70415  r1 r2 r12                     
++2.925169  (r1^2 + r2^2)                 -39.42111  (r1^2 r2 + r2^2 r1)           +130.3304  r1^2 r2^2                     -16.35208  (r1^2 + r2^2) r12             
+-3.279182  (r1^2 r2 + r2^2 r1) r12       +10.695    r1^2 r2^2 r12                 -7.300259  r12^2                         -6.408305  (r1 + r2) r12^2               
++4.154608  r1 r2 r12^2                   +24.65097  (r1^2 + r2^2) r12^2           -9.840991  (r1^2 r2 + r2^2 r1) r12^2     +31.73644  r1^2 r2^2 r12^2               
++6.423576  (r1^3 + r2^3)                 +37.58342  (r1^3 r2 + r2^3 r1)           -104.1997  (r1^3 r2^2 + r2^3 r1^2)       -0.2197408 r1^3 r2^3                     
++3.279182  (r1^3 + r2^3) r12             -5.3475    (r1^3 r2 + r2^3 r1) r12       -7.02761   (r1^3 + r2^3) r12^2           -43.92766  (r1^3 r2 + r2^3 r1) r12^2     
++38.5241   (r1^3 r2^2 + r2^3 r1^2) r12^2 +22.58192  r1^3 r2^3 r12^2               +21.14533  r12^3                         -24.03327  (r1 + r2) r12^3               
++26.87914  r1 r2 r12^3                   -6.297709  (r1^2 + r2^2) r12^3           +3.951706  (r1^2 r2 + r2^2 r1) r12^3     -14.33271  r1^2 r2^2 r12^3               
++9.108368  (r1^3 + r2^3) r12^3           +27.3251   (r1^3 r2 + r2^3 r1) r12^3     -44.3088   (r1^3 r2^2 + r2^3 r1^2) r12^3 -9.091852  r1^3 r2^3 r12^3               )
+
+***************  TheMan.run();
+ iteration            Eavg            Estd    Num. Walkers         Eff. dt    Num. Samples            Skew        Kurtosis
+       -10    0.0000000000   0.0000000e+00               2   9.7621686e-03               0       0.0000000       0.0000000 
+         0    0.0000000000   0.0000000e+00               2   9.7732740e-03               0       0.0000000       0.0000000 
+        30    0.0000000000   0.0000000e+00               2             nan               0       0.0000000       0.0000000 
+        40  -76.8835895829   0.0000000e+00               2   9.3660015e-03               1       0.0000000       0.0000000 
+        50  -78.1017756036   0.0000000e+00               2   8.3321623e-03               2       0.0000000       0.0000000 
+        60  -78.1017756036   0.0000000e+00               2   8.3321623e-03               2       0.0000000       0.0000000 
+        70  -78.7367696615   0.0000000e+00               2   8.5865600e-03               3       0.0000000       0.0000000 
+        80  -78.7367696615   0.0000000e+00               2   8.5865600e-03               3       0.0000000       0.0000000 
+        90  -78.5230207607   0.0000000e+00               2   8.7780346e-03               4       0.0000000       0.0000000 
+       100  -78.3789710301   0.0000000e+00               2   8.9056308e-03               5      -0.2079384      -1.3911569 
+       100  -78.3789710301   0.0000000e+00               2   8.9056308e-03               5      -0.2079384      -1.3911569 
+***************  Print Results (ok = 1)
+**************** Start of Results *****************
+
+------------------- Energy -------------------
+Sample variance = 1.270106
+ -7.837897103009e+01 +/-  1.000000000000e+300 (5 samples, decorr depth -2)
+  DeCorr_depth       samples           Ave           Std        StdStd           Var        VarStd    Corr. Len.      Variance          Skew      Kurtosis
+             0             5    -78.378971  5.634948e-01  1.992255e-01  3.175264e-01  2.245251e-01      1.000000      1.270106     -0.207938     -1.391157
+             1             2    -78.523021  4.212452e-01  2.978653e-01  1.774475e-01  2.509486e-01      0.558843      0.177447      0.000000      0.000000
+             2             1    -78.523021
+
+----------------- Energy^2 -------------------
+  6.144533205475e+03 +/-  1.000000000000e+300 (5 samples, decorr depth -2)
+
+--------------- Kinetic Energy ---------------
+ -1.118236425395e+02 +/-  1.000000000000e+300 (5 samples, decorr depth -2)
+
+-------------- Potential Energy --------------
+  3.344467150941e+01 +/-  1.000000000000e+300 (5 samples, decorr depth -2)
+
+-------------- Nuc-Elec Energy ---------------
+  0.000000000000e+00 +/-  1.000000000000e+300 (5 samples, decorr depth -2)
+
+-------------- Elec-Elec Energy --------------
+  0.000000000000e+00 +/-  1.000000000000e+300 (5 samples, decorr depth -2)
+
+------------ AcceptanceProbability -----------
+  9.314365024062e-01 +/-  1.000000000000e+300 (5 samples, decorr depth -2)
+
+------------ DistanceMovedAccepted -----------
+  3.768004691937e-02 +/-  1.000000000000e+300 (5 samples, decorr depth -2)
+
+------------- DistanceMovedTrial -------------
+  4.231036293012e-02 +/-  1.000000000000e+300 (5 samples, decorr depth -2)
+
+----------------- Walker Age -----------------
+  2.000000000000e+00 +/-  1.000000000000e+300 (80 samples, decorr depth -2)
+
+--------------- Weight Change ----------------
+  1.000000000000e+00 +/-  1.000000000000e+300 (5 samples, decorr depth -2)
+
+---------------- Growth Rate -----------------
+  0.000000000000e+00 +/-  1.000000000000e+300 (80 samples, decorr depth -2)
+
+----------------- logWeights -----------------
+  1.000000000000e+00 +/-  1.000000000000e+300 (5 samples, decorr depth -2)
+dt_effective: 8.905630750935e-03 +/- inf
+
+--------------- Virial Ratio (-<V>/<T>) ---------------
+      0: 2.984405556903e-01 +/- inf
+         Total Energy Estimator (KE/Virial): 1.120647675784e+02 +/- inf
+         Total Energy Estimator (PE/Virial): 1.672233575470e+01 +/- inf
+
+**************** End of Results *****************
+***************  Finalize
+Average iterations per hour:                              6.884549922549e+06
+Average iterations*walkers per hour:                      1.376909984510e+07
+Average microseconds per sample:                          4417.4
+Average microseconds per sample per num initial walkers:  2208.7
+
+Wallclock Time:                           52 ms   =                0.052 s    =           0.00086667 mins =           1.4444e-05 hrs 
+Total Time:                               52 ms   =                0.052 s    =           0.00086667 mins =           1.4444e-05 hrs     100.00 %
+Initialization Time:                       2 ms   =                0.002 s    =           3.3333e-05 mins =           5.5556e-07 hrs       5.27 %
+Equilibration Time:                        6 ms   =                0.006 s    =               0.0001 mins =           1.6667e-06 hrs      12.72 %
+Propagation Time:                         22 ms   =                0.022 s    =           0.00036667 mins =           6.1111e-06 hrs      42.24 %
+Send Command Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.04 %
+Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.36 %
+Synchronization Time:                      0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.01 %
+Poll for Command Time:                     0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
+Optimization Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
+
+Wallclock Time:                           65 ms   =                0.065 s    =            0.0010833 mins =           1.8056e-05 hrs 

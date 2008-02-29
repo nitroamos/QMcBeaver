@@ -1,3 +1,13 @@
+Fri, Feb 29, 2008 Amos Anderson
+1.  I added some better example files.
+2.  I committed some changes relating to problems on the ALC machine. If you're
+    using an older MPICH, then the MPI datatypes might be slightly different. Look at
+    QMCProperties and QMCProperty for details.
+3.  I added a method to check whether a QMcBeaver executable produces results that match
+    reference data. I've started making some input files in the test directory to help
+    verify that results aren't changing. This section needs more work, but this is a start.
+    It makes it a lot easier to do debugging, too... :-)
+
 Mon, Feb 25, 2008 Amos Anderson
 1.  I added a new, unified submission script, qmcsub.py. I merged everything from the qsub,
     bsub, and llnl qmcbeaverrun.py scripts so that now it's much easier to make
