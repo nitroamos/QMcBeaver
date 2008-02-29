@@ -1,3 +1,11 @@
+# This example represents the best Helium wavefunction I have optimized. It uses 3 particle jastrows.
+
+# Optimization tag written Fri Feb 29 12:27:22 2008
+#  iteration            Eavg            Estd    Num. Walkers         Eff. dt    Num. Samples            Skew        Kurtosis
+#    1000000   -2.9036087480   7.7463111e-06             100   9.9097593e-03         4187915       0.2222529       0.4900011 
+# Optimization tag written Wed Feb 27 05:51:53 2008
+#  iteration            Eavg            Estd    Num. Walkers         Eff. dt    Num. Samples            Skew        Kurtosis
+#    1000000   -2.9036250297   1.5075638e-05             100   9.9097386e-03          998000       0.2093513       0.4047625 
 # Optimization tag written Mon Feb 25 11:22:06 2008
 #  iteration            Eavg            Estd    Num. Walkers         Eff. dt    Num. Samples            Skew        Kurtosis
 #     506707   -2.9035840183   1.5568263e-05             100   9.9096997e-03         1045532       0.2144397       0.4076963 
@@ -106,7 +114,7 @@ checkpoint_interval
 use_available_checkpoints
  0
 checkpoint_input_name
- he_1
+ he_2
 zero_out_checkpoint_statistics
  1
 checkpoint_energy_only
@@ -116,7 +124,7 @@ print_configs
 print_config_frequency
  50
 temp_dir
- /temp1/amosa/he_1.01
+ /temp1/amosa/he_2
 write_all_energies_out
  0
 write_electron_densities
@@ -166,7 +174,7 @@ oppzCorrelationDiagramMax
 
 # Parameters for wavefunction optimization
 optimize_Psi
- 1
+ 0
 optimize_EE_Jastrows
  1
 optimize_EN_Jastrows
@@ -174,7 +182,7 @@ optimize_EN_Jastrows
 optimize_NEE_Jastrows
  1
 optimize_L
- 1
+ 0
 optimize_CI
  0
 optimize_Orbitals
@@ -328,7 +336,7 @@ ParticleTypes:	Electron_up	Electron_down
 CorrelationFunctionType:	Cambridge2
 NumberOfParameterTypes:	2
 NumberOfParametersOfEachType:	1	8
-Parameters:	0.133479527303	0.50607535959	5.67378442319	-26.6370866077	72.8428190098	-79.8726113523	-23.7831279957	15.144888752	28.9553744421
+Parameters:	0.133479527303	0.497851589766	5.45978274358	-26.6282669438	72.8613745666	-79.8714605684	-23.7890392069	15.1396298353	28.9527916028
 NumberOfConstantTypes:	2
 NumberOfConstantsOfEachType:	1	2
 Constants:	0.5	3	0
@@ -337,7 +345,7 @@ ParticleTypes:	Electron_up	He
 CorrelationFunctionType:	Cambridge2
 NumberOfParameterTypes:	2
 NumberOfParametersOfEachType:	1	8
-Parameters:	0.373882098502	-0.582737706296	-1.8671371969	-4.4404798956	25.5277864259	-61.6196477986	21.1285385695	78.9002525616	-76.6637604428
+Parameters:	0.373882098502	-0.570639019553	-1.77305839535	-4.46391509758	25.5378836699	-61.5978777277	21.1449263692	78.9148688755	-76.6455184295
 NumberOfConstantTypes:	2
 NumberOfConstantsOfEachType:	1	2
 Constants:	0	3	0
@@ -347,30 +355,30 @@ threeBodyCorrelationFunctionType:	Cambridge
 NumberOfParameterTypes:	2
 NumberOfParametersOfEachType:  4  4
 Parameters:
- -0.490107998585      
+ -0.471159955648      
 
- -1.47032399575        -1.47032399575        -4.41097198726         0                   
-  0                     0                     25.5323708799       
+ -1.41347986694        -1.41347986694        -4.24043960083         0                   
+  0                     0                     25.7256178392       
 
-  0.691756138967        0.691756138967       -27.1350814561        -27.1350814561       
-  64.1404912455        -12.7661854399        -12.7661854399         11.2890652408       
-  11.2890652408        -14.519700303         -1.69385751283        -1.40359354531       
- -1.40359354531        -15.1895618278         18.3502177943         18.3502177943       
-  0.739624188664        0.739624188664        35.7797244028       
+  0.980296094018        0.980296094018       -27.0269285072        -27.0269285072       
+  64.0875384181        -12.8628089196        -12.8628089196         11.2269380804       
+  11.2269380804        -14.6231372316        -1.79365174762        -1.13875629275       
+ -1.13875629275        -15.1812397282         18.3521688338         18.3521688338       
+  0.666332408036        0.666332408036        35.7582444941       
 
-  10.8218631883         10.8218631883         12.4981138989         12.4981138989       
- -78.8934229192        -78.8934229192         8.27662888634        -11.2890652408       
- -11.2890652408         7.25985015148         7.25985015148         0                   
-  0                     0                     10.0168545353         10.0168545353       
- -46.1535823724        -46.1535823724         59.7101049149         59.7101049149       
-  26.4990558902         5.33739086371        -2.62919211167        -2.62919211167       
-  5.29640698517        -24.5699541877        -24.5699541877         2.49428341534       
-  2.49428341534         9.23113150403         17.4053386149         17.4053386149       
-  52.2160158446         52.2160158446         14.7310683424         14.7310683424       
-  6.34406909445       
+  10.6635092084         10.6635092084         12.5631173799         12.5631173799       
+ -78.9235655438        -78.9235655438         8.2723827791         -11.2269380804       
+ -11.2269380804         7.31156861578         7.31156861578         0                   
+  0                     0                     10.1024109742         10.1024109742       
+ -46.175724621         -46.175724621          59.6979433615         59.6979433615       
+  26.4981394968         5.29759007309        -2.73021352474        -2.73021352474       
+  5.20715066219        -24.6925786628        -24.6925786628         2.40522155529       
+  2.40522155529         9.21238521597         17.3882848935         17.3882848935       
+  52.1648546806         52.1648546806         14.7208091542         14.7208091542       
+  6.34383243729       
 
 C:  3
-Cutoff:  0.303364960963
+Cutoff:  0.303546287567
 
 
 &Jastrow
