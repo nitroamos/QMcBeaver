@@ -55,7 +55,7 @@ QMCConfigIO::QMCConfigIO()
   areWriting = true;
   numWritten = 0;
   numRead    = 0;
-  filename = "";
+  filename   = string("");
 }
 
 QMCConfigIO::~QMCConfigIO()
@@ -82,7 +82,7 @@ QMCConfigIO::QMCConfigIO(int numE)
   areWriting = true;
   numWritten = 0;
   numRead    = 0;
-  filename = "";
+  filename   = string("");
   numElectrons = numE;
 }
 

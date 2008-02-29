@@ -339,7 +339,6 @@ bool QMCProperties::readXML(istream& strm)
 
 ostream& operator <<(ostream& strm, QMCProperties &rhs)
 {
-
   strm << endl << "------------------- Energy -------------------" << endl;
   //strm << rhs.energy;
   
@@ -439,18 +438,28 @@ void QMCProperties::buildMpiType()
       displacements[i] = addresses[i+1] - addresses[0];
     }
 
+
+#ifdef QMC_OLDMPICH
   /*
+    If you're having trouble with MPICH (e.g. it can't find MPI_Type_create_resized)
+    then compile with the USE_OLDMPICH flag.
+  */
   MPI_Type_struct(NumberOfProperties, block_lengths, displacements, typelist, 
 		  &MPI_TYPE);
-  //Because we're including all kinds of junk in QMCProperties, the displacements
-  //are not going to find everything. This ensures that MPI knows the exact size
+#else
+  /*
+    Because we're including all kinds of junk in QMCProperties, the displacements
+    are not going to find everything. This ensures that MPI knows the exact size.
+
+    I've only MPICH version 1.2.* complain about the following lines, so if you want
+    to use it, then you'll have to compile this file and QMCProperty with the
+    QMC_OLDMPICH macro enabled.
   */
-  
   MPI_Datatype temp;
   MPI_Type_struct(NumberOfProperties, block_lengths, displacements, typelist, 
                   &temp);
   MPI_Type_create_resized(temp,0,sizeof(QMCProperties),&MPI_TYPE);
-
+#endif
 
   MPI_Type_commit(&MPI_TYPE);
 }

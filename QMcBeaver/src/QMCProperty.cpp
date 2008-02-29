@@ -38,6 +38,8 @@ QMCProperty::QMCProperty()
 
 void QMCProperty::zeroOut()
 {
+  if(getNumberSamples() == 0) return;
+
   for(int i=0;i<DCL;i++)
   {
     DeCorr[i].zeroOut();
@@ -1246,12 +1248,14 @@ void QMCProperty::buildMpiType()
   displacements[2] = addresses[3] - addresses[0];
   displacements[3] = addresses[4] - addresses[0];
 
-  //MPI_Type_struct(4, block_lengths, displacements, typelist, &MPI_TYPE);
-
-  //This is the same sort of fix that was applied to QMCProperties
+  // Look in QMCProperties for a discussion about this business
+#ifdef QMC_OLDMPICH
+  MPI_Type_struct(4, block_lengths, displacements, typelist, &MPI_TYPE);
+#else
   MPI_Datatype temp;
   MPI_Type_struct(4, block_lengths, displacements, typelist, &temp);
   MPI_Type_create_resized(temp,0,sizeof(QMCProperty),&MPI_TYPE);   
+#endif
 
   MPI_Type_commit(&MPI_TYPE);
 }
