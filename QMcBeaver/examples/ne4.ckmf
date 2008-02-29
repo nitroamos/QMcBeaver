@@ -1,0 +1,618 @@
+# This example uses 3 particle jastrows on a Neon atom.
+#
+# Optimization tag written Fri Feb 29 10:38:52 2008
+#  iteration            Eavg            Estd    Num. Walkers         Eff. dt    Num. Samples            Skew        Kurtosis
+#      80000 -128.8348941195   8.5633844e-04             100   7.6018557e-03          331920       0.1902470      18.0932807 
+&flags
+# Parameters for QMC
+run_type
+ variational
+dt
+ 0.01
+number_of_walkers
+ 100
+max_time_steps
+ 80000
+max_time
+ -1
+one_e_per_iter
+ 0
+desired_convergence
+ 0
+warn_verbosity
+ 0
+rel_cutoff
+ 100
+limit_branching
+ 1
+
+# Parameters specific to the Green's function
+sampling_method
+ umrigar93_importance_sampling
+QF_modification_type
+ umrigar93_unequalelectrons
+umrigar93_equalelectrons_parameter
+ 0.5
+energy_modification_type
+ umrigar93
+energy_cutoff_type
+ umrigar93
+lock_trial_energy
+ 0
+synchronize_dmc_ensemble
+ 0
+synchronize_dmc_ensemble_interval
+ 1000
+
+# Parameters specific to weights, branching, and fusion
+walker_reweighting_method
+ umrigar93_probability_weighted
+branching_method
+ nonunit_weight_branching
+branching_threshold
+ 2
+fusion_threshold
+ 0.45
+population_control_parameter
+ 1
+correct_population_size_bias
+ 1
+old_walker_acceptance_parameter
+ 30
+
+# Parameters for initialization
+dt_equilibration
+ 0.01
+use_equilibration_array
+ 0
+equilibration_steps
+ 2000
+equilibration_function
+ ramp
+CKAnnealingEquilibration1_parameter
+ 500
+walker_initialization_method
+ dans_walker_initialization
+walker_initialization_combinations
+ 3
+
+# Parameters for added functionality/improvements
+calculate_bf_density
+ 0
+use_hf_potential
+ 0
+hf_num_average
+ 100
+replace_electron_nucleus_cusps
+ 1
+nuclear_derivatives
+ none
+future_walking
+ 0
+
+# Parameters relating to output
+output_interval
+ 1000
+checkpoint
+ 0
+checkpoint_interval
+ 100000
+use_available_checkpoints
+ 0
+checkpoint_input_name
+ ne4_1
+zero_out_checkpoint_statistics
+ 1
+checkpoint_energy_only
+ 0
+print_configs
+ 0
+print_config_frequency
+ 50
+temp_dir
+ /temp1/amosa/ne4_1
+write_all_energies_out
+ 0
+write_electron_densities
+ 0
+max_pair_distance
+ -1
+print_transient_properties
+ 0
+print_transient_properties_interval
+ 10000
+writePllxCorrelationDiagram
+ 0
+pllxCorrelationDiagramMin
+ 0
+pllxCorrelationDiagramMax
+ 0
+writePllyCorrelationDiagram
+ 0
+pllyCorrelationDiagramMin
+ 0
+pllyCorrelationDiagramMax
+ 0
+writePllzCorrelationDiagram
+ 0
+pllzCorrelationDiagramMin
+ 0
+pllzCorrelationDiagramMax
+ 0
+writeOppxCorrelationDiagram
+ 0
+oppxCorrelationDiagramMin
+ 0
+oppxCorrelationDiagramMax
+ 0
+writeOppyCorrelationDiagram
+ 0
+oppyCorrelationDiagramMin
+ 0
+oppyCorrelationDiagramMax
+ 0
+writeOppzCorrelationDiagram
+ 0
+oppzCorrelationDiagramMin
+ 0
+oppzCorrelationDiagramMax
+ 0
+
+# Parameters for wavefunction optimization
+optimize_Psi
+ 1
+optimize_EE_Jastrows
+ 1
+optimize_EN_Jastrows
+ 1
+optimize_NEE_Jastrows
+ 1
+optimize_L
+ 1
+optimize_CI
+ 0
+optimize_Orbitals
+ 0
+optimize_Psi_method
+ automatic
+optimize_Psi_criteria
+ generalized_eigenvector
+a_diag
+ -0.0001
+ksi
+ 0.5
+max_optimize_Psi_steps
+ 30
+equilibrate_first_opt_step
+ 1
+equilibrate_every_opt_step
+ 1
+optimization_max_iterations
+ 1
+optimization_error_tolerance
+ 0.001
+singularity_penalty_function_parameter
+ 1e-06
+optimize_Psi_barrier_parameter
+ 1
+numerical_derivative_surface
+ umrigar88
+line_search_step_length
+ Linearize
+ck_genetic_algorithm_1_population_size
+ 1000
+ck_genetic_algorithm_1_mutation_rate
+ 0.2
+ck_genetic_algorithm_1_initial_distribution_deviation
+ 1
+
+# Parameters for computation/MPI
+iseed
+ 0
+parallelization_method
+ manager_worker
+mpireduce_interval
+ 100
+mpipoll_interval
+ 10
+walkers_per_pass
+ 10
+use_basis_function_interpolation
+ 0
+number_basis_function_interpolation_grid_points
+ 1000
+basis_function_interpolation_first_point
+ 1e-10
+
+# Parameters for the molecule and wavefunction
+atoms
+ 1
+charge
+ 0
+energy
+ -128.5353023841
+trial_function_type
+ restricted
+norbitals
+ 5
+nbasisfunc
+ 69
+ndeterminants
+ 1
+link_Jastrow_parameters
+ 1
+link_NEE_Jastrows
+ 2
+link_Orbital_parameters
+ 1
+link_Determinant_parameters
+ 1
+use_three_body_jastrow
+ 1
+reproduce_NE_with_NEE_jastrow
+ 1
+reproduce_EE_with_NEE_jastrow
+ 1
+
+# Other parameters
+chip_and_mike_are_cool
+ Yea_Baby!
+& 
+&geometry
+Ne   10     0                     0                     0                   
+&
+&basis
+Ne    69    8
+  8 s    
+               24350    0.714783838934      
+                3650    1.33125139195       
+               829.6    2.25794411042       
+                 234    3.42708154678       
+               75.61    4.30176645117       
+               26.73    3.71582265731       
+               9.927    1.43243272735       
+               1.102   -0.00600634770055    
+  8 s    
+               24350   -0.278804001069      
+                3650   -0.520815033489      
+               829.6   -0.887559980092      
+                 234   -1.39476709858       
+               75.61   -1.87625205089       
+               26.73   -2.03063203686       
+               9.927   -1.20467015973       
+               1.102    0.7898307572        
+  1 s    
+               2.836    1.55754198431       
+  1 s    
+              0.3782    0.343717176524      
+  3 px   
+                54.7    8.98363572093       
+               12.43    8.84719661076       
+               3.679    5.77120064407       
+  3 py   
+                54.7    8.98363572093       
+               12.43    8.84719661076       
+               3.679    5.77120064407       
+  3 pz   
+                54.7    8.98363572093       
+               12.43    8.84719661076       
+               3.679    5.77120064407       
+  1 px   
+               1.143    1.68460418743       
+  1 py   
+               1.143    1.68460418743       
+  1 pz   
+               1.143    1.68460418743       
+  1 px   
+                0.33    0.356518862938      
+  1 py   
+                0.33    0.356518862938      
+  1 pz   
+                0.33    0.356518862938      
+  1 dxx  
+               4.014    18.7356968374       
+  1 dyy  
+               4.014    18.7356968374       
+  1 dzz  
+               4.014    18.7356968374       
+  1 dxy  
+               4.014    32.4511788377       
+  1 dxz  
+               4.014    32.4511788377       
+  1 dyz  
+               4.014    32.4511788377       
+  1 dxx  
+               1.096    1.9323150034        
+  1 dyy  
+               1.096    1.9323150034        
+  1 dzz  
+               1.096    1.9323150034        
+  1 dxy  
+               1.096    3.34686776212       
+  1 dxz  
+               1.096    3.34686776212       
+  1 dyz  
+               1.096    3.34686776212       
+  1 fxxx 
+               2.544    12.0328344154       
+  1 fyyy 
+               2.544    12.0328344154       
+  1 fzzz 
+               2.544    12.0328344154       
+  1 fxxy 
+               2.544    12.0328344154       
+  1 fxxz 
+               2.544    12.0328344154       
+  1 fyyx 
+               2.544    12.0328344154       
+  1 fyyz 
+               2.544    12.0328344154       
+  1 fzzx 
+               2.544    12.0328344154       
+  1 fzzy 
+               2.544    12.0328344154       
+  1 fxyz 
+               2.544    46.6029672985       
+  1 s    
+               9.883    3.97261692689       
+  1 s    
+              23.829    7.68669156843       
+  1 px   
+              16.275    46.5952165495       
+  1 py   
+              16.275    46.5952165495       
+  1 pz   
+              16.275    46.5952165495       
+  1 px   
+              59.242    234.275691074       
+  1 py   
+              59.242    234.275691074       
+  1 pz   
+              59.242    234.275691074       
+  1 dxx  
+              17.528    247.138891371       
+  1 dyy  
+              17.528    247.138891371       
+  1 dzz  
+              17.528    247.138891371       
+  1 dxy  
+              17.528    428.057116381       
+  1 dxz  
+              17.528    428.057116381       
+  1 dyz  
+              17.528    428.057116381       
+  1 s    
+              0.1133    0.139181824298      
+  1 px   
+             0.09175    0.0719776526168     
+  1 py   
+             0.09175    0.0719776526168     
+  1 pz   
+             0.09175    0.0719776526168     
+  1 dxx  
+               0.386    0.311126669021      
+  1 dyy  
+               0.386    0.311126669021      
+  1 dzz  
+               0.386    0.311126669021      
+  1 dxy  
+               0.386    0.538887198335      
+  1 dxz  
+               0.386    0.538887198335      
+  1 dyz  
+               0.386    0.538887198335      
+  1 fxxx 
+               1.084    1.76510414437       
+  1 fyyy 
+               1.084    1.76510414437       
+  1 fzzz 
+               1.084    1.76510414437       
+  1 fxxy 
+               1.084    1.76510414437       
+  1 fxxz 
+               1.084    1.76510414437       
+  1 fyyx 
+               1.084    1.76510414437       
+  1 fyyz 
+               1.084    1.76510414437       
+  1 fzzx 
+               1.084    1.76510414437       
+  1 fzzy 
+               1.084    1.76510414437       
+  1 fxyz 
+               1.084    6.83621895545       
+&
+&wavefunction
+ -0.0417703096              -0.279604157               -0.0524507576             
+ -0.196678212                0.15372022                 0.249516327              
+  0.244717426                0.119654457                0.194221298              
+  0.190485875                0.101055703                0.164032084              
+  0.160877285               -0.0117289814              -0.0117289814             
+ -0.0117289814               0                          0                        
+  0                          0.00068255223              0.00068255223            
+  0.00068255223              0                          0                        
+  0                          0.0172989689               0.0280794237             
+  0.0275393773               0.0125575                  0.0123159839             
+  0.00773633406              0.0123159839               0.00773633406            
+  0.0125575                  0                         -0.0491904027             
+  0.0190762876              -0.00250157093             -0.00406051197            
+ -0.00398241689             -0.000381785869            -0.000619709028           
+ -0.000607790278             0.00686546334              0.00686546334            
+  0.00686546334              0                          0                        
+  0                         -0.00977292413              0.0101466213             
+  0.0164698417               0.0161530802               0.00692520129            
+  0.00692520129              0.00692520129              0                        
+  0                          0                          0.0194009686             
+  0.0314913578               0.0308856902               0.0140833633             
+  0.0138125006               0.00867637693              0.0138125006             
+  0.00867637693              0.0140833633               0                        
+
+ -0.04177031                -0.279604157               -0.0524507576             
+ -0.196678212                0.240706555               -0.0579831879             
+ -0.290642781                0.187363849               -0.0451335995             
+ -0.226233765                0.158240538               -0.0381181593             
+ -0.191068622               -0.0117289814              -0.0117289814             
+ -0.0117289814               0                          0                        
+  0                          0.000682552227             0.000682552227           
+  0.000682552227             0                          0                        
+  0                          0.0270880123              -0.00652516216            
+ -0.0327076062              -0.00291814123             -0.0146272862             
+  0.0121141274              -0.0146272862               0.0121141274             
+ -0.00291814123              0                         -0.0491904027             
+  0.0190762876              -0.00391714586              0.00094359127            
+  0.00472978463             -0.000597828715             0.000144009434           
+  0.000721852382             0.00686546333              0.00686546333            
+  0.00686546333              0                          0                        
+  0                         -0.00977292413              0.0158883344             
+ -0.00382730033             -0.0191844784               0.00692520129            
+  0.00692520129              0.00692520129              0                        
+  0                          0                          0.0303794799             
+ -0.00731803538             -0.0366819113              -0.00327272491            
+ -0.0164046495               0.0135861164              -0.0164046495             
+  0.0135861164              -0.00327272491              0                        
+
+  0.967907516               -0.0658035008               0.0879421929             
+ -0.0506872478               9.32909603e-11            -3.02478453e-10           
+  4.03927009e-11             7.26168566e-11            -2.35446546e-10           
+  3.14413204e-11             6.1329496e-11             -1.98849395e-10           
+  2.65541697e-11            -0.012582345               -0.012582345              
+ -0.012582345                0                          0                        
+  0                          0.00686498513              0.00686498513            
+  0.00686498513              0                          0                        
+  0                          1.0498537e-11             -3.40395384e-11           
+  4.5456094e-12             -1.52229444e-11             2.03285832e-12           
+  4.69508849e-12             2.03285832e-12             4.69508849e-12           
+ -1.52229444e-11             0                         -0.083576366              
+  0.0305224206              -1.51817344e-12             4.92239281e-12           
+ -6.57331916e-13            -2.31701271e-13             7.51247943e-13           
+ -1.00320976e-13             0.0126650754               0.0126650754             
+  0.0126650754               0                          0                        
+  0                         -0.00246622679              6.15786294e-12           
+ -1.99657164e-11             2.66620383e-12             0.00341934065            
+  0.00341934065              0.00341934065              0                        
+  0                          0                          1.17742155e-11           
+ -3.81756868e-11             5.09794693e-12            -1.70726861e-11           
+  2.27987118e-12             5.26558924e-12             2.27987118e-12           
+  5.26558924e-12            -1.70726861e-11             0                        
+
+ -0.0417703104              -0.279604157               -0.0524507577             
+ -0.196678212               -0.0649054692              -0.330717249              
+  0.17941099                -0.0505218419              -0.257427375              
+  0.139651925               -0.0426688684              -0.217413586              
+  0.117944821               -0.0117289813              -0.0117289813             
+ -0.0117289813               0                          0                        
+  0                          0.000682552225             0.000682552225           
+  0.000682552225             0                          0                        
+  0                         -0.00730416396             -0.0372174031             
+  0.0201900904              -0.0166441287               0.00902928292            
+ -0.00326652143              0.00902928292             -0.00326652143            
+ -0.0166441287               0                         -0.0491904027             
+  0.0190762875               0.00105624124              0.00538193777            
+ -0.00291965051              0.000161201897             0.000821382981           
+ -0.000445592525             0.00686546333              0.00686546333            
+  0.00686546333              0                          0                        
+  0                         -0.00977292413             -0.00428421984            
+ -0.0218296766               0.0118423938               0.00692520129            
+  0.00692520129              0.00692520129              0                        
+  0                          0                         -0.00819169379            
+ -0.0417396942               0.0226433907              -0.0186665587             
+  0.0101264321              -0.00366343683              0.0101264321             
+ -0.00366343683             -0.0186665587               0                        
+
+  0.0417703095               0.279604157                0.0524507576             
+  0.196678212                0.329521306               -0.139184109              
+  0.133485635                0.256496464               -0.108339677              
+  0.103904035                0.216627372               -0.0914996614             
+  0.087753483                0.0117289814               0.0117289814             
+  0.0117289814               0                          0                        
+  0                         -0.000682552231            -0.000682552231           
+ -0.000682552231             0                          0                        
+  0                          0.0370828172              -0.0156631416             
+  0.0150218614              -0.00700476989              0.00671798066            
+  0.01658394                 0.00671798066              0.01658394               
+ -0.00700476989              0                          0.0491904027             
+ -0.0190762876              -0.00536247556              0.00226501707            
+ -0.00217228276             -0.000818412688             0.000345683387           
+ -0.00033153042             -0.00686546334             -0.00686546334            
+ -0.00686546334              0                          0                        
+  0                          0.00977292413              0.0217507359             
+ -0.00918713523              0.00881099562             -0.00692520129            
+ -0.00692520129             -0.00692520129              0                        
+  0                          0                          0.0415887547             
+ -0.0175663718               0.0168471696              -0.0078559203             
+  0.00753428328              0.0185990565               0.00753428328            
+  0.0185990565              -0.0078559203               0                        
+
+Alpha Occupation
+1   1   1   1   1   
+
+Beta Occupation
+1   1   1   1   1   
+
+CI Coeffs
+  1                        
+
+&
+
+&Jastrow
+ParticleTypes:	Electron_up	Electron_down
+CorrelationFunctionType:	Cambridge2
+NumberOfParameterTypes:	2
+NumberOfParametersOfEachType:	1	8
+Parameters:	0.29876612863	0.520873443768	2.48134709982	-12.0228688816	42.0930715856	-78.3442579376	45.168034558	45.5911174086	-37.8649366552
+NumberOfConstantTypes:	2
+NumberOfConstantsOfEachType:	1	1
+Constants:	0.5	3
+
+ParticleTypes:	Electron_up	Electron_up
+CorrelationFunctionType:	Cambridge2
+NumberOfParameterTypes:	2
+NumberOfParametersOfEachType:	1	8
+Parameters:	0.304400332203	0.429517199916	2.97722578499	-30.8203179403	105.180523268	-134.884742452	16.8427197181	76.1641357833	-16.0835586078
+NumberOfConstantTypes:	2
+NumberOfConstantsOfEachType:	1	1
+Constants:	0.25	3
+
+ParticleTypes:	Electron_up	Ne
+CorrelationFunctionType:	Cambridge2
+NumberOfParameterTypes:	2
+NumberOfParametersOfEachType:	1	8
+Parameters:	0.28978135101	-4.64246095079	-27.3667344346	28.7135410922	-105.588325329	113.64178816	36.4981704199	-34.6887676602	-9.85534858327
+NumberOfConstantTypes:	2
+NumberOfConstantsOfEachType:	1	1
+Constants:	0	3
+
+ParticleTypes:	Ne	Electron_up	Electron_down
+threeBodyCorrelationFunctionType:	Cambridge
+NumberOfParameterTypes:	2
+NumberOfParametersOfEachType:  4  4
+Parameters:
+ -0.191252552024      
+
+ -0.573757656071       -0.573757656071       -1.72127296821         0                   
+  0                     0                     27.2886914521       
+
+ -0.435797844453       -0.435797844453       -37.8173446608        -37.8173446608       
+  99.3359141416        -13.6443457261        -13.6443457261        -10.8191191271       
+ -10.8191191271        -12.9608895979        -4.93700946439        -5.58976871786       
+ -5.58976871786         34.6283522622         28.6151949137         28.6151949137       
+ -29.3071639374        -29.3071639374         17.9564714671       
+
+  3.69268289745         3.69268289745         23.1446211589         23.1446211589       
+ -98.1957644773        -98.1957644773        -13.9090423057         10.8191191271       
+  10.8191191271         6.48044479895         6.48044479895         0                   
+  0                     0                    -38.6577380601        -38.6577380601       
+ -93.9608024639        -93.9608024639         15.5271676936         15.5271676936       
+  1.42097254428         18.3257267968        -38.6009685429        -38.6009685429       
+  25.3267556322         18.4146496892         18.4146496892         33.2315373513       
+  33.2315373513         11.3140818053         13.1472210547         13.1472210547       
+  39.441663164          39.441663164         -18.8397921933        -18.8397921933       
+ -18.2635321716       
+
+C:  3
+Cutoff:  0.333819477753
+
+
+&Jastrow
+
+
