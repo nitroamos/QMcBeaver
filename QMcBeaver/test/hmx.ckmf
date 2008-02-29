@@ -7,11 +7,11 @@ dt
 number_of_walkers
  1
 max_time_steps
- 2000
+ 100
 max_time
  0
 one_e_per_iter
- 1
+ 0
 desired_convergence
  0
 warn_verbosity
@@ -61,7 +61,7 @@ dt_equilibration
 use_equilibration_array
  0
 equilibration_steps
- 9
+ 10
 equilibration_function
  ramp
 CKAnnealingEquilibration1_parameter
@@ -87,7 +87,7 @@ future_walking
 
 # Parameters relating to output
 output_interval
- 20
+ 5
 checkpoint
  0
 checkpoint_interval

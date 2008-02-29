@@ -5,7 +5,7 @@
 run_type
  diffusion
 dt
- 0.01
+ 0.001
 number_of_walkers
  10
 max_time_steps
@@ -89,7 +89,7 @@ future_walking
 
 # Parameters relating to output
 output_interval
- 50
+ 5
 checkpoint
  0
 checkpoint_interval
