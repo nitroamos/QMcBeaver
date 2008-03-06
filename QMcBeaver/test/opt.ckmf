@@ -1,4 +1,4 @@
-# This will test the Cambridge style Jastrows
+# This will test the generalized_eigenvector optimization method.
 
 &flags
 # Parameters for QMC

@@ -1,3 +1,5 @@
+# This will test a large molecule (516 basisfunctions, 172 electrons)
+
 &flags
 # Parameters for QMC
 run_type

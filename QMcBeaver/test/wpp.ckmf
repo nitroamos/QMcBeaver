@@ -1,4 +1,4 @@
-# This will test to make sure the walkers_per_pass parameter is working
+# This will test to make sure the walkers_per_pass parameter is working (w/ variational)
 
 &flags
 # Parameters for QMC

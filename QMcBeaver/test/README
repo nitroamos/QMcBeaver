@@ -1,0 +1,63 @@
+
+To test your QMcBeaver.x, step into the QMcBeaver/test directory and run:
+
+../bin/test.pl ../bin/QMcBeaver.x
+
+And it will compare the results from QMcBeaver.x with the reference
+results in this directory. The reference was produced by this QMcBeaver:
+
+Compiler version 3.4.6 20060404 (Red Hat 3.4.6-8),
+LAPACK 3.1.1, GotoBLAS 1.17, and run on "hive", a
+Intel Dual-Core Xeon Processor 5100 (Woodcrest), 65nm
+
+This testing system is new, so I don't know how much of an
+error to expect when running on different systems. Double precision
+error would be approximately 1.0e-15. If only one test fails, then you
+might want to inspect the reference and new .out files directly.
+
+I've added several tests, and I've put descriptions of the tests
+on the first line of their ckmf file.
+
+*****************************************************************
+
+
+Here are some results from the literature.
+To use jaguar, use:
+   ip164=2
+-------------------------------------------
+From Morosi et al. International J. Quantum Chem. Vol 74, 23-33 (1999).
+
+For Li:
+    HF Limit: -7.43274
+    Exact Energy: -7.47806
+
+For Be:
+    HF Limit: -14.57302
+    Exact Energy: -14.66736
+
+For B:
+    HF Limit: -24.52906
+    Exact Energy: -24.65393
+
+For H-:
+    HF Limit: DNE
+    Exact Energy: -0.52775
+
+For He:
+    HF Limit: -2.86168
+    Exact Energy: -2.90372
+
+For Li+:
+    HF Limit: -7.23641
+    Exact Energy: -7.2799
+
+For H2:
+    Equilibrium bond distance: 1.4011 au
+    HF Limit: -1.133623
+    Exact Energy: -1.174476
+
+For LiH:
+    Equilibrium bond distance: 3.015 au
+    HF Limit: -7.98735
+    Exact Energy: -8.07021
+
