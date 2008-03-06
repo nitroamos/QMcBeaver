@@ -55,7 +55,6 @@ QMCConfigIO::QMCConfigIO()
   areWriting = true;
   numWritten = 0;
   numRead    = 0;
-  filename   = string("");
 }
 
 QMCConfigIO::~QMCConfigIO()
