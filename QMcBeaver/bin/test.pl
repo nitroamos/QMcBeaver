@@ -55,9 +55,12 @@ for(my $index=0; $index<=$#files; $index++){
     } else {
 	$outname = "${base}.out";
     }
-
+    $refCompiler = `grep Compiler ${base}.out`;
+    $description = `grep "This will" ${base}.ckmf`;
     my $command = "$exe $files[$index] > $outname";
+    print "$description";
     print "$command\n";
+    print "Reference compiler $refCompiler";
     `$command`;
 
     next if($testmode == 0);
@@ -66,6 +69,8 @@ for(my $index=0; $index<=$#files; $index++){
     getEnergies("${base}.out",\@origE);
     my @newE;
     getEnergies($outname,\@newE);
+    $newCompiler = `grep Compiler $outname`;
+    print "     your compiler $newCompiler";
     my $pass = 1;
     my $avg  = 0;
     my $num  = 0;
