@@ -104,6 +104,7 @@ def normalize( xexp, yexp, zexp, precoeff, expcoeff):
     return value * precoeff
 
 Infile = sys.argv[1]
+
 IN = open(Infile,'r')
 gamess_output = IN.readlines()
 IN.close()
@@ -117,11 +118,12 @@ else:
 	print "The file ", Infile, " is not recognized as a GAMESS log file!"
 	sys.exit(0)
 	
-Datafile = filebase + "dat"	
+Datafile = filebase + "dat"
+
 IN2 = open(Datafile,'r')
 gamess_data = IN2.readlines()
 IN2.close()
-                       
+
 Outfile = filebase + "ckmf"
 OUT = open(Outfile,'w')
 
@@ -220,6 +222,7 @@ for i in range(len(gamess_output)):
     if string.find(gamess_output[i], '$CONTRL OPTIONS') != -1:
         end_basis = i
         break
+
 basisdata = gamess_output[start_basis:end_basis]
 
 end = 0
@@ -242,7 +245,7 @@ for line in basisdata:
         line = string.replace(line,')',' ')
         line = string.replace(line,'(',' ')
         line = string.split(line)
-        if len(line) == 1 and line[0] != str(bfnumber) and line[0] != str(bfnumber+1):
+        if len(line) == 1:
             # We are starting a new atom
             if bf != []:
                 # We add the old contracted basis function to the atom and clear the temp
@@ -255,7 +258,8 @@ for line in basisdata:
             # We start the new atom with the label
             atom = atom + [line]
             
-        elif len(line) > 1 and line[0] == str(bfnumber+1):
+        elif len(line) > 1 and line[0] != str(bfnumber):
+            bfnumber = string.atoi(line[0])
             # We are starting a new contracted basis function for this atom
             if bf != []:
                 # We add the old contracted basis function to the atom and clear the temp
@@ -267,7 +271,6 @@ for line in basisdata:
                 temp = temp + [line[6]]
             line = temp
             bf = [line]
-            bfnumber = bfnumber+1
 
         elif len(line) > 1 and line[0] == str(bfnumber):
             # We are continuing to add primitive basis functions to the contracted one
