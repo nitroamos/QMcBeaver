@@ -3,7 +3,7 @@
 run_type
  variational
 dt
- 0.01
+ 0.1
 number_of_walkers
  100
 max_time_steps
@@ -53,11 +53,11 @@ population_control_parameter
 correct_population_size_bias
  1
 old_walker_acceptance_parameter
- 30
+ 50
 
 # Parameters for initialization
 dt_equilibration
- 0.01
+ -0.1
 use_equilibration_array
  0
 equilibration_steps
@@ -94,16 +94,12 @@ checkpoint_interval
  100000
 use_available_checkpoints
  0
-checkpoint_input_name
- ne_5
 zero_out_checkpoint_statistics
  1
 print_configs
  0
 print_config_frequency
  50
-temp_dir
- /temp2/amosa/
 write_all_energies_out
  0
 write_electron_densities
