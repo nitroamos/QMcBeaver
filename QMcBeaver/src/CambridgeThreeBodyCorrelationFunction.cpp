@@ -15,12 +15,13 @@ void CambridgeThreeBodyCorrelationFunction::initializeParameters(
   Nen = electron_nucleus;
   Nee = electron_electron;
 
-  if( L <= 0.0)
+  if( fabs(L) < 1e-10)
     {
+      //This ensures that the electrons are always outside the range 1/L
+      L = 1.0e10;
       if(globalInput.flags.a_diag < 0.0)
 	{
 	  //hopefully this isn't the guiding function...
-
 	} else {
 	  cerr << "Error: You can not have L = " << L << " in Cambridge 2 particle Jastrows!\n";
 	  print(cerr);
@@ -558,14 +559,6 @@ void CambridgeThreeBodyCorrelationFunction::print(ostream & strm)
   else
     strm << " (not optimized)" << endl;
 
-  strm.unsetf(ios::scientific);
-  strm << "r1  = x1  / " << (1.0 / L) << endl;
-  strm << "r2  = x2  / " << (1.0 / L) << endl;
-  strm << "r12 = x12 / " << (1.0 / L) << endl;
-  strm << "(r1 - 1)^" << C;
-  strm << " (r2 - 1)^" << C;
-  strm << " (" << endl;
-
   //**************************
   bool symmetric = true;
   bool extraPrec = false;
@@ -581,6 +574,14 @@ void CambridgeThreeBodyCorrelationFunction::print(ostream & strm)
       coPrec  = 7;
       coWidth = 10;
     }
+
+  strm.unsetf(ios::scientific);
+  strm << "x1  = r1  / " << setprecision(coPrec) << (1.0 / L) << endl;
+  strm << "x2  = r2  / " << setprecision(coPrec) << (1.0 / L) << endl;
+  strm << "x12 = r12 / " << setprecision(coPrec) << (1.0 / L) << endl;
+  strm << "(x1 - 1)^" << C;
+  strm << " (x2 - 1)^" << C;
+  strm << " (" << endl;
 
   int counter = 0;
   for(int p=0; p<max(Nen,Nee); p++)
@@ -609,17 +610,17 @@ void CambridgeThreeBodyCorrelationFunction::print(ostream & strm)
 	      
 	      stringstream temp;
 	      stringstream lm;
-	      if(l > 0) lm << "r1";
+	      if(l > 0) lm << "x1";
 	      if(l > 1) lm << "^" << l;
-	      if(m > 0) lm << " r2";
+	      if(m > 0) lm << " x2";
 	      if(m > 1) lm << "^" << m;
 	      
 	      if(l != m)
 		{
 		  lm << " + ";
-		  if(l > 0) lm << "r2";
+		  if(l > 0) lm << "x2";
 		  if(l > 1) lm << "^" << l;
-		  if(m > 0) lm << " r1";
+		  if(m > 0) lm << " x1";
 		  if(m > 1) lm << "^" << m;
 		  temp << " (" << lm.str() << ")";
 		} else {
@@ -627,7 +628,7 @@ void CambridgeThreeBodyCorrelationFunction::print(ostream & strm)
 		    temp << " " << lm.str();
 		}
 	      
-	      if(n > 0) temp << " r12";
+	      if(n > 0) temp << " x12";
 	      if(n > 1) temp << "^" << n;	  
 	      
 	      int extrawidth = co.str().length() - coWidth;
