@@ -6,11 +6,13 @@ require "$path/utilities.pl";
 
 my $calcDiff = 1;
 my $useAvg   = 1;
-my $withErr  = 0;
+my $withErr  = 1;
 
 #add lines with these values:
-my @exact_titles    = ("exp" , "ccsdt");
-my @exact           = (-21.5539 , -22.5373);
+#my @exact_titles    = ("exp" , "ccsdt");
+#my @exact           = (-21.5539 , -22.5373);
+my @exact_titles    = ("exp");
+my @exact           = (-9.353);
 
 my $every    = 1;
 if($withErr){
@@ -390,7 +392,7 @@ my @energies;
 my @dt_values;
 my @keys;
 
-my $all_dt   = 0;
+my $all_dt   = "";
 my $all_form = "";
 
 #let's not assume we know what's in the data files
@@ -400,13 +402,13 @@ foreach $line (@lines)
 {
     #print "$line\n";
     my @data = split/[= ]+/, $line;
-    
-    if($all_dt == 0){
+
+    if($all_dt eq ""){
 	$all_dt = $data[2];
-    } elsif($all_dt == -1){
+    } elsif($all_dt eq "-1"){
 	
-    } elsif($data[2] != $all_dt){
-	$all_dt == -1;
+    } elsif($data[2] ne $all_dt){
+	$all_dt = "-1";
     }
 
     if($calcDiff){

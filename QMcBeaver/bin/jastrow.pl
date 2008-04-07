@@ -43,6 +43,9 @@ my $numbf = 0;
 my $numci = 1;
 for(my $index=0; $index<=$#files; $index++){
     $base = substr($files[$index],0,-4);
+
+    next if($base !~ /tw/);
+
     #print "base = $base\n";
     open (CKMFFILE, "$base.ckmf");
     my $isd = "";
@@ -77,6 +80,9 @@ for(my $index=0; $index<=$#files; $index++){
     if($useVar == 0){
 	next if($isd eq "variational");
     }
+
+    $numjw = "";
+    $numjwID = 0;
 
     while(<CKMFFILE> !~ /Jastrow/){}
     while(<CKMFFILE>){
