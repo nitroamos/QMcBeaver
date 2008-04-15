@@ -1,3 +1,9 @@
+Tues, April 15, 2008 Daniel R Fisher
+1.  I fixed a few problems that were happening when DMC runs were
+    being restarted from checkpoints.  The ensemble was not being
+    synchronized, which was making the run crash.  I also added the
+    correction divisor queue to the checkpoint.
+
 Wed, March 26, 2008 Daniel R Fisher
 1.  I fixed a problem with the gamess2qmcbeaver.py script.  It was not
     extracting the basis set properly when symmetry was used in the

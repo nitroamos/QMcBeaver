@@ -851,6 +851,20 @@ void QMCRun::toXML(ostream& strm)
   << populationSizeBiasCorrectionFactor
   << "\n</populationSizeBiasCorrectionFactor>" << endl;
   
+  if (globalInput.flags.run_type == "diffusion")
+    {
+      int cDsize = correctionDivisor.size();
+
+      strm << "<correctionDivisorSize>\n\t" << cDsize
+	   << "\n</correctionDivisorSize>" << endl;
+      strm << "<correctionDivisor>\n";
+      for (int i=0; i<cDsize; i++)
+	{
+	  strm << correctionDivisor.front() << endl;
+	  correctionDivisor.pop();
+	}
+      strm << "</correctionDivisor>" << endl;
+    }
   // writes out the properties
   if (Input->flags.use_equilibration_array == 1)
     EquilibrationArray.toXML(strm);
@@ -867,8 +881,7 @@ void QMCRun::toXML(ostream& strm)
   for(list <QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
     {
       wp->toXML(strm);
-    }
-    
+    }    
   strm << "</walkers>\n" << endl;
 }
 
@@ -886,6 +899,30 @@ bool QMCRun::readXML(istream& strm)
   if (temp != "</populationSizeBiasCorrectionFactor>")
     return false;
   
+  if (globalInput.flags.run_type == "diffusion")
+    {
+      strm >> temp;
+      if (temp != "<correctionDivisorSize>")
+	return false;
+      strm >> temp;
+      int cDsize = atoi(temp.c_str());
+      strm >> temp;
+      if (temp != "</correctionDivisorSize>")
+	return false;
+
+      strm >> temp;
+      if (temp != "<correctionDivisor>")
+	return false;
+      for (int i=0; i<cDsize; i++)
+	{
+	  strm >> temp;
+	  correctionDivisor.push(atof(temp.c_str()));
+	}
+      strm >> temp;
+      if (temp != "</correctionDivisor>")
+	return false;
+    }
+
   // read the properties
   if (Input->flags.use_equilibration_array == 1)
     {
@@ -1060,8 +1097,8 @@ void QMCRun::calculatePopulationSizeBiasCorrectionFactor()
       temp = exp(temp);
       populationSizeBiasCorrectionFactor *= temp;
 
-      //this is not supposed to be cleared when transitioning from equilibration to
-      //production steps.
+      //this is not supposed to be cleared when transitioning from 
+      //equilibration to production steps.
       correctionDivisor.push(temp);
       if(correctionDivisor.size() > Tp)
 	{

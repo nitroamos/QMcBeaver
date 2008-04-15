@@ -1204,7 +1204,7 @@ void QMCManager::equilibration_step()
     
     if( iteration >= globalInput.flags.equilibration_steps )
     { 
-      QMCnode.zeroOut();
+      zeroOut();
       equilibrating = false;
       globalInput.flags.dt = globalInput.flags.dt_run;
     }
@@ -1219,7 +1219,7 @@ void QMCManager::equilibration_step()
     {
       globalInput.flags.dt = globalInput.flags.dt_run;
       
-      QMCnode.zeroOut();
+      zeroOut();
       equilibrating = false;
     }
   }
@@ -1237,7 +1237,7 @@ void QMCManager::equilibration_step()
     // step function
     if(  iteration >= globalInput.flags.equilibration_steps )
     {
-      QMCnode.zeroOut();
+      zeroOut();
       equilibrating = false;
       globalInput.flags.dt = globalInput.flags.dt_run;
     }
@@ -1939,28 +1939,30 @@ bool QMCManager::readXML( istream & strm )
     This just mimics the way these variables are updated
     in run()
   */
-  gatherProperties();
 
   if(globalInput.flags.run_type == "diffusion" )
     {
       if( globalInput.flags.synchronize_dmc_ensemble == 1 )
 	{
+	  synchronizeDMCEnsemble();
 	  updateEstimatedEnergy( &Properties_total );
 	  updateEffectiveTimeStep( &Properties_total );
 	}
       else
 	{
+	  gatherProperties();
 	  updateEstimatedEnergy( QMCnode.getProperties() );
 	  updateEffectiveTimeStep( QMCnode.getProperties() );
-	  }
+	}
       
       updateTrialEnergy( QMCnode.getWeights(),
 			 globalInput.flags.number_of_walkers_initial );
-    } else {
+    } 
+  else 
+    {
+      gatherProperties();
       updateEffectiveTimeStep(QMCnode.getProperties() );
     }
-
-
   return true;
 }
 
@@ -2011,7 +2013,7 @@ void QMCManager::initializeCalculationState(long int iseed)
 	      clog << " unsuccessful; readXML failed." << endl;
 
 	      //it's probably not even worth continuing
-	      exit(0);
+	      //	      exit(0);
 	      clog << " Randomly initializing walkers." << endl;
 	      qmcCheckpoint.close();
 	      QMCnode.zeroOut();
@@ -2027,7 +2029,7 @@ void QMCManager::initializeCalculationState(long int iseed)
 	  clog << " unsuccessful; ifstream open failed." << endl;
 	  
 	  //it's probably not even worth continuing
-	  exit(0);
+	  //	  exit(0);
 
 	  clog << "Randomly initializing walkers." << endl;
           localTimers.getInitializationStopwatch()->start();
