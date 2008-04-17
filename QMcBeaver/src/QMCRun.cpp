@@ -847,21 +847,23 @@ double QMCRun::getPopulationSizeBiasCorrectionFactor()
 
 void QMCRun::toXML(ostream& strm)
 {
-  strm << "<populationSizeBiasCorrectionFactor>\n\t"
-  << populationSizeBiasCorrectionFactor
-  << "\n</populationSizeBiasCorrectionFactor>" << endl;
-  
   if (globalInput.flags.run_type == "diffusion")
     {
-      int cDsize = correctionDivisor.size();
+      strm << "<populationSizeBiasCorrectionFactor>\n\t"
+	   << populationSizeBiasCorrectionFactor
+	   << "\n</populationSizeBiasCorrectionFactor>" << endl;
+  
+      queue<double> temp_CD = correctionDivisor;
+
+      int cDsize = temp_CD.size();
 
       strm << "<correctionDivisorSize>\n\t" << cDsize
 	   << "\n</correctionDivisorSize>" << endl;
       strm << "<correctionDivisor>\n";
       for (int i=0; i<cDsize; i++)
 	{
-	  strm << correctionDivisor.front() << endl;
-	  correctionDivisor.pop();
+	  strm << temp_CD.front() << endl;
+	  temp_CD.pop();
 	}
       strm << "</correctionDivisor>" << endl;
     }
@@ -889,18 +891,18 @@ bool QMCRun::readXML(istream& strm)
 {
   string temp;
 
-  // read populationSizeBiasCorrectionFactor
-  strm >> temp;
-  if (temp != "<populationSizeBiasCorrectionFactor>")
-    return false;
-  strm >> temp;
-  populationSizeBiasCorrectionFactor = atof(temp.c_str());
-  strm >> temp;
-  if (temp != "</populationSizeBiasCorrectionFactor>")
-    return false;
-  
   if (globalInput.flags.run_type == "diffusion")
     {
+      // read populationSizeBiasCorrectionFactor
+      strm >> temp;
+      if (temp != "<populationSizeBiasCorrectionFactor>")
+	return false;
+      strm >> temp;
+      populationSizeBiasCorrectionFactor = atof(temp.c_str());
+      strm >> temp;
+      if (temp != "</populationSizeBiasCorrectionFactor>")
+	return false;
+  
       strm >> temp;
       if (temp != "<correctionDivisorSize>")
 	return false;
