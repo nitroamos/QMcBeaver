@@ -17,6 +17,7 @@ QMCDansWalkerInitialization::QMCDansWalkerInitialization(QMCInput * INPUT)
 
 QMCDansWalkerInitialization::~QMCDansWalkerInitialization()
 {
+  arraysInitialized = false;
   phiSplines.deallocate();
   phiSplinesMade.deallocate();
   thetaSplines.deallocate();

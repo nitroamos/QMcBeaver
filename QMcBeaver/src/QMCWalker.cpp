@@ -766,9 +766,10 @@ void QMCWalker::reweight_walker()
   
   bool weightIsNaN = false;
 
-  if( Input->flags.run_type == "variational" )
-      // Keep weights constant for VMC
-      dW = 1.0;
+  if( Input->flags.run_type == "variational" || Input->flags.equilibration_steps+iteration < 500 )
+    // Keep weights constant for VMC
+    // Keep weights constant for the first 500 iterations of a DMC calculation.
+    dW = 1.0;
 
   else
     {     
@@ -934,13 +935,14 @@ void QMCWalker::reweight_walker()
 		       Input->flags.energy_estimated_original);
     }
 
-  if(iteration < -100)
+  if(iteration < -100 && Input->flags.equilibration_steps+iteration >= 500)
     {
       /*
 	We're equilibrating when iteration < 0.
 
 	If we're equilibrating, we can be more aggressive about
 	handling bad walkers.
+	We are going to not branch for the first five hundred steps.
       */
       
       // we probably don't need warnings for the first couple steps

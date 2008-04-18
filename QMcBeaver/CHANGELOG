@@ -1,3 +1,12 @@
+Fri, April 18, 2008 Daniel R Fisher
+1.  Fixed a problem in QMCDansWalkerInitialization that was causing a
+    segmentation fault when the ensemble was randomly initialized
+    during the run.
+2.  I made a small change in the way walkers are reweighted in
+    QMCWalker.  In a DMC run, the walkers are not reweighted for the
+    first 500 iterations, which should allow them a few accepted moves
+    before diffusion starts.
+
 Tues, April 15, 2008 Daniel R Fisher
 1.  I fixed a few problems that were happening when DMC runs were
     being restarted from checkpoints.  The ensemble was not being
