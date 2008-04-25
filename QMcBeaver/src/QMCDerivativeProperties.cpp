@@ -24,29 +24,35 @@ QMCDerivativeProperties::QMCDerivativeProperties(QMCProperties * properties,
 
 double QMCDerivativeProperties::getEffectiveTimeStep()
 {
-  double value = dt * properties->distanceMovedAccepted.getAverage()/
-    properties->distanceMovedTrial.getAverage();
-
+  double value = dt;
+  if (properties->distanceMovedAccepted.getNumberSamples() > 0)
+    {
+      value = dt * properties->distanceMovedAccepted.getAverage()/
+	properties->distanceMovedTrial.getAverage();
+    }
   return value;
 }
 
 double QMCDerivativeProperties::getEffectiveTimeStepVariance()
 {
-  double distanceMovedAcceptAve =
-    properties->distanceMovedAccepted.getAverage();
-  double distanceMovedAcceptVar = 
-    properties->distanceMovedAccepted.getVariance();
+  double result = 0.0;
+  if (properties->distanceMovedAccepted.getNumberSamples() > 0)
+    {
+      double distanceMovedAcceptAve =
+	properties->distanceMovedAccepted.getAverage();
+      double distanceMovedAcceptVar = 
+	properties->distanceMovedAccepted.getVariance();
 
-  double distanceMovedTrialAve = properties->distanceMovedTrial.getAverage();
-  double distanceMovedTrialVar = properties->distanceMovedTrial.getVariance();
+      double distanceMovedTrialAve = properties->distanceMovedTrial.getAverage();
+      double distanceMovedTrialVar = properties->distanceMovedTrial.getVariance();
 
-  double temp1 = 1.0/distanceMovedTrialAve/distanceMovedTrialAve;
-  double temp2 = distanceMovedAcceptAve * temp1;
-  temp2 = temp2*temp2;
+      double temp1 = 1.0/distanceMovedTrialAve/distanceMovedTrialAve;
+      double temp2 = distanceMovedAcceptAve * temp1;
+      temp2 = temp2*temp2;
 
-  double result = dt * ( temp1 * distanceMovedAcceptVar + 
-			 temp2 * distanceMovedTrialVar );
-
+      result = dt * ( temp1 * distanceMovedAcceptVar + 
+		      temp2 * distanceMovedTrialVar );
+    }
   return result;
 }
 

@@ -1,3 +1,8 @@
+Thurs, April 24, 2008 Daniel R Fisher
+1.  Fixed a problem in QMCDerivativeProperties.  If there are no
+    samples in the QMCProperties, it divides by zero when it tries to
+    calculate the effective time step.
+
 Fri, April 18, 2008 Daniel R Fisher
 1.  Fixed a problem in QMCDansWalkerInitialization that was causing a
     segmentation fault when the ensemble was randomly initialized
