@@ -69,11 +69,26 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
   int nbeta = Input->WF.getNumberBetaElectrons();
   int nalpha = Input->WF.getNumberAlphaElectrons();
 
+  cout << "QMCDansWalkerInitialization" << endl;
+  cout << "nelectrons = " << nelectrons << ", nalpha = " << nalpha << ", nbeta = " << nbeta << endl;
+
   // This array holds the numbers of total, alpha, and beta electrons on each
   // center.
 
+  cout << "Assigning electrons to nuclei" << endl;
+
   Array2D<int> ab_count(natoms,3);
   ab_count = assign_electrons_to_nuclei();
+
+  cout << "ab_count:" << endl;
+  for (int i=0; i<natoms; i++)
+    {
+      for (int j=0; j<3; j++)
+	cout << ab_count(i,j) << "\t";
+      cout << endl;
+    }
+
+  cout << "Redistributing charged centers" << endl;
 
   // Redistribute electrons if there are charged centers.
 
@@ -169,7 +184,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 		      {
 			for (int l=0; l<natoms; l++) 
 			  if ( (l != give && l != get) && 
-			       (ab_count(l,1) < ab_count(l,2)) )
+			       (ab_count(l,1) <= ab_count(l,2)) )
 			    { 
 			      ab_count(give,0) -= 1;
 			      ab_count(give,1) -= 1;
@@ -196,7 +211,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 		      {
 			for (int m=0; m<natoms; m++)
 			  if ( (m != give && m != get) &&  
-			       (ab_count(m,1) > ab_count(m,2)) )
+			       (ab_count(m,1) >= ab_count(m,2)) )
 			    {
 			      ab_count(give,0) -= 1;
 			      ab_count(give,2) -= 1;
@@ -212,12 +227,22 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  }
       }
 
+  cout << "ab_count:" << endl;
+  for (int i=0; i<natoms; i++)
+    {
+      for (int j=0; j<3; j++)
+	cout << ab_count(i,j) << "\t";
+      cout << endl;
+    }
+
   // Now we check to make sure no center has too many or too few electrons of 
   // one type.  We want to make sure each energy level is full before we start
   // filling the next one.  We assume the previous checks have made the atoms
   // neutral.  One example of what we want to prevent in this section is a Li
   // atom with three alphas.  It is neutral, but the first energy level was not
   // filled before we started occupying the second.
+
+  cout << "Making sure no second row atom has n=3 electrons" << endl;
 
   for (int i=0; i<natoms; i++)
     {
@@ -231,7 +256,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               int extra_alphas = ab_count(i,1)-1;
               for (int p=0; p<extra_alphas; p++)
                 for (int q=0; q<natoms; q++)
-                  if (q != i && ab_count(q,1) < ab_count(q,2))
+                  if (q != i && ab_count(q,1) <= ab_count(q,2))
                     {
                       ab_count(i,1) -= 1;
                       ab_count(q,1) += 1;
@@ -245,7 +270,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               int extra_betas = ab_count(i,2)-1;
               for (int r=0; r<extra_betas; r++)
                 for (int s=0; s<natoms; s++)
-                  if (s != i && ab_count(s,1) > ab_count(s,2))
+                  if (s != i && ab_count(s,1) >= ab_count(s,2))
                     {
                       ab_count(i,2) -= 1;
                       ab_count(i,1) += 1;
@@ -264,7 +289,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               int extra_alphas = ab_count(i,1)-5;
               for (int j=0; j<extra_alphas; j++)
                 for (int k=0; k<natoms; k++)
-                  if (k != i && ab_count(k,1) < ab_count(k,2))
+                  if (k != i && ab_count(k,1) <= ab_count(k,2))
                     { 
                       ab_count(i,1) -= 1;
                       ab_count(k,1) += 1;
@@ -279,7 +304,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               // is not filled, so we can't start the second one.  We need to
               // get an alpha from another atom.
               for (int j=0; j<natoms; j++)
-                if (j != i && ab_count(j,1) > ab_count(j,2))
+                if (j != i && ab_count(j,1) >= ab_count(j,2))
                   {
                     ab_count(i,1) += 1;
                     ab_count(j,1) -= 1;
@@ -293,7 +318,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               int extra_betas = ab_count(i,2)-5;
               for (int m=0; m<extra_betas; m++)
                 for (int n=0; n<natoms; n++)
-                  if (n != i && ab_count(n,1) > ab_count(n,2))
+                  if (n != i && ab_count(n,1) >= ab_count(n,2))
                     {
                       ab_count(i,2) -= 1;
                       ab_count(n,2) += 1;
@@ -305,7 +330,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
           if (ab_count(i,2) == 0)
             {
               for (int j=0; j<natoms; j++)
-                if (j != i && ab_count(j,2) > ab_count(j,1))
+                if (j != i && ab_count(j,2) >= ab_count(j,1))
                   {
                     ab_count(i,2) += 1;
                     ab_count(j,2) -= 1;
@@ -324,7 +349,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               int extra_alphas = ab_count(i,1)-9;
               for (int j=0; j<extra_alphas; j++)
                 for (int k=0; k<natoms; k++)
-                  if (k != i && ab_count(k,1) < ab_count(k,2))
+                  if (k != i && ab_count(k,1) <= ab_count(k,2))
                     {
                       ab_count(i,1) -= 1;
                       ab_count(k,1) += 1;
@@ -338,7 +363,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               int alphas_needed = 5-ab_count(i,1);
               for (int j=0; j<alphas_needed; j++)
                 for (int k=0; k<natoms; k++)
-                  if (k != i && ab_count(k,1) > ab_count(k,2))
+                  if (k != i && ab_count(k,1) >= ab_count(k,2))
                     {
                       ab_count(i,1) += 1;
                       ab_count(k,1) -= 1;
@@ -352,7 +377,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               int extra_betas = ab_count(i,2)-9;
               for (int m=0; m<extra_betas; m++)
                 for (int n=0; n<natoms; n++)
-                  if (n != i && ab_count(n,1) > ab_count(n,2))
+                  if (n != i && ab_count(n,1) >= ab_count(n,2))
                     {
                       ab_count(i,2) -= 1;
                       ab_count(n,2) += 1;
@@ -366,7 +391,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               int betas_needed = 5-ab_count(i,2);
               for (int j=0; j<betas_needed; j++)
                 for (int k=0; k<natoms; k++)
-                  if (k != i && ab_count(k,2) > ab_count(k,1))
+                  if (k != i && ab_count(k,2) >= ab_count(k,1))
                     {
                       ab_count(i,2) += 1;
                       ab_count(k,2) -= 1;
@@ -376,6 +401,14 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
                     }
             }
         }       
+    }
+
+  cout << "ab_count:" << endl;
+  for (int i=0; i<natoms; i++)
+    {
+      for (int j=0; j<3; j++)
+	cout << ab_count(i,j) << "\t";
+      cout << endl;
     }
 
   // Check to see that all electrons have been assigned.
