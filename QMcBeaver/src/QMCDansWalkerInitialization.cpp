@@ -69,26 +69,11 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
   int nbeta = Input->WF.getNumberBetaElectrons();
   int nalpha = Input->WF.getNumberAlphaElectrons();
 
-  cout << "QMCDansWalkerInitialization" << endl;
-  cout << "nelectrons = " << nelectrons << ", nalpha = " << nalpha << ", nbeta = " << nbeta << endl;
-
   // This array holds the numbers of total, alpha, and beta electrons on each
   // center.
 
-  cout << "Assigning electrons to nuclei" << endl;
-
   Array2D<int> ab_count(natoms,3);
   ab_count = assign_electrons_to_nuclei();
-
-  cout << "ab_count:" << endl;
-  for (int i=0; i<natoms; i++)
-    {
-      for (int j=0; j<3; j++)
-	cout << ab_count(i,j) << "\t";
-      cout << endl;
-    }
-
-  cout << "Redistributing charged centers" << endl;
 
   // Redistribute electrons if there are charged centers.
 
@@ -227,22 +212,12 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  }
       }
 
-  cout << "ab_count:" << endl;
-  for (int i=0; i<natoms; i++)
-    {
-      for (int j=0; j<3; j++)
-	cout << ab_count(i,j) << "\t";
-      cout << endl;
-    }
-
   // Now we check to make sure no center has too many or too few electrons of 
   // one type.  We want to make sure each energy level is full before we start
   // filling the next one.  We assume the previous checks have made the atoms
   // neutral.  One example of what we want to prevent in this section is a Li
   // atom with three alphas.  It is neutral, but the first energy level was not
   // filled before we started occupying the second.
-
-  cout << "Making sure no second row atom has n=3 electrons" << endl;
 
   for (int i=0; i<natoms; i++)
     {
@@ -401,14 +376,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
                     }
             }
         }       
-    }
-
-  cout << "ab_count:" << endl;
-  for (int i=0; i<natoms; i++)
-    {
-      for (int j=0; j<3; j++)
-	cout << ab_count(i,j) << "\t";
-      cout << endl;
     }
 
   // Check to see that all electrons have been assigned.
