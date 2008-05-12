@@ -7,7 +7,7 @@ run_type
 dt
  0.01
 number_of_walkers
- 2
+ 1
 max_time_steps
  100
 max_time
@@ -213,7 +213,7 @@ mpireduce_interval
 mpipoll_interval
  5
 walkers_per_pass
- 1
+ 10
 use_basis_function_interpolation
  0
 number_basis_function_interpolation_grid_points
