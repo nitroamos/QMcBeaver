@@ -67,7 +67,7 @@ void QMCHarmonicOscillator::evaluate(Array1D<QMCWalkerData *> &walkerData,
       walkerData(i)->kineticEnergy = ke;
       walkerData(i)->potentialEnergy = pe;
       walkerData(i)->localEnergy = ke + pe;
-      walkerData(i)->isSingular = false;
+      walkerData(i)->singular = false;
       walkerData(i)->modifiedGradPsiRatio = walkerData(i)->gradPsiRatio;
       
       if(false)

@@ -36,6 +36,15 @@ void QMCInput::read(string inputfile)
  WF.read(flags.charge, flags.Norbitals, flags.Nbasisfunc, flags.Ndeterminants, 
 	 flags.trial_function_type, inputfile);
 
+ if(Molecule.getNuclearCharge() != WF.getNumberElectrons() + flags.charge)
+   {
+     clog << "Error: incorrect number of electrons." << endl;
+     clog << "    Nuclear charge = " << Molecule.getNuclearCharge() << endl;
+     clog << "  Number electrons = " << WF.getNumberElectrons() << endl;
+     clog << " Electronic charge = " << flags.charge << endl;
+     exit(0);
+   }
+
  JP.read(Molecule.NucleiTypes,flags.link_Jastrow_parameters,flags.replace_electron_nucleus_cusps,
 	 WF.getNumberAlphaElectrons(),WF.getNumberBetaElectrons(),inputfile);
 

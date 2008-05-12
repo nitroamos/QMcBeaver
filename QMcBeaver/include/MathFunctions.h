@@ -13,9 +13,10 @@
 #ifndef MathFunctions_H
 #define MathFunctions_H
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "IeeeMath.h"
+#include <math.h>
 
 
 /**
@@ -49,6 +50,21 @@ class MathFunctions
   static double gamma_series(double a, double x);
 
   static double gamma_cf(double a, double x);
+
+  /**
+     Used for Umrigar's spherical metropolis sampling.
+
+     Look in A.4 of 
+     "Variational Monte Carlo Basics and Applications to Atoms and Molecules"
+     by C. J. Umrigar
+     NATO ASI Series, Series C, Mathematical and Physical Sciences, Vol. C-525,
+     (Kluwer Academic Publishers, Boston, 1999)
+  */
+  static double accel_G(double n, double x, double y,
+			double a, double zeta);
+
+  static void fitU(double Z, double Frk, double r, double delta,
+		   double & zeta, double & a, double & I);
 
  private:
   /**

@@ -16,7 +16,7 @@ int QMCCorrelatedSamplingVMCOptimization::optStep = 1;
 
 void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 						    QMCProperties & lastRun,
-						    QMCFutureWalkingProperties & fwLastRun,
+						    QMCPropertyArrays & fwLastRun,
 						    int configsToSkip)
 {
   double rel = 0;

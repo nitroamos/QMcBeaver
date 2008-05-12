@@ -38,6 +38,7 @@ public:
     Total energy of the system.
   */
   QMCProperty energy;
+  QMCProperty tr_weight;
   QMCProperty energy2;
 
   /**

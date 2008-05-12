@@ -446,7 +446,6 @@ evaluateBasisFunctions(Array2D<double>& X, Array2D<qmcfloat>& chi_value)
               if(chi > 0 && chi < TOOSMALL) chi = TOOSMALL;
               if(chi < 0 && chi > -1.0*TOOSMALL) chi = -1.0*TOOSMALL;
               chi_value(el,bf)     = (qmcfloat)chi;
-              //printf("chi: %3i %3i %10.7f\n",el,bf,chi);
               bf++;
             }//sum over basis functions
         }//sum over atoms

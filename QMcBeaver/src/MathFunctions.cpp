@@ -191,6 +191,79 @@ double MathFunctions::erfc(double x)
   return ans;
 }
 
+void MathFunctions::fitU(double Z, double Frk, double r, double delta,
+			 double & zeta, double & a, double & I)
+{
+  //Now we solve for a and z (looking at eqns 41 & 42)
+  double t1 = Frk + Z;
+  double discriminant = t1*(r*t1 - 4.0)/r;
+  zeta = 0.0;
+  if(discriminant > 0.0)
+    {
+      double root1 = Z - Frk;
+      double root2 = Z - Frk;
+      double sq = sqrt(discriminant);	  
+      root1 -= sq;
+      root2 += sq;
+      root1 /= 2.0;
+      root2 /= 2.0;
+      
+      if(root1*root2 <= 0.0)
+	{
+	  //return the postive root
+	  zeta = root1 > root2 ? root1 : root2;
+	} else if(root1 <= 0.0)
+	  {
+	    //both were negative
+	    zeta = 0.0;	     
+	  } else {
+	    //both positive, return the smallest
+	    zeta = root1 < root2 ? root1 : root2;
+	  }
+    }
+  
+  if(zeta <= 1e-50)
+    {
+      if(Frk < 0.0)
+	zeta = -Frk;
+      else
+	zeta = 1.0;
+    }
+  
+  a = -(Frk + zeta)/(-1.0 + r*(Frk + zeta));  
+
+  /*
+    This is from eqns on pg 158 (In the appendix).
+    Note: there is a typo in the formulas. Umrigar says the nodes
+    are at -a, but as is easily verified, the nodes are actually at -1/a.
+    
+    Because we're integrating the absolute value of the function, we need
+    to separate this into two integrals if the integrand goes through a node.
+  */
+  double node = -1.0/a;
+  if(fabs(a) > 1e-50 && r/delta < node && node < r*delta)
+    {
+      I = fabs(accel_G(1.5,zeta*r*delta,-zeta/a,a,zeta)) +
+          fabs(accel_G(1.5,-zeta/a,zeta*r/delta,a,zeta));
+    } else {
+      I = fabs(accel_G(1.5,zeta*r*delta,zeta*r/delta,a,zeta));
+    }
+
+  /*
+  printf("a=%20.10f zeta=%20.10f r=%20.10f root=%20.10f L=%20.10f U=%20.10f I=%20.10f\n",
+	 a,zeta,r,node,r/delta,r*delta,I);
+  */
+}
+
+double MathFunctions::accel_G(double n, double x, double y,
+			      double a, double zeta)
+{
+  double den = pow(zeta,-n-1);
+  double t1 = (gamma_inc(n,x)   - gamma_inc(n,y)  )*den*zeta;
+  double t2 = (gamma_inc(n+1,x) - gamma_inc(n+1,y))*den;
+  return t1 + a*t2;
+}
+
 double MathFunctions::csevl(double x, double * coef, int lengthCoef)
 {
   double b0, b1, b2, twox;

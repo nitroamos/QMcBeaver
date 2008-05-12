@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCProperty.h"
+#include <sstream>
 
 QMCProperty::QMCProperty()
 {
@@ -55,6 +56,63 @@ void QMCProperty::zeroOut()
 unsigned long QMCProperty::getNumberSamples()
 {
   return DeCorr[0].getNumberSamples();
+}
+
+string QMCProperty::getLongString()
+{
+  stringstream strm;
+  int width = 20;
+  int prec  = 12;
+  
+  strm << fixed;
+  if( fabs(getAverage()) > 1e-300 )
+    if( log( fabs( getAverage() )) > 10.0)
+      strm << scientific;
+  strm << setw(width) << setprecision(prec) << getAverage();
+  
+  strm << " +/- " << fixed;
+  if( fabs(getStandardDeviation()) > 1e-300 )
+    if( log( fabs( getStandardDeviation() )) > 10.0)
+      strm << scientific;
+  strm << setw(width) << setprecision(prec) << left << getStandardDeviation() << right;
+  return strm.str();
+}
+
+string QMCProperty::getShortString()
+{
+  double avg = getAverage();
+  double std = getStandardDeviation();
+  stringstream strm;
+
+  if( fabs((std+avg)/avg-1.0) < 1e-10 || getDecorrDepth() < 0){
+    //The measurement is practically exact, so don't waste space
+    strm << fixed;
+    if( fabs(getAverage()) > 1e-300 )
+      if( log( fabs( getAverage() )) > 10.0)
+	strm << scientific;
+    strm << setw(10) << setprecision(5) << getAverage();
+    return strm.str();
+  }
+    
+  int prec;
+  if( fabs(std) > 1e-300 )
+    prec = (int)floor(log10(std)) -1;
+  else
+    prec = 12;
+
+  double average = avg * pow(10.0,-prec);
+  int tempA = (int)floor(average+0.5);
+  average = tempA*pow(10.0,prec);
+
+  strm << fixed;
+  if(prec < 0){
+    strm << setprecision(-prec) << average;
+    strm << "(" << setprecision(0) << (std*pow(10.0,-prec)) << ")";
+  } else {
+    strm << setprecision(0) << average;
+    strm << "(" << setprecision(0) << std << ")";
+  }
+  return strm.str();
 }
 
 double QMCProperty::getAverage()
@@ -108,6 +166,18 @@ double QMCProperty::getKurtosis()
     return 99;
   }
   else return getBlockKurtosis(decorr_depth);
+}
+
+double QMCProperty::getCorrelationLength()
+{
+  return getCorrelationLength(getDecorrDepth());
+
+}
+
+double QMCProperty::getCorrelationLength(int i)
+{
+  if(i <= 0) return i;
+  return getBlockVariance(i) / getBlockVariance(0);
 }
 
 int QMCProperty::getDecorrDepth()
@@ -698,7 +768,13 @@ void QMCProperty::printAll(ostream & strm)
 	{
 	  strm.setf(ios::fixed);
 	  strm.unsetf(ios::scientific);
-	  strm << setw(width) << i << setw(width) << DeCorr[i].getNumberSamples() 
+
+	  if(i == getDecorrDepth())
+	    strm << setw(width) << i;
+	  else
+	    strm << left << setw(width) << i << right;
+
+	  strm << setw(width) << DeCorr[i].getNumberSamples() 
 	       << setw(width) << DeCorr[i].getAverage();
 	  
 	  if( DeCorr[i].getNumberSamples() > 1 )
@@ -712,7 +788,7 @@ void QMCProperty::printAll(ostream & strm)
 
 	      strm.setf(ios::fixed);
 	      strm.unsetf(ios::scientific);
-	      strm << setw(width) << getBlockVariance(i) / getBlockVariance(0)
+	      strm << setw(width) << getCorrelationLength(i)
 		   << setw(width) << DeCorr[i].getVariance()
 		   << setw(width) << getBlockSkewness(i)
 		   << setw(width) << getBlockKurtosis(i);
@@ -725,20 +801,11 @@ void QMCProperty::printAll(ostream & strm)
 
 ostream& operator <<(ostream& strm, QMCProperty &rhs)
 {    
-  if(!false)
-  {
-    strm.precision(12);
-    strm.width(20);
-    strm << scientific << rhs.getAverage() << " +/- ";
-    if( fabs(rhs.getStandardDeviation()) > 1e-300 )
-      if( log( fabs( rhs.getStandardDeviation() )) > 10.0)
-	strm << scientific;
-    strm.precision(12);
-    strm.width(20);
-    strm << scientific << rhs.getStandardDeviation() << " (" << rhs.getNumberSamples() << " samples, decorr depth " << rhs.getDecorrDepth() << ")" << endl;
-  } else {
-    printf("%20.12e +/- %20.12e (%li samples, decorr depth %i)\n",rhs.getAverage(),rhs.getStandardDeviation(),rhs.getNumberSamples(),rhs.getDecorrDepth());
-  }
+  strm << rhs.getLongString();
+  strm << " (" << rhs.getNumberSamples() << " samples, Tcorr ";
+  strm.precision(5);
+  strm.width(10);
+  strm << fixed << rhs.getCorrelationLength() << ")" << endl;
 
   /*
    double a = rhs.stdevFittingParameters[0] * rhs.stdevFittingParameters[0];

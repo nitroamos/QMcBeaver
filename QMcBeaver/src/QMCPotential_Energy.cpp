@@ -88,6 +88,7 @@ void QMCPotential_Energy::calc_P_nn()
 void QMCPotential_Energy::calc_P_en(Array2D<double> &R)
 {
   P_en = 0.0;
+
   double chargei, chargej;
 
   //loop over every atom
@@ -101,7 +102,7 @@ void QMCPotential_Energy::calc_P_en(Array2D<double> &R)
       for(int j=0;j<R.dim1();j++)
         {
           chargej = -1.0;
-          P_en += (chargei*chargej)/wd->riI(j,i);
+          P_en += (chargei*chargej)/wd->riA(j,i);
         }
     }
 }

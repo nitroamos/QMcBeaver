@@ -17,7 +17,7 @@
 #include <sstream>
 
 #include "QMCInput.h"
-#include "QMCGreensRatioComponent.h"
+#include "QMCDouble.h"
 #include "QMCConfigIO.h"
 #include "IeeeMath.h"
 #include "QMCWalkerData.h"

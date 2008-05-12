@@ -67,7 +67,9 @@ void QMCJastrowParameters::operator=( const QMCJastrowParameters & rhs )
 
 void QMCJastrowParameters::print(ostream & strm)
 {
-  //return;
+  if(globalInput.flags.set_debug == 1)
+    return;
+
   if(EupEdn.isUsed())
     {
       strm << "EupEdn:" << endl;
@@ -884,6 +886,7 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
   QMCCorrelationFunctionParameters CP;
   while(CP.read( file , nucCuspReplacement))
     {
+      bool foundMatch = false;
       if( CP.getParticle1Type() == "Electron_up" )
 	{
 	  if( CP.getParticle2Type() == "Electron_up" )
@@ -894,7 +897,7 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 		       << "function loaded when one does not belong!" << endl;
 		  exit(0);
 		}
-	      
+	      foundMatch = true;
 	      EupEup = CP;
 	    }
 	  else if( CP.getParticle2Type() == "Electron_down" )
@@ -906,7 +909,7 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 		       << "Maybe you are using an old ckmf file?" << endl;
 		  exit(0);
 		}
-
+	      foundMatch = true;
 	      EupEdn = CP;
 	    }
 	  else
@@ -915,6 +918,7 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 	      for( int j=0; j<NucleiTypes.dim1(); j++ )
 		if( NucleiTypes(j) == CP.getParticle2Type() )
 		    {
+		      foundMatch = true;
 		      EupNuclear(j) = CP;
 		      break;
 		    }
@@ -930,7 +934,7 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 		       << "function loaded when one does not belong!" << endl;
 		  exit(0);
 		}
-	      
+	      foundMatch = true;	      
 	      EdnEdn = CP;
 	    }
 	  else
@@ -946,13 +950,21 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 			     << endl;
 			exit(0);
 		      }
+		    foundMatch = true;
 		    EdnNuclear(j) = CP;
 		    break;
 		  }
 	    }
 	}
+
+      if(!foundMatch){
+	clog << "Warning: Jastrow from input file ("
+	     << CP.getParticle1Type() << "," << CP.getParticle2Type() << ") was not used:\n";
+	CP.getCorrelationFunction()->print(clog);
+	clog << endl << endl;
+      }
     }
-  
+
   // if the particles are linked make the down electron parameters equal
   // to the up electron parameters.
   NumberOfEEParameters       = 0;
@@ -1032,6 +1044,7 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
       QMCThreeBodyCorrelationFunctionParameters CP;
       while(CP.read( file ))
 	{
+	  bool foundMatch = false;
 	  if( CP.getParticle2Type() == "Electron_up" )
 	    {
 	      if( CP.getParticle3Type() == "Electron_down" )
@@ -1046,6 +1059,7 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 		  for (int j=0; j<NucleiTypes.dim1(); j++)
 		    if (NucleiTypes(j) == CP.getParticle1Type() )
 		      {
+			foundMatch = true;
 			EupEdnNuclear(j) = CP;
 			break;
 		      }
@@ -1063,6 +1077,7 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 		  for (int j=0; j<NucleiTypes.dim1(); j++)
 		    if (NucleiTypes(j) == CP.getParticle1Type() )
 		      {
+			foundMatch = true;
 			EupEupNuclear(j) = CP;
 			break;
 		      }
@@ -1082,10 +1097,19 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
 	      for( int j=0; j<NucleiTypes.dim1(); j++ )
 		if( NucleiTypes(j) == CP.getParticle1Type() )
 		  {
+		    foundMatch = true;
 		    EdnEdnNuclear(j) = CP;
 		    break;
 		  }
 	    }
+
+	  if(!foundMatch){
+	    clog << "Warning: Jastrow from input file ("
+		 << CP.getParticle1Type() << "," << CP.getParticle2Type() << ","
+		 << CP.getParticle3Type() << ") was not used:\n";
+	    CP.getThreeBodyCorrelationFunction()->print(clog);
+	    clog << endl << endl;
+	  }
 	}
 
       // if the particles are linked make the down electron parameters equal

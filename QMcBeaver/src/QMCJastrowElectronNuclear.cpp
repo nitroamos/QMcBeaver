@@ -12,15 +12,10 @@
 
 #include "QMCJastrowElectronNuclear.h"
 
-QMCJastrowElectronNuclear::QMCJastrowElectronNuclear()
-{
-
-}
+QMCJastrowElectronNuclear::QMCJastrowElectronNuclear(){}
 
 QMCJastrowElectronNuclear::~QMCJastrowElectronNuclear()
 {
-  grad_sum_U.deallocate();
-
   for(int i=0; i<p2_xa.dim1(); i++)
     p2_xa(i).deallocate();
 
@@ -31,45 +26,13 @@ QMCJastrowElectronNuclear::~QMCJastrowElectronNuclear()
 
 void QMCJastrowElectronNuclear::initialize(QMCInput * input)
 {
-  Input = input;
-
-  grad_sum_U.allocate(Input->WF.getNumberElectrons(),3);
-
   int numNE = globalInput.JP.getNumberNEParameters();
   p_a.allocate(numNE);
   p2_xa.allocate(numNE);
   p3_xxa.allocate(numNE);
 
   for(int i=0; i<p2_xa.dim1(); i++)
-    p2_xa(i).allocate(Input->WF.getNumberElectrons(),3);
-}
-
-/**
-   Find the unit vector and distance between X1 and X2.  The unit vector is in
-   the direction of X1-X2.
-*/
-
-void QMCJastrowElectronNuclear::calculateDistanceAndUnitVector(
-  Array2D<double> & X1, int x1particle, Array2D<double> &X2,
-  int x2particle, double & r, Array1D<double> & UnitVector)
-{
-  double r_sq = 0;
-
-  for(int i=0; i<3; i++)
-    {
-      UnitVector(i) = X1(x1particle,i) - X2(x2particle,i);
-      r_sq += UnitVector(i) * UnitVector(i);
-    }
-
-  r = sqrt( r_sq );
-
-  UnitVector *= 1.0/r;
-}
-
-
-double QMCJastrowElectronNuclear::getLaplacianLnJastrow()
-{
-  return laplacian_sum_U;
+    p2_xa(i).allocate(globalInput.WF.getNumberElectrons(),3);
 }
 
 double QMCJastrowElectronNuclear::get_p3_xxa_ln(int ai)
@@ -77,19 +40,9 @@ double QMCJastrowElectronNuclear::get_p3_xxa_ln(int ai)
   return p3_xxa(ai);
 }
 
-Array2D<double> * QMCJastrowElectronNuclear::getGradientLnJastrow()
-{
-  return &grad_sum_U;
-}
-
 Array2D<double> * QMCJastrowElectronNuclear::get_p2_xa_ln(int ai)
 {
   return &p2_xa(ai);
-}
-
-double QMCJastrowElectronNuclear::getLnJastrow()
-{
-  return sum_U;
 }
 
 double QMCJastrowElectronNuclear::get_p_a_ln(int ai)
@@ -102,18 +55,16 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
 					 Array2D<double> & X)
 {
   // initialize the results
-  sum_U = 0.0;
-  laplacian_sum_U = 0.0;
-  grad_sum_U = 0.0;
-  double firstDeriv;
+  double temp;
+  double UiA, UiA_x, UiA_xx;
 
   p_a              = 0.0;
   p3_xxa           = 0.0;
   for(int ai=0; ai<p2_xa.dim1(); ai++)
     p2_xa(ai)      = 0.0;
 
-  int nalpha = Input->WF.getNumberAlphaElectrons();
-  int nbeta = Input->WF.getNumberBetaElectrons();
+  int nalpha = globalInput.WF.getNumberAlphaElectrons();
+  int nbeta  = globalInput.WF.getNumberBetaElectrons();
 
   // Get values from JP that will be needed during the calc
 
@@ -122,15 +73,14 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
   Array1D<QMCCorrelationFunctionParameters> * EupNuclear = 0;
   if (nalpha > 0)
     EupNuclear = JP.getElectronUpNuclearParameters();
-
+  
   Array1D<QMCCorrelationFunctionParameters> * EdnNuclear = 0;
   if (nbeta > 0)
     EdnNuclear = JP.getElectronDownNuclearParameters();
 
   // Loop over each atom calculating the e-n jastrow function
   double r;
-  static Array1D<double> unitVector(3);
-  for(int Nuclei=0; Nuclei<Input->Molecule.getNumberAtoms(); Nuclei++)
+  for(int Nuclei=0; Nuclei<globalInput.Molecule.getNumberAtoms(); Nuclei++)
     {
 
       /*
@@ -154,7 +104,7 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
       // Find the number of the current nucleus in the nuclei list
       int CurrentNucleiNumber = -1;
       for( int i=0; i<NucleiTypes->dim1(); i++ )
-	if( Input->Molecule.Atom_Labels(Nuclei) == (*NucleiTypes)(i) )
+	if( globalInput.Molecule.Atom_Labels(Nuclei) == (*NucleiTypes)(i) )
 	  {
 	    CurrentNucleiNumber = i;
 	    break;
@@ -165,20 +115,12 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
 
       for(int Electron=0; Electron<X.dim1(); Electron++)
         {
-          // Find the unit vector between the nucleus and the electron and
-          // their distance apart
+	  if(wd->whichE != Electron && wd->whichE != -1)
+	    continue;
 
-          r = 0;
-          for(int i=0; i<3; i++)
-            {
-              unitVector[i] = X(Electron,i) - 
-		Input->Molecule.Atom_Positions(Nuclei,i);
-              r += unitVector[i] * unitVector[i];
-            }
-          r = sqrt( r );
+          r = wd->riA(Electron,Nuclei);
 
           // Get the correct correlation function to use and evaluate it
-
           QMCCorrelationFunction *U_Function = 0;
 
 	  int ai_shift;
@@ -197,24 +139,34 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
 
 	      ai_shift = nuc_Edn_shift;
 	      numP = (*EdnNuclear)(CurrentNucleiNumber).getTotalNumberOfParameters();
-	      if(Input->flags.link_Jastrow_parameters == 0)
-		ai_shift += Input->JP.getNumberNEupParameters();
+	      if(globalInput.flags.link_Jastrow_parameters == 0)
+		ai_shift += globalInput.JP.getNumberNEupParameters();
 	    }
 
           U_Function->evaluate(r);
-          firstDeriv = U_Function->getFirstDerivativeValue();
+
+	  UiA    = U_Function->getFunctionValue();
+          UiA_x  = U_Function->getFirstDerivativeValue();
+	  UiA_xx = 2.0/r * UiA_x + U_Function->getSecondDerivativeValue();
+
           // Update the values being calculated ...
 
-          sum_U +=  U_Function->getFunctionValue();
+	  wd->U -= wd->UiA(Electron, Nuclei);
+          wd->U += UiA;
+	  wd->UiA(Electron, Nuclei) = UiA;
 
-          laplacian_sum_U += 2.0/r * firstDeriv +
-	    U_Function->getSecondDerivativeValue();
+	  wd->U_xx -= wd->UiA_xx(Electron,Nuclei);
+          wd->U_xx += UiA_xx;
+	  wd->UiA_xx(Electron,Nuclei) = UiA_xx;
 
           for(int i=0; i<3; i++)
-            {
-              unitVector[i] /= r;
-              grad_sum_U(Electron,i) += firstDeriv * unitVector[i];
-            }
+	    {
+	      temp = wd->UiA_x(Electron,Nuclei,i);
+	      wd->U_x(Electron,i) -= temp;
+	      temp = UiA_x * wd->riA_uvec(Electron,Nuclei,i);
+	      wd->UiA_x(Electron,Nuclei,i) = temp;
+	      wd->U_x(Electron,i) += temp;
+	    }
 
 	  if(globalInput.flags.calculate_Derivatives == 1 &&
 	     globalInput.flags.optimize_EN_Jastrows == 1)
@@ -222,11 +174,11 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
 	      for(int ai=0; ai<numP; ai++)
 		{
 		  p_a(ai+ai_shift)    += U_Function->get_p_a(ai);
-		  firstDeriv           = U_Function->get_p2_xa(ai);
-		  p3_xxa(ai+ai_shift) += 2.0/r * firstDeriv + U_Function->get_p3_xxa(ai);
+		  UiA_x           = U_Function->get_p2_xa(ai);
+		  p3_xxa(ai+ai_shift) += 2.0/r * UiA_x + U_Function->get_p3_xxa(ai);
 		  
 		  for(int i=0; i<3; i++)
-		    (p2_xa(ai+ai_shift))(Electron,i) += firstDeriv * unitVector[i];
+		    (p2_xa(ai+ai_shift))(Electron,i) += UiA_x * wd->riA_uvec(Electron,Nuclei,i);
 		}
 	    }
 	}

@@ -153,12 +153,6 @@ int main(int argcTemp, char *argvTemp[])
   clog.rdbuf(cout.rdbuf());
 #endif
 
-  if(argcTemp == 1 || showExtraHeaders)
-    {
-      printCompileInfo(clog);
-      clog << endl << endl;
-    }
-
 #ifdef QMC_GPU
   openGLBootStrap();
 #else
@@ -192,6 +186,12 @@ void qmcbeaver()
       cerr << "ERROR: No input file given" << endl;
       exit(1);
     }
+
+  if(argc == 1 || showExtraHeaders)
+    {
+      printCompileInfo(clog);
+      clog << endl << endl;
+    }
     
   globalInput.read( string(argv[ 1 ]) );
 
@@ -206,7 +206,7 @@ void qmcbeaver()
   bool ok = TheMan.run(false);
   TheMan.writeRestart();
   
-  if( globalInput.flags.my_rank == 0 )
+  if( globalInput.flags.my_rank == 0 && globalInput.flags.set_debug == 0)
     {
       clog << "***************  Print Results (ok = " << ok << ")" << endl;
       clog << TheMan;
@@ -221,7 +221,8 @@ void qmcbeaver()
       TheMan.writeTimingData(clog);
       clog << "***************  Optimize iteration: "  << optloops << ";" << endl;
 
-      if(optloops > 1) TheMan.resetTimers();
+      //if(optloops > 1) TheMan.resetTimers();
+      TheMan.resetTimers();
 
       TheMan.optimize();
       TheMan.zeroOut();
@@ -276,7 +277,8 @@ void qmcbeaver()
       */
     }
 
-  clog << "***************  Finalize" << endl;
+  if(globalInput.flags.set_debug == 0)
+    clog << "***************  Finalize" << endl;
   TheMan.finalize();
 
   timer.stop();
@@ -293,10 +295,12 @@ void qmcbeaver()
       TheMan.writeForces();
     }
     
-  if( globalInput.flags.my_rank == 0 )
+  if( globalInput.flags.my_rank == 0)
     {
       TheMan.writeTimingData(clog);
-      clog << "Wallclock Time:         " << timer << endl;
+
+      if(globalInput.flags.set_debug == 0)
+	clog << "Wallclock Time:         " << timer << endl;
       
       TheMan.writeTimingData( *TheMan.getResultsOutputStream() );
       *TheMan.getResultsOutputStream()

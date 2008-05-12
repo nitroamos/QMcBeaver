@@ -39,7 +39,7 @@ class QMCCorrelatedSamplingVMCOptimization
   */
   static void optimize(QMCInput * input,
 		       QMCProperties & lastRun,
-		       QMCFutureWalkingProperties & fwLastRun,
+		       QMCPropertyArrays & fwLastRun,
 		       int configsToSkip);
 };
 

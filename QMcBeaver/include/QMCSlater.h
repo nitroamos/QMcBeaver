@@ -128,7 +128,7 @@ public:
   */
   template <class T>
     bool calculate_DerivativeRatios(int ci, int row,
-				    Array2D<T> & psi,
+				    Array2D<double> & psi,
 				    Array2D<double> & inv,
 				    Array2D<T> & lap,
 				    Array2D<T> & gradx,
@@ -240,23 +240,66 @@ public:
   QMCWavefunction  *WF;
   
   /**
-     These arrays are the local storage data that
-     we use when we update all electrons at once.
+     Data structures to store the partial derivatives
+     with respect to orbital coefficients.
   */
-  Array1D< Array1D<double> > Psi;
-  Array1D< Array1D<double> > Laplacian_PsiRatio;
-  Array1D< Array3D<double> > Grad_PsiRatio;
-  Array1D< Array1D<double> > Chi_Density;
-  Array1D< Array1D<bool> >   Singular;
+  Array1D< Array1D< Array2D<double> > > p_a;
+  Array1D< Array3D< Array2D<double> > > p2_xa;
+  Array1D< Array1D< Array2D<double> > > p3_xxa;
 
   /**
-     These arrays are where we store the basis functions
+     The starting and stopping indices in the position
+     array for the electrons this Slater is responsible for.
+  */
+  int Start;
+  int Stop;
+
+  QMCElectronNucleusCusp ElectronNucleusCusp;
+
+  /**
+     These arrays are where we store the basis functions Chi
      and their derivatives, evaluated for a particular
      electronic configuration.
+
+     The 'X' is meant to look like Chi
+     The w denotes the walker indexing.
   */
-  Array1D<          Array2D<qmcfloat>   > Chi;
-  Array1D<          Array2D<qmcfloat>   > Chi_laplacian;
-  Array1D< Array1D< Array2D<qmcfloat> > > Chi_gradient;
+  Array1D<          Array2D<qmcfloat>   >  Xw;
+  Array1D< Array1D< Array2D<qmcfloat> > >  Xw_x;
+  Array1D<          Array2D<qmcfloat>   >  Xw_xx;
+  Array1D< Array1D<double> >               Xw_Density;
+
+  /** 
+    The dimensions of these data are numWalkers, then numElec x numOrb
+
+    These data: D, D_inv, Laplacian_D, and Grad_D are meant to hold
+    only the results that were calculated on the CPU
+
+    D_inv is the only one that can be in double since we'll explicitly
+    typecast D before inversion.
+
+    The w denotes the walker indexing.
+  */
+  Array2D< double > * ciDet;
+  Array1D< Array2D<qmcfloat> > Dw;
+  Array2D< Array2D<qmcfloat> > Dw_x;
+  Array1D< Array2D<qmcfloat> > Dw_xx;
+  Array2D< Array2D<double>   > Dwc_inv;
+
+  /**
+     These arrays are the local storage data that
+     we use when we update all electrons at once.
+     
+     The r prefix indicates that the data has been
+     divided by the determinant.
+
+     The w denotes the walker indexing.
+     The c denotes the determinant indexing.
+  */
+  Array1D< Array1D<double> > Dwc;
+  Array1D< Array3D<double> > rDwc_x;
+  Array1D< Array1D<double> > rDwc_xx;
+  Array1D< Array1D<bool> >   Singular;
 
   /**
     If we are updating one electron at a time, then
@@ -276,42 +319,9 @@ public:
     If we only update one at a time, then we need a
     per walker storage location.
   */
-  Array1D< Array1D<double> * > pointer_det;
-  Array1D< Array1D<double> * > pointer_lapPR;
-  Array1D< Array3D<double> * > pointer_gradPR;
-
-  /**
-     Data structures to store the partial derivatives
-     with respect to orbital coefficients.
-  */
-  Array1D< Array1D< Array2D<double> > > p_a;
-  Array1D< Array3D< Array2D<double> > > p2_xa;
-  Array1D< Array1D< Array2D<double> > > p3_xxa;
-
-  /**
-     The starting and stopping indices in the position
-     array for the electrons this Slater is responsible for.
-  */
-  int Start;
-  int Stop;
-
-  QMCElectronNucleusCusp ElectronNucleusCusp;
-
-  /** 
-    The dimensions of these data are numWalkers x numDeterminants then 
-    numElec x numOrb
-
-    These data: D, D_inv, Laplacian_D, and Grad_D are meant to hold
-    only the results that were calculated on the CPU
-
-    D_inv is the only one that can be in double since we'll explicitly
-    typecast D before inversion.
-  */
-  Array2D< double > * ciDet;
-  Array1D< Array2D<qmcfloat> > D;
-  Array2D< Array2D<qmcfloat> > Grad_D;
-  Array1D< Array2D<qmcfloat> > Laplacian_D;
-  Array2D< Array2D<double>   > D_inv;
+  Array1D< Array1D<double> * > pointer_Dwc;
+  Array1D< Array3D<double> * > pointer_rDwc_x;
+  Array1D< Array1D<double> * > pointer_rDwc_xx;
 
 #ifdef QMC_GPU
   /** 
@@ -322,10 +332,10 @@ public:
     only the results that were calculated on the GPU
   */
 
-  Array1D< Array2D<float> > gpu_D;
-  Array2D< Array2D<float> > gpu_D_inv;
-  Array1D< Array2D<float> > gpu_Laplacian_D;
-  Array2D< Array2D<float> > gpu_Grad_D;
+  Array1D< Array2D<float> > gpu_Dw;
+  Array2D< Array2D<float> > gpu_Dw_inv;
+  Array1D< Array2D<float> > gpu_Dw_xx;
+  Array2D< Array2D<float> > gpu_Dw_x;
 
   /**
     This holds pointers to the GPU data. It is currently

@@ -10,12 +10,12 @@
 //
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
-#include "QMCFutureWalkingProperties.h"
+#include "QMCPropertyArrays.h"
 #include "QMCDerivativeProperties.h"
 
-int QMCFutureWalkingProperties::numFutureWalking = -1;
+int QMCPropertyArrays::numFutureWalking = -1;
 
-QMCFutureWalkingProperties::QMCFutureWalkingProperties()
+QMCPropertyArrays::QMCPropertyArrays()
 {
   /*
     we need to be sure that globalInput has been initialized
@@ -24,12 +24,12 @@ QMCFutureWalkingProperties::QMCFutureWalkingProperties()
     
     globalInput is a global variable declared in QMCBeaver. i
     did this because it would be extremely tedious and prone
-    to error to modify all instances of QMCFutureWalkingProperties to
+    to error to modify all instances of QMCPropertyArrays to
     require a QMCInput to it's constructor.
     
     lastly, the globalInput needs to be initiated before
-    any QMCFutureWalkingProperties are initiated because if we are running
-    a parallel calculation, then we want the QMCFutureWalkingProperties on
+    any QMCPropertyArrays are initiated because if we are running
+    a parallel calculation, then we want the QMCPropertyArrays on
     all the processors to have the right (static) MPI datatype.
     therefore, this information needs to be available before
     a QMCManager is created.
@@ -78,7 +78,7 @@ QMCFutureWalkingProperties::QMCFutureWalkingProperties()
   zeroOut();
 }
 
-QMCFutureWalkingProperties::~QMCFutureWalkingProperties()
+QMCPropertyArrays::~QMCPropertyArrays()
 {
   if(calc_forces)
   {
@@ -99,7 +99,7 @@ QMCFutureWalkingProperties::~QMCFutureWalkingProperties()
   chiDensity.deallocate();
 }
 
-void QMCFutureWalkingProperties::setCalcDensity(bool calcDensity, int nbasisfunctions)
+void QMCPropertyArrays::setCalcDensity(bool calcDensity, int nbasisfunctions)
 {
   calc_density = calcDensity;
 
@@ -115,7 +115,7 @@ void QMCFutureWalkingProperties::setCalcDensity(bool calcDensity, int nbasisfunc
     }
 }
 
-void QMCFutureWalkingProperties::setCalcForces(bool calcForces, int dim1, int dim2)
+void QMCPropertyArrays::setCalcForces(bool calcForces, int dim1, int dim2)
 {
   calc_forces = calcForces;
   
@@ -133,7 +133,7 @@ void QMCFutureWalkingProperties::setCalcForces(bool calcForces, int dim1, int di
     }
 }
 
-void QMCFutureWalkingProperties::zeroOut()
+void QMCPropertyArrays::zeroOut()
 {
   for(int fw=0; fw<numFutureWalking; fw++)
   {
@@ -162,22 +162,27 @@ void QMCFutureWalkingProperties::zeroOut()
       der.deallocate();
     }
 
-  if( globalInput.flags.optimize_Psi_criteria == "analytical_energy_variance")
+  if(globalInput.flags.calculate_Derivatives != 0)
     {
-      hessIsSymmetric = true;
-      hess.allocate(1);
-      hess(0).allocate(numAI,numAI);
-    } else if(globalInput.flags.optimize_Psi_criteria == "generalized_eigenvector")
-      {
-	hessIsSymmetric = false;
-	hess.allocate(3);
-	for(int i=0; i<hess.dim1(); i++)
-	  hess(i).allocate(numAI,numAI);	
-      } else {
-	for(int i=0; i<hess.dim1(); i++)
-	  hess(i).deallocate();
-	hess.deallocate();
-      }
+      if( globalInput.flags.optimize_Psi_criteria == "analytical_energy_variance")
+	{
+	  hessIsSymmetric = true;
+	  hess.allocate(1);
+	  hess(0).allocate(numAI,numAI);
+	} else if(globalInput.flags.optimize_Psi_criteria == "generalized_eigenvector")
+	  {
+	    hessIsSymmetric = false;
+	    hess.allocate(3);
+	    for(int i=0; i<hess.dim1(); i++)
+	      hess(i).allocate(numAI,numAI);	
+	  } else {
+	    clog << "Error: unknown optimize_Psi_criteria\n";
+	  }
+    } else {
+      for(int i=0; i<hess.dim1(); i++)
+	hess(i).deallocate();
+      hess.deallocate();
+    }
 
   for(int i=0; i<cs_Energies.dim1(); i++)
     cs_Energies(i).zeroOut();
@@ -196,17 +201,17 @@ void QMCFutureWalkingProperties::zeroOut()
       chiDensity(i).zeroOut();
 }
 
-void QMCFutureWalkingProperties::newSample(QMCFutureWalkingProperties* newProperties, double weight, 
-					   int nwalkers)
-{  
+void QMCPropertyArrays::newSample(QMCPropertyArrays* newProperties, double weight, 
+				  int nwalkers)
+{
   for(int fw=0; fw<numFutureWalking; fw++)
     {   
       if (calc_forces && (newProperties->nuclearForces(fw))(0,0).getNumberSamples() > 0)
 	{
 	  for (int i=0; i<nuclearForces(fw).dim1(); i++)
 	    for (int j=0; j<nuclearForces(fw).dim2(); j++)
-	      (nuclearForces(fw))(i,j).newSample((newProperties->nuclearForces(fw))(i,j).getAverage(), 
-						 weight);
+		(nuclearForces(fw))(i,j).newSample((newProperties->nuclearForces(fw))(i,j).getAverage(), 
+						   weight);
 	}
       
       for(int i=0; i<props.size(); i++)
@@ -215,11 +220,13 @@ void QMCFutureWalkingProperties::newSample(QMCFutureWalkingProperties* newProper
     }
 
   for(int i=0; i<cs_Energies.dim1(); i++)
-    cs_Energies(i).newSample(newProperties->cs_Energies(i).getAverage(), weight);
-
+    if(newProperties->cs_Energies(i).getNumberSamples() > 0)
+      cs_Energies(i).newSample(newProperties->cs_Energies(i).getAverage(), weight);
+  
   for (int i=0; i<der.dim1(); i++)
     for (int j=0; j<der.dim2(); j++)
-      der(i,j).newSample(newProperties->der(i,j).getAverage(),weight);
+      if(newProperties->der(i,j).getNumberSamples() > 0)
+	der(i,j).newSample(newProperties->der(i,j).getAverage(),weight);
 
   for (int i=0; i<hess.dim1(); i++)
     for(int j=0; j<hess(i).dim1(); j++)
@@ -227,17 +234,19 @@ void QMCFutureWalkingProperties::newSample(QMCFutureWalkingProperties* newProper
 	int max = hess(i).dim2();
 	if(hessIsSymmetric)
 	  max = j+1;
-
+	
 	for(int k=0; k<max; k++)
-	  (hess(i))(j,k).newSample( (newProperties->hess(i))(j,k).getAverage(),weight);
+	  if((newProperties->hess(i))(j,k).getNumberSamples() > 0)
+	    (hess(i))(j,k).newSample( (newProperties->hess(i))(j,k).getAverage(),weight);
       }
-
+  
   if (calc_density)
     for (int i=0; i<nBasisFunc; i++)
-      chiDensity(i).newSample(newProperties->chiDensity(i).getAverage(),weight);
+      if(newProperties->chiDensity(i).getNumberSamples() > 0)
+	chiDensity(i).newSample(newProperties->chiDensity(i).getAverage(),weight);
 }
 
-void QMCFutureWalkingProperties::matchParametersTo( const QMCFutureWalkingProperties &rhs )
+void QMCPropertyArrays::matchParametersTo( const QMCPropertyArrays &rhs )
 {
   if(rhs.calc_forces)
     setCalcForces(rhs.calc_forces,rhs.nuclearForces.get(0).dim1(),rhs.nuclearForces.get(0).dim2());
@@ -247,7 +256,7 @@ void QMCFutureWalkingProperties::matchParametersTo( const QMCFutureWalkingProper
   zeroOut();
 }
 
-void QMCFutureWalkingProperties::operator = ( const QMCFutureWalkingProperties &rhs )
+void QMCPropertyArrays::operator = ( const QMCPropertyArrays &rhs )
 {
   matchParametersTo(rhs);
   
@@ -268,9 +277,9 @@ void QMCFutureWalkingProperties::operator = ( const QMCFutureWalkingProperties &
   cs_Energies = rhs.cs_Energies;
 }
 
-QMCFutureWalkingProperties QMCFutureWalkingProperties::operator + ( QMCFutureWalkingProperties &rhs )
+QMCPropertyArrays QMCPropertyArrays::operator + ( QMCPropertyArrays &rhs )
 {
-  QMCFutureWalkingProperties result;
+  QMCPropertyArrays result;
 
   matchParametersTo(rhs);
   result.matchParametersTo(rhs);
@@ -293,10 +302,10 @@ QMCFutureWalkingProperties QMCFutureWalkingProperties::operator + ( QMCFutureWal
   return result;
 }
 
-void QMCFutureWalkingProperties::toXML(ostream& strm)
+void QMCPropertyArrays::toXML(ostream& strm)
 {
   // Open XML
-  strm << "<QMCFutureWalkingProperties>" << endl;
+  strm << "<QMCPropertyArrays>" << endl;
 
   // Chi Density
   if (calc_density)
@@ -337,10 +346,10 @@ void QMCFutureWalkingProperties::toXML(ostream& strm)
   }
 
   // Close XML
-  strm << "</QMCFutureWalkingProperties>" << endl;
+  strm << "</QMCPropertyArrays>" << endl;
 }
 
-bool QMCFutureWalkingProperties::readXML(istream& strm)
+bool QMCPropertyArrays::readXML(istream& strm)
 {
   string temp;
 
@@ -381,17 +390,17 @@ bool QMCFutureWalkingProperties::readXML(istream& strm)
     
   // Close XML
   strm >> temp;
-  if(temp != "</QMCFutureWalkingProperties>")
+  if(temp != "</QMCPropertyArrays>")
     {
-      clog << "Error: checkpoint read failed in QMCFutureWalkingProperties."
-	   << " We expected to read a \"</QMCFutureWalkingProperties>\""
+      clog << "Error: checkpoint read failed in QMCPropertyArrays."
+	   << " We expected to read a \"</QMCPropertyArrays>\""
 	   << " tag, but found \"" << temp << "\"." << endl;
       return false;
     }
   return true;
 }
 
-ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs)
+ostream& operator <<(ostream& strm, QMCPropertyArrays &rhs)
 { 
   int w1 = 10;
   int w2 = 10;

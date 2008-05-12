@@ -340,14 +340,10 @@ bool QMCProperties::readXML(istream& strm)
 ostream& operator <<(ostream& strm, QMCProperties &rhs)
 {
   strm << endl << "------------------- Energy -------------------" << endl;
-  //strm << rhs.energy;
-  
-  strm << "Sample variance = " << rhs.energy.getSeriallyCorrelatedVariance() << endl;
   rhs.energy.printAll(strm);
 
   strm << endl << "----------------- Energy^2 -------------------" << endl;
   strm << rhs.energy2;
-  //rhs.energy2.printAll(strm);
 
   strm << endl << "--------------- Kinetic Energy ---------------" << endl;
   strm << rhs.kineticEnergy;
@@ -373,14 +369,16 @@ ostream& operator <<(ostream& strm, QMCProperties &rhs)
   strm << endl << "----------------- Walker Age -----------------" << endl;
   strm << rhs.walkerAge;
 
-  strm << endl << "--------------- Weight Change ----------------" << endl;
-  strm << rhs.weightChange;
+  if(globalInput.flags.run_type == "diffusion"){
+    strm << endl << "--------------- Weight Change ----------------" << endl;
+    strm << rhs.weightChange;
+    
+    strm << endl << "---------------- Growth Rate -----------------" << endl;
+    strm << rhs.growthRate;
 
-  strm << endl << "---------------- Growth Rate -----------------" << endl;
-  strm << rhs.growthRate;
-
-  strm << endl << "----------------- logWeights -----------------" << endl;
-  strm << rhs.logWeights;
+    strm << endl << "----------------- logWeights -----------------" << endl;
+    strm << rhs.logWeights;
+  }
 
   return strm;
 }

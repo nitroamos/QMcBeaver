@@ -86,6 +86,9 @@ public:
   */
   unsigned long getNumberSamples();
 
+  string getLongString();
+  string getShortString();
+
   /**
     Gets the average of the data entered into the object.
     @return average of the data in the object.
@@ -237,6 +240,16 @@ public:
     @return standard deviation of the standard deviation for block.
   */
   double getBlockVarianceStandardDeviation(int i);
+
+  /**
+     The correlation length for the decorrelated data.
+  */
+  double getCorrelationLength();
+
+  /**
+     The correlation length for a particular block i
+  */
+  double getCorrelationLength(int i);
 
  private:
 

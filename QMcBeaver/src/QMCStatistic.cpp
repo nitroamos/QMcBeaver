@@ -54,22 +54,26 @@ double QMCStatistic::getVariance() const
 
 double QMCStatistic::getSkewness() const
 {
-  if( nsamples == 0 || weights == 0 ) return 0;
+  if( nsamples < 5 || weights == 0 ) return 0;
   double skew = sum3/weights;
   skew -= 3.0 * getAverage() * sum2/weights;
   skew += 2.0 * getAverage() * getAverage() * getAverage();
   double var = getVariance();
+
+  if(fabs(skew) > 1e100 || fabs(var) < 1e-50) return 0.0;
   return skew / pow(var,1.5);
 }
 
 double QMCStatistic::getKurtosis() const
 {
-  if( nsamples == 0 || weights == 0 ) return 0;
+  if( nsamples < 5 || weights == 0 ) return 0;
   double kurt = sum4/weights;
   kurt -= 4.0 * getAverage() * sum3/weights;
   kurt += 6.0 * getAverage() * getAverage() * sum2/weights;
   kurt -= 3.0 * getAverage() * getAverage() * getAverage() * getAverage();
   double var = getVariance();
+
+  if(fabs(kurt) > 1e100 || fabs(var) < 1e-50) return 0.0;
   return kurt / (var * var) - 3.0;
 }
 
@@ -93,6 +97,19 @@ void QMCStatistic::newSample(long double s, long double weight)
       sum2    +=     s*s*weight;
       sum3    +=   s*s*s*weight;
       sum4    += s*s*s*s*weight;
+    }
+  nsamples++;
+}
+
+void QMCStatistic::quickSample(long double s, long double weight)
+{
+  if(nsamples == 0)
+    {
+      weights =       1;
+      sum     =       s;
+    } else {
+      weights +=      1;
+      sum     +=      s;
     }
   nsamples++;
 }

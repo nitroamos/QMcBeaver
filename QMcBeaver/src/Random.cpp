@@ -266,6 +266,20 @@ double Random::sindev()
   return acos(1.0-2.0*unidev());
 }
 
+double Random::sindev(double u)
+{
+  double scale = 1.0;
+  if(u < 3.14159265359 * 0.5)
+    scale = sin(u);
+  
+  while(true)
+    {
+      double x = u*unidev();
+      if( unidev() < sin(x)/scale )
+	return x;
+    }
+}
+
 double Random::randomDistribution1()
 {
   while(true)
@@ -273,6 +287,91 @@ double Random::randomDistribution1()
       double x = expdev()/0.4;
 
       if( unidev() < ( 0.5*x*x*exp(-x) )/( 0.8*exp(-0.4*x) ) )
+	{
+	  return x;
+	}
+    }
+}
+
+double Random::pdf2(double a, double zeta, double x)
+{
+  return fabs((1.0+a*x)*exp(-zeta * x) * sqrt(x));
+}
+
+double Random::randomDistribution2(double a, double zeta, double l, double r)
+{
+#ifdef QMC_DEBUG
+  if(l > r){
+    cout << "Error: lower bound (" << l << ") is higher than upper bound (" << r << ")" << endl;
+  }
+#endif
+
+  double scale = 1.0;
+  if(fabs(a) < 1e-50)
+    {
+      double root1  = 0.5 / zeta;
+      double vroot1 = pdf2(a, zeta, root1);
+      scale = vroot1;
+
+      /*
+      printf("1=%20.10f\n",root1);
+      printf("1=%20.10f\n",vroot1);
+      */
+    } else if(fabs(zeta) < 1e-50){
+      double root1  = -1.0 / (3.0*a);
+      double vroot1 = pdf2(a, zeta, root1);
+      scale = vroot1;
+
+      /*
+      printf("1=%20.10f\n",root1);
+      printf("1=%20.10f\n",vroot1);
+      */
+    } else {
+      double root1  = (3.0*a - 2.0*zeta + sqrt(9.0*a*a - 4.0*a*zeta + 4.0*zeta*zeta))/(4.0*a*zeta);
+      double root2  = (3.0*a - 2.0*zeta - sqrt(9.0*a*a - 4.0*a*zeta + 4.0*zeta*zeta))/(4.0*a*zeta);
+      double vroot1 = pdf2(a, zeta, root1);
+      double vroot2 = pdf2(a, zeta, root2);
+      scale = max(vroot1,vroot2);
+
+      /*
+      printf("1=%20.10f 2=%20.10f\n",root1,root2);
+      printf("1=%20.10f 2=%20.10f\n",vroot1,vroot2);
+      */
+    }
+
+  double vl    = pdf2(a, zeta, l);
+  double vr    = pdf2(a, zeta, r);
+  scale = max(scale,vl);
+  scale = max(scale,vr);
+
+  /*
+  printf("l=%20.10f r=%20.10f\n",l,r);
+  printf("l=%20.10f r=%20.10f scale=%20.10f\n",vl,vr,scale);
+  */
+
+  while(true)
+    {
+      double x = (r-l)*unidev() + l;
+      if( unidev() < pdf2(a, zeta, x)/ scale )
+	{
+	  return x;
+	}
+    }
+}
+
+double Random::randomDistribution3(double F)
+{
+  //I assume F can never be negative
+#ifdef QMC_DEBUG
+  if(F <= 0.0){
+    cout << "Error: why is F = " << F << " negative?" << endl;
+  }
+#endif
+  double scale = 1.0 + F;
+  while(true)
+    {
+      double x = 2.0*3.14159265359*unidev();
+      if( unidev() < (1.0 + F*cos(x))/ scale )
 	{
 	  return x;
 	}

@@ -21,7 +21,7 @@
 #include "QMCInput.h"
 #include "QMCJastrow.h"
 #include "QMCPotential_Energy.h"
-#include "QMCGreensRatioComponent.h"
+#include "QMCDouble.h"
 #include "QMCHartreeFock.h"
 #include "QMCConfigIO.h"
 #include "IeeeMath.h"
@@ -136,7 +136,7 @@ public:
   QMCPotential_Energy PE;
   QMCNuclearForces nf;
 
-  QMCGreensRatioComponent Psi;
+  QMCDouble Psi;
 
   double Laplacian_PsiRatio;
 
@@ -245,7 +245,7 @@ public:
      
      @return wavefunction value
   */
-  QMCGreensRatioComponent getPsi()
+  QMCDouble getPsi()
     {
       return Psi;
     }

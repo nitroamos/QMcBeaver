@@ -302,6 +302,8 @@ QMCWavefunction QMCWavefunction::operator=( const QMCWavefunction & rhs )
   trialFunctionType = rhs.trialFunctionType;
   OrbitalCoeffs     = rhs.OrbitalCoeffs;
   CI_coeffs         = rhs.CI_coeffs;
+  CI_constraints    = rhs.CI_constraints;
+  numIndependent    = rhs.numIndependent;
   AlphaOccupation   = rhs.AlphaOccupation;
   BetaOccupation    = rhs.BetaOccupation;
   return *this;
@@ -384,11 +386,32 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
   strm >> temp_string;
 
   rhs.CI_coeffs.allocate(rhs.Ndeterminants);
-  for (int i=0; i<rhs.Ndeterminants; i++)
+  rhs.CI_constraints.allocate(rhs.Ndeterminants);
+  rhs.numIndependent = rhs.Ndeterminants;
+  rhs.CI_constraints = -1;
+  for(int i=0; i<rhs.Ndeterminants; i++)
     {
-      strm >> rhs.CI_coeffs(i);
+      string temp;
+      strm >> temp;
+
+      if(temp.find('c') != string::npos)
+	{
+	  int c;
+	  strm >> c;
+
+	  // This coefficient is constrainted
+	  // when optimizing
+	  rhs.CI_constraints(i) = c;
+	  rhs.numIndependent--;
+	} else {
+	  rhs.CI_coeffs(i) = atof(temp.c_str());
+	}
     }
 
+  for(int i=0; i<rhs.Ndeterminants; i++)
+    if(rhs.CI_constraints(i) != -1)
+      rhs.CI_coeffs(i) = rhs.CI_coeffs(rhs.CI_constraints(i));
+  
   if(rhs.Ncharge != 0)
     {
       cerr << "Error: molecular charges have not been included in QMcBeaver\n";
@@ -570,10 +593,15 @@ ostream& operator <<(ostream& strm, QMCWavefunction& rhs)
   strm << endl << "CI Coeffs" << endl;
   for (int i=0; i<rhs.Ndeterminants; i++)
     {
-      strm.precision(wf_precision);
-      if(rhs.CI_coeffs(i) < 0.0) strm << " -";
-      else                       strm << "  ";
-      strm << setw(wf_width) << left << fabs(rhs.CI_coeffs(i)) << endl;
+      if(rhs.CI_constraints(i) == -1)
+	{
+	  strm.precision(wf_precision);
+	  if(rhs.CI_coeffs(i) < 0.0) strm << " -";
+	  else                       strm << "  ";
+	  strm << setw(wf_width) << left << fabs(rhs.CI_coeffs(i)) << endl;
+	} else {
+	  strm << " c " << rhs.CI_constraints(i) << endl;
+	}
     }
   strm << endl;
   
@@ -589,32 +617,54 @@ int QMCWavefunction::getNumberCIParameters()
     Since the wavefunction is invariant to normalization,
     there are only N-1 independent CI coefficients.
   */
-  return getNumberDeterminants();
+  return numIndependent;
 }
 
 void QMCWavefunction::getCIParameters(Array1D<double> & params, int shift)
 {
-  for(int i=0; i<getNumberCIParameters(); i++)
-    params(i + shift) = CI_coeffs(i);
+  if(getNumberCIParameters() <= 0)
+    return;
+
+  int ci = 0;
+  for(int i=0; i<getNumberDeterminants(); i++)
+    {
+      if(CI_constraints(i) == -1)
+	{
+	  params(ci + shift) = CI_coeffs(i);
+	  ci++;
+	}
+    }
 }
 
 void QMCWavefunction::setCIParameters(Array1D<double> & params, int shift)
 {
-  for(int i=0; i<getNumberCIParameters(); i++)
-    CI_coeffs(i) = params(i + shift);
+  if(getNumberCIParameters() <= 0)
+    return;
+  
+  int ci = 0;
+  for(int i=0; i<getNumberDeterminants(); i++)
+    {
+      if(CI_constraints(i) == -1)
+	{
+	  CI_coeffs(i) = params(ci + shift);
+	  ci++;
+	}
+    }
+  for(int i=0; i<getNumberDeterminants(); i++)
+    {
+      if(CI_constraints(i) != -1)
+	CI_coeffs(i) = CI_coeffs(CI_constraints(i));
+    }
 }
 
 double QMCWavefunction::getCINorm()
 {
-  double norm = 0;
-  for(int ci=0; ci<Ndeterminants; ci++)
-    norm += CI_coeffs(ci)*CI_coeffs(ci);
-  return sqrt(norm);
+  return CI_coeffs.mag();
 }
 
 void QMCWavefunction::normalizeCI()
 {
-  double norm = getCINorm();
+  double norm = CI_coeffs.mag();
   for(int ci=0; ci<Ndeterminants; ci++)
     CI_coeffs(ci) = CI_coeffs(ci)/norm;
 }

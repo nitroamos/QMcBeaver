@@ -13,6 +13,7 @@
 #include "QMCWalker.h"
 #include "QMCSurfer.h"
 #include "QMCPotential_Energy.h"
+#include "math.h"
 
 const double QMCWalker::maxFWAsymp = 1.0;
 long int QMCWalker::nextID = 0;
@@ -22,11 +23,12 @@ QMCWalker::QMCWalker()
   TrialWalker    = 0;
   OriginalWalker = 0;
 
-  dW       = 1.0;
-  weight   = 1.0;
-  age      = 0;
-  dR2      = 0.0;
-  ageMoved =-1;
+  dW          =  1.0;
+  weight      =  1.0;
+  age         =  0;
+  dR2         =  0.0;
+  ageMoved    = -1;
+  numWarnings =  0;
 }
 
 void QMCWalker::branchID()
@@ -93,9 +95,10 @@ void QMCWalker::operator=( const QMCWalker & rhs )
   // This is not required because these are just temporary variables used in
   // propagating the electrons.
   
-  weight   = rhs.weight;
-  age      = rhs.age;
-  ageMoved = rhs.ageMoved;
+  weight      = rhs.weight;
+  age         = rhs.age;
+  ageMoved    = rhs.ageMoved;
+  numWarnings = rhs.numWarnings;
 
   for(int i=0; i<numAncestors; i++)
     genealogy[i] = rhs.genealogy[i];
@@ -176,22 +179,29 @@ void QMCWalker::processPropagation(QMCFunctions & QMF, bool writeConfigs)
       if(iteration == iteration_to_stop)
 	{
 	  static QMCSurfer s;
-	  cout << "\n**** Surfing walker " << ID();
+	  cout << "\n**** Surfing walker " << ID(false);
 	  iteration_to_stop = s.mainMenu(&QMF, iteration, R);
 	}
     }
 
-  QMCGreensRatioComponent reverseGreensFunction =
+
+  QMCDouble reverseGreensFunction =
     calculateReverseGreensFunction();
   double GreensFunctionRatio =
     (double)(reverseGreensFunction/forwardGreensFunction);
 
-  if (IeeeMath::isNaN(GreensFunctionRatio))
+  if (IeeeMath::isNaN(GreensFunctionRatio)){
+    cout << "Error: bad Green's ratio " << GreensFunctionRatio << endl;
+    cout << " Forward = " << forwardGreensFunction << endl;
+    cout << " Reverse = " << reverseGreensFunction << endl;
     calculateMoveAcceptanceProbability(0.0);
+  }
   else
     calculateMoveAcceptanceProbability(GreensFunctionRatio);
   
   acceptOrRejectMove();
+
+  //exit(0);
 
   if(walkerData.whichE == -1 ||
      walkerData.whichE == 0)
@@ -224,13 +234,20 @@ void QMCWalker::processPropagation(QMCFunctions & QMF, bool writeConfigs)
   if(move_accepted == false)
     {
       R                     = OriginalWalker->R;
-      walkerData            = OriginalWalker->walkerData;
       AcceptanceProbability = OriginalWalker->AcceptanceProbability;
+
+      if(globalInput.flags.one_e_per_iter == 0)
+	{
+	  walkerData            = OriginalWalker->walkerData;
+	} else {	 
+	  walkerData.updateDistances(R);
+	  QMF.evaluate(R,walkerData);
+	}
     }
   
   if( TrialWalker->isSingular() )
     {
-      cerr << "WARNING: Reinitializing a singular walker!!" << endl;
+      cerr << "WARNING: Reinitializing a singular walker!! " << ID(true) << endl;
       initializeWalkerPosition(QMF);
     }
 
@@ -244,7 +261,7 @@ void QMCWalker::processPropagation(QMCFunctions & QMF, bool writeConfigs)
     }
 }
 
-QMCGreensRatioComponent QMCWalker::moveElectrons()
+QMCDouble QMCWalker::moveElectrons()
 {
   // Make sure that dt is positive!
   if( Input->flags.dt <= 0 )
@@ -252,7 +269,7 @@ QMCGreensRatioComponent QMCWalker::moveElectrons()
       cerr << "ERROR: Negative dt value! (" << Input->flags.dt << ")" << endl;
       exit(0);
     }
-  QMCGreensRatioComponent gr = QMCGreensRatioComponent();
+  QMCDouble gr = QMCDouble();
   
   if(Input->flags.sampling_method == "no_importance_sampling")
     gr = moveElectronsNoImportanceSampling();
@@ -260,6 +277,8 @@ QMCGreensRatioComponent QMCWalker::moveElectrons()
     gr = moveElectronsImportanceSampling();
   else if(Input->flags.sampling_method == "umrigar93_importance_sampling")
     gr = moveElectronsUmrigar93ImportanceSampling();
+  else if(Input->flags.sampling_method == "umrigar93_accelerated_sampling")
+    gr = moveElectronsUmrigar93AcceleratedSampling();
   else
     {
       cerr << "ERROR: Improper value for sampling_method set ("
@@ -271,7 +290,7 @@ QMCGreensRatioComponent QMCWalker::moveElectrons()
   return gr;
 }
 
-QMCGreensRatioComponent QMCWalker::moveElectronsNoImportanceSampling()
+QMCDouble QMCWalker::moveElectronsNoImportanceSampling()
 {
   int whichE = walkerData.whichE;
 
@@ -298,10 +317,10 @@ QMCGreensRatioComponent QMCWalker::moveElectronsNoImportanceSampling()
 	}
     }
       
-  return QMCGreensRatioComponent(1.0);
+  return QMCDouble(1.0);
 }
 
-QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
+QMCDouble QMCWalker::moveElectronsImportanceSampling()
 {
   Array2D<double> Displacement(R.dim1(),R.dim2());
   double tau    = Input->flags.dt;
@@ -351,14 +370,14 @@ QMCGreensRatioComponent QMCWalker::moveElectronsImportanceSampling()
     
   //k a^2 exp(c)
   double k = 1.0;
-  double a = 2.0*3.14159265359*tau;
+  double a = 2.0*pi*tau;
   double b = -0.5*R.dim1()*R.dim2();
   double c = -greens/(2.0*tau);
   
-  return QMCGreensRatioComponent(k,a,b,c);
+  return QMCDouble(k,a,b,c);
 }
 
-QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
+QMCDouble QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 {
   int whichE = walkerData.whichE;
   double tau = Input->flags.dt;
@@ -371,10 +390,10 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
   Array1D<double> radialUnitVector(3);
   Array1D<double> newPosition(3);
   
-  QMCGreensRatioComponent GF(1.0);
-  QMCGreensRatioComponent GaussianGF;
-  QMCGreensRatioComponent SlaterGF;
-  QMCGreensRatioComponent OneE;
+  QMCDouble GF(1.0);
+  QMCDouble GaussianGF;
+  QMCDouble SlaterGF;
+  QMCDouble OneE;
 
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
     {
@@ -383,20 +402,11 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	toMove = false;
 
       // Find the nearest nucleus to this electron
-      int nearestNucleus = Input->Molecule.findClosestNucleusIndex(R,electron);
-      double distanceFromNucleus = 0.0;
+      int nearestNucleus = Input->Molecule.findClosestNucleusIndex(walkerData.riA,electron);
+      double distanceFromNucleus = walkerData.riA(electron,nearestNucleus);
       
-      // Calculate the unit vector in the Z direction
       for(int i=0; i<3; i++)
-        {
-          zUnitVector(i) = R(electron,i) -
-                           Input->Molecule.Atom_Positions(nearestNucleus,i);
-	  distanceFromNucleus += zUnitVector(i)*zUnitVector(i);
-        }
-
-      distanceFromNucleus = sqrt(distanceFromNucleus);
-      zUnitVector /= distanceFromNucleus;
-      
+	zUnitVector(i) = walkerData.riA_uvec(electron,nearestNucleus,i);
       
       // Decompose the modified QF into components in the z and radial
       // directions
@@ -437,9 +447,13 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       // to a gaussian type distribution with a QF drift or a hydrogenic
       // atom type slater function centered on the closest nucleus
       
+      /*
+	double probabilitySlaterTypeMove = 0.5 *
+	erfc( (distanceFromNucleus + zComponentQF * tau) / sqrt(2.0 * tau) );
+	/*/
       double probabilitySlaterTypeMove = 0.5 *
-              MathFunctions::erfc( (distanceFromNucleus + zComponentQF * tau) /
-                                                             sqrt(2.0 * tau) );
+      MathFunctions::erfc( (distanceFromNucleus + zComponentQF * tau) / sqrt(2.0 * tau) );
+      //*/
 
       if (probabilitySlaterTypeMove > 1.0)
 	{
@@ -455,10 +469,10 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	}
                                                               
       double probabilityGaussianTypeMove = 1.0 - probabilitySlaterTypeMove;
-      // Randomly decide which electron moving method to use
       
       if(toMove)
 	{
+	  // Randomly decide which electron moving method to use
 	  if( probabilityGaussianTypeMove > ran.unidev() )
 	    {
 	      // Gaussian Type Move
@@ -469,8 +483,9 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	      //   gaussian random number with standard deviation sqrt(tau)
 	      for(int i=0; i<3; i++)
 		newPosition(i) = Input->Molecule.Atom_Positions(nearestNucleus,i)
-		  + radialCoordinate * radialUnitVector(i) + zCoordinate * zUnitVector(i) +
-		  sqrt(tau)*ran.gasdev();
+		  + radialCoordinate * radialUnitVector(i)
+		  + zCoordinate * zUnitVector(i)
+		  + sqrt(tau)*ran.gasdev();
 	    }
 	  else
 	    {
@@ -482,7 +497,7 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	      // add random part
 	      
 	      double r = ran.randomDistribution1()/(2.0*expParam);
-	      double phi = 2*3.14159265359*ran.unidev();
+	      double phi = 2*pi*ran.unidev();
 	      double theta = ran.sindev();
 	      
 	      newPosition(0) += r*sin(theta)*cos(phi);
@@ -496,9 +511,17 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	    newPosition(i) = R(electron,i);
 	}
 
+      double temp;
+      // Update the distance attempted to move squared and move the electron.
+      for(int i=0; i<3; i++)
+        {
+          temp = newPosition(i) - R(electron,i);
+          dR2 += temp*temp;
+          R(electron,i) = newPosition(i);
+        }
+
       // Update the greens function
       double distance1Sq = 0.0;
-      double temp;
       
       for(int i=0; i<3; i++)
         {
@@ -509,12 +532,19 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
           distance1Sq += temp*temp;
         }
       
-      double ga = 2*3.14159265359*tau;
+      double ga = 2*pi*tau;
       double gb = -1.5;
       double gc = -distance1Sq/(2*tau);
       
-      GaussianGF=QMCGreensRatioComponent(probabilityGaussianTypeMove,ga,gb,gc);
-      
+      GaussianGF=QMCDouble(probabilityGaussianTypeMove,ga,gb,gc);
+
+      /*
+      if(probabilitySlaterTypeMove < 1e-20)
+	{
+	  GF *= GaussianGF;
+	  continue;	  
+	}
+      */
       double distance2Sq = 0.0;
       
       for(int i=0; i<3; i++)
@@ -525,31 +555,153 @@ QMCGreensRatioComponent QMCWalker::moveElectronsUmrigar93ImportanceSampling()
           distance2Sq += temp*temp;
         }
       
-      double sk = probabilitySlaterTypeMove/3.14159265359;
+      double sk = probabilitySlaterTypeMove/pi;
       double sa = expParam;
       double sb = 3.0;
       double sc = -2.0*expParam*sqrt(distance2Sq);
       
-      SlaterGF = QMCGreensRatioComponent(sk,sa,sb,sc);
+      SlaterGF = QMCDouble(sk,sa,sb,sc);
       
       // The addition and multiplication operations here have been causing a
       // lot of problems.
       OneE = SlaterGF + GaussianGF;
       
       GF *= OneE;
-      
-      // Update the distance attempted to move squared and move the electron.
-      for(int i=0; i<3; i++)
-        {
-          temp = newPosition(i) - R(electron,i);
-          dR2 += temp*temp;
-          R(electron,i) = newPosition(i);
-        }
     }
   return GF;
 }
 
-QMCGreensRatioComponent QMCWalker::calculateReverseGreensFunction()
+QMCDouble QMCWalker::moveElectronsUmrigar93AcceleratedSampling()
+{
+  int whichE = walkerData.whichE;
+  double cos_tm = cos(globalInput.flags.accel_tm);
+  double delta = globalInput.flags.accel_delta;
+  bool toMove;
+
+  dR2 = 0.0;
+  Array2D<double> & Fk = walkerData.modifiedGradPsiRatio;
+  //Array2D<double> & Fk = walkerData.gradPsiRatio;
+  
+  Array1D<double> riA_hat(3);
+  Array1D<double> Fx(3);
+  Array1D<double> newPosition(3);
+  
+  QMCDouble GF(1.0);
+  for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
+    {
+      toMove = true;
+      if(whichE != -1 && electron != whichE)
+	toMove = false;
+      if(!toMove) continue;
+
+      // Find the nearest nucleus to this electron
+      int nearestNucleus = Input->Molecule.findClosestNucleusIndex(walkerData.riA,electron);
+      double Z = Input->Molecule.Z(nearestNucleus);
+      double riA = walkerData.riA(electron,nearestNucleus);
+      
+      for(int xyz=0; xyz<3; xyz++)
+	riA_hat(xyz) = walkerData.riA_uvec(electron,nearestNucleus,xyz);      
+
+      /*
+	First, calculate the new radius. To do this, we need to fit
+	parameters a and zeta so that the U function matches log derivatives.
+	Frk = rki . Fk
+      */
+      double Frk = 0.0;      
+      for(int xyz=0; xyz<3; xyz++)
+	Frk += riA_hat(xyz)*Fk(electron,xyz);
+
+      //Get zeta and a
+      double zeta, a, I;
+      MathFunctions::fitU(Z,Frk,riA,delta,zeta,a,I);
+
+      //Now that we have a and zeta, we can sample the function sqrt(rf) |U(rf)|
+      double rkf;
+      if(toMove) rkf = ran.randomDistribution2(a,zeta,riA/delta,riA*delta);
+      else	 rkf = riA;
+      double rav = (riA + rkf)/2.0;
+
+      /*
+	Obtain the new theta
+      */
+      double tM, cos_tM;
+      cos_tM = cos_tm - (1.0 + cos_tm)/(1.0 + Z*Z*rav*rav);
+      tM = acos(cos_tM);
+
+      double tkf;
+      if(toMove){
+	tkf = ran.sindev(tM);	
+      } else {
+	tkf = 0.0;
+      }
+      double s_tkf = sin(tkf);
+      double c_tkf = cos(tkf);
+
+      /*
+	Obtain the new phi
+	Fxk = | Fk - Frk rk |
+      */
+      double Fxk = 0.0;
+      for(int xyz=0; xyz<3; xyz++)
+        {
+          Fx(xyz) = Fk(electron,xyz) - Frk*riA_hat(xyz);
+          Fxk += Fx(xyz)*Fx(xyz);
+        }
+      Fxk = sqrt(Fxk);
+
+      double Fpk = Fxk*rav*s_tkf;
+      double pkf;
+      if(toMove) pkf = ran.randomDistribution3(Fpk);
+      else       pkf = 0.0;
+
+      // Our new position is rotated theta degrees in the direction of Fx
+      for(int xyz=0; xyz<3; xyz++)
+	newPosition(xyz) = c_tkf*riA_hat(xyz) + s_tkf*Fx(xyz)/Fxk;
+
+      // Rotate our new position phi degrees around riA_hat
+      newPosition.rotate(riA_hat,pkf);
+      newPosition *= rkf;
+
+      double temp;
+      for(int xyz=0; xyz<3; xyz++)
+        {
+	  //Move the electron
+          temp = newPosition(xyz) - R(electron,xyz);
+          R(electron,xyz) = newPosition(xyz);
+          dR2 += temp*temp;
+	}
+
+      /*
+	Finally, calculate the transition matrix terms
+	S(Rf|Ri) is the current going to Rf from Ri
+	S(Rf|Ri) = | Phi(Rf|Ri) | / rkf^1.5 (eqn 24)
+	Phi(Rf|Ri) = W V U
+      */
+      double S = 1.0;
+      S *= (1.0 + a*rkf)*exp(-zeta*rkf);
+      S *= 1.0 + min(Fpk,1.0)*cos(pkf);
+      S *= pow(rkf,-1.5);
+      S = fabs(S);
+
+      I *= (1.0 - cos_tM);
+      I *= 2*pi;
+
+      //T(Rf|Ri) = S(Rf|Ri)/I(Ri) is probability of going from Ri to Rf 
+      if(fabs(I) > 1e-50)
+	GF *= QMCDouble(S/I);
+
+      if(GF.isNotValid()){
+	printf("move electron=%i age=%i\n",electron,age);
+	printf("rki=%20.10f a=%20.10f zeta=%20.10f i=%20.10f o=%20.10f tM=%20.10e\n",riA,a,zeta,riA/delta,riA*delta,tM);
+	printf("Frk=%20.10f Fxk=%20.10f Fpk=%20.10f\n",Frk,Fxk,Fpk);
+	printf("rkf=%20.10f tkf=%20.10f pkf=%20.10f\n",rkf,tkf,pkf); 
+	printf("S=%20.10e I=%20.10e T=%20.10e\n",S,I,(double)(GF));
+      }
+    }
+  return GF;
+}
+
+QMCDouble QMCWalker::calculateReverseGreensFunction()
 {
   // Make sure that dt is positive!
   if( Input->flags.dt <= 0 )
@@ -564,6 +716,8 @@ QMCGreensRatioComponent QMCWalker::calculateReverseGreensFunction()
       return calculateReverseGreensFunctionImportanceSampling();
   else if(Input->flags.sampling_method == "umrigar93_importance_sampling")
       return calculateReverseGreensFunctionUmrigar93ImportanceSampling();
+  else if(Input->flags.sampling_method == "umrigar93_accelerated_sampling")
+      return calculateReverseGreensFunctionUmrigar93AcceleratedSampling();
   else
     {
       cerr << "ERROR: Improper value for sampling_method set ("
@@ -573,17 +727,17 @@ QMCGreensRatioComponent QMCWalker::calculateReverseGreensFunction()
     
   // should never reach this
   
-  QMCGreensRatioComponent TRASH = QMCGreensRatioComponent();
+  QMCDouble TRASH = QMCDouble();
   return TRASH;
 }
 
-QMCGreensRatioComponent \
+QMCDouble \
 QMCWalker::calculateReverseGreensFunctionNoImportanceSampling()
 {
-  return QMCGreensRatioComponent(1.0);
+  return QMCDouble(1.0);
 }
 
-QMCGreensRatioComponent \
+QMCDouble \
 QMCWalker::calculateReverseGreensFunctionImportanceSampling()
 {
   double tau = Input->flags.dt;  
@@ -602,14 +756,14 @@ QMCWalker::calculateReverseGreensFunctionImportanceSampling()
 
   // k * a^b * exp(c)
   double k = 1.0;
-  double a = 2.0*3.14159265359*tau;
+  double a = 2.0*pi*tau;
   double b = -0.5*R.dim1()*R.dim2();
   double c = -greens/(2.0*tau);
 
-  return QMCGreensRatioComponent(k,a,b,c);
+  return QMCDouble(k,a,b,c);
 }
 
-QMCGreensRatioComponent \
+QMCDouble \
 QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
 {
   int whichE = walkerData.whichE;
@@ -619,10 +773,10 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
   Array1D<double> zUnitVector(3);
   Array1D<double> radialUnitVector(3);
 
-  QMCGreensRatioComponent GF(1.0);
-  QMCGreensRatioComponent GaussianGF;
-  QMCGreensRatioComponent SlaterGF;
-  QMCGreensRatioComponent OneE;
+  QMCDouble GF(1.0);
+  QMCDouble GaussianGF;
+  QMCDouble SlaterGF;
+  QMCDouble OneE;
 
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
     {      
@@ -631,22 +785,11 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
 	moved = false;
 
       // Find the nearest nucleus to this electron
-      int nearestNucleus =
-        Input->Molecule.findClosestNucleusIndex(TrialWalker->R,electron);
-        
-      // Calculate the unit vector in the Z direction
-      double distanceFromNucleus = 0.0;
+      int nearestNucleus = Input->Molecule.findClosestNucleusIndex(TrialWalker->walkerData.riA,electron);
+      double distanceFromNucleus = walkerData.riA(electron,nearestNucleus);
       
       for(int i=0; i<3; i++)
-        {
-          zUnitVector(i) = TrialWalker->R(electron,i) -
-                           Input->Molecule.Atom_Positions(nearestNucleus,i);
-                           
-          distanceFromNucleus += zUnitVector(i)*zUnitVector(i);
-        }
-        
-      distanceFromNucleus = sqrt(distanceFromNucleus);
-      zUnitVector /= distanceFromNucleus;
+	zUnitVector(i) = walkerData.riA_uvec(electron,nearestNucleus,i);
       
       // Decompose the modified QF into components in the z and radial
       // directions
@@ -689,9 +832,13 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
       // to a gaussian type distribution with a QF drift or a hydrogenic
       // atom type slater function centered on the closest nucleus
       
+      /*
       double probabilitySlaterTypeMove = 0.5 *
-              MathFunctions::erfc( (distanceFromNucleus + zComponentQF * tau) /
-                                                             sqrt(2.0 * tau) );
+	erfc( (distanceFromNucleus + zComponentQF * tau) / sqrt(2.0 * tau) );
+	/*/
+      double probabilitySlaterTypeMove = 0.5 *
+      MathFunctions::erfc( (distanceFromNucleus + zComponentQF * tau) / sqrt(2.0 * tau) );
+      //*/
 
       if (probabilitySlaterTypeMove > 1.0)
 	{
@@ -722,12 +869,20 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
           distance1Sq += temp*temp;
         }
         
-      double ga = 2*3.14159265359*tau;
+      double ga = 2*pi*tau;
       double gb = -1.5;
       double gc = -distance1Sq/(2*tau);
       
-      GaussianGF=QMCGreensRatioComponent(probabilityGaussianTypeMove,ga,gb,gc);
-      
+      GaussianGF=QMCDouble(probabilityGaussianTypeMove,ga,gb,gc);
+
+      /*
+      if(probabilitySlaterTypeMove < 1e-20)
+	{
+	  GF *= GaussianGF;
+	  continue;
+	}
+      */
+
       double distance2Sq = 0.0;
       
       for(int i=0; i<3; i++)
@@ -738,18 +893,150 @@ QMCWalker::calculateReverseGreensFunctionUmrigar93ImportanceSampling()
           distance2Sq += temp*temp;
         }
         
-      double sk = probabilitySlaterTypeMove/3.14159265359;
+      double sk = probabilitySlaterTypeMove/pi;
       double sa = expParam;
       double sb = 3.0;
       double sc = -2.0*expParam*sqrt(distance2Sq);
       
-      SlaterGF = QMCGreensRatioComponent(sk,sa,sb,sc);
+      SlaterGF = QMCDouble(sk,sa,sb,sc);
 
       // The addition and multiplication operations here have been causing a
       // a lot of problems.
       OneE = SlaterGF + GaussianGF;
-      
+
       GF *= OneE;
+    }
+  return GF;
+}
+
+QMCDouble QMCWalker::calculateReverseGreensFunctionUmrigar93AcceleratedSampling()
+{
+  int whichE = walkerData.whichE;
+  bool moved;
+
+  double cos_tm = cos(globalInput.flags.accel_tm);
+  double delta  = globalInput.flags.accel_delta;
+
+  Array1D<double> riA_hat(3);
+  Array1D<double> rfA_hat(3);
+
+  Array1D<double> Fx(3);
+  Array2D<double> & Fk = TrialWalker->walkerData.modifiedGradPsiRatio;
+  //Array2D<double> & Fk = TrialWalker->walkerData.gradPsiRatio;
+
+  QMCDouble GF(1.0);
+  for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
+    {      
+      moved = true;
+      if(whichE != -1 && electron != whichE)
+	moved = false;
+      if(!moved) continue;
+
+      // Find the nearest nucleus to this electron
+      int nearestNucleus = Input->Molecule.findClosestNucleusIndex(TrialWalker->walkerData.riA,electron);
+      double Z = Input->Molecule.Z(nearestNucleus);
+      double rkf = OriginalWalker->walkerData.riA(electron,nearestNucleus);
+      double riA = TrialWalker->walkerData.riA(electron,nearestNucleus);
+      double rav = (riA + rkf)/2.0;
+      for(int xyz=0; xyz<3; xyz++)
+	{
+	  riA_hat(xyz) = TrialWalker->walkerData.riA_uvec(electron,nearestNucleus,xyz);
+	  rfA_hat(xyz) = OriginalWalker->walkerData.riA_uvec(electron,nearestNucleus,xyz);
+	}      
+
+      /*
+	First, calculate the new radius. To do this, we need to fit
+	parameters a and zeta so that the U function matches log derivatives.
+      */
+      double Frk = 0.0;
+      for(int xyz=0; xyz<3; xyz++)
+	Frk += riA_hat(xyz)*Fk(electron,xyz);
+
+      //Get zeta and a
+      double zeta, a, I;
+      MathFunctions::fitU(Z,Frk,riA,delta,zeta,a,I);
+
+      if(rkf > riA*delta || rkf < riA/delta){
+	printf("Warning: rkf is outside range! rkf=%20.10f l=%20.10f u=%20.10f\n",
+	       rkf,riA/delta,riA*delta);
+	GF *= QMCDouble(0.0);
+	return GF;
+      }
+
+      /*
+	Obtain the new theta, zenith angle
+      */
+      double tM, cos_tM;
+      cos_tM = cos_tm - (1.0 + cos_tm)/(1.0 + Z*Z*rav*rav);
+      tM = acos(cos_tM);
+
+      // This should be exactly the same as before, if nearestNucleus is the same
+      double ri_dot_rf = riA_hat * rfA_hat;
+      double tkf;
+      if(fabs(ri_dot_rf-1.0) < 1e-10) tkf = 0.0;
+      else tkf = acos(riA_hat * rfA_hat);
+
+      if(tkf > tM){
+	printf("Warning: tkf is outside range! tkf = %20.10f tM=%20.10f\n",tkf,tM);
+	GF *= QMCDouble(0.0);
+	return GF;
+      }
+
+      double s_tkf = sin(tkf);
+
+      /*
+	Obtain the new phi, azimuth angle
+      */
+      double Fxk = 0.0;
+      for(int i=0; i<3; i++)
+        {
+          Fx(i) = Fk(electron,i) - Frk*riA_hat(i);
+          Fxk += Fx(i)*Fx(i);
+        }
+      Fxk = sqrt(Fxk);
+      double Fpk = Fxk*rav*s_tkf;
+      double pkf;
+      double rf_dot_Fx = rfA_hat * Fx;
+      if(fabs(rf_dot_Fx) < 1e-10) pkf = 0.5*pi;
+      else pkf = acos((rfA_hat * Fx)/(s_tkf*Fxk));
+
+      /*
+      //It doesn't matter whether it's pkf or -pkf
+      //but this will help verify that we have the correct coordinates
+      double c_tkf = cos(tkf);
+      if((rfA_hat.cross(Fx) * riA_hat) > 0.0) pkf *= -1;
+      Array1D<double> newPosition(3);
+      for(int xyz=0; xyz<3; xyz++)
+	newPosition(xyz) = c_tkf*riA_hat(xyz) + s_tkf*Fx(xyz)/Fxk;
+      newPosition.rotate(riA_hat,pkf);
+      newPosition *= rkf;
+      for(int xyz=0;xyz<3;xyz++)
+	printf("%i pkf %20.10f diff %20.10f \n",xyz,pkf,
+	       newPosition(xyz)-rfA_hat(xyz)*rkf);
+      //*/
+      //printf("rkf=%20.10f tkf=%20.10f pkf=%20.10f\n",rkf,tkf,pkf); 
+
+      double S = 1.0;
+      S *= (1.0 + a*rkf)*exp(-zeta*rkf);
+      S *= 1.0 + min(Fpk,1.0)*cos(pkf);
+      S *= pow(rkf,-1.5);
+      S = fabs(S);
+
+      I *= (1.0 - cos_tM);
+      I *= 2*pi;
+
+      if( fabs(I) < 1e-50)
+	GF *= 0.0;
+      else
+	GF *= QMCDouble(S/I);
+
+      if(GF.isNotValid()){
+	printf("moved electron=%i age=%i\n",electron,age);
+	printf("a=%20.10f zeta=%20.10f i=%20.10f o=%20.10f cos_tM=%20.10f\n",a,zeta,riA/delta,riA*delta,cos_tM);  
+	printf("Frk=%20.10f Fxk=%20.10f Fpk=%20.10f\n",Frk,Fxk,Fpk);
+	printf("rkf=%20.10f tkf=%20.10f pkf=%20.10f\n",rkf,tkf,pkf); 
+	printf("S=%20.10e I=%20.10e T=%20.10e\n",S,I,(double)(GF));
+      }
     }
   return GF;
 }
@@ -766,9 +1053,8 @@ void QMCWalker::reweight_walker()
   
   bool weightIsNaN = false;
 
-  if( Input->flags.run_type == "variational" || Input->flags.equilibration_steps+iteration < 500 )
+  if( Input->flags.run_type == "variational")
     // Keep weights constant for VMC
-    // Keep weights constant for the first 500 iterations of a DMC calculation.
     dW = 1.0;
 
   else
@@ -935,14 +1221,13 @@ void QMCWalker::reweight_walker()
 		       Input->flags.energy_estimated_original);
     }
 
-  if(iteration < -100 && Input->flags.equilibration_steps+iteration >= 500)
+  if(iteration < -100)
     {
       /*
 	We're equilibrating when iteration < 0.
 
 	If we're equilibrating, we can be more aggressive about
 	handling bad walkers.
-	We are going to not branch for the first five hundred steps.
       */
       
       // we probably don't need warnings for the first couple steps
@@ -954,7 +1239,7 @@ void QMCWalker::reweight_walker()
 	{
 	  if(steps > min_steps)
 	    {
-	      cerr << "WARNING: Deleting heavy walker " << ID();
+	      cerr << "WARNING: Deleting heavy walker " << ID(move_accepted);
 	      cerr.flush();
 	    }
 	  setWeight(0.0);
@@ -965,7 +1250,7 @@ void QMCWalker::reweight_walker()
 	{
 	  if(steps > min_steps)
 	    {
-	      cerr << "WARNING: Deleting light walker " << ID();
+	      cerr << "WARNING: Deleting light walker " << ID(move_accepted);
 	      cerr.flush();
 	    }
 	  setWeight(0.0);
@@ -982,7 +1267,7 @@ void QMCWalker::reweight_walker()
 		  double p = TrialWalker->getAcceptanceProbability();
 		  double q = 1.0 - p;
 		  
-		  cerr << "WARNING: Deleting walker with bad dW " << ID();
+		  cerr << "WARNING: Deleting walker with bad dW " << ID(move_accepted);
 		  cerr << "       p = " << p << "; q = " << q;
 		  cerr << "       energy_trial     = " << Input->flags.energy_trial << endl;
 		  cerr << "       energy_estimated = " << Input->flags.energy_estimated << endl;
@@ -994,7 +1279,7 @@ void QMCWalker::reweight_walker()
 		}
 	      else
 		{
-		  //cerr << "WARNING: Deleting fast growth walker " << ID();
+		  //cerr << "WARNING: Deleting fast growth walker " << ID(move_accepted);
 		}
 	      cerr.flush();
 	    }
@@ -1017,7 +1302,7 @@ void QMCWalker::reweight_walker()
 	    Is there any argument suggesting that a Local Energy can never be +'ve?
 	   */
 	  if(rel_diff > rel_cutoff && steps > 2*min_steps){
-	    cerr << "WARNING: Deleting walker with bad energy " << ID();
+	    cerr << "WARNING: Deleting walker with bad energy " << ID(move_accepted);
 	    cerr.flush();
 	  }
 	  setWeight(0.0);
@@ -1030,7 +1315,7 @@ void QMCWalker::reweight_walker()
 	  // I don't see how a warning here could be very useful...
 	  if(steps > age_cutoff && false)
 	    {
-	      cerr << "WARNING: Deleting aged walker " << ID();
+	      cerr << "WARNING: Deleting aged walker " << ID(move_accepted);
 	      cerr.flush();
 	    }
 	  setWeight(0.0);
@@ -1048,7 +1333,7 @@ void QMCWalker::reweight_walker()
       */
       if(getWeight() > 50.0)
 	{
-	  cerr << "ERROR: Deleting heavy walker " << ID();
+	  cerr << "ERROR: Deleting heavy walker " << ID(move_accepted);
 	  cerr.flush();
 	  setWeight(0.0);
 	  return;
@@ -1056,7 +1341,7 @@ void QMCWalker::reweight_walker()
 
       if(rel_diff > globalInput.flags.rel_cutoff)
 	{
-	  cerr << "ERROR: Deleting walker with bad energy " << ID();
+	  cerr << "ERROR: Deleting walker with bad energy " << ID(move_accepted);
 	  cerr.flush();
 	  setWeight(0.0);
 	  return;
@@ -1068,7 +1353,7 @@ void QMCWalker::reweight_walker()
 	  double p = TrialWalker->getAcceptanceProbability();
 	  double q = 1.0 - p;
 	  
-	  strm << "ERROR: Deleting fast growth walker " << ID();
+	  strm << "ERROR: Deleting fast growth walker " << ID(move_accepted);
 	  strm << "       p = " << p << "; q = " << q;
 	  strm << "       energy_trial     = " << Input->flags.energy_trial << endl;
 	  strm << "       energy_estimated = " << Input->flags.energy_estimated << endl;
@@ -1167,14 +1452,14 @@ bool QMCWalker::branchRecommended()
 
   if(shouldWarn && !shouldRecommend && iteration > 0)
     {
-      cerr << "WARNING: Not recommending a branch for walker " << ID();
+      cerr << "WARNING: Not recommending a branch for walker " << ID(move_accepted);
       cerr.flush();
     }
 
   return shouldRecommend;
 }
 
-string QMCWalker::ID()
+string QMCWalker::ID(bool showTrial)
 {
   /*
     The output only depends upon move_accepted if
@@ -1183,81 +1468,79 @@ string QMCWalker::ID()
     syncronize the Trial and Original walkerData.
    */
   QMCWalkerData * wd;
-  if(move_accepted)
+  if(showTrial)
     wd = & TrialWalker->walkerData;
   else
     wd = & OriginalWalker->walkerData;
+
+  int w = 25;
+  int p = 15;
 
   double virial = 0;
   if(fabs(wd->kineticEnergy) > 1e-30)
     virial = -wd->potentialEnergy/wd->kineticEnergy;
 
+  /*
   double rel_diff = fabs( (wd->localEnergy -
 		    Input->flags.energy_estimated_original)/
 		   Input->flags.energy_estimated_original);
-
+  */
   stringstream id;
 
   id << "(" << genealogy[0];
   for(int i=1; i<numAncestors; i++)
-    id << "<" << genealogy[i];
+    {
+      if(genealogy[i] == -1)
+	break;
+      id << "<" << genealogy[i];
+    }
 
   id << "::" << Input->flags.my_rank << ")" << endl;
 
+  id << *wd;
+
   if(globalInput.flags.run_type != "variational")
     {
-      id << "     weight = ";
-      id.precision(15);
-      id.width(20);
-      id << getWeight() << endl;
-      
-      id << "         dW = ";
-      id.precision(15);
-      id.width(20);
-      id << dW << endl;
+      id.width(10);
+      id << "weight= "
+	 << setw(w) << setprecision(p)
+	 << scientific << getWeight();
+      id.width(10);
+      id << "   dW = "
+	 << setw(w) << setprecision(p)
+	 << fixed << dW;
+      id.width(10);
+      id << endl;
     }
 
-  id << "     energy = ";
-  id.precision(15);
-  id.width(20);
-  id << wd->localEnergy << endl;
+  id.width(10);
+  id << " iter = "
+     << setw(w) << setprecision(p)
+     << fixed << iteration;
+  id.width(10);
+  id << "  age = "
+     << setw(w) << setprecision(p)
+     << scientific << age;
+  id.width(10);
+  id << endl;
 
-  /*
-  id << "  mod.ratio = ";
-  id.precision(15);
-  id.width(20);
-  id << wd->modificationRatio << endl;
-  */
-
-  id << "     virial = ";
-  id.precision(15);
-  id.width(20);
-  id << virial << endl;
-
-  id << "   rel_diff = ";
-  id.precision(15);
-  id.width(20);
-  id << rel_diff << endl;
-
-  id << "        age = ";
-  id.width(20);
-  id << age << endl;
-  
-  id << "       iter = ";
-  id.width(20);
-  id << iteration << endl;
   return id.str();
 }
 
 void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
 {
-  // This tells us the probability of accepting or rejecting a proposed move
-  
+  // This tells us the probability of accepting or rejecting a proposed move  
   double PsiRatio = TrialWalker->walkerData.psi/OriginalWalker->walkerData.psi;
 
   // calculate the probability of accepting the trial move
   double p = PsiRatio * PsiRatio * GreensRatio;
-  
+
+  /*
+  printf("OP=%20.10e TP=%20.10e PsiRatio^2=%20.10e GR=%20.10e p=%20.10e\n",
+	 (double)OriginalWalker->walkerData.psi,
+	 (double)TrialWalker->walkerData.psi,
+	 PsiRatio*PsiRatio,GreensRatio,p);
+  //*/
   if( !(IeeeMath::isNaN(p)))
     {
       // 1.1 ^ 1000 ~= 1e41
@@ -1277,7 +1560,8 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
       
     } else {
       // if the aratio is NaN then reject the move
-      cerr << "WARNING: Rejecting trial walker with NaN p!" << endl;
+      numWarnings++;
+      cerr << "WARNING: Rejecting trial walker with NaN p! " << ID(true);
       cerr << "         PsiRatio    = " << PsiRatio << endl;
       cerr << "         GreensRatio = " << GreensRatio << endl;
       p = 0.0;
@@ -1285,32 +1569,28 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
       // p=0 doesn't result in 0 contribution.
       TrialWalker->walkerData.zero();
     }
-  
-  // The particular NaN that this is correcting for is not revealed by isinf or
-  // isnan...
-  double kineticEnergy = TrialWalker->walkerData.kineticEnergy;
-  if( IeeeMath::isNaN(kineticEnergy) )
-    {
-      cerr << "WARNING: Rejecting trial walker with NaN kinetic energy!" << endl;
-      p = 0.0;
-      TrialWalker->walkerData.zero();
-    }
-
-  double potentialEnergy = TrialWalker->walkerData.potentialEnergy;
-  if( IeeeMath::isNaN(potentialEnergy) )
-    {
-      cerr << "WARNING: Rejecting trial walker with NaN potential energy!" << endl;
-      p = 0.0;
-      TrialWalker->walkerData.zero();
-    }
     
   // if the trial position is singular reject the move
   if( TrialWalker->isSingular() )
     {
-      cerr << "WARNING: Rejecting singular trial walker!" << endl;
+      numWarnings++;
+      cerr << "WARNING: Rejecting singular trial walker! " << ID(true);
       p = 0.0;
       TrialWalker->walkerData.zero();
     }
+
+  if(numWarnings >= 10){
+    /*
+      I've had problems with exploding files. It's usually an indicator of a
+      programming error somewhere.
+    */
+    cerr << "ERROR: There have been " << numWarnings << " warnings, so I'm quitting." << endl;
+
+#ifdef PARALLEL
+    MPI_Abort(MPI_COMM_WORLD,1);
+#endif
+    exit(0);
+  }
     
   // Fixed Node Condition
   if( PsiRatio < 0 && Input->flags.run_type == "diffusion" )
@@ -1352,7 +1632,8 @@ void QMCWalker::acceptOrRejectMove()
     {
       if(ageMoved > Input->flags.old_walker_acceptance_parameter + 15)
 	{
-	  cerr << "WARNING: Old walker moved after " << ageMoved << " iterations " << ID();
+	  //cerr << "WARNING: Old walker moved after " << ageMoved << " iterations " << ID(false);
+	  cerr << "WARNING: Old walker moved after " << ageMoved << " iterations." << endl;
 	}
       /*
       if(aged >= 50 && aged%50 == 0)
@@ -1381,9 +1662,16 @@ void QMCWalker::createChildWalkers()
 
   //We create a copy of the data we need
   OriginalWalker->R                     = R;
-  OriginalWalker->walkerData            = walkerData;
   OriginalWalker->dR2                   = dR2;
   OriginalWalker->AcceptanceProbability = AcceptanceProbability;
+
+  if(globalInput.flags.one_e_per_iter == 0)
+    {
+      OriginalWalker->walkerData            = walkerData;
+    } else {
+      //when moving one electron at a time, a full copy is expensive
+      OriginalWalker->walkerData.partialCopy(walkerData);
+    }
 
   //And use a psuedonym
   TrialWalker = this;
@@ -1427,7 +1715,7 @@ void QMCWalker::initialize(QMCInput *INPUT)
 
   R.allocate(numElectrons,numDimensions);
 
-  walkerData.initialize(Input,numDimensions,
+  walkerData.initialize(numDimensions,
 			numNucForceDim1,numNucForceDim2);
 
   numFWSteps.resize(numFW);
@@ -1762,7 +2050,7 @@ void QMCWalker::calculateObservables()
 {
   double p = TrialWalker->AcceptanceProbability;
   double q = 1.0 - p;
-
+  
   // Calculate the Energy ...
   localEnergy = p * TrialWalker->walkerData.localEnergy +
                 q * OriginalWalker->walkerData.localEnergy;
@@ -1786,7 +2074,7 @@ void QMCWalker::calculateObservables()
     {
       cs_Energies.allocate(TrialWalker->walkerData.cs_LocalEnergy.dim1());
       cs_Weights.allocate(TrialWalker->walkerData.cs_Weights.dim1());
-
+      
       if(OriginalWalker->walkerData.cs_LocalEnergy.dim1() ==
 	 TrialWalker->walkerData.cs_LocalEnergy.dim1())
 	{
@@ -1803,12 +2091,12 @@ void QMCWalker::calculateObservables()
 	  cs_Weights = 0.0;
 	}
     }
-
+  
   if(globalInput.flags.calculate_Derivatives == 1)
     {
       p3_xxa.allocate(TrialWalker->walkerData.p3_xxa.dim1());
       rp_a.allocate(TrialWalker->walkerData.rp_a.dim1());
-
+      
       if(iteration == 1)
 	{
 	  /*
@@ -1832,11 +2120,11 @@ void QMCWalker::calculateObservables()
 	    }
 	}
     }
-
+  
   // Calculate the DistanceMovedAccepted this is the average distance
   // moved on a step
   distanceMovedAccepted = p * dR2;
-
+  
   if (Input->flags.calculate_bf_density == 1)
     {
       for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
@@ -1990,11 +2278,9 @@ void QMCWalker::calculateObservables( QMCProperties & props )
     So, we want to set this cutoff high enough to cut out
     all the good to decent walkers.
    */
-  /*
-  if(ageMoved > 1){
+  if(iteration > 0 && ageMoved > Input->flags.old_walker_acceptance_parameter){
     props.walkerAge.newSample(ageMoved,1.0);
   }
-  */
   ageMoved = -1;
 
 
@@ -2033,7 +2319,7 @@ void QMCWalker::calculateObservables( QMCProperties & props )
 	    }
 
 	  if(shouldWarn && iteration + Input->flags.equilibration_steps > 5){
-	    cerr << "ERROR: Not including walker in average " << ID();
+	    cerr << "ERROR: Not including walker in average " << ID(move_accepted);
 	    cerr << "   localEnergy = " << localEnergy << endl;
 	    cerr.flush();
 	  }
@@ -2055,7 +2341,7 @@ void QMCWalker::calculateObservables( QMCProperties & props )
   props.logWeights.newSample(getWeight(),1);
 }
 
-void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
+void QMCWalker::calculateObservables( QMCPropertyArrays & fwProps )
 {
 
   double rel_diff = fabs( (localEnergy -
@@ -2179,11 +2465,11 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 	    of original and trial walkers...
 	  */
 	  double e2 = localEnergy * localEnergy;
-	  fwProps.der(ai,0).newSample(rp_a(ai),                 getWeight());
-	  fwProps.der(ai,1).newSample(rp_a(ai) * localEnergy,   getWeight());
-	  fwProps.der(ai,2).newSample(rp_a(ai) * e2,            getWeight());
-	  fwProps.der(ai,3).newSample(p3_xxa(ai),               getWeight());
-	  fwProps.der(ai,4).newSample(p3_xxa(ai) * localEnergy, getWeight());
+	  fwProps.der(ai,0).quickSample(rp_a(ai),                 getWeight());
+	  fwProps.der(ai,1).quickSample(rp_a(ai) * localEnergy,   getWeight());
+	  fwProps.der(ai,2).quickSample(rp_a(ai) * e2,            getWeight());
+	  fwProps.der(ai,3).quickSample(p3_xxa(ai),               getWeight());
+	  fwProps.der(ai,4).quickSample(p3_xxa(ai) * localEnergy, getWeight());
 	}
       
       if(globalInput.flags.optimize_Psi_criteria == "analytical_energy_variance")
@@ -2191,15 +2477,16 @@ void QMCWalker::calculateObservables( QMCFutureWalkingProperties & fwProps )
 	  
 	  for(int ai=0; ai<numAI; ai++)
 	    for(int aj=0; aj<=ai; aj++)
-	      (fwProps.hess(0))(ai,aj).newSample(p3_xxa(ai) * p3_xxa(aj), getWeight());
+	      (fwProps.hess(0))(ai,aj).quickSample(p3_xxa(ai) * p3_xxa(aj), getWeight());
 	  
 	} else if(globalInput.flags.optimize_Psi_criteria == "generalized_eigenvector") {
 	  for(int ai=0; ai<numAI; ai++)
-	    for(int aj=0; aj<numAI; aj++)
+	    	    for(int aj=0; aj<numAI; aj++)
+	    //for(int aj=0; aj<=ai; aj++) //this line changes the answer...
 	      {
-		(fwProps.hess(0))(ai,aj).newSample(rp_a(ai) * rp_a(aj) * localEnergy, getWeight());
-		(fwProps.hess(1))(ai,aj).newSample(rp_a(ai) * rp_a(aj),               getWeight());
-		(fwProps.hess(2))(ai,aj).newSample(rp_a(ai) * p3_xxa(aj),             getWeight());
+		(fwProps.hess(0))(ai,aj).quickSample(rp_a(ai) * rp_a(aj) * localEnergy, getWeight());
+		(fwProps.hess(1))(ai,aj).quickSample(rp_a(ai) * rp_a(aj),               getWeight());
+		(fwProps.hess(2))(ai,aj).quickSample(rp_a(ai) * p3_xxa(aj),             getWeight());
 	      }
 	}
     } else {
@@ -2252,7 +2539,7 @@ void QMCWalker::resetFutureWalking()
 
 bool QMCWalker::isSingular()
 {
-  return walkerData.isSingular;
+  return walkerData.isSingular();
 }
 
 double QMCWalker::getLocalEnergyEstimator()

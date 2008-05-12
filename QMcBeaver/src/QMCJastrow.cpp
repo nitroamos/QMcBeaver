@@ -71,9 +71,9 @@ void QMCJastrow::initialize(QMCInput * input)
 #endif
 }
 
-double QMCJastrow::getJastrow(int which)
+QMCDouble QMCJastrow::getJastrow(int which)
 {
-  return exp(sum_U(which));
+  return QMCDouble(1.0,1.0,0.0,sum_U(which));
 }
 
 double QMCJastrow::get_p_a(int which, int ai)
@@ -125,6 +125,79 @@ void QMCJastrow::evaluate(Array2D<double> & R)
   Array1D<QMCWalkerData *> wdArray(1);
   wdArray(0) = 0;
   evaluate(Input->JP,wdArray,temp,1,0);
+}
+
+void QMCJastrow::evaluate(QMCJastrowParameters & JP,
+			  Array1D<QMCWalkerData *> &walkerData,
+			  Array1D<Array2D<double>*> &X, int num, int start)
+{
+  static double averageJ = 0, timeJ = 0;
+  static double numT = -5;
+  static int multiplicity = 1;
+  
+  Stopwatch sw = Stopwatch();
+  sw.reset();
+
+  for(int walker = start; walker < start+num; walker++)
+    {
+      /*
+      if(walkerData(walker)->whichE == -1)
+	{
+	  walkerData(walker)->U    = 0;
+	  walkerData(walker)->U_x  = 0;
+	  walkerData(walker)->U_xx = 0;
+	}
+      */
+      JastrowElectronNuclear.evaluate(JP,walkerData(walker),*X(walker));
+
+      if(showTimings){sw.start();}
+      JastrowElectronElectron.evaluate(JP,walkerData(walker),*X(walker));
+      if(showTimings){sw.stop();}
+
+      if (Input->flags.use_three_body_jastrow == 1)
+	ThreeBodyJastrow.evaluate(JP,walkerData(walker),*X(walker));
+
+      sum_U(walker)           = walkerData(walker)->U;
+      grad_sum_U(walker)      = walkerData(walker)->U_x;
+      laplacian_sum_U(walker) = walkerData(walker)->U_xx;
+
+      if(Input->flags.calculate_Derivatives == 1)
+	{
+	  // We have not figured out the parameter derivatives with respect to
+	  // the three body Jastrow functions yet.
+
+	  int numEE = globalInput.JP.getNumberEEParameters();
+	  for(int ai=0; ai<numEE; ai++)
+	    {
+	      p_a(walker,ai)    = JastrowElectronElectron.get_p_a_ln(ai);
+	      p2_xa(walker,ai)  = *JastrowElectronElectron.get_p2_xa_ln(ai);
+	      p3_xxa(walker,ai) = JastrowElectronElectron.get_p3_xxa_ln(ai);
+	    }
+	  int shift = numEE;
+	  int numNE = globalInput.JP.getNumberNEParameters();
+	  for(int ai=0; ai<numNE; ai++)
+	    {
+	      p_a(walker,ai+shift)    = JastrowElectronNuclear.get_p_a_ln(ai);
+	      p2_xa(walker,ai+shift)  = *JastrowElectronNuclear.get_p2_xa_ln(ai);
+	      p3_xxa(walker,ai+shift) = JastrowElectronNuclear.get_p3_xxa_ln(ai);
+	    }
+	  shift += numNE;
+	  int numJW = globalInput.JP.getNumberJWParameters(); 
+	  for(int ai=shift; ai<numJW; ai++)
+	    {
+	      p_a(walker,ai)    = ThreeBodyJastrow.get_p_a_ln(ai-shift);
+	      p2_xa(walker,ai)  = *ThreeBodyJastrow.get_p2_xa_ln(ai-shift);
+	      p3_xxa(walker,ai) = ThreeBodyJastrow.get_p3_xxa_ln(ai-shift);
+	    }
+	}
+    }
+  if(showTimings)
+    {
+      timeJ = sw.timeUS();
+      if(numT >= 0) averageJ += sw.timeUS();
+      if( num > 1) numT++;
+      cout << "cpu ee: " << (int)(timeJ/multiplicity+0.5) << " ( " << (int)(averageJ/(numT*multiplicity)+0.5) << ")\n";
+    }
 }
 
 #ifdef QMC_GPU
@@ -200,113 +273,6 @@ void QMCJastrow::setUpGPU(GLuint aElectrons, GLuint bElectrons, int num)
   } 
 }
 #endif
-
-void QMCJastrow::evaluate(QMCJastrowParameters & JP,
-			  Array1D<QMCWalkerData *> &walkerData,
-			  Array1D<Array2D<double>*> &X, int num, int start)
-{
-  static double averageJ = 0, timeJ = 0;
-  static double numT = -5;
-  static int multiplicity = 1;
-  
-  Stopwatch sw = Stopwatch();
-  sw.reset();
-
-  Array2D<double> * grad_JEN;
-  Array2D<double> * grad_3body;
-  Array2D<double> * grad_JEE;
-
-  for(int walker = start; walker < start+num; walker++)
-    {
-      JastrowElectronNuclear.evaluate(JP,walkerData(walker),*X(walker));
-
-      if(showTimings){sw.start();}
-      JastrowElectronElectron.evaluate(JP,walkerData(walker),*X(walker));
-      if(showTimings){sw.stop();}
-      
-      sum_U(walker) = JastrowElectronNuclear.getLnJastrow() +
-	JastrowElectronElectron.getLnJastrow();
-
-      laplacian_sum_U(walker) = JastrowElectronNuclear.getLaplacianLnJastrow()
-	+ JastrowElectronElectron.getLaplacianLnJastrow();
-
-      grad_JEN = JastrowElectronNuclear.getGradientLnJastrow();
-      grad_JEE = JastrowElectronElectron.getGradientLnJastrow();
-
-      grad_sum_U(walker).allocate(X(walker)->dim1(),3);
-
-      for(int i=0; i<grad_JEE->dim1(); i++)
-	for(int j=0; j<grad_JEE->dim2(); j++)
-	  (grad_sum_U(walker))(i,j) = (*grad_JEE)(i,j) + (*grad_JEN)(i,j);
-
-      if (Input->flags.use_three_body_jastrow == 1)
-	{
-	  ThreeBodyJastrow.evaluate(JP,walkerData(walker),*X(walker));
-	  sum_U(walker) += ThreeBodyJastrow.getLnJastrow();
-	  laplacian_sum_U(walker) += ThreeBodyJastrow.getLaplacianLnJastrow();
-
-	  grad_3body = ThreeBodyJastrow.getGradientLnJastrow();
-
-	  for (int i=0; i<grad_3body->dim1(); i++)
-	    for (int j=0; j<grad_3body->dim2(); j++)
-	      (grad_sum_U(walker))(i,j) += (*grad_3body)(i,j);
-	}
-
-      if (IeeeMath::isNaN( sum_U(walker) ))
-	{
-	  cerr << "WARNING: lnJastrow = " << sum_U(walker) << endl;
-	  cerr << "lnJastrow is being set to 0 to avoid ruining the " << endl;
-	  cerr << "calculation." << endl;
-	  sum_U(walker) = 0.0;
-	  laplacian_sum_U(walker) = 0.0;
-	  grad_sum_U(walker) = 0.0;
-	}
-
-      if(Input->flags.calculate_Derivatives == 1)
-	{
-	  // We have not figured out the parameter derivatives with respect to
-	  // the three body Jastrow functions yet.
-
-	  int numEE = globalInput.JP.getNumberEEParameters();
-	  for(int ai=0; ai<numEE; ai++)
-	    {
-	      p_a(walker,ai)    = JastrowElectronElectron.get_p_a_ln(ai);
-	      p2_xa(walker,ai)  = *JastrowElectronElectron.get_p2_xa_ln(ai);
-	      p3_xxa(walker,ai) = JastrowElectronElectron.get_p3_xxa_ln(ai);
-	    }
-	  int shift = numEE;
-	  int numNE = globalInput.JP.getNumberNEParameters();
-	  for(int ai=0; ai<numNE; ai++)
-	    {
-	      p_a(walker,ai+shift)    = JastrowElectronNuclear.get_p_a_ln(ai);
-	      p2_xa(walker,ai+shift)  = *JastrowElectronNuclear.get_p2_xa_ln(ai);
-	      p3_xxa(walker,ai+shift) = JastrowElectronNuclear.get_p3_xxa_ln(ai);
-	    }
-	  shift += numNE;
-	  int numJW = globalInput.JP.getNumberJWParameters(); 
-	  for(int ai=shift; ai<numJW; ai++)
-	    {
-	      p_a(walker,ai)    = ThreeBodyJastrow.get_p_a_ln(ai-shift);
-	      p2_xa(walker,ai)  = *ThreeBodyJastrow.get_p2_xa_ln(ai-shift);
-	      p3_xxa(walker,ai) = ThreeBodyJastrow.get_p3_xxa_ln(ai-shift);
-	    }
-	}
-
-      if(printJastrow)
-        {
-          printf("%4d: ",walker);
-          printf("lnJEE # %s%18.15e ",JastrowElectronElectron.getLnJastrow()<0?"":" ",JastrowElectronElectron.getLnJastrow() );
-          printf("laplnJEE # %s%18.15g\n",JastrowElectronElectron.getLaplacianLnJastrow()<0?"":" ",JastrowElectronElectron.getLaplacianLnJastrow() );
-        }
-    }
-  if(showTimings)
-    {
-      timeJ = sw.timeUS();
-      if(numT >= 0) averageJ += sw.timeUS();
-      if( num > 1) numT++;
-      cout << "cpu ee: " << (int)(timeJ/multiplicity+0.5) << " ( " << (int)(averageJ/(numT*multiplicity)+0.5) << ")\n";
-    }
-}
 
 void QMCJastrow::operator=(const QMCJastrow & rhs )
 {

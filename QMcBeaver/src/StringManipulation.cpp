@@ -11,6 +11,9 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "StringManipulation.h"
+#include "math.h"
+
+using namespace std;
 
 // to upper case
 string StringManipulation::toAllUpper(string & s)
@@ -170,6 +173,40 @@ string StringManipulation::doubleToString(double d)
   //  snprintf(charArray,64,"%f",d);
   //  string result(charArray);
   //  return result;
+}
+
+string StringManipulation::fancyDoubleToString(int sigFig, int width, double d)
+{
+  ostringstream ostr;
+  ostr.precision(sigFig);
+  ostr << showpos;
+  string output;
+
+  if(d == 0.0){
+    ostr.precision(1);
+    ostr.setf(ios::fixed);
+    ostr << 0.0;
+    output = ostr.str();
+  } else if(fabs(d) > 1e-2)
+    {
+      ostr.setf(ios::fixed);
+      ostr << d;
+      output = ostr.str();
+    } else {
+      ostr.setf(ios::scientific);
+      ostr << d;
+      string temp = ostr.str();      
+      string::size_type loc = temp.find("e", 0 );
+      temp.replace(loc,1,"*^");
+      output = temp;
+    }
+
+  int len = output.length();
+  if(len < width)
+    output.insert(0,width-len,' ');
+  len = output.length();
+  
+  return output;
 }
 
 string StringManipulation::longToString(long l)

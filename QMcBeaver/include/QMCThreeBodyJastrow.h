@@ -87,49 +87,12 @@ public:
   */
   double get_p3_xxa_ln(int ai);
 
-  /**
-    Gets the value of the natural log of the three body Jastrow function for 
-    the last evaluated electronic configuration and parameter set.  
-    \f$\ln(J)=\sum{u_{i,j}(r_{i,j})}\f$
-
-    @return natural log of the three body Jastrow function 
-    (\f$\ln(J)=\sum{u_{i,j}(r_{i,j})}\f$)
-    */
-  double getLnJastrow();
-  
-  /**
-    Gets the gradient of the natural log of the three body Jastrow function 
-    with respect to the cartesian electronic coordinates for the last evaluated
-    electronic configuration and parameter set.  
-    \f$\nabla\ln(J)=\nabla\sum{u_{i,j}(r_{i,j})}\f$
-
-    @return gradient natural log of the three body Jastrow function 
-    (\f$\nabla\ln(J)=\nabla\sum{u_{i,j}(r_{i,j})}\f$)
-    */
-  Array2D<double> * getGradientLnJastrow();
-  
-  /**
-    Gets the laplacian of the natural log of the three body Jastrow function 
-    with respect to the cartesian electronic coordinates for the last evaluated
-    electronic configuration and parameter set.  
-    \f$\nabla^2\ln(J)=\nabla^2\sum{u_{i,j}(r_{i,j})}\f$
-
-    @return laplacian natural log of the three body Jastrow function 
-    (\f$\nabla^2\ln(J)=\nabla^2\sum{u_{i,j}(r_{i,j})}\f$)
-    */
-  double getLaplacianLnJastrow();
-
  protected:
-  double sum_U;
-  Array2D<double> grad_sum_U;
-  double laplacian_sum_U;
-  QMCInput* Input;
-
   QMCWalkerData * wd;
 
-  Array1D<double> p_a;
+  Array1D<double>            p_a;
   Array1D< Array2D<double> > p2_xa;
-  Array1D<double> p3_xxa;
+  Array1D<double>            p3_xxa;
 
   Array1D<QMCThreeBodyCorrelationFunctionParameters> * EupEdnNuclear;
   Array1D<QMCThreeBodyCorrelationFunctionParameters> * EupEupNuclear;
@@ -138,10 +101,8 @@ public:
 private:    
   void packageDerivatives();
 
-  void calculateDistances(Array2D<double> &X1, int x1particle, int x2particle, 
-			  Array2D<double> &X3, int x3particle, 
-			  Array1D<double> &position1, double &r1, 
-			  Array1D<double> &position2, double &r2);
+  void updateOne(QMCJastrowParameters & JP, Array2D<double> & X);
+  void updateAll(QMCJastrowParameters & JP, Array2D<double> & X);
 
   void collectForPair(int Electron1, 
 		      int Electron2,

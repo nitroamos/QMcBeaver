@@ -96,6 +96,15 @@ public:
   static string doubleToString(double d);
 
   /**
+    Returns a string representation of a double.
+
+    @param d a double.
+    */
+  static string fancyDoubleToString(int sigFig,
+				    int width,
+				    double d);
+
+  /**
     Returns a string representation of a long.
 
     @param l a long.

@@ -54,6 +54,9 @@ void Stopwatch::reset()
   micro1   = 0;
   total_us = 0;
   running  = false;
+
+  average_us = 0;
+  numSamples = -5;
 }
 
 void Stopwatch::start()
@@ -94,6 +97,42 @@ void Stopwatch::stop()
       cerr << "exit in void Stopwatch::stop()" << endl;
       exit(1);
     }
+}
+
+void Stopwatch::lap()
+{
+  if(running)
+    {
+      gettimeofday(&tp,&tz);
+      stime2 = tp.tv_sec;
+      micro2 = tp.tv_usec;
+      result_us = (longType)((stime2-stime1)*1e6 + micro2 - micro1);
+      total_us  = result_us;
+      running   = false;
+    }
+  else
+    {
+      //stopped a stopwatch that was not running
+      cerr << "ERROR: You just stopped a stopwatch that was not running" 
+	   << endl;
+      cerr << "check to make sure this is not a bug" << endl;
+      cerr << "exit in void Stopwatch::stop()" << endl;
+      exit(1);
+    }
+
+  if(numSamples >= 0)
+    average_us += total_us;
+  numSamples++;
+}
+
+void Stopwatch::print(string title)
+{
+  cout << setw(10) << title << ": " << (int)(total_us+0.5);
+  cout << " ( " << setw(8);
+  if(numSamples > 0)
+    cout << (int)(average_us/(numSamples)+0.5) << ")\n";
+  else
+    cout << 0 << ")\n";
 }
 
 longType Stopwatch::timeMS()

@@ -53,7 +53,6 @@ void QMCRun::propagateWalkers(bool writeConfigs, int iteration)
 	  int num = index==0?wpp:index;
 	  QMF->evaluate(dataPointers,rPointers,num);
 
-
 	  if(globalInput.cs_Parameters.dim1() > 1)
 	    {
 	      //we don't need to do this if we're equilibrating, since we're just going
@@ -475,8 +474,6 @@ void QMCRun::calculateObservables()
   }
   // Add the pre blocked data from this time step to the accumulated
   // statistics
-
-  timeStepProperties.walkerAge.newSample(getNumberOfWalkers(),1.0);
   timeStepProperties.growthRate.newSample(growthRate,1.0);
 
   double totalWeights = getWeights() * populationSizeBiasCorrectionFactor;
@@ -998,12 +995,12 @@ QMCProperties * QMCRun::getProperties()
     return &Properties;
 }
 
-QMCFutureWalkingProperties * QMCRun::getFWTimeStepProperties()
+QMCPropertyArrays * QMCRun::getFWTimeStepProperties()
 {
   return &fwTimeStepProperties;
 }
 
-QMCFutureWalkingProperties * QMCRun::getFWProperties()
+QMCPropertyArrays * QMCRun::getFWProperties()
 {
   /*
     AGA: FIX THIS

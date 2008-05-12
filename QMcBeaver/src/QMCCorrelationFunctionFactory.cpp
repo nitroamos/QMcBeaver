@@ -13,12 +13,14 @@
 #include "QMCCorrelationFunctionFactory.h"
 #include "Cambridge2CorrelationFunction.h"
 #include "Umrigar2CorrelationFunction.h"
+#include "Yukawa2CorrelationFunction.h"
+#include "Williamson2CorrelationFunction.h"
+#include "Anderson2CorrelationFunction.h"
 
 QMCCorrelationFunction * 
   QMCCorrelationFunctionFactory::correlationFunctionFactory(string & Type)
 {
   QMCCorrelationFunction * CorrelationFunction = 0;
-
   if( Type == "None" )
     {
       CorrelationFunction = new ZeroCorrelationFunction();
@@ -38,6 +40,18 @@ QMCCorrelationFunction *
   else if( Type == "Umrigar2" )
     {
       CorrelationFunction = new Umrigar2CorrelationFunction();
+    }
+  else if( Type == "Yukawa" )
+    {
+      CorrelationFunction = new Yukawa2CorrelationFunction();
+    }
+  else if( Type == "Williamson" )
+    {
+      CorrelationFunction = new Williamson2CorrelationFunction();
+    }
+  else if( Type == "Anderson" )
+    {
+      CorrelationFunction = new Anderson2CorrelationFunction();
     }
   else if( Type == "Julius" )
     {

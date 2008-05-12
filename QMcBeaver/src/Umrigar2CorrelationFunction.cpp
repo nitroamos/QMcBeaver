@@ -53,6 +53,13 @@ void Umrigar2CorrelationFunction::evaluate( double _r )
 {
   r = _r;
 
+  if(isSingular()){
+    FunctionValue   = 0.0;
+    dFunctionValue  = 0.0;
+    d2FunctionValue = -1e10;
+    return;
+  }
+
   dU_dr  = exp(-k * r);
   dU_drr = -1.0 * dU_dr * k;
   U = (1.0 - dU_dr) / k;
@@ -68,6 +75,11 @@ void Umrigar2CorrelationFunction::evaluate( double _r )
   FunctionValue   = g * U * iden;
   dFunctionValue  = g * dU_dr * iden2;
   d2FunctionValue = dFunctionValue * ( dU_drr / dU_dr - 2.0 * B * dU_dr * iden);
+
+  if(isnan(d2FunctionValue)){
+    printf("k %20.10e B %20.10e r %20.10e U %20.10e dU_dr %20.10e dU_drr %20.10e\n",
+	   k,B,r,U,dU_dr,dU_drr);
+  }
 }
 
 double Umrigar2CorrelationFunction::get_p_a(int ai)
@@ -212,5 +224,5 @@ void Umrigar2CorrelationFunction::print(ostream& strm)
 
 bool Umrigar2CorrelationFunction::isSingular()
 {
-  return k < 0.0;
+  return k <= 0.0 || fabs(B) < 1e-50;
 }

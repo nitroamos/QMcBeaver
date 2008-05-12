@@ -65,33 +65,10 @@ public:
 		 Array2D<double> & X);
 
   /**
-    Gets the value of the natural log of the electron-electron Jastrow 
-    function for the last 
-    evaluated electronic configuration and parameter set.  
-    \f$\ln(J)=\sum{u_{i,j}(r_{i,j})}\f$
-
-    @return natural log of the electron-electron Jastrow function 
-    (\f$\ln(J)=\sum{u_{i,j}(r_{i,j})}\f$)
-    */
-  double getLnJastrow();
-
-  /**
      Partial derivative of the natural log of the function with respect to
      parameter ai.
   */
   double get_p_a_ln(int ai);
-
-  /**
-    Gets the gradient of the natural log of the electron-electron 
-    Jastrow function with
-    respect to the cartesian electronic coordinates for the last 
-    evaluated electronic configuration and parameter set.  
-    \f$\nabla\ln(J)=\nabla\sum{u_{i,j}(r_{i,j})}\f$
-
-    @return gradient natural log of the electron-electron Jastrow function 
-    (\f$\nabla\ln(J)=\nabla\sum{u_{i,j}(r_{i,j})}\f$)
-    */
-  Array2D<double> * getGradientLnJastrow();
 
   /**
      Second Partial derivative of the natural log of the function with respect to
@@ -100,29 +77,12 @@ public:
   Array2D<double> * get_p2_xa_ln(int ai);
 
   /**
-    Gets the laplacian of the natural log of the electron-electron 
-    Jastrow function with
-    respect to the cartesian electronic coordinates for the last 
-    evaluated electronic configuration and parameter set.  
-    \f$\nabla^2\ln(J)=\nabla^2\sum{u_{i,j}(r_{i,j})}\f$
-
-    @return gradient natural log of the electron-electron Jastrow function 
-    (\f$\nabla^2\ln(J)=\nabla^2\sum{u_{i,j}(r_{i,j})}\f$)
-    */
-  double getLaplacianLnJastrow();
-
-  /**
      Third partial derivative of the natural log of the function with respect to
      parameters x, x, and ai.
   */
   double get_p3_xxa_ln(int ai);
 
 protected:
-  QMCInput* Input;
-  double sum_U;
-  Array2D<double> grad_sum_U;
-  double laplacian_sum_U;
-
   Array1D<double>  p_a;
   Array1D< Array2D<double> > p2_xa;
   Array1D<double> p3_xxa;
@@ -130,15 +90,32 @@ protected:
 private:  
   QMCWalkerData * wd;
 
+  /**
+     The QMCJastrowElectronElectron::evaluate redirects here if
+     we are only evaluating 1 electron.
+     
+     @param JP Jastrow parameters to use during the evaluation
+     @param X \f$3N\f$ dimensional configuration of electrons represented by 
+     a \f$N \times 3\f$ matrix
+    */
+  void updateOne( QMCJastrowParameters & JP,
+		  Array2D<double> & X);
+
+  /**
+     The QMCJastrowElectronElectron::evaluate redirects here if
+     we are evaluating all electrons.
+     
+     @param JP Jastrow parameters to use during the evaluation
+     @param X \f$3N\f$ dimensional configuration of electrons represented by 
+     a \f$N \times 3\f$ matrix
+    */
+  void updateAll( QMCJastrowParameters & JP,
+		  Array2D<double> & X);
+  
   void collectForPair(int el1, int el2,
 		      QMCCorrelationFunction *U_Function,
 		      Array2D<double> & X,
 		      int index, int numP);
-
-  void calculateDistanceAndUnitVector(Array2D<double> & X1, int x1particle, 
-				      Array2D<double> &X2, int x2particle, 
-				      double & r, 
-				      Array1D<double> & UnitVector);
 };
 
 #endif

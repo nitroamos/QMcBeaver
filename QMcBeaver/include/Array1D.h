@@ -401,12 +401,56 @@ template <class T> class Array1D
     }
 
     /**
-    Rotates a point by an angle about an axis.
-    @param angle
-    @param axis 3D coords of axis of unit length about which we are rotating.
-    */
+       Rotates a vector by an angle about a normalized axis. It uses a rotation
+       matrix, and is ~6-7 times faster than rotateQ.
 
+       This procedure takes 9+12 = 21 multiplications and 1+15=16 additions,
+       for a total of 37 operations, and 2 trig operations.
+
+       @param angle
+       @param axis 3D coords of axis of unit length about which we are rotating.
+    */
     void rotate(Array1D axis, double angle)
+    {
+#ifdef QMC_DEBUG
+      if (n_1 != 3)
+        {
+          cerr << "ERROR: incorrect size for rotating point." << endl;
+          exit(1);
+        }
+#endif
+      double x = axis(0);
+      double y = axis(1);
+      double z = axis(2);
+      double s  = sin(angle);
+      double c  = cos(angle);
+      double v  = 1.0 - c;
+      double xs = x*s;
+      double ys = y*s;
+      double zs = z*s;
+      double xv = x*v;
+      double yv = y*v;
+      double zv = z*v;
+      double xyv = x*yv;
+      double yzv = y*zv;
+      double zxv = z*xv;
+
+      double i = (x*xv+c)*pArray[0] + (xyv-zs)*pArray[1] + (zxv+ys)*pArray[2];
+      double j = (xyv+zs)*pArray[0] + (y*yv+c)*pArray[1] + (yzv-xs)*pArray[2];
+      double k = (zxv-ys)*pArray[0] + (yzv+xs)*pArray[1] + (z*zv+c)*pArray[2];
+      
+      pArray[0] = i;
+      pArray[1] = j;
+      pArray[2] = k;
+    }
+
+    /**
+       Rotates a point by an angle about an axis, using a very general approach
+       with quaternions. It is 6-7 times slower than rotate.
+       @param angle
+       @param axis 3D coords of axis of unit length about which we are rotating.
+    */
+    void rotateQ(Array1D axis, double angle)
     {
       if (n_1 != 3)
         {
@@ -431,7 +475,35 @@ template <class T> class Array1D
     }
 
     /**
-    Creates an array.
+       Returns the cross product of two vectors
+    */
+    Array1D<T> cross(Array1D<T> & rhs)
+      {
+#ifdef QMC_DEBUG
+	if(n_1 != 3 || rhs.dim1() != 3)
+	  {
+	    cout << "Error: cross product vectors are " << n_1 << "x" << rhs.dim1() << endl;
+	  }
+#endif	
+	Array1D<T> crossed(3);
+	crossed[0] = pArray[1]*rhs[2] - pArray[2]*rhs[1];
+	crossed[1] = pArray[2]*rhs[0] - pArray[0]*rhs[2];
+	crossed[2] = pArray[0]*rhs[1] - pArray[1]*rhs[0];
+	return crossed;
+      }
+    
+    /*
+      Returns the length of the vector.
+    */
+    T mag(){
+      double sum = 0.0;
+      for(int i=0; i<n_1; i++)
+	sum += pArray[i]*pArray[i];
+      return sqrt(sum);
+    }
+
+    /**
+       Creates an array.
     */
 
     Array1D()

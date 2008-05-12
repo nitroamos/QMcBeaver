@@ -14,7 +14,7 @@
 
 
 QMCDerivativeProperties::QMCDerivativeProperties(QMCProperties * properties, 
-						 QMCFutureWalkingProperties * fwProperties,
+						 QMCPropertyArrays * fwProperties,
 						 double dt)
 {
   this->properties   = properties;

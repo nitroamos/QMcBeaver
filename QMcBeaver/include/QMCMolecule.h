@@ -58,6 +58,13 @@ class QMCMolecule
 
   int getNumberAtoms();
 
+  /**
+     Gets the total charge from all the nuclei.
+
+     @return total charge
+  */
+  int getNuclearCharge();
+
 
   /**
      Array containing the labels for the atoms.  The ith element is the

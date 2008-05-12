@@ -35,7 +35,7 @@ using namespace std;
 class QMCRun
 {
  public:
- 
+
   ~QMCRun();
 
   /**
@@ -87,7 +87,7 @@ class QMCRun
     Gets the statistics for the future walking properties that have been calculated.
     @return statistics for the properties that have been calculated.
   */
-  QMCFutureWalkingProperties * getFWProperties();
+  QMCPropertyArrays * getFWProperties();
   
   /**
     Gets the statistics for the future walking properties that have
@@ -95,7 +95,7 @@ class QMCRun
     @return statistics for the properties that have been calculated at this
     time step.
   */
-  QMCFutureWalkingProperties * getFWTimeStepProperties();
+  QMCPropertyArrays * getFWTimeStepProperties();
 
   /**
     Starts the timers in the EquilibrationArray.
@@ -266,7 +266,7 @@ private:
     The statistics for this group of walkers if QMCEquilibrationArray is not
     used.
   */
-  QMCFutureWalkingProperties fwProperties;
+  QMCPropertyArrays fwProperties;
 
   /**
     The statistics for these walkers at this time step.
@@ -277,7 +277,7 @@ private:
     The statistics for these walkers at this time step, using
     future walking.
   */
-  QMCFutureWalkingProperties fwTimeStepProperties;
+  QMCPropertyArrays fwTimeStepProperties;
 
   /**
     Input data to control the calculation.

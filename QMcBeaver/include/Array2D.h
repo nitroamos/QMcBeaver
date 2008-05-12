@@ -769,6 +769,15 @@ template <class T> class Array2D
         pArray[i] = C;
     }
   
+  double addLL()
+    {
+      double sum = 0;
+      for(int i=0; i<n_1; i++)
+	for(int j=0; j < i; j++)
+	  sum += pArray[n_2*i + j];
+      return sum;
+    }
+
   /**
      Returns the product of an array and a scalar.
   */

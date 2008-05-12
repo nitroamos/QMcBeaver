@@ -109,6 +109,10 @@ class Stopwatch
   longType stime1, stime2, result_us, total_us;
   microType micro1, micro2;
   bool running;
+
+  longType average_us;
+  int numSamples;
+
   struct timeval tp;
   struct timezone tz;
 
@@ -140,6 +144,8 @@ public:
 
   void stop();
 
+  void lap();
+  void print(string title);
 
   /**
     Gets the time in milliseconds.

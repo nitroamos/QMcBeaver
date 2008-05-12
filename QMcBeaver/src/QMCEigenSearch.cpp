@@ -248,7 +248,6 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
       if(orig_steps < 10000)
 	{
 	  globalInput.flags.max_time_steps = min(2000,orig_steps);
-	  //globalInput.flags.max_time_steps = 2000;
 	}
       else
 	{
@@ -420,8 +419,12 @@ Array1D<double> QMCEigenSearch::getParameters(QMCDerivativeProperties & dp, doub
   if(IeeeMath::isNaN(rescale) || rescale < 0.05)
     {
       cout << "Warning: invalid rescale = " << rescale << endl;
-      x_new = 0.0;
-      return x_new;
+
+      if(IeeeMath::isNaN(rescale))
+	{
+	  x_new = 0.0;
+	  return x_new;
+	}
     } else {
       //cout << "Warning: ok rescale = " << rescale << endl;
     }

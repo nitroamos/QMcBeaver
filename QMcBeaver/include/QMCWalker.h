@@ -20,8 +20,8 @@
 #include "QMCInitializeWalkerFactory.h"
 #include "QMCProperties.h"
 #include "MathFunctions.h"
-#include "QMCGreensRatioComponent.h"
-#include "QMCFutureWalkingProperties.h"
+#include "QMCDouble.h"
+#include "QMCPropertyArrays.h"
 #include "QMCNuclearForces.h"
 
 using namespace std;
@@ -34,6 +34,7 @@ using namespace std;
 class QMCWalker
 {
 public:
+
   /**
     Creates a new uninitialized instance of this class.
   */
@@ -109,11 +110,11 @@ public:
 
   /**
     Calculates the observables for this walker and adds them to the input
-    QMCFutureWalkingProperties.
+    QMCPropertyArrays.
     @param props properties to which this walkers current observable values are
      added.
   */
-  void calculateObservables( QMCFutureWalkingProperties & props );
+  void calculateObservables( QMCPropertyArrays & props );
 
   /**
     Sets two QMCWalker objects equal.
@@ -132,6 +133,11 @@ public:
     @param val value to set the weight equal to.
   */
   void setWeight(double val);
+
+  /**
+     Uses the formula proposed by Trail.
+  */
+  double getTrailWeight(double energy);
 
   /**
     Determines if the trial wavefunction is singular for this walker.
@@ -153,8 +159,11 @@ public:
   /**
      This will return a string with a short identification
      of this walker.
+
+     @param showTrail whether to print details for the Trial walker,
+     or for the Original walker.
    */
-  string ID();
+  string ID(bool showTrial);
 
   /*
     Call this function *after* branching. This will give it a new
@@ -242,16 +251,22 @@ public:
   void resetFutureWalking();
     
 private:
+  static const double pi = 3.14159265359;
+
   /*
     We might want to behave differently if we are equilibrating.
    */
   int iteration;
 
+  double tr_w_ratio;
+  double tr_w;
   double weight;
   int age;
   int ageMoved;
   bool locationWarned;
   double dW;
+
+  int numWarnings;
 
   /**
      An ID and processor rank are unique identifiers for each walker.
@@ -332,7 +347,7 @@ private:
      This data is simply meant to carry the forwardGreensFunction between the 2
      propagate walker functions.
   */
-  QMCGreensRatioComponent forwardGreensFunction;
+  QMCDouble forwardGreensFunction;
 
   Array2D<double> R;
 
@@ -358,7 +373,7 @@ private:
     electron to move.
     @return Greens's function for the forward move of the electrons.
   */
-  QMCGreensRatioComponent moveElectrons();
+  QMCDouble moveElectrons();
 
   /**
     Randomly moves the electrons to their new locations without using
@@ -367,7 +382,7 @@ private:
     electron to move.
     @return Greens's function for the forward move of the electrons.
   */
-  QMCGreensRatioComponent moveElectronsNoImportanceSampling();
+  QMCDouble moveElectronsNoImportanceSampling();
 
   /**
     Randomly moves the electrons to their new locations using
@@ -376,7 +391,7 @@ private:
     electron to move.
     @return Greens's function for the forward move of the electrons.
   */
-  QMCGreensRatioComponent moveElectronsImportanceSampling();
+  QMCDouble moveElectronsImportanceSampling();
 
   /**
     Randomly moves the electrons to their new locations using
@@ -385,36 +400,45 @@ private:
     electron to move.
     @return Greens's function for the forward move of the electrons.
   */
-  QMCGreensRatioComponent moveElectronsUmrigar93ImportanceSampling();
+  QMCDouble moveElectronsUmrigar93ImportanceSampling();
+
+  /**
+
+    @param whichE -1 to move all electrons, otherwise the index of the one
+    electron to move.
+    @return Greens's function for the forward move of the electrons.
+  */
+  QMCDouble moveElectronsUmrigar93AcceleratedSampling();
 
   /**
     Calculates the reverse Green's function for the proposed move of the
     electrons.
     @return Green's function for the reverse move of the electrons.
   */
-  QMCGreensRatioComponent calculateReverseGreensFunction();
+  QMCDouble calculateReverseGreensFunction();
 
   /**
     Calculates the reverse Green's function for the proposed move of the
     electrons when no importance sampling is used.
     @return Green's function for the reverse move of the electrons.
   */
-  QMCGreensRatioComponent calculateReverseGreensFunctionNoImportanceSampling();
+  QMCDouble calculateReverseGreensFunctionNoImportanceSampling();
 
   /**
     Calculates the reverse Green's function for the proposed move of the
     electrons when importance sampling is used.
     @return Green's function for the reverse move of the electrons.
   */
-  QMCGreensRatioComponent calculateReverseGreensFunctionImportanceSampling();
+  QMCDouble calculateReverseGreensFunctionImportanceSampling();
 
   /**
     Calculates the reverse Green's function for the proposed move of the
     electrons when umrigar93 importance sampling is used.
     @return Green's function for the reverse move of the electrons.
   */
-  QMCGreensRatioComponent \
-                   calculateReverseGreensFunctionUmrigar93ImportanceSampling();
+  QMCDouble calculateReverseGreensFunctionUmrigar93ImportanceSampling();
+
+  QMCDouble calculateReverseGreensFunctionUmrigar93AcceleratedSampling();
 
   int getAge();
   double getAcceptanceProbability();

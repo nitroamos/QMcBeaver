@@ -161,6 +161,11 @@ class QMCFlags
   */
   int use_surfer;
 
+  /**
+     Minimize the amount of output.
+  */
+  int set_debug;
+
   /*
     These are debugging flags. They might be used in QMCSurfer.
   */
@@ -224,6 +229,24 @@ class QMCFlags
      Algorithm used to reweight the walkers after a time step.
   */
   string walker_reweighting_method;
+
+  /**
+     Trail's eps^2 value for his weighting method found in
+     Alternative sampling for variational quantum Monte Carlo
+     Phys Rev E 77, 016704 (2008)
+
+     He recommends that eps2 = variance
+  */
+  double trail_eps2;
+
+  /**
+     The e_0 value used in:
+     Alternative sampling for variational quantum Monte Carlo
+     Phys Rev E 77, 016704 (2008)
+
+     It is supposed to hold the best known VMC energy.
+  */
+  double e_0;
 
   /**
      Method for branching walkers.  Possible methods include not
@@ -299,6 +322,9 @@ class QMCFlags
      all the calculations simultaneously or in succession...)
   */
   double dt;
+
+  double accel_delta;
+  double accel_tm;
 
   /**
      Time step to be used for the non-equilibration portion of the

@@ -44,11 +44,11 @@ QMCSlater::QMCSlater()
 void QMCSlater::operator=(const QMCSlater & rhs )
 {
   Input              = rhs.Input;
-  Psi                = rhs.Psi;
-  Laplacian_PsiRatio = rhs.Laplacian_PsiRatio;
-  Grad_PsiRatio      = rhs.Grad_PsiRatio;
+  Dwc                = rhs.Dwc;
+  rDwc_xx = rhs.rDwc_xx;
+  rDwc_x      = rhs.rDwc_x;
   if (Input->flags.calculate_bf_density == 1)
-    Chi_Density      = rhs.Chi_Density;
+    Xw_Density      = rhs.Xw_Density;
 
   BF         = rhs.BF;
   WF         = rhs.WF;
@@ -62,7 +62,7 @@ void QMCSlater::operator=(const QMCSlater & rhs )
   // This was done in this round about way to avoid some weird compiler errors
   // dealing with when const was used.  In the simplest format this would be
   // allocate( rhs.D.dim1() );
-  D = rhs.D;
+  Dw = rhs.Dw;
   allocate();
 }
 
@@ -113,55 +113,55 @@ void QMCSlater::allocate()
   if(wpp - gpp > 0)
     {
       if(WF->getNumberDeterminants() > 1)
-	ciDet = new Array2D<qmcfloat>();
-      D.allocate(wpp-gpp);
-      D_inv.allocate(wpp-gpp,ndet);
-      Laplacian_D.allocate(wpp-gpp);
-      Grad_D.allocate(wpp-gpp,3);
+	ciDet = new Array2D<double>();
+      Dw.allocate(wpp-gpp);
+      Dwc_inv.allocate(wpp-gpp,ndet);
+      Dw_xx.allocate(wpp-gpp);
+      Dw_x.allocate(wpp-gpp,3);
     }
 
 #ifdef QMC_GPU
-  gpu_D.allocate(gpp);
-  gpu_D_inv.allocate(gpp);
-  gpu_Laplacian_D.allocate(gpp);
-  gpu_Grad_D.allocate(gpp,3);
+  gpu_Dw.allocate(gpp);
+  gpu_Dwc_inv.allocate(gpp);
+  gpu_Dw_xx.allocate(gpp);
+  gpu_Dw_x.allocate(gpp,3);
   
   //this code is now out of sync when we move
   //one e at a time.
   assert(0);
-  for(int j=0; j<gpu_D.dim1(); j++)
+  for(int j=0; j<gpu_Dw.dim1(); j++)
     {
-      for (int i=0; i<gpu_D.dim2(); i++)
-	gpu_D_inv(j,i).allocate(N,N);
+      for (int i=0; i<gpu_Dw.dim2(); i++)
+	gpu_Dwc_inv(j,i).allocate(N,N);
       
       gpu_D(j).allocate(N,N);
       
-      gpu_Laplacian_D(j).allocate(N,N);
+      gpu_Dw_xx(j).allocate(N,N);
       for(int k=0; k<3; k++)
-	gpu_Grad_D(j,k).allocate(N,N);
+	gpu_Dw_x(j,k).allocate(N,N);
     }
 #endif
 
   Singular.allocate(wpp);
-  Psi.allocate(wpp);
-  Laplacian_PsiRatio.allocate(wpp);
-  Grad_PsiRatio.allocate(wpp);
+  Dwc.allocate(wpp);
+  rDwc_xx.allocate(wpp);
+  rDwc_x.allocate(wpp);
 
-  pointer_det.allocate(wpp);
-  pointer_lapPR.allocate(wpp);
-  pointer_gradPR.allocate(wpp);
+  pointer_Dwc.allocate(wpp);
+  pointer_rDwc_xx.allocate(wpp);
+  pointer_rDwc_x.allocate(wpp);
 
   if (Input->flags.calculate_bf_density == 1)
-    Chi_Density.allocate(wpp);
+    Xw_Density.allocate(wpp);
 
   for(int w=0; w<wpp; w++)
     {
       Singular(w).allocate(ndet);
-      Psi(w).allocate(ndet);
-      Laplacian_PsiRatio(w).allocate(ndet);
-      Grad_PsiRatio(w).allocate(ndet,N,3);
+      Dwc(w).allocate(ndet);
+      rDwc_xx(w).allocate(ndet);
+      rDwc_x(w).allocate(ndet,N,3);
       if (Input->flags.calculate_bf_density == 1)
-        Chi_Density(w).allocate(nbasisfunc);
+        Xw_Density(w).allocate(nbasisfunc);
     }
 
   if (Input->flags.optimize_Orbitals == 1)
@@ -202,11 +202,11 @@ void QMCSlater::allocate()
     {
       for(int iWalker=0; iWalker<gpp; iWalker++)
         {
-          resultsCollector(iDet,iWalker*5    ) = & gpu_D(iWalker, iDet);
-          resultsCollector(iDet,iWalker*5 + 1) = & gpu_Grad_D(iWalker, iDet, 0);
-          resultsCollector(iDet,iWalker*5 + 2) = & gpu_Grad_D(iWalker, iDet, 1);
-          resultsCollector(iDet,iWalker*5 + 3) = & gpu_Grad_D(iWalker, iDet, 2);
-          resultsCollector(iDet,iWalker*5 + 4) = & gpu_Laplacian_D(iWalker, iDet);
+          resultsCollector(iDet,iWalker*5    ) = & gpu_Dw(iWalker, iDet);
+          resultsCollector(iDet,iWalker*5 + 1) = & gpu_Dw_x(iWalker, iDet, 0);
+          resultsCollector(iDet,iWalker*5 + 2) = & gpu_Dw_x(iWalker, iDet, 1);
+          resultsCollector(iDet,iWalker*5 + 3) = & gpu_Dw_x(iWalker, iDet, 2);
+          resultsCollector(iDet,iWalker*5 + 4) = & gpu_Dw_xx(iWalker, iDet);
         }
     }
 #endif
@@ -244,36 +244,36 @@ void QMCSlater::allocateIteration(int whichE, int & start, int & stop)
 	need to keep Chi data a little bit longer than
 	otherwise.
       */
-      Chi.allocate(wpp);
-      Chi_laplacian.allocate(wpp);
-      Chi_gradient.allocate(wpp);
+      Xw.allocate(wpp);
+      Xw_x.allocate(wpp);
+      Xw_xx.allocate(wpp);
     }
   else
     {
-      Chi.allocate(1);
-      Chi_laplacian.allocate(1);
-      Chi_gradient.allocate(1);
+      Xw.allocate(1);
+      Xw_x.allocate(1);
+      Xw_xx.allocate(1);
     }
 
-  for(int w=0; w<Chi.dim1(); w++)
+  for(int w=0; w<Xw.dim1(); w++)
     {
-      Chi(w).allocate(nUP,nBF);
-      Chi_laplacian(w).allocate(nUP,nBF);
-      Chi_gradient(w).allocate(3);
+      Xw(w).allocate(nUP,nBF);
+      Xw_xx(w).allocate(nUP,nBF);
+      Xw_x(w).allocate(3);
       for(int xyz=0; xyz<3; xyz++)
-	(Chi_gradient(w))(xyz).allocate(nUP,nBF);
+	(Xw_x(w))(xyz).allocate(nUP,nBF);
     }
 
-  for(int w=0; w<D.dim1(); w++)
+  for(int w=0; w<Dw.dim1(); w++)
     {
       for (int ci=0; ci<WF->getNumberDeterminants(); ci++)
-	D_inv(w,ci).allocate(nEL,nEL);
+	Dwc_inv(w,ci).allocate(nEL,nEL);
       
-      D(w).allocate(nUP,nOR);
+      Dw(w).allocate(nUP,nOR);
       
-      Laplacian_D(w).allocate(nUP,nOR);
+      Dw_xx(w).allocate(nUP,nOR);
       for(int xyz=0; xyz<3; xyz++)
-	Grad_D(w,xyz).allocate(nUP,nOR);
+	Dw_x(w,xyz).allocate(nUP,nOR);
     }
 }
 
@@ -281,50 +281,50 @@ QMCSlater::~QMCSlater()
 {
   if (Start != Stop)
     {
-      for(int j=0; j<D.dim1(); j++)
+      for(int j=0; j<Dw.dim1(); j++)
         {
           for (int ci=0; ci<WF->getNumberDeterminants(); ci++)
-	    D_inv(j,ci).deallocate();
+	    Dwc_inv(j,ci).deallocate();
 
-	  D(j).deallocate();
-	  Laplacian_D(j).deallocate();
+	  Dw(j).deallocate();
+	  Dw_xx(j).deallocate();
 	  for(int k=0; k<3; k++)
-	    Grad_D(j,k).deallocate();
+	    Dw_x(j,k).deallocate();
         }
       if(ciDet != 0)
 	delete ciDet;
-      D.deallocate();
-      D_inv.deallocate();
-      Laplacian_D.deallocate();
-      Grad_D.deallocate();
+      Dw.deallocate();
+      Dwc_inv.deallocate();
+      Dw_xx.deallocate();
+      Dw_x.deallocate();
 
 #ifdef QMC_GPU
-      for(int j=0; j<gpu_D.dim1(); j++)
+      for(int j=0; j<gpu_Dw.dim1(); j++)
         {
           for (int i=0; i<WF->getNumberDeterminants(); i++)
-	    gpu_D_inv(j,i).deallocate();
+	    gpu_Dwc_inv(j,i).deallocate();
 	  
           
-	  gpu_D(j).deallocate();
+	  gpu_Dw(j).deallocate();
 	  
-	  gpu_Laplacian_D(j).deallocate();
+	  gpu_Dw_xx(j).deallocate();
 	  for(int k=0; k<3; k++)
-	    gpu_Grad_D(j,k).deallocate();
+	    gpu_Dw_x(j,k).deallocate();
         }
-      gpu_D.deallocate();
-      gpu_D_inv.deallocate();
-      gpu_Laplacian_D.deallocate();
-      gpu_Grad_D.deallocate();
+      gpu_Dw.deallocate();
+      gpu_Dwc_inv.deallocate();
+      gpu_Dw_xx.deallocate();
+      gpu_Dw_x.deallocate();
 #endif
 
       for(int j=0; j < Input->flags.walkers_per_pass; j++)
         {
           Singular(j).deallocate();
-          Psi(j).deallocate();
-          Laplacian_PsiRatio(j).deallocate();
-          Grad_PsiRatio(j).deallocate();
+          Dwc(j).deallocate();
+          rDwc_xx(j).deallocate();
+          rDwc_x(j).deallocate();
           if (Input->flags.calculate_bf_density == 1)
-            Chi_Density(j).deallocate();
+            Xw_Density(j).deallocate();
         }
 
       if (Input->flags.optimize_Orbitals == 1)
@@ -351,12 +351,12 @@ QMCSlater::~QMCSlater()
         }
 
       Singular.deallocate();
-      Psi.deallocate();
-      Laplacian_PsiRatio.deallocate();
-      Grad_PsiRatio.deallocate();
+      Dwc.deallocate();
+      rDwc_xx.deallocate();
+      rDwc_x.deallocate();
 
       if (Input->flags.calculate_bf_density == 1)
-        Chi_Density.deallocate();
+        Xw_Density.deallocate();
 
 #ifdef QMC_GPU
       //We do not need to deallocate the contents of
@@ -368,17 +368,17 @@ QMCSlater::~QMCSlater()
       gpuMatMult.destroy();
 #endif
 
-      for(int k=0; k<Chi.dim1(); k++)
+      for(int k=0; k<Xw.dim1(); k++)
         {
-          Chi(k).deallocate();
-          Chi_laplacian(k).deallocate();
+          Xw(k).deallocate();
+          Xw_xx(k).deallocate();
           for (int j=0; j<3; j++)
-            (Chi_gradient(k))(j).deallocate();
-          Chi_gradient(k).deallocate();
+            (Xw_x(k))(j).deallocate();
+          Xw_x(k).deallocate();
         }
-      Chi.deallocate();
-      Chi_laplacian.deallocate();
-      Chi_gradient.deallocate();
+      Xw.deallocate();
+      Xw_xx.deallocate();
+      Xw_x.deallocate();
     }
 }
 
@@ -401,18 +401,18 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
 	*/
 	if(isAlpha)
 	  {
-	    pointer_det(w) =    & walkerData(w+gpp)->PsiA;
-	    pointer_gradPR(w) = & walkerData(w+gpp)->Grad_PsiRatioA;
-	    pointer_lapPR(w) =  & walkerData(w+gpp)->Laplacian_PsiRatioA;
+	    pointer_Dwc(w)     = & walkerData(w+gpp)->DcA;
+	    pointer_rDwc_x(w)  = & walkerData(w+gpp)->rDc_xA;
+	    pointer_rDwc_xx(w) = & walkerData(w+gpp)->rDc_xxA;
 	  } else {
-	    pointer_det(w) =    & walkerData(w+gpp)->PsiB;
-	    pointer_gradPR(w) = & walkerData(w+gpp)->Grad_PsiRatioB;
-	    pointer_lapPR(w) =  & walkerData(w+gpp)->Laplacian_PsiRatioB;
+	    pointer_Dwc(w)     = & walkerData(w+gpp)->DcB;
+	    pointer_rDwc_x(w)  = & walkerData(w+gpp)->rDc_xB;
+	    pointer_rDwc_xx(w) = & walkerData(w+gpp)->rDc_xxB;
 	  }
       } else {
-	pointer_det(w) =    & Psi(w);
-	pointer_gradPR(w) = & Grad_PsiRatio(w);
-	pointer_lapPR(w) =  & Laplacian_PsiRatio(w);
+	pointer_Dwc(w)     = & Dwc(w);
+	pointer_rDwc_x(w)  = & rDwc_x(w);
+	pointer_rDwc_xx(w) = & rDwc_xx(w);
       }
       
   if(whichE != -1)
@@ -438,8 +438,8 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
 	 just pointers to the D object.*/
       off = w;
       gpuMatMult.getResults(resultsCollector);
-      calculate_DerivativeRatios(0,ci,gpu_D,gpu_D_inv,
-				 gpu_Laplacian_D,gpu_Grad_D);
+      calculate_DerivativeRatios(0,ci,gpu_D,gpu_Dwc_inv,
+				 gpu_Dw_xx,gpu_Dw_x);
       
 #endif
       off = w + gpp;
@@ -447,67 +447,75 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
       if(globalInput.flags.one_e_per_iter)
 	{
 	  //it might have been an all electron update
-	  int numE = D(w).dim1();
+	  int numE = Dw(w).dim1();
 	  //index of first updated electron
 	  int iEl = whichE == -1 ? 0 : whichE - Start;
 	  
 	  //reload the data from the other electrons
 	  if(isAlpha)
 	    {
-	      lap =   &  walkerData(off)->Laplacian_DA;
-	      gradx = & (walkerData(off)->Grad_DA)(0);
-	      grady = & (walkerData(off)->Grad_DA)(1);
-	      gradz = & (walkerData(off)->Grad_DA)(2);
+	      lap =   &  walkerData(off)->D_xxA;
+	      gradx = & (walkerData(off)->D_xA)(0);
+	      grady = & (walkerData(off)->D_xA)(1);
+	      gradz = & (walkerData(off)->D_xA)(2);
 	    } else {
-	      lap =   &  walkerData(off)->Laplacian_DB;
-	      gradx = & (walkerData(off)->Grad_DB)(0);
-	      grady = & (walkerData(off)->Grad_DB)(1);
-	      gradz = & (walkerData(off)->Grad_DB)(2);
+	      lap =   &  walkerData(off)->D_xxB;
+	      gradx = & (walkerData(off)->D_xB)(0);
+	      grady = & (walkerData(off)->D_xB)(1);
+	      gradz = & (walkerData(off)->D_xB)(2);
 	    }
 
 	  //and update the data for our electron
-	  lap->setRows(iEl,0,numE,Laplacian_D(w));
-	  gradx->setRows(iEl,0,numE,Grad_D(w,0));
-	  grady->setRows(iEl,0,numE,Grad_D(w,1));
-	  gradz->setRows(iEl,0,numE,Grad_D(w,2));
+	  lap->setRows(iEl,0,numE,Dw_xx(w));
+	  gradx->setRows(iEl,0,numE,Dw_x(w,0));
+	  grady->setRows(iEl,0,numE,Dw_x(w,1));
+	  gradz->setRows(iEl,0,numE,Dw_x(w,2));
 	  
 	} else {
-	  lap =   & Laplacian_D(w);
-	  gradx = & Grad_D(w,0);
-	  grady = & Grad_D(w,1);
-	  gradz = & Grad_D(w,2);
+	  lap =   & Dw_xx(w);
+	  gradx = & Dw_x(w,0);
+	  grady = & Dw_x(w,1);
+	  gradz = & Dw_x(w,2);
 	}
       
       for(int ci=0; ci<WF->getNumberDeterminants(); ci++)
 	{
 	  if(globalInput.flags.one_e_per_iter)
 	    {
-	      if(isAlpha) inv =   &  walkerData(off)->D_invA(ci);
-	      else        inv =   &  walkerData(off)->D_invB(ci);
+	      if(isAlpha) inv =   &  walkerData(off)->Dc_invA(ci);
+	      else        inv =   &  walkerData(off)->Dc_invB(ci);
 
 	      if(ci > 0 && whichE < 0)
 		{
 		  //We need to copy the previous inverse during all electron
 		  //updates
-		  if(isAlpha) (*inv) = walkerData(off)->D_invA(ci-1);
-		  else        (*inv) = walkerData(off)->D_invB(ci-1);
+		  if(isAlpha) (*inv) = walkerData(off)->Dc_invA(ci-1);
+		  else        (*inv) = walkerData(off)->Dc_invB(ci-1);
 		}
 	    } else {
 	      //this might only be used by orbital derivatives...
-	      inv =   & D_inv(w,ci);
+	      inv =   & Dwc_inv(w,ci);
 	      
 	      //this part is used when updating the inverse,
 	      //as opposed to calculating all of it
 	      if(ci > 0)
-		(*inv) = D_inv(w,ci-1);
+		(*inv) = Dwc_inv(w,ci-1);
 	    }
 
+	  Array2D<double> * psi;
+#if defined SINGLEPRECISION || defined QMC_GPU
+	  static Array2D<double> temp;
+	  temp = Dw(w);
+	  psi = & temp;
+#else
+	  psi = & Dw(w);
+#endif
 	  (Singular(off))(ci) = calculate_DerivativeRatios(ci,whichE - Start,
-							   D(w),*inv,*lap,
+							   *psi,*inv,*lap,
 							   *gradx, *grady, *gradz,
-							   *pointer_det(w),
-							   *pointer_gradPR(w),
-							   *pointer_lapPR(w));
+							   *pointer_Dwc(w),
+							   *pointer_rDwc_x(w),
+							   *pointer_rDwc_xx(w));
 	}
     }
 
@@ -557,7 +565,7 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
       Array2D<double> temp;
       Array2D<double> ciData(getNumberElectrons(),getNumberElectrons());
 
-      for(int w=0; w<D.dim1(); w++)
+      for(int w=0; w<Dw.dim1(); w++)
         {
           for(int ci=0; ci<WF->getNumberDeterminants(); ci++)
             {
@@ -567,19 +575,19 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
               * p3xxa = 0.0;
 
               //calculate  d |D|
-              D_inv(w,ci).gemm(Chi(w),*pa,false);
-              (*pa) *= (Psi(w+gpp))(ci);
+              Dwc_inv(w,ci).gemm(Xw(w),*pa,false);
+              (*pa) *= (Dwc(w+gpp))(ci);
 
               for(int xyz=0; xyz<3; xyz++)
                 {
-		  WF->getDataForCI(ci,isAlpha,Grad_D(w,xyz),ciData);
-                  ciData.gemm(D_inv(w,ci),temp,false);
-                  temp.gemm(Chi(w),nabDinvDdD(xyz),false);
+		  WF->getDataForCI(ci,isAlpha,Dw_x(w,xyz),ciData);
+                  ciData.gemm(Dwc_inv(w,ci),temp,false);
+                  temp.gemm(Xw(w),nabDinvDdD(xyz),false);
                   //temp = 0.0;
                 }
-	      WF->getDataForCI(ci,isAlpha,Laplacian_D(w),ciData);
-              ciData.gemm(D_inv(w,ci),temp,false);
-              temp.gemm(Chi(w),nab2DinvDdD,false);
+	      WF->getDataForCI(ci,isAlpha,Dw_xx(w),ciData);
+              ciData.gemm(Dwc_inv(w,ci),temp,false);
+              temp.gemm(Xw(w),nab2DinvDdD,false);
 
               int nor = pa->dim1();
               int nbf = pa->dim2();
@@ -592,13 +600,13 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
                           for(int xyz=0; xyz<3; xyz++)
                             {
                               double d2xa = 0.0;
-                              d2xa += (D_inv(w,ci))(o,e) * ((Chi_gradient(w))(xyz))(e,bf);
-                              d2xa -= (D_inv(w,ci))(o,e) * (nabDinvDdD(xyz))(e,bf);
+                              d2xa += (Dwc_inv(w,ci))(o,e) * ((Xw_x(w))(xyz))(e,bf);
+                              d2xa -= (Dwc_inv(w,ci))(o,e) * (nabDinvDdD(xyz))(e,bf);
                               ((p2_xa(w+gpp))(ci,e,xyz))(o,bf) = d2xa;
                             }
                           double d3xxa = 0.0;
-                          d3xxa += (D_inv(w,ci))(o,e) * (Chi_laplacian(w))(e,bf);
-                          d3xxa -= (D_inv(w,ci))(o,e) * nab2DinvDdD(e,bf);
+                          d3xxa += (Dwc_inv(w,ci))(o,e) * (Xw_xx(w))(e,bf);
+                          d3xxa -= (Dwc_inv(w,ci))(o,e) * nab2DinvDdD(e,bf);
                           (*p3xxa)(o,bf) += d3xxa;
                         }
                     }
@@ -617,7 +625,7 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
 
 template <class T>
 bool QMCSlater::calculate_DerivativeRatios(int ci, int row,
-					   Array2D<T> & psi,
+					   Array2D<double> & psi,
 					   Array2D<double> & inv,
 					   Array2D<T> & lap,
 					   Array2D<T> & gradx,
@@ -727,7 +735,7 @@ bool QMCSlater::calculate_DerivativeRatios(int ci, int row,
 #if defined SINGLEPRECISION || defined QMC_GPU
 template bool QMCSlater::calculate_DerivativeRatios<float>
 (int ci, int row,
- Array2D<float> & psi,
+ Array2D<double> & psi,
  Array2D<double> & inv,
  Array2D<float> & lap,
  Array2D<float> & gradx,
@@ -757,7 +765,7 @@ template bool QMCSlater::calculate_DerivativeRatios<double>
    2) The Slater matrix is calculated along with the associated gradient and 
    laplacian matricies:
    
-   D(numElec x numOrb) = Chi(numElec x numBasisFunction) * 
+   D(numElec x numOrb) = Xw(numElec x numBasisFunction) * 
                          WF_coeffs(numBasisFunction x numOrb)
  
   Note: the coefficient matricies are transposed.  Hand-coded matrix 
@@ -823,7 +831,7 @@ void QMCSlater::gpuEvaluate(Array1D<Array2D<double>*> &X, int num)
 }
 #endif
 
-void QMCSlater::evaluate(Array1D<Array2D<double>*> &X,
+void QMCSlater::evaluate(Array1D<Array2D<double>*> &R,
                          int num, int start, int whichE)
 {
   if(getNumberElectrons() == 0)
@@ -857,18 +865,18 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X,
           sw.reset(); sw.start();
         }
 
-      int Chi_i = Chi.dim1() == 1 ? 0 : walker;
+      int Chi_i = Xw.dim1() == 1 ? 0 : walker;
       int startE, stopE;
 
       allocateIteration(whichE,startE,stopE);
       
-      BF->evaluateBasisFunctions(*X(walker+start),
+      BF->evaluateBasisFunctions(*R(walker+start),
                                  startE,stopE,
-                                 Chi(Chi_i),
-                                 (Chi_gradient(Chi_i))(0),
-                                 (Chi_gradient(Chi_i))(1),
-                                 (Chi_gradient(Chi_i))(2),
-                                 Chi_laplacian(Chi_i));
+                                 Xw(Chi_i),
+                                 (Xw_x(Chi_i))(0),
+                                 (Xw_x(Chi_i))(1),
+                                 (Xw_x(Chi_i))(2),
+                                 Xw_xx(Chi_i));
 
       if(showTimings)
         {
@@ -880,20 +888,20 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X,
 
       Array2D<qmcfloat> * coeffs = WF->getCoeff(isAlpha);
 
-      Chi(Chi_i).gemm( *coeffs, D(walker),true);
-      Chi_laplacian(Chi_i).gemm( *coeffs, Laplacian_D(walker),true);
-      (Chi_gradient(Chi_i))(0).gemm( *coeffs, Grad_D(walker,0),true);
-      (Chi_gradient(Chi_i))(1).gemm( *coeffs, Grad_D(walker,1),true);
-      (Chi_gradient(Chi_i))(2).gemm( *coeffs, Grad_D(walker,2),true);
+      Xw(Chi_i).gemm( *coeffs, Dw(walker),true);
+      Xw_xx(Chi_i).gemm( *coeffs, Dw_xx(walker),true);
+      (Xw_x(Chi_i))(0).gemm( *coeffs, Dw_x(walker,0),true);
+      (Xw_x(Chi_i))(1).gemm( *coeffs, Dw_x(walker,1),true);
+      (Xw_x(Chi_i))(2).gemm( *coeffs, Dw_x(walker,2),true);
 
       if (Input->flags.replace_electron_nucleus_cusps == 1)
-	ElectronNucleusCusp.replaceCusps(*X(walker+start),
+	ElectronNucleusCusp.replaceCusps(*R(walker+start),
 					 startE,stopE,
-					 D(walker),
-					 Grad_D(walker,0),
-					 Grad_D(walker,1),
-					 Grad_D(walker,2),
-					 Laplacian_D(walker));
+					 Dw(walker),
+					 Dw_x(walker,0),
+					 Dw_x(walker,1),
+					 Dw_x(walker,2),
+					 Dw_xx(walker));
 
       if(showTimings)
         {
@@ -905,15 +913,15 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X,
 
   for(int walker = 0; walker < num; walker++)
     {
-      int Chi_i = Chi.dim1() == 1 ? 0 : walker;
+      int Chi_i = Xw.dim1() == 1 ? 0 : walker;
 
       if (Input->flags.calculate_bf_density == 1)
         {
-          Chi_Density(walker+start) = 0.0;
+          Xw_Density(walker+start) = 0.0;
           for (int i=0; i<WF->getNumberBasisFunctions(); i++)
             for (int j=0; j<getNumberElectrons(); j++)
               {
-                (Chi_Density(walker))(i) += (Chi(Chi_i))(j,i);
+                (Xw_Density(walker))(i) += (Xw(Chi_i))(j,i);
               }
         }
     }
@@ -946,28 +954,28 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &X,
 Array1D<double>* QMCSlater::getPsi(int i)
 {
   if(getNumberElectrons() != 0)
-    return pointer_det(i);
+    return pointer_Dwc(i);
 
-  if(Psi.dim1() == 0)
+  if(Dwc.dim1() == 0)
     {
-      Psi.allocate(1);
-      Psi(0).allocate(WF->getNumberDeterminants());
-      Psi(0) = 1.0;
+      Dwc.allocate(1);
+      Dwc(0).allocate(WF->getNumberDeterminants());
+      Dwc(0) = 1.0;
     }
-  return &Psi(0);
+  return &Dwc(0);
 }
 
 Array1D<double>* QMCSlater::getLaplacianPsiRatio(int i)
 {
   if(getNumberElectrons() != 0)
-    return pointer_lapPR(i);
+    return pointer_rDwc_xx(i);
   return 0;
 }
 
 Array3D<double>* QMCSlater::getGradPsiRatio(int i)
 {
   if(getNumberElectrons() != 0)
-    return pointer_gradPR(i);
+    return pointer_rDwc_x(i);
 
   return 0;
 }
@@ -975,7 +983,7 @@ Array3D<double>* QMCSlater::getGradPsiRatio(int i)
 Array1D<double>* QMCSlater::getChiDensity(int i)
 {
   if(getNumberElectrons() != 0)
-    return &Chi_Density(i);
+    return &Xw_Density(i);
 
   return 0;
 }

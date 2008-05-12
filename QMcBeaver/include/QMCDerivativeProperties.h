@@ -14,7 +14,7 @@
 #define QMCDerivativeProperties_H
 
 #include "QMCProperties.h"
-#include "QMCFutureWalkingProperties.h"
+#include "QMCPropertyArrays.h"
 
 /**
   All of the calculated quantities and properties that are derived 
@@ -32,7 +32,7 @@ public:
     @param dt time step for the calculation.
     */
   QMCDerivativeProperties(QMCProperties * properties,
-			  QMCFutureWalkingProperties * fwProperties,
+			  QMCPropertyArrays * fwProperties,
 			  double dt);
 
   /**
@@ -98,25 +98,25 @@ public:
   double getParameterValue();
 
   /**
-     Convert the der terms collected in QMCFutureWalkingProperties
+     Convert the der terms collected in QMCPropertyArrays
      into the actual gradient.
   */
   Array1D<double> getParameterGradient();
 
   /**
-     Convert the hess terms collected in QMCFutureWalkingProperties
+     Convert the hess terms collected in QMCPropertyArrays
      into the actual hessian.
   */
   Array2D<double> getParameterHessian();
 
   /**
-     Convert the hess terms collected in QMCFutureWalkingProperties
+     Convert the hess terms collected in QMCPropertyArrays
      into a hamiltonian matrix.
   */
   Array2D<double> getParameterHamiltonian();
 
   /**
-     Convert the hess terms collected in QMCFutureWalkingProperties
+     Convert the hess terms collected in QMCPropertyArrays
      into an overlap matrix.
   */
   Array2D<double> getParameterOverlap();
@@ -130,7 +130,7 @@ public:
 private:
   bool typePRL;
   QMCProperties * properties;
-  QMCFutureWalkingProperties * fwProperties;
+  QMCPropertyArrays * fwProperties;
   double dt;
 };
 

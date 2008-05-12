@@ -45,10 +45,16 @@ enum labels { FW_TE     = 0,
 static const int NUM_PROPS = FW_It+1;
 
 /**
-  All of the quantities and properties evaluated during a calculation.
+   This class has the same purpose as QMCProperties, except
+   that I discovered that some MPI implementations do not handle
+   mixing dynamic and static arrays in the same datatype if you're
+   going to make an MPI datatype for it.
+
+   So this class contains all the dynamic arrays of properties
+   that we're going to want.
 */
 
-class QMCFutureWalkingProperties
+class QMCPropertyArrays
 {
 public:
 
@@ -104,36 +110,36 @@ public:
   /**
     Creates an instance of the class.
   */
-  QMCFutureWalkingProperties();
-  ~QMCFutureWalkingProperties();
+  QMCPropertyArrays();
+  ~QMCPropertyArrays();
   
   /**
     Sets all of the data in the object to zero.
   */
   void zeroOut();
 
-  void matchParametersTo( const QMCFutureWalkingProperties &rhs );
+  void matchParametersTo( const QMCPropertyArrays &rhs );
 
   /**
     Sets two objects equal.
   */
-  void operator = ( const QMCFutureWalkingProperties &rhs );
+  void operator = ( const QMCPropertyArrays &rhs );
 
   /**
-    Returns the sum of two QMCFutureWalkingProperties.
-    @return sum of two QMCFutureWalkingProperties
+    Returns the sum of two QMCPropertyArrays.
+    @return sum of two QMCPropertyArrays
   */
-  QMCFutureWalkingProperties operator + ( QMCFutureWalkingProperties &rhs );
+  QMCPropertyArrays operator + ( QMCPropertyArrays &rhs );
 
   /**
     Adds the statistics calculated for a time step to the object as new 
-    samples.  This is not the same as adding the two QMCFutureWalkingProperties objects 
+    samples.  This is not the same as adding the two QMCPropertyArrays objects 
     together.
     @param newProperties the statistics calculated at the time step.
     @param weight the weight of the new samples.
     @param nwalkers the number of walkers used to make this sample.
   */
-  void newSample(QMCFutureWalkingProperties* newProperties, double weight, int nwalkers);
+  void newSample(QMCPropertyArrays* newProperties, double weight, int nwalkers);
 
   /**
     Tells the object if basis function densities are being calculated.
@@ -167,7 +173,7 @@ public:
   /**
     Formats and prints the properties to a stream.
   */
-  friend ostream& operator <<(ostream& strm, QMCFutureWalkingProperties &rhs);
+  friend ostream& operator <<(ostream& strm, QMCPropertyArrays &rhs);
 };
 
 #endif

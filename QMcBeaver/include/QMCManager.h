@@ -36,7 +36,7 @@ enum signalType {SIG_REDUCE, SIG_INCREASE, SIG_QUIT, SIG_NOTHING};
 #include "QMCCopyright.h"
 #include "QMCProperties.h"
 #include "QMCProperty.h"
-#include "QMCFutureWalkingProperties.h"
+#include "QMCPropertyArrays.h"
 #include "QMCNuclearForces.h"
 
 #ifdef PARALLEL
@@ -151,18 +151,18 @@ class QMCManager
   friend ostream & operator<<(ostream & strm, QMCManager & rhs);
 
   /**
-		Call this function when you want QMCManager to change its
-		signal flags.
+     Call this function when you want QMCManager to change its
+     signal flags.
   */
   static void receiveSignal(signalType signal);
 
  private:
  
   /**
-  		These are signal flags. Since system signaling can only
-  		call static functions, we translate any signal information
-  		into these flags, which QMCManager can look at during some
-  		decision.
+     These are signal flags. Since system signaling can only
+     call static functions, we translate any signal information
+     into these flags, which QMCManager can look at during some
+     decision.
   */
   static bool SIGNAL_SAYS_QUIT;
   static bool REDUCE_ALL_NOW;
@@ -225,7 +225,7 @@ class QMCManager
      information from the input file. This difference is important
      for how MPI reduces the properties.
   */
-  QMCFutureWalkingProperties fwProperties_total;
+  QMCPropertyArrays fwProperties_total;
 
   /**
      Local statistical properties calculated during the equilibration phase

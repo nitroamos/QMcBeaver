@@ -126,7 +126,7 @@ public:
 
     @return Jastrow function value (\f$J=exp(\sum{u_{i,j}(r_{i,j})})\f$).
   */
-  double getJastrow(int which);
+  QMCDouble getJastrow(int which);
 
   /**
      The partial derivative of this function with repspect to parameter

@@ -28,6 +28,15 @@ int QMCMolecule::getNumberAtoms()
   return Natoms;
 }
 
+int QMCMolecule::getNuclearCharge()
+{
+  int sum = 0;
+  for(int i=0; i<Natoms; i++)
+    {
+      sum += Z(i);
+    }
+  return sum;
+}
 
 QMCMolecule QMCMolecule::operator=( const QMCMolecule & rhs )
 {
@@ -38,27 +47,17 @@ QMCMolecule QMCMolecule::operator=( const QMCMolecule & rhs )
   return *this;
 }
 
-int QMCMolecule::findClosestNucleusIndex(Array2D<double> & x, int index)
+int QMCMolecule::findClosestNucleusIndex(Array2D<double> & riA, int e)
 {
   // Find the closest nucleus to x
-
-  int closest_nucleus_index               = 0;
-  double closest_nucleus_distance_squared = 1e100;
+  int closest_nucleus_index       = 0;
+  double closest_nucleus_distance = 1e100;
   
   for(int nucleus=0; nucleus<getNumberAtoms(); nucleus++)
-    {
-      double r2 = 0.0;
-      
-      for(int xyz=0; xyz<3; xyz++)
+    {      
+      if( riA(e,nucleus) < closest_nucleus_distance )
 	{
-	  double temp = x(index,xyz) - Atom_Positions(nucleus,xyz);
-	  
-	  r2 += temp * temp;
-	}
-      
-      if( r2 < closest_nucleus_distance_squared )
-	{
-	  closest_nucleus_distance_squared = r2;
+	  closest_nucleus_distance = riA(e,nucleus);
 	  closest_nucleus_index            = nucleus;
 	}
     }

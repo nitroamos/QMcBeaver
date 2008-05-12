@@ -257,7 +257,8 @@ class QMCWavefunction
     Array containing the CI coefficients for a multideterminant wavefunction.
   */
   Array1D<double> CI_coeffs;
-
+  Array1D<int>    CI_constraints;
+  int             numIndependent;
   /**
     Array which indicates how many \f$\alpha\f$ spin electron are in each
     orbital for each determinant.  

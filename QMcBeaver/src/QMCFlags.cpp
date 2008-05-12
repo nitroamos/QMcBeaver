@@ -28,12 +28,16 @@ void QMCFlags::read_flags(string InFileName)
   *************************************************************************/
   //QMC Parameters
   dt                             = 0.01;
+  accel_delta                    = 5;
+  accel_tm                       = 0.5*3.14159265359;
+
   desired_convergence            = 0.0;
   max_time_steps                 = 1000000;
   max_time                       = 0.0;
   number_of_walkers              = 1;
   one_e_per_iter                 = 0;
   use_surfer                     = 0;
+  set_debug                      = 0;
 
   //Initialization parameters
   walker_initialization_method   = "dans_walker_initialization";
@@ -188,6 +192,11 @@ void QMCFlags::read_flags(string InFileName)
           input_file >> temp_string;
 	  use_surfer = atoi(temp_string.c_str());
         }
+      else if(temp_string == "set_debug")
+        {
+          input_file >> temp_string;
+	  set_debug = atoi(temp_string.c_str());
+        }
       else if(temp_string == "one_e_per_iter")
         {
           input_file >> temp_string;
@@ -311,6 +320,16 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
           dt = atof(temp_string.c_str());
+        }
+      else if(temp_string == "accel_delta")
+        {
+          input_file >> temp_string;
+          accel_delta = atof(temp_string.c_str());
+        }
+      else if(temp_string == "accel_tm")
+        {
+          input_file >> temp_string;
+          accel_tm = atof(temp_string.c_str());
         }
       else if(temp_string == "desired_convergence")
         {
@@ -1170,15 +1189,21 @@ bool QMCFlags::checkFlags()
       return false;
     }
 
-  if(run_type == "" )
-    {
-      clog << "ERROR: run_type not set!" << endl;
-      return false;
-    }
-
   if(dt_equilibration < 0)
     {
       dt_equilibration = dt;
+    }
+
+  if(sampling_method == "umrigar93_accelerated_sampling")
+    {
+      if(run_type != "variational"){
+	clog << "Error: sampling method " << sampling_method <<
+	  " can only be used with run_type = variational.";
+	return false;
+      }
+      clog << "Using sampling_method = " << sampling_method << endl;
+      clog << " accel_delta = " << accel_delta << endl;
+      clog << " accel_tm    = " << accel_tm << endl;
     }
 
   if(dt > dt_equilibration)
@@ -1200,6 +1225,20 @@ bool QMCFlags::checkFlags()
 	+ globalInput.flags.checkout_file_name;
 
       clog << "Notice: checkpoint files will be written into " << filename << endl;
+    }
+
+  if(one_e_per_iter == 1 && optimize_Psi == 1)
+    {
+      /*
+	Currently:
+	1) correlated sampling doesn't work with one_e_per_iter
+	2) I haven't added updates for the parameter derivatives
+
+	Maybe someone could use a different optimization scheme, but at
+	the moment, it doesn't seem worth it.
+      */
+      clog << "Error: the code is unable to optimize psi using one_e_per_iter.\n";
+      return false;
     }
 
   /**
@@ -1383,6 +1422,13 @@ bool QMCFlags::checkFlags()
       clog << "Warning: Setting sampling_method to \"no_importance_sampling\" since " <<
 	"umrigar93_importance_sampling requires Natoms > 0\n" << endl;
       sampling_method = "no_importance_sampling";
+    }
+
+  if(walkers_per_pass > number_of_walkers)
+    {
+      clog << "Warning: you requested more walkers_per_pass (" << walkers_per_pass
+	   << ") than walkers (" << number_of_walkers << "), resetting walkers_per_pass." << endl;
+      walkers_per_pass = number_of_walkers;
     }
 
 #ifdef QMC_GPU

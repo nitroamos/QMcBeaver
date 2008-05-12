@@ -165,6 +165,18 @@ public:
     }
 
   /**
+     Sets all of the elements in an array equal to the same value.
+  */
+  
+  void operator=(const T C)
+    {
+      for(int i=0; i<n_1;i++)
+        for(int j=0; j<n_2;j++)
+          for(int k=0; k<n_3;k++)
+            pArray[i][j][k] = C;
+    }
+
+  /**
      Creates an array.
   */
   Array3D(){pArray = 0; n_1 = 0; n_2 = 0; n_3 = 0;}

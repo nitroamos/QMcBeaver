@@ -645,63 +645,51 @@ is returned in the QMcBeaver versioning format (yyyymmdd).
 '''
 
 def __getMostRecentCVSDateLocalDirectory(directory):
+    if not os.path.isdir(directory+"CVS"):        
+        return 0
 
-    if os.path.isdir(directory):
-        directoryContents = os.listdir(directory)
-    else:
-        directoryContents = []
-        
     mostRecentVersionNumber = 0
 
-    # see if there is a CVS directory
-    
-    if "CVS" in directoryContents:
+    # get the most recent file date from the CVS files
+    data = open( directory + "CVS/Entries" ).readlines()
 
-        # get the most recent file date from the CVS files
+    for datum in data:
+	temp = string.split(datum,"/")
+	if len(temp) > 3 and string.find(datum,'dummy') == -1:
 
-        data = open( directory + "CVS/Entries" ).readlines()
-
-        for datum in data:
-            temp = string.split(datum,"/")
-            if len(temp) > 3 and string.find(datum,'dummy') == -1:
-
-                date = temp[-3]
-                date = string.split(date)
+	    date = temp[-3]
+	    date = string.split(date)
                 
-                if len(date) > 1:
-		    try:
-                    	day   = string.atoi(date[2])
-		    	month = date[1]
-                    	year  = string.atoi(date[4])
-		    except :
-			print "Error: directory = ",directory, " date =",date, " datum = ",datum
-			continue
-			break
-                    if month == 'Jan': month = 1
-                    elif month == 'Feb': month = 2
-                    elif month == 'Mar': month = 3
-                    elif month == 'Apr': month = 4
-                    elif month == 'May': month = 5
-                    elif month == 'Jun': month = 6
-                    elif month == 'Jul': month = 7
-                    elif month == 'Aug': month = 8
-                    elif month == 'Sep': month = 9
-                    elif month == 'Oct': month = 10
-                    elif month == 'Nov': month = 11
-                    elif month == 'Dec': month = 12
-                    else: print "ERROR: Unknown Month (", month,")!"
+	    if len(date) > 1:
+		try:
+		    day   = string.atoi(date[2])
+		    month = date[1]
+		    year  = string.atoi(date[4])
+		except :
+		    print "Error: directory = ",directory, " date =",date, " datum = ",datum
+		    continue
 
-                    versionNumber = year * 10000 + month * 100 + day
-                else:
-                    versionNumber = 0
+		if month == 'Jan': month = 1
+		elif month == 'Feb': month = 2
+		elif month == 'Mar': month = 3
+		elif month == 'Apr': month = 4
+		elif month == 'May': month = 5
+		elif month == 'Jun': month = 6
+		elif month == 'Jul': month = 7
+		elif month == 'Aug': month = 8
+		elif month == 'Sep': month = 9
+		elif month == 'Oct': month = 10
+		elif month == 'Nov': month = 11
+		elif month == 'Dec': month = 12
+		else: print "ERROR: Unknown Month (", month,")!"
+	    
+	    versionNumber = year * 10000 + month * 100 + day
+	else:
+	    versionNumber = 0
 
+	if versionNumber > mostRecentVersionNumber:
+	    mostRecentVersionNumber = versionNumber
 
-                if versionNumber > mostRecentVersionNumber:
-                    mostRecentVersionNumber = versionNumber
-
-    else:
-        # no CVS directory so return a date of zero
-        pass
 
     return mostRecentVersionNumber
 
@@ -718,13 +706,9 @@ def __getMostRecentCVSDate(directory):
     mostRecentVersionNumber = \
                             __getMostRecentCVSDateLocalDirectory(directory)
 
-    if os.path.isdir(directory):
-        directoryContents = os.listdir(directory)
-    else:
-        directoryContents = []
-
+    directoryContents = ['src','include']
     for item in directoryContents:
-        versionNumber = __getMostRecentCVSDate( directory + item + "/" )
+	versionNumber = __getMostRecentCVSDateLocalDirectory( directory + item + "/" )
 
         if versionNumber > mostRecentVersionNumber:
             mostRecentVersionNumber = versionNumber

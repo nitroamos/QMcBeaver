@@ -9,7 +9,7 @@ using namespace std;
 QMCSurfer::QMCSurfer()
 {
   QMF = 0;
-  walkerData.initialize(&globalInput,3,-1,-1);
+  walkerData.initialize(3,-1,-1);
 }
 
 QMCSurfer::~QMCSurfer()
@@ -489,7 +489,7 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
 	}
 
       //the amount of energy from the gradient terms
-      double grade = walkerData.SCF_Laplacian_PsiRatio + walkerData.lnJ;
+      double grade = walkerData.D_xx + walkerData.U_xx;
       grade *= -0.5;
       grade = walkerData.kineticEnergy - grade;
       if(fabs(walkerData.kineticEnergy) >= 1e4 ||
@@ -501,8 +501,8 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
 	  if(allKE)
 	    {
 	      printf(" %20.7e %20.7e",
-		     -0.5*walkerData.SCF_Laplacian_PsiRatio,
-		     -0.5*walkerData.lnJ);
+		     -0.5*walkerData.D_xx,
+		     -0.5*walkerData.U);
 	    }
 	  printf(" %20.10e",
 		 walkerData.potentialEnergy);
@@ -514,8 +514,8 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
 	  if(allKE)
 	    {
 	      printf(" %20.10f %20.10f",
-		     -0.5*walkerData.SCF_Laplacian_PsiRatio,
-		     -0.5*walkerData.lnJ);
+		     -0.5*walkerData.D_xx,
+		     -0.5*walkerData.U);
 	    }
 	  printf(" %20.14f",
 		 walkerData.potentialEnergy);

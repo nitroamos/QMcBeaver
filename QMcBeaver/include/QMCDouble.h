@@ -20,9 +20,9 @@ using namespace std;
   QMCFunctions to handle super small psi multiplied by super huge jastrow term.
   
   The full set of math operators have been defined including a cast to double
-  operator. One word of warning, if GRC is a QMCGreensRatioComponent object,
+  operator. One word of warning, if GRC is a QMCDouble object,
   then -1.0*GRC is not necessarily equal to GRC*-1.0. This is because the 
-  latter calls the QMCGreensRatioComponent operator * (double) function, while 
+  latter calls the QMCDouble operator * (double) function, while 
   the former casts GRC to a double (which *might* be a problem), then 
   multiplies by -1.0. 
 
@@ -38,24 +38,24 @@ using namespace std;
   1) Ones that return by reference the object operated on (divideBy, 
   multiplyBy, add)
   2) Ones that return nothing (the +=, *=, /=, etc)
-  3) Ones that return a new QMCGreensRatioComponent, leaving the operands 
+  3) Ones that return a new QMCDouble, leaving the operands 
   unaffected (*, +, /, etc)
 */
 
-class QMCGreensRatioComponent
+class QMCDouble
 {
  public:
   
   /**
     Creates a new uninitialized instance of this class.
   */
-  QMCGreensRatioComponent();
+  QMCDouble();
   
   /**
      Creates a new instance of this class with a total value of 'k.'
      @param k total value for the new object.
   */
-  QMCGreensRatioComponent(double k);
+  QMCDouble(double k);
   
   /** 
       Creates a new instance of this class of the form k*a^b*c.
@@ -64,54 +64,54 @@ class QMCGreensRatioComponent
       @param b power
       @param c exponent
   */
-  QMCGreensRatioComponent(double k, double a, double b, double c);
+  QMCDouble(double k, double a, double b, double c);
   
   /** 
       Creates  new instance of this class and makes it equivalent to another 
       instance of this class.
       @param rhs object to set this equal to.
   */
-  QMCGreensRatioComponent( const QMCGreensRatioComponent & rhs );
+  QMCDouble( const QMCDouble & rhs );
   
   /** 
       Deallocates the memory allocated by this object.
   */
-  ~QMCGreensRatioComponent();
+  ~QMCDouble();
   
   /**
-     Divides this QMCGreensRatioComponent by another one and returns a double.
+     Divides this QMCDouble by another one and returns a double.
      @param denom object to divide this object by
      @return *this
   */
-  QMCGreensRatioComponent & divideBy(const QMCGreensRatioComponent &denom);
+  QMCDouble & divideBy(const QMCDouble &denom);
   
   /**
-     Multiplies two QMCGreensRatioComponents together.
+     Multiplies two QMCDoubles together.
      @param *this
   */
-  QMCGreensRatioComponent & multiplyBy(const QMCGreensRatioComponent &rhs);
+  QMCDouble & multiplyBy(const QMCDouble &rhs);
   
   /**
-     Adds two QMCGreensRatioComponents together.
+     Adds two QMCDoubles together.
      @param *this
   */
-  QMCGreensRatioComponent & add(const QMCGreensRatioComponent &rhs);
+  QMCDouble & add(const QMCDouble &rhs);
   
   
-  QMCGreensRatioComponent operator + ( const QMCGreensRatioComponent & rhs ) const;
-  QMCGreensRatioComponent operator - ( const QMCGreensRatioComponent & rhs ) const;
-  QMCGreensRatioComponent operator * ( const QMCGreensRatioComponent & rhs ) const;
-  QMCGreensRatioComponent operator / ( const QMCGreensRatioComponent & rhs ) const;
-  void operator += ( const QMCGreensRatioComponent & rhs );
-  void operator -= ( const QMCGreensRatioComponent & rhs );  
-  void operator *= ( const QMCGreensRatioComponent & rhs );
-  void operator /= ( const QMCGreensRatioComponent & rhs );
-  void operator =  ( const QMCGreensRatioComponent & rhs );
+  QMCDouble operator + ( const QMCDouble & rhs ) const;
+  QMCDouble operator - ( const QMCDouble & rhs ) const;
+  QMCDouble operator * ( const QMCDouble & rhs ) const;
+  QMCDouble operator / ( const QMCDouble & rhs ) const;
+  void operator += ( const QMCDouble & rhs );
+  void operator -= ( const QMCDouble & rhs );  
+  void operator *= ( const QMCDouble & rhs );
+  void operator /= ( const QMCDouble & rhs );
+  void operator =  ( const QMCDouble & rhs );
   
-  QMCGreensRatioComponent operator + ( const double & rhs ) const;
-  QMCGreensRatioComponent operator - ( const double & rhs ) const;
-  QMCGreensRatioComponent operator * ( const double & rhs ) const;
-  QMCGreensRatioComponent operator / ( const double & rhs ) const;
+  QMCDouble operator + ( const double & rhs ) const;
+  QMCDouble operator - ( const double & rhs ) const;
+  QMCDouble operator * ( const double & rhs ) const;
+  QMCDouble operator / ( const double & rhs ) const;
   void operator += ( const double & rhs );
   void operator -= ( const double & rhs );  
   void operator *= ( const double & rhs );
@@ -134,7 +134,7 @@ class QMCGreensRatioComponent
   /*
     Formats the object
   */
-  friend ostream& operator << (ostream& strm, const QMCGreensRatioComponent & rhs);
+  friend ostream& operator << (ostream& strm, const QMCDouble & rhs);
 
   /**
      Gets the overall value of the object.
@@ -143,7 +143,7 @@ class QMCGreensRatioComponent
   double getValue() const;
 
   /**
-     If the QMCGreensRatioComponent is bad (e.g. inf, nan, etc)
+     If the QMCDouble is bad (e.g. inf, nan, etc)
      then this will return false.
   */
   bool isNotValid() const;

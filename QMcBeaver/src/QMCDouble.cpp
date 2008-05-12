@@ -1,19 +1,19 @@
-#include "QMCGreensRatioComponent.h"
+#include "QMCDouble.h"
 #include <iomanip>
 
-QMCGreensRatioComponent::QMCGreensRatioComponent()
+QMCDouble::QMCDouble()
 {
   initialize();
 }
 
-QMCGreensRatioComponent::QMCGreensRatioComponent(double value)
+QMCDouble::QMCDouble(double value)
 {
   initialize();
   k = value;
 }
 
-QMCGreensRatioComponent::QMCGreensRatioComponent(double w, double x, double y,\
-						 double z) 
+QMCDouble::QMCDouble(double w, double x, double y,\
+		     double z) 
 {
   initialize();
   k = w;
@@ -22,18 +22,17 @@ QMCGreensRatioComponent::QMCGreensRatioComponent(double w, double x, double y,\
   c = z;
 }
 
-QMCGreensRatioComponent::QMCGreensRatioComponent( const \
-						  QMCGreensRatioComponent & rhs )
+QMCDouble::QMCDouble( const QMCDouble & rhs )
 {
   *this = rhs;
 }
 
-QMCGreensRatioComponent::~QMCGreensRatioComponent()
+QMCDouble::~QMCDouble()
 {
   // does nothing
 }
 
-void QMCGreensRatioComponent::initialize()
+void QMCDouble::initialize()
 {
   k = 1.0;
   a = 1.0;
@@ -41,7 +40,7 @@ void QMCGreensRatioComponent::initialize()
   c = 0.0;
 }
 
-ostream& operator << (ostream& strm, const QMCGreensRatioComponent &rhs)
+ostream& operator << (ostream& strm, const QMCDouble &rhs)
 {
   int w = 15;
   strm.setf(ios::scientific);
@@ -60,19 +59,19 @@ ostream& operator << (ostream& strm, const QMCGreensRatioComponent &rhs)
   return strm;
 }
 
-void QMCGreensRatioComponent::toXML(ostream & strm)
+void QMCDouble::toXML(ostream & strm)
 {
-  strm << "<QMCGreensRatioComponent>" << endl;
+  strm << "<QMCDouble>" << endl;
   strm << "\t<k>\t" << k << "\t</k>" << endl;
   strm << "\t<a>\t" << a << "\t</a>" << endl;
   strm << "\t<b>\t" << b << "\t</b>" << endl;
   strm << "\t<c>\t" << c << "\t</c>" << endl;
-  strm << "</QMCGreensRatioComponent>\n" << endl;
+  strm << "</QMCDouble>\n" << endl;
 }
 
 // ra^rb = na^nb/da^db
-void QMCGreensRatioComponent::SimplifyRatioPowers(double na, double nb,
-				  double da, double db, double &ra, double &rb)
+void QMCDouble::SimplifyRatioPowers(double na, double nb,
+				    double da, double db, double &ra, double &rb)
 {
   double power1, power2;
   int method = -1;
@@ -136,7 +135,7 @@ void QMCGreensRatioComponent::SimplifyRatioPowers(double na, double nb,
     }
   else
     {
-      cerr << "Error in QMCGreensRatioComponent::SimplifyRatioPowers()";
+      cerr << "Error in QMCDouble::SimplifyRatioPowers()";
       cerr << endl;
       cerr << "Your query is not yet supported." << endl;
       cerr << "na:\t" << na << endl;
@@ -151,11 +150,11 @@ void QMCGreensRatioComponent::SimplifyRatioPowers(double na, double nb,
 #endif
 }
 
-double QMCGreensRatioComponent::getValue() const
+double QMCDouble::getValue() const
 {
   if (a<0.0)
     {
-      cerr << "Error in QMCGreensRatioComponent::getValue():" << endl;
+      cerr << "Error in QMCDouble::getValue():" << endl;
       cerr << "attempting to take a power of a negative number." << endl;
       cerr << "value = " << *this << endl;
       exit(1);
@@ -170,7 +169,7 @@ double QMCGreensRatioComponent::getValue() const
   return k*t1*t2;
 }
 
-bool QMCGreensRatioComponent::isNotValid() const
+bool QMCDouble::isNotValid() const
 {
   //k a^b exp(c)  
   if(IeeeMath::isNaN(k) || IeeeMath::isNaN(a) || IeeeMath::isNaN(b) || IeeeMath::isNaN(c))
@@ -191,7 +190,7 @@ bool QMCGreensRatioComponent::isNotValid() const
   return false;
 }
 
-bool QMCGreensRatioComponent::isZero() const
+bool QMCDouble::isZero() const
 {
   if(fabs(k) <  1e-250 || c < -690.0 )
     {
@@ -200,7 +199,7 @@ bool QMCGreensRatioComponent::isZero() const
   return false;
 }
 
-QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatioComponent & denom)
+QMCDouble & QMCDouble::divideBy(const QMCDouble & denom)
 {
   if(isZero())
     return *this;
@@ -242,7 +241,7 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatio
 
   if (isNotValid())
     {
-      cerr << "Error in QMCGreensRatioComponent::divideBy():" << endl;
+      cerr << "Error in QMCDouble::divideBy():" << endl;
       cerr << "dividend = " << *this << endl;
       cerr << " divisor = " << denom << endl;
       exit(1);
@@ -251,11 +250,11 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::divideBy(const QMCGreensRatio
   return *this;
 }
 
-QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRatioComponent &X)
+QMCDouble & QMCDouble::multiplyBy(const QMCDouble &X)
 {
   if (isNotValid() || X.isNotValid())
     {
-      cerr << "Error in QMCGreensRatioComponent::multiplyBy():" << endl;
+      cerr << "Error in QMCDouble::multiplyBy():" << endl;
       cerr << "multiplicand = " << *this << endl;
       cerr << "  multiplier = " << X << endl;
     }
@@ -392,7 +391,7 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRat
 
   if (isNotValid() || X.isNotValid())
     {
-      cerr << "Error in QMCGreensRatioComponent::multiplyBy():" << endl;
+      cerr << "Error in QMCDouble::multiplyBy():" << endl;
       cerr << "multiplicand = " << *this << endl;
       cerr << "  multiplier = " << X << endl;
       *this = 0.0;
@@ -401,14 +400,14 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::multiplyBy(const QMCGreensRat
   return *this;
 }
 
-QMCGreensRatioComponent & QMCGreensRatioComponent::add(const QMCGreensRatioComponent &X)
+QMCDouble & QMCDouble::add(const QMCDouble &X)
 {
   // This function has been causing a lot of problems on QSC.
   // First we make sure that none of the elements is NaN.
 
   if (isNotValid() || X.isNotValid())
     {
-      cerr << "Error in QMCGreensRatioComponent::add():" << endl;
+      cerr << "Error in QMCDouble::add():" << endl;
       cerr << "augend = " << *this << endl;
       cerr << "addend = " << X << endl;
       exit(1);
@@ -498,7 +497,7 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::add(const QMCGreensRatioCompo
 
       if (IeeeMath::isNaN(temp))
 	{
-	  cerr << "Error in QMCGreensRatioComponent::add()" << endl;
+	  cerr << "Error in QMCDouble::add()" << endl;
 	  cerr << "Attempting to calculate exp(" << temp << ")" << endl;
 	  cerr << "augend = " << *this << endl;
 	  cerr << "addend = " << X << endl;
@@ -543,7 +542,7 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::add(const QMCGreensRatioCompo
 
       if (IeeeMath::isNaN(expArg))
 	{
-	  cerr << "Error in QMCGreensRatioComponent::add()" << endl;
+	  cerr << "Error in QMCDouble::add()" << endl;
 	  cerr << "Attempting to calculate exp(" << expArg << ")" << endl;
 	  cerr << "augend = " << *this << endl;
 	  cerr << "addend = " << X << endl;
@@ -581,90 +580,90 @@ QMCGreensRatioComponent & QMCGreensRatioComponent::add(const QMCGreensRatioCompo
   return *this;
 }
 
-QMCGreensRatioComponent QMCGreensRatioComponent::operator + ( const QMCGreensRatioComponent & rhs ) const {
-  QMCGreensRatioComponent result = *this;
+QMCDouble QMCDouble::operator + ( const QMCDouble & rhs ) const {
+  QMCDouble result = *this;
   return result.add(rhs);
 }
 
-QMCGreensRatioComponent QMCGreensRatioComponent::operator - ( const QMCGreensRatioComponent & rhs ) const {
-  QMCGreensRatioComponent result = *this;
+QMCDouble QMCDouble::operator - ( const QMCDouble & rhs ) const {
+  QMCDouble result = *this;
   return result.add(rhs*-1.0);
 }
 
-QMCGreensRatioComponent QMCGreensRatioComponent::operator * ( const QMCGreensRatioComponent & rhs ) const {
-  QMCGreensRatioComponent result = *this;
+QMCDouble QMCDouble::operator * ( const QMCDouble & rhs ) const {
+  QMCDouble result = *this;
   return result.multiplyBy(rhs);
 }
 
-QMCGreensRatioComponent QMCGreensRatioComponent::operator / ( const QMCGreensRatioComponent & rhs ) const {
-  QMCGreensRatioComponent result = *this;
+QMCDouble QMCDouble::operator / ( const QMCDouble & rhs ) const {
+  QMCDouble result = *this;
   return result.divideBy(rhs);
 }
 
-void QMCGreensRatioComponent::operator += ( const QMCGreensRatioComponent & rhs ){
+void QMCDouble::operator += ( const QMCDouble & rhs ){
   add(rhs);
 }
 
-void QMCGreensRatioComponent::operator -= ( const QMCGreensRatioComponent & rhs ){
+void QMCDouble::operator -= ( const QMCDouble & rhs ){
   add(rhs*-1.0);
 }  
 
-void QMCGreensRatioComponent::operator *= ( const QMCGreensRatioComponent & rhs ){
+void QMCDouble::operator *= ( const QMCDouble & rhs ){
   multiplyBy(rhs);
 }
 
-void QMCGreensRatioComponent::operator /= ( const QMCGreensRatioComponent & rhs ){
+void QMCDouble::operator /= ( const QMCDouble & rhs ){
   divideBy(rhs);
 }
 
-void QMCGreensRatioComponent::operator = ( const QMCGreensRatioComponent & rhs ){
+void QMCDouble::operator = ( const QMCDouble & rhs ){
   k = rhs.k;
   a = rhs.a;
   b = rhs.b;
   c = rhs.c;
 }
 
-QMCGreensRatioComponent QMCGreensRatioComponent::operator + ( const double & rhs ) const {
-  QMCGreensRatioComponent result = *this;
-  return result.add(QMCGreensRatioComponent(rhs));
+QMCDouble QMCDouble::operator + ( const double & rhs ) const {
+  QMCDouble result = *this;
+  return result.add(QMCDouble(rhs));
 }
 
-QMCGreensRatioComponent QMCGreensRatioComponent::operator - ( const double & rhs ) const {
-  QMCGreensRatioComponent result = *this;
-  return result.add(QMCGreensRatioComponent(-1.0*rhs));
+QMCDouble QMCDouble::operator - ( const double & rhs ) const {
+  QMCDouble result = *this;
+  return result.add(QMCDouble(-1.0*rhs));
 }
 
-QMCGreensRatioComponent QMCGreensRatioComponent::operator * ( const double & rhs ) const {
-  QMCGreensRatioComponent result = *this;
-  return result.multiplyBy(QMCGreensRatioComponent(rhs));
+QMCDouble QMCDouble::operator * ( const double & rhs ) const {
+  QMCDouble result = *this;
+  return result.multiplyBy(QMCDouble(rhs));
 }
 
-QMCGreensRatioComponent QMCGreensRatioComponent::operator / ( const double & rhs ) const {
-  QMCGreensRatioComponent result = *this;
-  return result.divideBy(QMCGreensRatioComponent(rhs));
+QMCDouble QMCDouble::operator / ( const double & rhs ) const {
+  QMCDouble result = *this;
+  return result.divideBy(QMCDouble(rhs));
 }
 
-void QMCGreensRatioComponent::operator += ( const double & rhs ){
-  add(QMCGreensRatioComponent(rhs));
+void QMCDouble::operator += ( const double & rhs ){
+  add(QMCDouble(rhs));
 }
 
-void QMCGreensRatioComponent::operator -= ( const double & rhs ){
-  add(QMCGreensRatioComponent(-1.0*rhs));
+void QMCDouble::operator -= ( const double & rhs ){
+  add(QMCDouble(-1.0*rhs));
 }
 
-void QMCGreensRatioComponent::operator *= ( const double & rhs ){
-  multiplyBy(QMCGreensRatioComponent(rhs));
+void QMCDouble::operator *= ( const double & rhs ){
+  multiplyBy(QMCDouble(rhs));
 }
 
-void QMCGreensRatioComponent::operator /= ( const double & rhs ){
-  divideBy(QMCGreensRatioComponent(rhs));
+void QMCDouble::operator /= ( const double & rhs ){
+  divideBy(QMCDouble(rhs));
 }
 
-void QMCGreensRatioComponent::operator = ( double rhs ){
-  operator = (QMCGreensRatioComponent(rhs));
+void QMCDouble::operator = ( double rhs ){
+  operator = (QMCDouble(rhs));
 }
 
-QMCGreensRatioComponent::operator double() const {
+QMCDouble::operator double() const {
   return getValue();
 }
 

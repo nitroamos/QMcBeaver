@@ -134,7 +134,6 @@ class Random
      deviation. If the SPRNG library is available, it will
      be used.
      
-     @param idum random number seed
      @return uniform random number on \f$[0,INT_MAX]\f$.
   */
   int intdev();
@@ -144,7 +143,6 @@ class Random
      deviation. If the SPRNG library is available, it will
      be used.
      
-     @param idum random number seed
      @return uniform random number on \f$[0,1]\f$.
   */
   double unidev();
@@ -155,7 +153,6 @@ class Random
      number with another variance, multiply this result by the desired standard
      deviation.
      
-     @param idum random number seed
      @return gaussian random number with unit variance
   */
   double gasdev();
@@ -176,7 +173,6 @@ class Random
      This method was developed by David Randall ``Chip'' Kent IV and works by
      directly inverting the distribution.
      
-     @param idum random number seed
      @return exponential random number
   */
   double expdev();
@@ -192,10 +188,11 @@ class Random
      This method was developed by David Randall ``Chip'' Kent IV and works by
      directly inverting the distribution.
      
-     @param idum random number seed
      @return random number distributed with respect to \f$\sin(x)/2\f$.
   */
   double sindev();
+
+  double sindev(double u);
   
   /**
      Generates a random number distributed whith the probability distribution 
@@ -208,11 +205,25 @@ class Random
      This method was developed by David Randall ``Chip'' Kent IV and works by
      using a rejection type algorithm.
      
-     @param idum random number seed
      @return random number distributed with respect to \f$x^{2}e^{-x}/2\f$.
   */
   
   double randomDistribution1();
+
+  /**
+     Generates a random number distributed with the probability distribution 
+     function using a rejection type algorithm.
+     \f[
+     p(x)dx = sqrt(x) ( 1 + a x) e^{- \zeta x}dx.
+     \f]
+     The random variable is a number on the positive real axis.
+     
+     @return random number distributed with respect to \f$ sqrt(x) (1 + a x)e^{- \zeta x}\f$.  
+  */
+  double pdf2(double a, double zeta, double x);
+  double randomDistribution2(double a, double zeta, double min, double max);
+  
+  double randomDistribution3(double F);
 };  
 
 /**

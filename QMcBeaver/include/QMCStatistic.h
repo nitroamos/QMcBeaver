@@ -92,6 +92,7 @@ public:
     */
 
   void newSample(long double s, long double weight);
+  void quickSample(long double s, long double weight);
 
   /**
      Sets two object equal.

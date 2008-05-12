@@ -65,7 +65,7 @@ bool QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
   
   string pt1, pt2;
   strm >> temp;
-  
+
   if(temp != "ParticleTypes:")
     {
       strm.seekg(start);
@@ -275,6 +275,7 @@ bool QMCCorrelationFunctionParameters::read(istream & strm, bool nucCuspReplacem
   // set the correlation function
   setCorrelationFunction();
   initializeCorrelationFunctionParameters();
+
   return ok;
 }
 
