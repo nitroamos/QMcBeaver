@@ -1,3 +1,39 @@
+Mon, May 12, 2008 Amos Anderson
+1.  I updated all the changes I'd been collecting for a while. If you
+    want the old version, then look at the apr9_2008_stable tag.
+
+2.  I've added Umrigar's accelerated metropolis method from 1993. However,
+    it is most effective when updating one electron per iteration, and
+    I don't have all the parameter derivatives updatable one electron at
+    a time. So the method is not much use at the moment, if you are optimizing
+    wavefunctions. However, if you set a dt of about 0.1, then you'll get
+    about the same efficiency anyway.
+
+3.  I changed the names of many wavefunction related variables in SCFJastrow
+    and Slater. I think the names make more sense now. This also includes replacing
+    the name QMCGreensRatioComponent with QMCDouble and QMCFutureWalkingProperties with
+    QMCPropertyArrays.
+
+4.  I added some new 2 particle Jastrows, but they don't represent much of an improvement, so
+    I stopped working on them. They're probably unstable.
+
+5.  I changed the output format so that more information is available. In VMC it is now:
+ iteration            Eavg            Estd    Num. Samples           Tcorr      Acceptance         <p dR2>     Sample Var.         Summary
+    and in DMC it is now:
+ iteration            Eavg            Estd    Num. Samples           Tcorr      Acceptance    Num. Walkers         Weights    Trial Energy         Eff. dt
+
+6.  I added a couple of performance improvements, especially focusing on the one-electron
+    updates. Als, calculation of CI parameter derivatives is much more efficient for > 100 coeffiecients.
+
+7.  In the mean time, the code can now efficiently move one electron at a time;
+    it just can't calculate parameter derivatives efficiently. I plan to add
+    this eventually, and then perhaps Umrigar's accelerated metropolis method 
+    will be more of an improvement.
+
+8.  I added a way to constrain CI coefficients during optimization. It's very primitive.
+
+9.  Stopwatch has a new function: lap which is useful for timing something that is repeated.
+
 Wed, May 7, 2008 Daniel R Fisher
 1.  Made the redistribution of electrons in
     QMCDansWalkerInitialization to avoid charged atoms a bit more
