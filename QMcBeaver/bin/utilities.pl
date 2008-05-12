@@ -129,8 +129,8 @@ sub estimateTimeToFinish
 
 sub getCKMFHeader
 {
-    my $header = sprintf "%-30s %2s %3s %11s %-7s %-6s %4s %4s  %-15s %8s %8s\n",
-    "Name","  ","NW","EQ/Steps","dt","nbf","opt","optl","HF","Age","Size";
+    my $header = sprintf "%-30s %2s %3s %11s %-7s %-7s %1s%1s%1s%1s %-15s %8s %8s\n",
+    "Name","  ","NW","EQ/Steps","dt","nci:nbf","O","L","C","3","HF","Age","Size";
     return $header;
 }
 
@@ -156,17 +156,19 @@ sub getCKMFSummary
     open (CKMFFILE, "$ckmf");
 
     while(<CKMFFILE> !~ /&flags/){};
-    $rt = "";
-    $numbf = 0;
-    $numci = 0;
-    $hfe = "";
-    $nw = 0;
-    $dt = 0;
-    $opt = 0;
-    $optl = 0;
-    $steps=0;
-    $eqsteps=0;
-    $iseed=0;
+    $rt      = "";
+    $numbf   = 0;
+    $numci   = 0;
+    $hfe     = "";
+    $nw      = 0;
+    $dt      = 0;
+    $opt     = 0;
+    $optl    = 0;
+    $optci   = 0;
+    $opt3    = 0;
+    $steps   = 0;
+    $eqsteps = 0;
+    $iseed   = 0;
 
     while(<CKMFFILE>){
 	if($_ =~ m/^\s*run_type\s*$/){
@@ -216,6 +218,18 @@ sub getCKMFSummary
 	    chomp;
 	    my @line = split/[ ]+/;
 	    $optl = $line[1];
+	}
+	if($_ =~ m/^\s*optimize_CI\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $optci = $line[1];
+	}
+	if($_ =~ m/^\s*optimize_NEE_Jastrows\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $opt3 = $line[1];
 	}
 	if($_ =~ m/^\s*max_time_steps\s*$/){
 	    $_ = <CKMFFILE>;
@@ -348,11 +362,11 @@ sub getCKMFSummary
     }
 
     my $oneliner = "";
-    $oneliner .= sprintf "%-30s %2s %3i %5s/%-5s %-7s %-6s %4i %4i %-15s",
+    $oneliner .= sprintf "%-30s %2s %3i %5s/%-5s %-7s %3i:%-3s %1i%1i%1i%1i %-15s",
     $shortbase,$rt,
     $nw,$eqsteps_str,$steps_str,
     $dt,
-    "${numci}:${numbf}",$opt,$optl,$hfe;
+    ${numci},${numbf},$opt,$optl,$optci,$opt3,$hfe;
     $oneliner .= sprintf " %10s", $outModTime;
     $oneliner .= sprintf " %7s", $outSize;
     $oneliner .= sprintf " %50s", $ovData;

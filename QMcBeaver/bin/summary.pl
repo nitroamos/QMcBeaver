@@ -21,8 +21,10 @@ my @fileFilters;
 
 #use strict;
 
-#hartrees (=1) or kcal/mol (=627.50960803)?
+#hartrees (=1) or kcal/mol (=627.50960803) or eV (27.211399)?
+#my $units = 27.211399;
 my $units = 627.50960803;
+
 
 #absolute energies (=0) or relative (=1) to each other?
 my $shift = 1;
@@ -80,7 +82,8 @@ if($#ARGV < 0)
     #die;
 }
 
-getFileList(".out",\@files);
+#getFileList(".out",\@files);
+getFileList(".qmc",\@files);
 
 my $y_min = 0;
 my $y_max = 0;
@@ -464,7 +467,7 @@ if($num_results > 0){
     $ave_result /= $num_results;
     #print "Average result = $ave_result\n";
     
-    printf "%5s %10s %10s %20s %5s %5s   %-25s %5s %20s %20s %20s %10s\n",
+    printf "%5s %20s %10s %20s %5s %5s   %-25s %5s %20s %20s %20s %10s\n",
     "ID","Label",
     "dt","Ref. Energy","Num","NumBF","NumJW","NumW","Average","Error (kcal)","Corr. E.","Weight";
     my %qref;
@@ -475,9 +478,14 @@ if($num_results > 0){
     {
 	my @keydata = split/&/,$key;
 	$dt_ave_results{$key} /= $dt_num_results{$key};
-	$dt_err_results{$key} = sqrt($dt_err_results{$key}/$dt_nme_results{$key});
 
-	printf "%5i %10s %10s %20s %5i %5i   %-25s %5i %20.10f %20.10f %20.10f %10.5f\n",
+	if($dt_nme_results{$key} > 0){
+	    $dt_err_results{$key} = sqrt($dt_err_results{$key}/$dt_nme_results{$key});
+	} else {
+
+	}
+
+	printf "%5i %20s %10s %20s %5i %5i   %-25s %5i %20.10f %20.10f %20.10f %10.5f\n",
 	$label{$key},
 	$shortnames{$key},
 	"$keydata[1]", "$keydata[0]",
@@ -514,6 +522,8 @@ if($num_results > 0){
 	    my $r = $dt_ave_results{$row};
 	    my $c = $dt_ave_results{$col};
 
+	    #$rMult = 1;
+	    #$cMult = 1;
 	    #the results are not comparable if either is zero
 	    next if($rMult == 0 || $cMult == 0);
 	    #otherwise we'll get two of every comparison
@@ -528,7 +538,7 @@ if($num_results > 0){
 
 	    my $comparison = "";
 	    if($newrow == 1 || true){
-		$comparison .= sprintf "%3i) %10s %15.10f x $rMult %9s %5s %5s %2i | ",
+		$comparison .= sprintf "%3i) %20s %15.10f x $rMult %9s %5s %5s %2i | ",
 		$label{$row},
 		$shortnames{$row},
 		$r,$rowdata[1],$rowdata[2],
@@ -537,7 +547,7 @@ if($num_results > 0){
 	    } else {
 		$comparison .= sprintf "%49s | "," ";
 	    }
-	    $comparison .= sprintf "%3i) %10s %15.10f x $cMult %9s %5s %5s %2i | ",
+	    $comparison .= sprintf "%3i) %20s %15.10f x $cMult %9s %5s %5s %2i | ",
 	    $label{$col},
 	    $shortnames{$col},
 	    $c,$coldata[1],$coldata[2],$colJW,$coldata[5];

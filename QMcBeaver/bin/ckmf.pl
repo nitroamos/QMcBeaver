@@ -24,7 +24,6 @@ for(my $index=0; $index<=$#files; $index++){
     if(!$includeRestarts){
 	next if($files[$index] =~ /.\d\d.ckmf$/ && !(-e "${base}.out"));
     }
-
     my $oneliner = getCKMFSummary("$files[$index]");
     print "$oneliner";
 }

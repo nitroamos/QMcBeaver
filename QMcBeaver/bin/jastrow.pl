@@ -44,7 +44,7 @@ my $numci = 1;
 for(my $index=0; $index<=$#files; $index++){
     $base = substr($files[$index],0,-4);
 
-    next if($base !~ /tw/);
+    #next if($base !~ /tw/);
 
     #print "base = $base\n";
     open (CKMFFILE, "$base.ckmf");
@@ -279,7 +279,13 @@ set ylabel "$ylabel"
 gnuplot_Commands_Done
 
 	if($multiPlot){
-	    print GNUPLOT "set multiplot layout 2,2\n";
+	    $numPlots = scalar keys %plotters;
+	    $numR = 2;
+	    $numC = 2;
+	    $numC = 3 if($numPlots > 4);
+	    $numR = 3 if($numPlots > 6);
+	    die "Too many plots: $numPlots" if($numPlots > 9);
+	    print GNUPLOT "set multiplot layout $numR,$numC\n";
 	}
     }
 
@@ -366,7 +372,7 @@ gnuplot_Commands_Done
 	$func = "x > $max ? 1/0 : $func";
 	#$func = "x";
 	print GNUPLOT " $func title \"$title\""; 
-	
+
 	#print GNUPLOT " [0:$kd[2]] $func title \"$kd[3]\""; 
 	if($i != $#plots){
 	    print GNUPLOT ",\\"; 
