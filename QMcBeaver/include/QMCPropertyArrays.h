@@ -83,12 +83,13 @@ public:
      The second dimension will hold all the terms
      necessary to do the average.
   */
-  Array2D<QMCStatistic> der;
+  int numDerHessSamples;
+  Array2D<double> der;
 
   //for variance minimization, the hessian only needs one additional term
   //for energy minimization, we need several
   bool hessIsSymmetric;
-  Array1D< Array2D<QMCStatistic> > hess;
+  Array1D< Array2D<double> > hess;
 
   Array1D< QMCProperty > cs_Energies;
 

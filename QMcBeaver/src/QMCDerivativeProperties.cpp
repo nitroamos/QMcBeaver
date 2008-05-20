@@ -142,11 +142,11 @@ Array1D<double> QMCDerivativeProperties::getParameterGradient()
   gradient.allocate(numCI);
   for(int ci=0; ci<numCI; ci++)
     {
-      double pi    = fwProperties->der(ci,0).getAverage();  // < \frac{ \Psi_i }{ \Psi } >
-      double pi_e  = fwProperties->der(ci,1).getAverage();  // < \frac{ \Psi_i }{ \Psi } E_L>
-      double pi_e2 = fwProperties->der(ci,2).getAverage();  // < \frac{ \Psi_i }{ \Psi } E_L^2>
-      double ei    = fwProperties->der(ci,3).getAverage();  // < E_{L,i} > (= 0 in limit)
-      double ei_e  = fwProperties->der(ci,4).getAverage();  // < E_{L,i} E_L >
+      double pi    = fwProperties->der(ci,0);  // < \frac{ \Psi_i }{ \Psi } >
+      double pi_e  = fwProperties->der(ci,1);  // < \frac{ \Psi_i }{ \Psi } E_L>
+      double pi_e2 = fwProperties->der(ci,2);  // < \frac{ \Psi_i }{ \Psi } E_L^2>
+      double ei    = fwProperties->der(ci,3);  // < E_{L,i} > (= 0 in limit)
+      double ei_e  = fwProperties->der(ci,4);  // < E_{L,i} E_L >
       double e     = properties->energy.getAverage();       // < E_L >
       double e2    = properties->energy2.getAverage();      // < E_L^2 >
 
@@ -213,10 +213,10 @@ Array2D<double> QMCDerivativeProperties::getParameterHessian()
       for(int aj=0; aj<=ai; aj++)
 	{
 	  // < E_{L,i} E_{L,j} >
-	  double h1 = (fwProperties->hess(0))(ai,aj).getAverage();
+	  double h1 = (fwProperties->hess(0))(ai,aj);
 	  // < E_{L,i} > < E_{L,j} >
-	  double h2 = fwProperties->der(ai,3).getAverage()
-	            * fwProperties->der(aj,3).getAverage();
+	  double h2 = fwProperties->der(ai,3)
+                    * fwProperties->der(aj,3);
 
 	  double h3 = 2.0 * (h1 - h2);
 	  hessian(ai,aj) = h3;
@@ -254,11 +254,11 @@ Array2D<double> QMCDerivativeProperties::getParameterHamiltonian()
   for(int ai=0; ai<numAI; ai++)
     {
       // < \frac{ \Psi_i }{ \Psi } E_L >
-      double pi_e = fwProperties->der(ai,1).getAverage();
+      double pi_e = fwProperties->der(ai,1);
       // < \frac{ \Psi_i }{ \Psi } >
-      double pi  = fwProperties->der(ai,0).getAverage();
+      double pi  = fwProperties->der(ai,0);
       // < E_{L,i} > (= 0 in limit)
-      double ei  = fwProperties->der(ai,3).getAverage();
+      double ei  = fwProperties->der(ai,3);
       
       hamiltonian(ai+1,0) = pi_e - pi*e;
       hamiltonian(0,ai+1) = pi_e - pi*e + ei;
@@ -266,19 +266,19 @@ Array2D<double> QMCDerivativeProperties::getParameterHamiltonian()
       for(int aj=0; aj<numAI; aj++)
 	{
 	  // < \frac{ \Psi_i }{ \Psi } \frac{ \Psi_j }{ \Psi } E_L >
-	  double ppe  = (fwProperties->hess(0))(ai,aj).getAverage();
+	  double ppe  = (fwProperties->hess(0))(ai,aj);
 	  
 	  // < \frac{ \Psi_i }{ \Psi } E_{L,j} >
-	  double pi_ej = (fwProperties->hess(2))(ai,aj).getAverage();
+	  double pi_ej = (fwProperties->hess(2))(ai,aj);
 	  
 	  // < \frac{ \Psi_j }{ \Psi } E_L >
-	  double pj_e = fwProperties->der(aj,1).getAverage();
+	  double pj_e = fwProperties->der(aj,1);
 	  
 	  // < \frac{ \Psi_j }{ \Psi } >
-	  double pj  = fwProperties->der(aj,0).getAverage();
+	  double pj  = fwProperties->der(aj,0);
 	  
 	  // < E_{L,j} > (= 0 in limit) 
-	  double ej  = fwProperties->der(aj,3).getAverage();
+	  double ej  = fwProperties->der(aj,3);
 	  
 	  double val = ppe - pi*pj_e - pj*pi_e + pi*pj*e;
 	  val += pi_ej - pi*ej;
@@ -320,12 +320,12 @@ Array2D<double> QMCDerivativeProperties::getParameterOverlap()
       for(int aj=0; aj<=ai; aj++)
 	{
 	  // < \frac{ \Psi_i }{ \Psi } \frac{ \Psi_j }{ \Psi } >
-	  double pi_pj = (fwProperties->hess(1))(ai,aj).getAverage();
+	  double pi_pj = (fwProperties->hess(1))(ai,aj);
 	  
 	  // < \frac{ \Psi_i }{ \Psi } >
-	  double pi  = fwProperties->der(ai,0).getAverage();
+	  double pi  = fwProperties->der(ai,0);
 	  // < \frac{ \Psi_j }{ \Psi } >
-	  double pj  = fwProperties->der(aj,0).getAverage();
+	  double pj  = fwProperties->der(aj,0);
 	  
 	  double val = pi_pj - pi*pj;
 	  overlap(ai+1,aj+1) = val;

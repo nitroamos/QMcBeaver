@@ -1,3 +1,13 @@
+Tue, May 20, 2008 Amos Anderson
+1.  I have some wavefunctions with many parameters that have been quite expensive
+    to optimize, so changed some things so they run much faster now. I monkeyed with
+    QMCSlater::calculate_Derivatives so that it runs slighly faster. I also
+    switched the hess and der data structures in QMCPropertyArrays to be double,
+    and not QMCStatistic, and this saved a lot of computational effort. Further,
+    QMCWalker now accumulates statistics for der and hess directly without worrying
+    about averaging each timestep first. My wave function with ~500 parameters
+    optimizes about 5.5 times faster.
+
 Mon, May 12, 2008 Amos Anderson
 1.  I updated all the changes I'd been collecting for a while. If you
     want the old version, then look at the apr9_2008_stable tag.

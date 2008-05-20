@@ -187,14 +187,10 @@ void QMCPropertyArrays::zeroOut()
   for(int i=0; i<cs_Energies.dim1(); i++)
     cs_Energies(i).zeroOut();
 
-  for(int i=0; i<der.dim1(); i++)
-    for(int j=0; j<der.dim2(); j++)
-      der(i,j).zeroOut();
-
+  numDerHessSamples = 0;
+  der = 0.0;
   for(int i=0; i<hess.dim1(); i++)
-    for(int j=0; j<hess(i).dim1(); j++)
-      for(int k=0; k<hess(i).dim2(); k++)
-	(hess(i))(j,k).zeroOut();
+    hess(i) = 0.0;
 
   if (calc_density)
     for (int i=0; i<nBasisFunc; i++)
@@ -222,24 +218,7 @@ void QMCPropertyArrays::newSample(QMCPropertyArrays* newProperties, double weigh
   for(int i=0; i<cs_Energies.dim1(); i++)
     if(newProperties->cs_Energies(i).getNumberSamples() > 0)
       cs_Energies(i).newSample(newProperties->cs_Energies(i).getAverage(), weight);
-  
-  for (int i=0; i<der.dim1(); i++)
-    for (int j=0; j<der.dim2(); j++)
-      if(newProperties->der(i,j).getNumberSamples() > 0)
-	der(i,j).newSample(newProperties->der(i,j).getAverage(),weight);
 
-  for (int i=0; i<hess.dim1(); i++)
-    for(int j=0; j<hess(i).dim1(); j++)
-      {
-	int max = hess(i).dim2();
-	if(hessIsSymmetric)
-	  max = j+1;
-	
-	for(int k=0; k<max; k++)
-	  if((newProperties->hess(i))(j,k).getNumberSamples() > 0)
-	    (hess(i))(j,k).newSample( (newProperties->hess(i))(j,k).getAverage(),weight);
-      }
-  
   if (calc_density)
     for (int i=0; i<nBasisFunc; i++)
       if(newProperties->chiDensity(i).getNumberSamples() > 0)
@@ -275,6 +254,7 @@ void QMCPropertyArrays::operator = ( const QMCPropertyArrays &rhs )
   der = rhs.der;
   hess = rhs.hess;
   cs_Energies = rhs.cs_Energies;
+  numDerHessSamples = rhs.numDerHessSamples;
 }
 
 QMCPropertyArrays QMCPropertyArrays::operator + ( QMCPropertyArrays &rhs )

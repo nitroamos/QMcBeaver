@@ -117,6 +117,16 @@ public:
   void calculateObservables( QMCPropertyArrays & props );
 
   /**
+     This is the same as calculateObservables(QMCPropertyArrays & props), except
+     that this is for parameter derivatives, so QMCWalker can accumulate the data directly without
+     averaging over the time step first (unnecessary since we don't use the variance).
+
+     @param props properties to which this walkers current observable values are
+     added.
+  */  
+  void calculateDerivatives( QMCPropertyArrays & props );
+
+  /**
     Sets two QMCWalker objects equal.
     @param rhs object to set this object equal to.
   */

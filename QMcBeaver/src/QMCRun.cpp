@@ -468,10 +468,12 @@ void QMCRun::calculateObservables()
   fwTimeStepProperties.zeroOut();
 
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
-  {    
-    wp->calculateObservables( timeStepProperties );
-    wp->calculateObservables( fwTimeStepProperties );
-  }
+    {    
+      wp->calculateObservables( timeStepProperties );
+      wp->calculateObservables( fwTimeStepProperties );
+      wp->calculateDerivatives( fwProperties );
+    }
+
   // Add the pre blocked data from this time step to the accumulated
   // statistics
   timeStepProperties.growthRate.newSample(growthRate,1.0);

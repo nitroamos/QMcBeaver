@@ -650,7 +650,6 @@ bool QMCSlater::calculate_DerivativeRatios(int ci, int row,
       ciDet->allocate(psi.dim1(),inv.dim1());
       WF->getDataForCI(ci,isAlpha,psi,*ciDet);
     }
-
   if(ciDet->dim1() > 1 || row < 0)
     {
       if(ci == 0)
@@ -671,11 +670,13 @@ bool QMCSlater::calculate_DerivativeRatios(int ci, int row,
 	    {
 	      int so = swap->get(ci,o);
 	      if(so != -1)
-		{				
+		{
 		  ratio = inv.inverseUpdateOneColumn(so,*ciDet,so);
 		  
 		  det[ci] *= ratio;
 		  if(ratio == 0) break;
+		} else {
+		  break;
 		}
 	    }
 	  
@@ -710,6 +711,11 @@ bool QMCSlater::calculate_DerivativeRatios(int ci, int row,
   double ** grad_PR = gradPR.array()[ci];
   lap_PR = 0.0;
 
+  double * p_lap = lap.array();
+  double * p_grx = gradx.array();
+  double * p_gry = grady.array();
+  double * p_grz = gradz.array();
+
   for(int e=0; e<numE; e++)
     {
       grad_PR[e][0] = 0.0;
@@ -723,10 +729,13 @@ bool QMCSlater::calculate_DerivativeRatios(int ci, int row,
 
       for(int e=0; e<numE; e++)
 	{
-	  lap_PR        +=   lap[e][orb] * inv[o][e];
-	  grad_PR[e][0] += gradx[e][orb] * inv[o][e];
-	  grad_PR[e][1] += grady[e][orb] * inv[o][e];
-	  grad_PR[e][2] += gradz[e][orb] * inv[o][e];
+	  int ind = lap.map(e,orb);
+	  double inv_v = inv(o,e);
+
+	  lap_PR        += p_lap[ind] * inv_v;
+	  grad_PR[e][0] += p_grx[ind] * inv_v;
+	  grad_PR[e][1] += p_gry[ind] * inv_v;
+	  grad_PR[e][2] += p_grz[ind] * inv_v;
 	}
     }
   return false;

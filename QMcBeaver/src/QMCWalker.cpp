@@ -2445,7 +2445,6 @@ void QMCWalker::calculateObservables( QMCPropertyArrays & fwProps )
     {	
       for(int cs=0; cs<cs_Energies.dim1(); cs++)
 	{
-	  //printf("cs = %2i eng = %20.10f csw = %20.10e\n",cs,cs_Energies(cs),cs_Weights(cs));
 	  fwProps.cs_Energies(cs).newSample( cs_Energies(cs), getWeight() * cs_Weights(cs));
 	}
     }
@@ -2455,8 +2454,25 @@ void QMCWalker::calculateObservables( QMCPropertyArrays & fwProps )
       cs_Weights.deallocate();
     }
 
+  // Calculate the basis function densities
+  if (Input->flags.calculate_bf_density == 1)
+    for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
+      fwProps.chiDensity(i).newSample( walkerData.chiDensity(i), getWeight() );
+}
+
+void QMCWalker::calculateDerivatives( QMCPropertyArrays & props )
+{
+  //if rel diff is really bad, then we have no reason to collect statistics
+  double rel_diff = fabs( (localEnergy -
+			   Input->flags.energy_estimated_original)/
+			  Input->flags.energy_estimated_original);
+  if(rel_diff > Input->flags.rel_cutoff)
+    return;
+
   if(globalInput.flags.calculate_Derivatives == 1)
     {
+      props.numDerHessSamples++;
+
       int numAI = rp_a.dim1();
       for(int ai=0; ai<numAI; ai++)
 	{
@@ -2465,39 +2481,33 @@ void QMCWalker::calculateObservables( QMCPropertyArrays & fwProps )
 	    of original and trial walkers...
 	  */
 	  double e2 = localEnergy * localEnergy;
-	  fwProps.der(ai,0).quickSample(rp_a(ai),                 getWeight());
-	  fwProps.der(ai,1).quickSample(rp_a(ai) * localEnergy,   getWeight());
-	  fwProps.der(ai,2).quickSample(rp_a(ai) * e2,            getWeight());
-	  fwProps.der(ai,3).quickSample(p3_xxa(ai),               getWeight());
-	  fwProps.der(ai,4).quickSample(p3_xxa(ai) * localEnergy, getWeight());
+	  props.der(ai,0) += rp_a(ai);
+	  props.der(ai,1) += rp_a(ai) * localEnergy;
+	  props.der(ai,2) += rp_a(ai) * e2;
+	  props.der(ai,3) += p3_xxa(ai);
+	  props.der(ai,4) += p3_xxa(ai) * localEnergy;
 	}
       
       if(globalInput.flags.optimize_Psi_criteria == "analytical_energy_variance")
 	{
-	  
 	  for(int ai=0; ai<numAI; ai++)
 	    for(int aj=0; aj<=ai; aj++)
-	      (fwProps.hess(0))(ai,aj).quickSample(p3_xxa(ai) * p3_xxa(aj), getWeight());
+	      (props.hess(0))(ai,aj) += p3_xxa(ai) * p3_xxa(aj);
 	  
 	} else if(globalInput.flags.optimize_Psi_criteria == "generalized_eigenvector") {
+
 	  for(int ai=0; ai<numAI; ai++)
-	    	    for(int aj=0; aj<numAI; aj++)
-	    //for(int aj=0; aj<=ai; aj++) //this line changes the answer...
+	    for(int aj=0; aj<numAI; aj++)
 	      {
-		(fwProps.hess(0))(ai,aj).quickSample(rp_a(ai) * rp_a(aj) * localEnergy, getWeight());
-		(fwProps.hess(1))(ai,aj).quickSample(rp_a(ai) * rp_a(aj),               getWeight());
-		(fwProps.hess(2))(ai,aj).quickSample(rp_a(ai) * p3_xxa(aj),             getWeight());
+		(props.hess(0))(ai,aj) += rp_a(ai) * rp_a(aj) * localEnergy;
+		(props.hess(1))(ai,aj) += rp_a(ai) * rp_a(aj);
+		(props.hess(2))(ai,aj) += rp_a(ai) * p3_xxa(aj); //hessian is not symmmetric 
 	      }
 	}
     } else {
       rp_a.deallocate();
       p3_xxa.deallocate();
     }
-  
-  // Calculate the basis function densities
-  if (Input->flags.calculate_bf_density == 1)
-    for (int i=0; i<Input->WF.getNumberBasisFunctions(); i++)
-      fwProps.chiDensity(i).newSample( walkerData.chiDensity(i), getWeight() );
 }
 
 void QMCWalker::resetFutureWalking(int whichBlock, int whichIsDone)

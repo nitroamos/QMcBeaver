@@ -253,20 +253,27 @@ void QMCManager::gatherExtraProperties()
   int numAI = fwProperties_total.der.dim1();
   if(numAI > 0)
     {
+      MPI_Reduce( &QMCnode.getFWProperties()->numDerHessSamples,
+                  &fwProperties_total.numDerHessSamples,
+                  1,
+                  MPI_INT,
+                  MPI_SUM,
+                  0,MPI_COMM_WORLD );
+
       MPI_Reduce( QMCnode.getFWProperties()->der.array(),
                   fwProperties_total.der.array(),
                   numAI*fwProperties_total.der.dim2(),
-                  QMCStatistic::MPI_TYPE,
-                  QMCStatistic::MPI_REDUCE,
+                  MPI_DOUBLE,
+                  MPI_SUM,
                   0,MPI_COMM_WORLD );
 
       for(int i=0; i<fwProperties_total.hess.dim1(); i++)
-        MPI_Reduce( QMCnode.getFWProperties()->hess(i).array(),
-                    fwProperties_total.hess(i).array(),
-                    numAI * numAI,
-                    QMCStatistic::MPI_TYPE,
-                    QMCStatistic::MPI_REDUCE,
-                    0,MPI_COMM_WORLD );
+	MPI_Reduce( QMCnode.getFWProperties()->hess(i).array(),
+		    fwProperties_total.hess(i).array(),
+		    numAI * numAI,
+		    MPI_DOUBLE,
+		    MPI_SUM,
+		    0,MPI_COMM_WORLD );
     }
 
   for(int i=0; i<fwProperties_total.props.dim1(); i++)
@@ -281,6 +288,18 @@ void QMCManager::gatherExtraProperties()
 #else
   fwProperties_total = *QMCnode.getFWProperties();
 #endif
+
+  /*
+    We divide the sum of the derivatives by the number. We calculate
+    the average this way because using QMCStatistic is too expensive
+    for the simple needs here.
+  */
+  if(fwProperties_total.numDerHessSamples > 0)
+    {
+      fwProperties_total.der *= 1.0/fwProperties_total.numDerHessSamples; 
+      for(int i=0; i<fwProperties_total.hess.dim1(); i++)
+	fwProperties_total.hess(i) *= 1.0/fwProperties_total.numDerHessSamples;
+    }
 }
 
 void QMCManager::gatherProperties()
