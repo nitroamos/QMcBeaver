@@ -64,6 +64,9 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
 	$param = shift(@ARGV);
 	push(@fileFilters,$param);
 	print "Adding file filter $param\n";
+    } elsif($type eq "-u"){
+	$units = 27.211399;
+	print "Using energy eV units\n";
     } else {
 	print "Unrecognized option: $type\n";
 	die;
@@ -330,12 +333,29 @@ for(my $index=0; $index<=$#files; $index++){
 	    $eavg        = $data[2];
 	    $estd        = $data[3];
 	    $effnw       = $data[4];
-	    if($isd eq "variational"){
-		$effdt       = $data[5];
-		$num_samples = $data[6];
+	    
+	    if($effnw > 1000)
+	    {
+		#new output format
+		$effnw       = $data[7];
+		if($isd eq "variational"){
+		    $effdt       = $dt;
+		    $num_samples = $data[4];
+		} else {
+		    $effdt       = $data[10];
+		    $num_samples = $data[4];
+		    
+		}
 	    } else {
-		$effdt       = $data[7];
-		$num_samples = $data[8];
+		#old output format
+		if($isd eq "variational"){
+		    $effdt       = $data[5];
+		    $num_samples = $data[6];
+		} else {
+		    $effdt       = $data[7];
+		    $num_samples = $data[8];
+		    
+		}
 	    }
 	    
 	    #this is equal to sample variance * correlation length
@@ -398,9 +418,9 @@ for(my $index=0; $index<=$#files; $index++){
     chomp($sampleclock);
     chomp($sampleVar);
     $summary{$key} .= 
-	sprintf "..  %-30s%1s%7s %5s  %10.5f %10.5f %5i %5i %16.10f %4i %5i",
+	sprintf "..  %-30s%1s%7s %5s  %10.5f %10.5f %3i:%-3i %5i %16.10f %4i %5i",
 	"$base","$machine","$dt","$effnw","$hfe","$vare",
-	$numbf,$numjw,$eavg,
+	$numci,$numbf,$numjw,$eavg,
 	$numerrors,$numwarnings;
 
     if($wallclock ne ""){
@@ -450,9 +470,9 @@ foreach $key (sort byenergy keys %dt_ave_results)
 	$label{$key} = sprintf "%2i", (scalar keys %label) + 1;
     }
 }
-printf "ID  %-30s %7s %5s  %10s %10s %5s %5s %16s %4s %5s %10s %10s %10s %10s %10s %10s %15s\n",
+printf "ID  %-30s %7s %5s  %10s %10s %7s %5s %16s %4s %5s %10s %10s %10s %10s %10s %10s %15s\n",
     "File Name","dt","nw","HF E",
-    "Var E","NumBF",
+    "Var E","CI:BF",
     "NumJW","Avg E","Err","Warn",
     "Variance",
     "Corr Len","WF Eff","Wall","Total","Iter","effdt*iters";
@@ -467,9 +487,9 @@ if($num_results > 0){
     $ave_result /= $num_results;
     #print "Average result = $ave_result\n";
     
-    printf "%5s %20s %10s %20s %5s %5s   %-25s %5s %20s %20s %20s %10s\n",
+    printf "%5s %20s %10s %20s %5s %7s   %-25s %5s %20s %20s %20s %10s\n",
     "ID","Label",
-    "dt","Ref. Energy","Num","NumBF","NumJW","NumW","Average","Error (kcal)","Corr. E.","Weight";
+    "dt","Ref. Energy","Num","CI:BF","NumJW","NumW","Average","Error (kcal)","Corr. E.","Weight";
     my %qref;
     my %href;
     my $dtref = 0;
@@ -485,11 +505,12 @@ if($num_results > 0){
 
 	}
 
-	printf "%5i %20s %10s %20s %5i %5i   %-25s %5i %20.10f %20.10f %20.10f %10.5f\n",
+	printf "%5i %20s %10s %20s %5i %3i:%-3i   %-25s %5i %20.10f %20.10f %20.10f %10.5f\n",
 	$label{$key},
 	$shortnames{$key},
 	"$keydata[1]", "$keydata[0]",
 	$dt_num{$key},
+	$keydata[5],
 	$keydata[2],
 	$keydata[3],
 	$keydata[4],
@@ -538,19 +559,19 @@ if($num_results > 0){
 
 	    my $comparison = "";
 	    if($newrow == 1 || true){
-		$comparison .= sprintf "%3i) %20s %15.10f x $rMult %9s %5s %5s %2i | ",
+		$comparison .= sprintf "%3i) %20s %15.10f x $rMult %9s %2s:%-3s %5s | ",
 		$label{$row},
 		$shortnames{$row},
-		$r,$rowdata[1],$rowdata[2],
-		$rowJW,$rowdata[5];
+		$r,$rowdata[1],$rowdata[5],$rowdata[2],
+		$rowJW;
 		$newrow = 0;
 	    } else {
 		$comparison .= sprintf "%49s | "," ";
 	    }
-	    $comparison .= sprintf "%3i) %20s %15.10f x $cMult %9s %5s %5s %2i | ",
+	    $comparison .= sprintf "%3i) %20s %15.10f x $cMult %9s %2s:%-3s %5s | ",
 	    $label{$col},
 	    $shortnames{$col},
-	    $c,$coldata[1],$coldata[2],$colJW,$coldata[5];
+	    $c,$coldata[1],$coldata[5],$coldata[2],$colJW;
 	    $comparison .= sprintf " %9.3f",$diff;
 	    $comparison .= sprintf " +/- %-9.3f", $diffe;
 	    $comparison .= sprintf "\n";
