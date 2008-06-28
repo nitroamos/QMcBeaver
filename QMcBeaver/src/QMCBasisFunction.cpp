@@ -32,6 +32,7 @@ for more details.
 
 
 #include "QMCBasisFunction.h"
+#include "IeeeMath.h"
 
 QMCBasisFunction::QMCBasisFunction()
 {}
@@ -284,107 +285,117 @@ double QMCBasisFunction::radialFunctionSecondDerivative
   return temp;
 }
 
-void QMCBasisFunction::
-evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
-                       Array2D<qmcfloat>& chi_value,
-                       Array2D<qmcfloat>& chi_grx,
-                       Array2D<qmcfloat>& chi_gry,
-                       Array2D<qmcfloat>& chi_grz,
-                       Array2D<qmcfloat>& chi_laplacian)
+void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X,
+					      int start, int stop,
+					      Array2D<qmcfloat>& chi_val,
+					      Array2D<qmcfloat>& chi_grx,
+					      Array2D<qmcfloat>& chi_gry,
+					      Array2D<qmcfloat>& chi_grz,
+					      Array2D<qmcfloat>& chi_lap)
 {
-  /*
-#if defined SINGLEPRECISION || defined QMC_GPU
-  const float TOOSMALL = 1e-35;
-#else
-  const double TOOSMALL = 1e-306;
-#endif
-  */
-
   int el = 0, bf;
-  int a, b, c, nGaussians;
-  int numBF;
+  int a, b, c;
 
-  qmcfloat x, y, z, x2, y2, z2, r_sq, xyz;
-  qmcfloat p0, p1, exp_term, temp;
-  qmcfloat chi, chi_gradx, chi_grady, chi_gradz, chi_lap;
+  qmcfloat r_sq;
+  qmcfloat p0, exp_term, temp1, temp2, temp3x, temp3y, temp3z;
+  qmcfloat x_val, x_grx, x_gry, x_grz, x_lap;
 
-  for (int index=start; index<=stop; index++)
+  temp1 = 0;
+  temp2 = 0;
+  temp3x = 0;
+  temp3y = 0;
+  temp3z = 0;
+  for (int idx=start; idx<=stop; idx++)
     {
       bf = 0;
+      p0 = 0.0;
       for (int atom=0; atom<flags->Natoms; atom++)
         {
-          for (int i=0; i<3; i++)
-            {
-              Xcalc(i) = X(index,i) - Molecule->Atom_Positions(atom,i);
-            }
-          x = Xcalc(0);
-          y = Xcalc(1);
-          z = Xcalc(2);
-          x2 = x*x;
-          y2 = y*y;
-          z2 = z*z;
-          r_sq = x2+y2+z2;
-          numBF = BFCoeffs(atom).getNumberBasisFunctions();
+          for (int xyz=0; xyz<3; xyz++)
+	    Xcalc(xyz) = X(idx,xyz) - Molecule->Atom_Positions(atom,xyz);
+	  
+	  const int numl = BFCoeffs(atom).lmax + 1;
+	  const int numn = max(3,numl);
+	  /*
+	    xyz_abc[x,y, or z][l][n];
+	    if n = 0: then x^n
+	    if n = 1: then l / x
+	    if n = 2: then l(l-1) / x^2
+	  */
+	  double xyz_abc[3][numn][3];
+	  for(int xyz=0;xyz<3;xyz++)
+	    {
+	      xyz_abc[xyz][0][0] = 1.0;
+	      xyz_abc[xyz][1][0] = Xcalc(xyz);
+	      for(int abc=2; abc<numn; abc++)
+		xyz_abc[xyz][abc][0] = xyz_abc[xyz][1][0] * xyz_abc[xyz][abc-1][0];
+
+	      xyz_abc[xyz][0][1] = 0.0;
+	      xyz_abc[xyz][0][2] = 0.0;
+	      for(int abc=1; abc<numn; abc++)
+		{
+		  xyz_abc[xyz][abc][1] = abc / xyz_abc[xyz][1][0];
+		  xyz_abc[xyz][abc][2] = abc*(abc-1.0)/xyz_abc[xyz][2][0];
+		}
+	    }
+          r_sq = xyz_abc[0][2][0]+xyz_abc[1][2][0]+xyz_abc[2][2][0];
+	  
+	  double xyzA[numl][numl][numl][2];
+	  for(int ai=0; ai<numl; ai++)
+	    for(int bi=0; bi<numl; bi++)
+	      for(int ci=0; ci<numl; ci++)
+		{
+		  int sum = ai+bi+ci;
+		  if(sum>numl) continue;
+		  xyzA[ai][bi][ci][0] =
+		    xyz_abc[0][ai][0]*
+		    xyz_abc[1][bi][0]*
+		    xyz_abc[2][ci][0];
+		  xyzA[ai][bi][ci][1] = 4.0*sum+6.0;
+		}
+
+          const int numBF = BFCoeffs(atom).getNumberBasisFunctions();
           for (int j=0; j<numBF; j++)
             {
               a = BFCoeffs(atom).xyz_powers(j,0);
               b = BFCoeffs(atom).xyz_powers(j,1);
               c = BFCoeffs(atom).xyz_powers(j,2);
-
-              xyz = pow(x,a)*pow(y,b)*pow(z,c);
-
               qmcfloat** coeffs = BFCoeffs(atom).Coeffs.array()[j];
 
-              nGaussians = BFCoeffs(atom).N_Gauss(j);
-              chi       = 0;
-              chi_gradx = 0;
-              chi_grady = 0;
-              chi_gradz = 0;
-              chi_lap   = 0;
+              x_val = 0;
+              x_grx = 0;
+              x_gry = 0;
+              x_grz = 0;
+              x_lap = 0;
+              const int nGaussians = BFCoeffs(atom).N_Gauss(j);
               for (int i=0; i<nGaussians; i++)
                 {
-                  p0 = coeffs[i][0];
-                  p1 = coeffs[i][1];
-                  exp_term = p1*exp(-p0*r_sq)*xyz;
-                  temp = -2.0*p0;
+		  if(fabs(p0 - coeffs[i][0]) > 1e-10){
+		    p0     = coeffs[i][0];
+		    temp1  = exp(-p0*r_sq);		    
+		    temp2  = 4.0*r_sq*p0*p0;
+		    temp3x = -2.0*p0*xyz_abc[0][1][0];
+		    temp3y = -2.0*p0*xyz_abc[1][1][0];
+		    temp3z = -2.0*p0*xyz_abc[2][1][0];
+		  }
 
-                  chi       += exp_term;
-                  chi_gradx += (a/x + temp*x) * exp_term;
-                  chi_grady += (b/y + temp*y) * exp_term;
-                  chi_gradz += (c/z + temp*z) * exp_term;
-                  chi_lap   += (a*(a-1.0)/x2 + b*(b-1.0)/y2 + c*(c-1.0)/z2
-                                - (4.0*(a+b+c)+6.0-4.0*r_sq*p0)*p0)*exp_term;
+                  exp_term = temp1*coeffs[i][1]*xyzA[a][b][c][0];
+
+                  x_val += exp_term;
+                  x_grx += exp_term * (xyz_abc[0][a][1] + temp3x);
+                  x_gry += exp_term * (xyz_abc[1][b][1] + temp3y);
+                  x_grz += exp_term * (xyz_abc[2][c][1] + temp3z);
+                  x_lap += exp_term * (xyz_abc[0][a][2] +
+				       xyz_abc[1][b][2] +
+				       xyz_abc[2][c][2] -
+				       p0*xyzA[a][b][c][1]+temp2);
                 }
-
-              /*
-		This next block is unneeded if we're flushing underflow to zero
-		or if the computer doesn't slow down too much with denormal
-		values.
-
-		Allowing denormal floating point values can really slow down the machine since
-		they are likely handled in software (as opposed to hardware).
-
-		Further, I was finding that some machines were crashing when transcendental
-		math functions were evaluated with denormals later in the code...
-	      */	      
-	      /*
-              if(chi > 0 && chi < TOOSMALL) chi = TOOSMALL;
-              if(chi < 0 && chi > -1.0*TOOSMALL) chi = -1.0*TOOSMALL;
-              if(chi_gradx > 0 && chi_gradx < TOOSMALL) chi_gradx = TOOSMALL;
-              if(chi_gradx < 0 && chi_gradx > -1.0*TOOSMALL) chi_gradx = -1.0*TOOSMALL;
-              if(chi_grady > 0 && chi_grady < TOOSMALL) chi_grady = TOOSMALL;
-              if(chi_grady < 0 && chi_grady > -1.0*TOOSMALL) chi_grady = -1.0*TOOSMALL;
-              if(chi_gradz > 0 && chi_gradz < TOOSMALL) chi_gradz = TOOSMALL;
-              if(chi_gradz < 0 && chi_gradz > -1.0*TOOSMALL) chi_gradz = -1.0*TOOSMALL;
-              if(chi_lap > 0 && chi_lap < TOOSMALL) chi_lap = TOOSMALL;
-              if(chi_lap < 0 && chi_lap > -1.0*TOOSMALL) chi_lap = -1.0*TOOSMALL;
-	      */
-
-              chi_value(el,bf)     = (qmcfloat)chi;
-              chi_grx(el,bf)       = (qmcfloat)chi_gradx;
-              chi_gry(el,bf)       = (qmcfloat)chi_grady;
-              chi_grz(el,bf)       = (qmcfloat)chi_gradz;
-              chi_laplacian(el,bf) = (qmcfloat)chi_lap;
+	      
+              chi_val(el,bf) = (qmcfloat)x_val;
+              chi_grx(el,bf) = (qmcfloat)x_grx;
+              chi_gry(el,bf) = (qmcfloat)x_gry;
+              chi_grz(el,bf) = (qmcfloat)x_grz;
+              chi_lap(el,bf) = (qmcfloat)x_lap;
               bf++;
             }
         }
@@ -392,65 +403,84 @@ evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
     }
 }
 
-void QMCBasisFunction::
-evaluateBasisFunctions(Array2D<double>& X, Array2D<qmcfloat>& chi_value)
+void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X,
+					      Array2D<qmcfloat>& chi_val)
 {
-  //This line helps prevent some floating point errors
-  const double TOOSMALL = 1e-306;
   int el = 0, bf;
-  int a, b, c, nGaussians;
-  int numBF;
-  double x, y, z, x2, y2, z2, r_sq, xyz;
-  double p0, p1, exp_term, temp;
-  double chi;
-  for (int index=0; index<X.dim1(); index++)
+  int a, b, c;
+
+  qmcfloat r_sq;
+  qmcfloat p0, exp_term, temp1;
+  qmcfloat x_val;
+
+  temp1 = 0;
+  for (int idx=0; idx<X.dim1(); idx++)
     {
       bf = 0;
+      p0 = -100;
       for (int atom=0; atom<flags->Natoms; atom++)
         {
-          for (int i=0; i<3; i++)
-            {
-              Xcalc(i) = X(index,i) - Molecule->Atom_Positions(atom,i);
-            }
-          x = Xcalc(0);
-          y = Xcalc(1);
-          z = Xcalc(2);
+          for (int xyz=0; xyz<3; xyz++)
+	    Xcalc(xyz) = X(idx,xyz) - Molecule->Atom_Positions(atom,xyz);
+	  
+	  const int numl = BFCoeffs(atom).lmax + 1;
 
-          x2 = x*x;
-          y2 = y*y;
-          z2 = z*z;
-          r_sq = x2+y2+z2;
-          numBF = BFCoeffs(atom).getNumberBasisFunctions();
+	  /*
+	    xyz_abc[x,y, or z][l][n];
+	    if n = 0: then x^n
+	    if n = 1: then l / x
+	    if n = 2: then l(l-1) / x^2
+	  */
+	  double xyz_abc[3][numl];
+	  for(int xyz=0;xyz<3;xyz++)
+	    {
+	      xyz_abc[xyz][0] = 1.0;
+	      xyz_abc[xyz][1] = Xcalc(xyz);
+	      for(int abc=2; abc<numl; abc++)
+		xyz_abc[xyz][abc] = xyz_abc[xyz][1] * xyz_abc[xyz][abc-1];
+	    }
+          r_sq = xyz_abc[0][2]+xyz_abc[1][2]+xyz_abc[2][2];
+	  
+	  double xyzA[numl][numl][numl];
+	  for(int ai=0; ai<numl; ai++)
+	    for(int bi=0; bi<numl; bi++)
+	      for(int ci=0; ci<numl; ci++)
+		{
+		  int sum = ai+bi+ci;
+		  if(sum>numl) continue;
+		  xyzA[ai][bi][ci] =
+		    xyz_abc[0][ai]*
+		    xyz_abc[1][bi]*
+		    xyz_abc[2][ci];
+		}
+
+          const int numBF = BFCoeffs(atom).getNumberBasisFunctions();
           for (int j=0; j<numBF; j++)
             {
               a = BFCoeffs(atom).xyz_powers(j,0);
               b = BFCoeffs(atom).xyz_powers(j,1);
               c = BFCoeffs(atom).xyz_powers(j,2);
-
-              xyz = pow(x,a)*pow(y,b)*pow(z,c);
-
               qmcfloat** coeffs = BFCoeffs(atom).Coeffs.array()[j];
 
-              nGaussians = BFCoeffs(atom).N_Gauss(j);
-              chi       = 0;
+              x_val = 0;
+              const int nGaussians = BFCoeffs(atom).N_Gauss(j);
               for (int i=0; i<nGaussians; i++)
                 {
-                  p0 = coeffs[i][0];
-                  p1 = coeffs[i][1];
-                  exp_term = p1*exp(-p0*r_sq)*xyz;
-                  temp = -2.0*p0;
-                  chi       += exp_term;
+		  if(fabs(p0 - coeffs[i][0]) > 1e-10){
+		    p0     = coeffs[i][0];
+		    temp1  = exp(-p0*r_sq);		    
+		  }
+
+                  exp_term = temp1*coeffs[i][1]*xyzA[a][b][c];
+                  x_val += exp_term;
                 }
 
-              //This block could safely be commented out for most compilers
-              if(chi > 0 && chi < TOOSMALL) chi = TOOSMALL;
-              if(chi < 0 && chi > -1.0*TOOSMALL) chi = -1.0*TOOSMALL;
-              chi_value(el,bf)     = (qmcfloat)chi;
+              chi_val(el,bf) = (qmcfloat)x_val;
               bf++;
-            }//sum over basis functions
-        }//sum over atoms
+            }
+        }
       el++;
-    }//sum over index
+    }
 }
 
 

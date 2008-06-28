@@ -80,21 +80,23 @@ istream& operator >>(istream &strm, QMCBasisFunctionCoefficients &rhs)
   rhs.Type.allocate(rhs.N_Orbitals);
 
   int x,y,z;
+  rhs.lmax = 0;
   for(int i=0; i<rhs.N_Orbitals; i++)
     {
       strm >> rhs.N_Gauss(i);
       strm >> rhs.Type(i);
-
+      
       type_to_xyz(rhs.Type(i),x,y,z);
       rhs.xyz_powers(i,0) = x;
       rhs.xyz_powers(i,1) = y;
       rhs.xyz_powers(i,2) = z;
-
+      rhs.lmax = max(rhs.lmax,x+y+z);
+      
       for(int j=0; j<rhs.N_Gauss(i); j++)
-      {
-	    strm >> rhs.Coeffs(i,j,0);
-	    strm >> rhs.Coeffs(i,j,1);
-      }
+	{
+	  strm >> rhs.Coeffs(i,j,0);
+	  strm >> rhs.Coeffs(i,j,1);
+	}
     }
   return strm;
 }

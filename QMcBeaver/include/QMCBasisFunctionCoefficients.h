@@ -100,7 +100,11 @@ class QMCBasisFunctionCoefficients
  
   Array1D <string> Type;      
 
-                              
+  /**
+     The highest Type we'll need to evaluate.
+  */
+  int lmax;
+
   /**
     Sets two QMCBasisFunctionCoefficients objects equal.
 
