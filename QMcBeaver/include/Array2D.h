@@ -756,7 +756,9 @@ template <class T> class Array2D
       if(n_1 < 1 || n_2 < 1)
         {
           cerr << "Warning: using Array2D::operator=(const T C)"
-	       << " with dims " << n_1 << " and " << n_2 << endl;
+	       << " with dims " << n_1 << " and " << n_2
+	       << "; C = " << C << endl;
+	  //assert(0);
         }
 #endif
       if(C == 0)
@@ -787,7 +789,9 @@ template <class T> class Array2D
       if(n_1 < 1 || n_2 < 1)
         {
           cerr << "Warning: using Array2D::operator*(const T C)"
-	       << " with dims " << n_1 << " and " << n_2 << endl;
+	       << " with dims " << n_1 << " and " << n_2
+	       << "; C = " << C << endl;
+	  //assert(0);
         }
 #endif
       Array2D<T> TEMP(n_1,n_2);
@@ -806,6 +810,7 @@ template <class T> class Array2D
         {
           cerr << "Warning: using Array2D::operator-(const T C)"
 	       << " with dims " << n_1 << " and " << n_2 << endl;
+	  //assert(0);
         }
 #endif
       Array2D<T> TEMP(n_1,n_2);
@@ -824,6 +829,7 @@ template <class T> class Array2D
         {
           cerr << "Warning: using Array2D::operator+(const T C)"
 	       << " with dims " << n_1 << " and " << n_2 << endl;
+	  //assert(0);
         }
 #endif
       Array2D<T> TEMP(n_1,n_2);
@@ -841,7 +847,9 @@ template <class T> class Array2D
       if(n_1 < 1 || n_2 < 1)
         {
           cerr << "Warning: using Array2D::operator*=(const T C)"
-	       << " with dims " << n_1 << " and " << n_2 << endl;
+	       << " with dims " << n_1 << " and " << n_2 
+	       << "; C = " << C << endl;
+	  //assert(0);
         }
 #endif
       for(int i=0; i<n_1*n_2; i++)
@@ -857,7 +865,9 @@ template <class T> class Array2D
       if(n_1 < 1 || n_2 < 1)
         {
           cerr << "Warning: using Array2D::operator/=(const T C)"
-	       << " with dims " << n_1 << " and " << n_2 << endl;
+	       << " with dims " << n_1 << " and " << n_2
+	       << "; C = " << C << endl;
+	  //assert(0);
         }
       if(C == 0.0)
 	{
@@ -1008,11 +1018,8 @@ template <class T> class Array2D
       if(i >= n_1 || j >= n_2 ||
 	 i < 0 || j < 0)
 	{
-	  cerr << "Error: bad dimensions in Array2D::map" << endl
-	       << "  i = " << i << endl
-	       << "  j = " << j << endl
-	       << "n_1 = " << n_1 << endl
-	       << "n_2 = " << n_2 << endl;
+	  cerr << "Error: bad index in Array2D::map(" << i << "," << j << "); "
+	       << " allocated (" << n_1 << "," << n_2 << ")" << endl;
 	  assert(0);
 	}
       if(pArray == 0)
@@ -1046,6 +1053,20 @@ template <class T> class Array2D
   */
   T& operator()(int i,int j)
     {
+#ifdef QMC_DEBUG
+      if(i >= n_1 || j >= n_2 ||
+	 i < 0 || j < 0)
+	{
+	  cerr << "Error: bad index in Array2D::operator()(" << i << "," << j << "); "
+	       << " allocated (" << n_1 << "," << n_2 << ")" << endl;
+	  assert(0);
+	}
+      if(pArray == 0)
+	{
+	  cerr << "Error: pArray == 0 in Array2D::operator()" << endl;
+	  assert(0);
+	}
+#endif
       return pArray[map(i,j)];
     }
   
@@ -1055,6 +1076,20 @@ template <class T> class Array2D
   */
   T get(int i, int j) const
     {
+#ifdef QMC_DEBUG
+      if(i >= n_1 || j >= n_2 ||
+	 i < 0 || j < 0)
+	{
+	  cerr << "Error: bad index in Array2D::get(" << i << "," << j << "); "
+	       << " allocated (" << n_1 << "," << n_2 << ")" << endl;
+	  assert(0);
+	}
+      if(pArray == 0)
+	{
+	  cerr << "Error: pArray == 0 in Array2D::get(int,int)" << endl;
+	  assert(0);
+	}
+#endif
       return pArray[map(i,j)];
     }
   
