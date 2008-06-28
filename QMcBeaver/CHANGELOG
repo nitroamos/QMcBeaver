@@ -1,3 +1,9 @@
+Sat, Jun 28, 2008 Amos Anderson
+1.  I figured out a way to speed up basis function evaluation in QMCBasisFunction.cpp .
+    The code is more messy, but examples/ne0.ckmf goes twice as fast now. The most benefit
+    is for contracted and augmented basis sets. Basically, I eliminated the use of the pow
+    function by precalculating all of the x^a y^b z^c, and minimized the usage of the exp function.
+
 Tue, May 20, 2008 Amos Anderson
 1.  I have some wavefunctions with many parameters that have been quite expensive
     to optimize, so changed some things so they run much faster now. I monkeyed with
