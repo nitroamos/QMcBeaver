@@ -122,8 +122,11 @@ void QMCJastrow::evaluate(Array2D<double> & R)
   Array1D< Array2D<double>* > temp(1);
   temp(0) = &R;
 
+  QMCWalkerData wd;
+  wd.initialize(3,-1,-1);
+  wd.updateDistances(R);
   Array1D<QMCWalkerData *> wdArray(1);
-  wdArray(0) = 0;
+  wdArray(0) = &wd;
   evaluate(Input->JP,wdArray,temp,1,0);
 }
 
