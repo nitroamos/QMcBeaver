@@ -116,8 +116,10 @@ class QMCElectronNucleusCuspParameters
     @param orig_laplacian the laplacian of the original orbital
   */
   void evaluateOriginalOrbital(double x, double y, double z, double r,
-double& orig_value, double& orig_gradx, double& orig_grady, double& orig_gradz,
-			                               double& orig_laplacian);
+			       double& orig_value, double& orig_gradx, double& orig_grady, double& orig_gradz,
+			       double& orig_laplacian);
+  void evaluateOriginalOrbital(double x, double y, double z, double r,
+			       double& orig_value);
 
   /**
     Calculates the value, gradient, and laplacian of the replacement orbital.
@@ -135,8 +137,10 @@ double& orig_value, double& orig_gradx, double& orig_grady, double& orig_gradz,
     @param rep_laplacian the laplacian of the replacement orbital
   */
   void evaluateReplacementOrbital(double x, double y, double z, double r,
-    double& rep_value, double& rep_gradx, double& rep_grady, double& rep_gradz,
-				                        double& rep_laplacian);
+				  double& rep_value, double& rep_gradx, double& rep_grady, double& rep_gradz,
+				  double& rep_laplacian);
+  void evaluateReplacementOrbital(double x, double y, double z, double r,
+				  double& rep_value);
 
   /**
     Calculates the local energy of the replacement orbital at r. 
@@ -183,8 +187,10 @@ double& orig_value, double& orig_gradx, double& orig_grady, double& orig_gradz,
     @param orb_laplacian the laplacian of the orbital
   */
   void replaceOrbitalValues(double x, double y, double z, double r,
-    double& orb_value, double& orb_gradx, double& orb_grady, double& orb_gradz,
-                                                        double& orb_laplacian);
+			    double& orb_value, double& orb_gradx, double& orb_grady, double& orb_gradz,
+			    double& orb_laplacian);
+  void replaceOrbitalValues(double x, double y, double z, double r,
+			    double& orb_value);
 
   /**
     This function fits the parameters of the replacement orbital based on the 

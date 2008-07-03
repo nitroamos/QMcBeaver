@@ -232,6 +232,7 @@ template <class T> class Array2D
 	      cerr << "Warning: we had to reallocate result: "
 		   << result.dim1() << "x" << result.dim2() << " to "
 		   << n_1 << "x" << rhs.n_1 << endl;
+	      //assert(0);
 	    }
 #endif
 	  result.allocate(n_1,rhs.n_1);
@@ -642,26 +643,28 @@ template <class T> class Array2D
       same = true;
       int largestI = 0, largestJ = 0;
       double badCount = 0;
-      double currentError=0, largestError = 0;
+      double curRelErr=0, largestError = 0;
+      double curAbsErr=0;
       double error = 0, error2 = 0, sample_size = 0;
-      
+      double abs_error = 0;
+
       for(int i=0; i<n_1; i++)
         {
           for(int j=0; j<n_2; j++)
             {
-              currentError = (double)(get(i,j)-rhs.get(i,j));
+              curAbsErr = fabs((double)(get(i,j)-rhs.get(i,j)));
               double den = 1.0;
               if(fabs(rhs.get(i,j)) > 1e-200)
                 den = rhs.get(i,j);
-              currentError = fabs( currentError / den );
+              curRelErr = fabs( curAbsErr / den );
 	      
-              if(currentError > largestError)
+              if(curRelErr > largestError)
                 {
-                  largestError = currentError;
+                  largestError = curRelErr;
                   largestI = i; largestJ = j;
                 }
 	      
-              if(currentError > reallyBad)
+              if(curRelErr > reallyBad)
                 {
                   badCount++;
                   same = false;
@@ -672,15 +675,16 @@ template <class T> class Array2D
                       int width = 15;
                       cout << "Error at (" << i << "," << j << "): this "
 			   << setprecision(prec) << setw(width) << get(i,j) << " rhs "
-			   << setprecision(prec) << setw(width) << rhs.get(i,j) << " current error " << currentError << endl;
+			   << setprecision(prec) << setw(width) << rhs.get(i,j) << " current error " << curRelErr << endl;
 		      
                     }
                 }
 	      
-              if(currentError < reallyBad)
+              if(curRelErr < reallyBad)
                 {
-                  error  += currentError;
-                  error2 += currentError * currentError;
+		  abs_error += curAbsErr;
+                  error  += curRelErr;
+                  error2 += curRelErr * curRelErr;
                   sample_size++;
                 }
             }
@@ -701,8 +705,8 @@ template <class T> class Array2D
       double std_dev = sqrt(error2 - error*error);
       
       if(print)
-        printf("sample_size %5.2e ave_rel_error %6.3e std_dev %6.3e (%4.2e worse_than %5.3e)\n",
-               (double)sample_size, error, std_dev, badCount, reallyBad);
+        printf("sample_size %5.2e ave_abs_error %6.3e ave_rel_error %6.3e std_dev %6.3e (%4.2e worse_than %5.3e)\n",
+               (double)sample_size, abs_error, error, std_dev, badCount, reallyBad);
       
       //This cuttoff is very generous for double, but about right for float.
       //You probably shouldn't rely on "same" for anything important.

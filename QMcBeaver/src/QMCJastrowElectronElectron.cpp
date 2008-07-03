@@ -330,7 +330,6 @@ double QMCJastrowElectronElectron::jastrowOnGrid(QMCJastrowParameters & JP,
   if(EupEdn != 0)
     {
       U_Function = EupEdn->getCorrelationFunction();
-      numP = EupEdn->getTotalNumberOfParameters();
 
       if(isAlpha)
 	{
@@ -352,7 +351,6 @@ double QMCJastrowElectronElectron::jastrowOnGrid(QMCJastrowParameters & JP,
   
   if(EupEup != 0)
     {
-      numP  = EupEup->getTotalNumberOfParameters();
       U_Function = EupEup->getCorrelationFunction();
 
       if(isAlpha)
@@ -369,7 +367,6 @@ double QMCJastrowElectronElectron::jastrowOnGrid(QMCJastrowParameters & JP,
 
   if(EdnEdn != 0)
     {
-      numP  = EdnEdn->getTotalNumberOfParameters();
       U_Function = EdnEdn->getCorrelationFunction();
 
       if(!isAlpha)

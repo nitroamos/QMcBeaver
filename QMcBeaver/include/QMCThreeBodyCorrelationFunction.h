@@ -55,6 +55,12 @@ class QMCThreeBodyCorrelationFunction
   virtual double getFunctionValue() = 0;
 
   /**
+     Evaluate the function as fast as possible by skipping
+     the evaluation of the derivatives.
+  */
+  virtual double getFunctionValue(double r12, double r1, double r2) = 0;
+
+  /**
      Partial derivative of function with respect to parameter ai.
   */
   virtual double get_p_a(int ai) = 0;

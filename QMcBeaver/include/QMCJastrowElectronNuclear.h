@@ -68,6 +68,12 @@ public:
 		 QMCWalkerData * wData,
 		 Array2D<double> & X);
 
+  double jastrowOnGrid(QMCJastrowParameters & JP,
+		       int Electron,
+		       Array2D<double> & R,
+		       Array2D<double> & grid,
+		       Array1D<double> & integrand);
+
   /**
      Partial derivative of the natural log of this function with 
      respect to parameter ai.

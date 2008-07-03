@@ -117,6 +117,14 @@ public:
 
   void evaluate(double x);
   double getFunctionValue();
+
+  /**
+     This call doesn't calculate derivatives, only the function.
+     It's supposed to be faster than calling evaluate, which does
+     calculate the first 2 derivatives.
+  */
+  double getFunctionValue(double x);
+
   double getFirstDerivativeValue();
   double getSecondDerivativeValue();
   double getThirdDerivativeValue();

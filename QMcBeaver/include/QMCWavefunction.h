@@ -109,10 +109,26 @@ class QMCWavefunction
   QMCWavefunction();
 
   /**
-    Gets the number of orbitals.
+    Gets the number of orbitals total, including
+    ones that are not used.
+
     @return number of orbitals.
   */
   int getNumberOrbitals();
+
+  /**
+    Gets the number of orbitals used.
+
+    @param alpha or beta electrons?
+    @return number of orbitals.
+  */
+  int getNumberOrbitals(bool isAlpha)
+    {
+      if(isAlpha)
+	return AlphaCoeffs.dim1();
+      else
+	return BetaCoeffs.dim1();
+    }
 
   /**
     Gets the number of orbitals.
@@ -146,16 +162,10 @@ class QMCWavefunction
   int getNumberBasisFunctions();
 
   /**
-    Gets the number of \f$\alpha\f$ spin electrons.
-    @return number of \f$\alpha\f$ spin electrons.
+    Gets the number of \f$\isAlpha\f$ spin electrons.
+    @return number of \f$\isAlpha\f$ spin electrons.
   */
-  int getNumberAlphaElectrons();
-
-  /**
-    Gets the number of \f$\beta\f$ spin electrons.
-    @return number of \f$\beta\f$ spin electrons.
-  */
-  int getNumberBetaElectrons();
+  int getNumberElectrons(bool isAlpha);
 
   /**
     Gets the total number of electrons.

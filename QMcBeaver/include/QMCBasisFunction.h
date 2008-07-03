@@ -71,13 +71,49 @@ public:
   void initialize(QMCFlags * flags, QMCMolecule * molecule);
   
   /**
-     Calculates the value of a basis funcion.
+     Calculates the value of the basis funcions.
   */
 
-  void evaluateBasisFunctions(Array2D<double>& X, Array2D<qmcfloat>& chi_value);
+  void evaluateBasisFunctions(Array2D<double>& X,
+			      Array2D<qmcfloat>& chi_value);
 
   /**
-     Calculates the value, gradient, and Laplacian of a basis funcion.
+     Psuedopotential grids all have a fixed radius from their 
+     nucleus, so we can precalculate the angular terms x^a y^b z^c at the
+     very beginning of a run. For basisfunctions that are
+     not centered at the nucleus, we translate them to the nucleus,
+     where the angular terms become:
+     (rx-x0)^a (ry-y0)^b (rz-z0)^c
+
+     We then expand this out into a polynomial in powers of r.
+
+     It doesn't seem to be a significant performance improvement, but it seemed
+     like a good idea.
+
+     @param grid the grid of points on the unit shell
+     @param nuc the nucleus index for our grid
+     @param angularCi (output) the coefficients Ci of the polynomials
+  */
+  void angularGrid(Array2D<double>& grid,
+		   int nuc,
+		   Array2D< Array1D<double> > & angularCi);
+
+  /**
+     This evaluates the basis functions at all the grid points. It takes
+     advantage of the precalculated angular terms.
+
+     @param grid the grid of points on the unit shell
+     @param nuc the nucleus index for our grid
+     @param angularCi the coefficients Ci of the polynomials produced by angularGrid
+     @param angularCi (output) the evaluated basis functions
+  */
+  void QMCBasisFunction::basisFunctionsOnGrid(Array2D<double>& grid,
+					      int nuc,
+					      Array2D< Array1D<double> > & angularCi,
+					      Array2D<qmcfloat>& chi_val);
+
+  /**
+     Calculates the value, gradient, and Laplacian of the basis funcions.
   */
   void evaluateBasisFunctions(Array2D<double>& X, int start, int stop,
 			      Array2D<qmcfloat>& chi_value,
@@ -85,7 +121,6 @@ public:
 			      Array2D<qmcfloat>& chi_gry,
 			      Array2D<qmcfloat>& chi_grz,
 			      Array2D<qmcfloat>& chi_laplacian);
-  
   
   /**
      Sets two QMCBasisFunctions objects equal.

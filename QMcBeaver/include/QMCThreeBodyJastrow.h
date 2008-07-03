@@ -87,6 +87,23 @@ public:
   */
   double get_p3_xxa_ln(int ai);
 
+  /**
+     When calculating the overlap integral for psuedopotentials, we need to
+     evaluate the ratio of the Jastrow at each grid point to the Jastrow at
+     its original position.
+     
+     @param E is the index of the electron being moved to the different grid points
+     @param R the array of all electron positions
+     @param grid the grid points for electron E
+     @param integrand the value of the Jastrow at each of the grid points
+     @return the Jastrow at the original position (the denominator)
+  */
+  double jastrowOnGrid(QMCJastrowParameters & JP,
+		       int E,
+		       Array2D<double> & R,
+		       Array2D<double> & grid,
+		       Array1D<double> & integrand);
+
  protected:
   QMCWalkerData * wd;
 

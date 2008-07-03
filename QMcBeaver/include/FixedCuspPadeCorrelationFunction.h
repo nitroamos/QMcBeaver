@@ -48,6 +48,8 @@ class FixedCuspPadeCorrelationFunction : public QMCCorrelationFunction
   Array1D<Complex> getPoles();
 
   double getFunctionValue();
+  double getFunctionValue(double r);
+
   double get_p_a(int ai);
   
   double getFirstDerivativeValue();

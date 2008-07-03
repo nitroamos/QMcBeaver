@@ -20,6 +20,7 @@
 #include "QMCInput.h"
 #include "QMCHartreeFock.h"
 #include "QMCWalkerData.h"
+#include "QMCElectronNucleusCusp.h"
 
 using namespace std;
 
@@ -43,6 +44,15 @@ public:
     @param input data input to control the calculation
     */
   void initialize(QMCInput *input, QMCHartreeFock *HF);
+
+  /**
+     If psuedopotentials are used, call this function to evaluate it.
+
+     @param R the list of electron positions
+     @param elec the electron for which the ecp is evaluated
+     @param nuc the nucleus with the ecp
+  */
+  double evaluatePsuedoPotential(Array2D<double> & R, int elec, int nuc);
 
   /**
     Evaluates the potential energy for the given electronic configuration.
@@ -75,29 +85,28 @@ public:
     @param rhs object to set this object equal to
   */
   void operator=( const QMCPotential_Energy & rhs );
-
-  /**
-     Calculates distance between electrons i and j
-     based on the coordinates found in R
-  */
-  static double rij(Array2D<double> &R, int i, int j);
-
-  /**
-     Calculates the distance between particles i and j,
-     where i is found in positioni and
-     j is found in positionj.
-  */
-  static double rij(Array2D<double> &positioni,Array2D<double> &positionj, 
-		    int i, int j);
   
  private:
   QMCInput *Input;
   QMCHartreeFock *HartreeFock;
   QMCWalkerData * wd;
+  QMCWavefunction * WF;
+  QMCMolecule * MOL;
 
   Array1D<double> Energy_total;
   Array1D<double> Energy_ne;
   Array1D<double> Energy_ee;
+
+  //A bunch of data for ecp evaluation
+  Array1D< Array2D< Array1D<double> > > angularGrids;
+  Array1D<double> integrand;
+  Array2D<qmcfloat> * coeffs;
+  Array2D<double> X;
+  Array2D<double> D;
+  Array2D<double> ciDet;
+  Array1D< Array2D<double> >   Dc_inv;
+  QMCElectronNucleusCusp ElectronNucleusCuspA;
+  QMCElectronNucleusCusp ElectronNucleusCuspB;
 
   double P_nn;
   double P_en;

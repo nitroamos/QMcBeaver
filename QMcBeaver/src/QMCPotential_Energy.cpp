@@ -71,7 +71,7 @@ void QMCPotential_Energy::initialize(QMCInput * Ip, QMCHartreeFock * HF)
   for(int nuc=0; nuc<numN; nuc++)
     if(MOL->usesPsuedo(nuc)) 
       {
-	Array2D<double> grTemp = MOL->grid(nuc);
+	Array2D<double> grTemp = MOL->getGrid(nuc,1.0,false);
 	globalInput.BF.angularGrid(grTemp,nuc,angularGrids(nuc));
       }
 }
@@ -118,7 +118,7 @@ double QMCPotential_Energy::evaluatePsuedoPotential(Array2D<double> & R, int ele
     The grid is composed of points on a spherical shell, all
     the same distance from the nucleus as the electron itself.
   */
-  Array2D<double> grid = MOL->getGrid(nuc,r);
+  Array2D<double> grid = MOL->getGrid(nuc,r,true);
 
   int grSize = grid.dim1();
   X.allocate(grSize,WF->getNumberBasisFunctions());

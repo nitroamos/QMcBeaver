@@ -351,7 +351,7 @@ int QMCMolecule::readPsuedoPotential(string runfile)
   return usePsuedo;
 }
 
-Array2D<double> QMCMolecule::getGrid(int nuc, double r)
+Array2D<double> QMCMolecule::getGrid(int nuc, double r, bool translate)
 {
   /*
     The grid points are on a spherical shell centered at
@@ -360,6 +360,10 @@ Array2D<double> QMCMolecule::getGrid(int nuc, double r)
   */
   Array2D<double> gNuc = grid(nuc); 
   gNuc *= r;
+
+  //No translation
+  if(!translate) return gNuc;
+
   double x0 = Atom_Positions(nuc,0);
   double y0 = Atom_Positions(nuc,1);
   double z0 = Atom_Positions(nuc,2);

@@ -58,51 +58,57 @@ public:
   /**
     Evaluates the correlation function and it's first two derivatives at 
     \f$r\f$.
-    */
+  */
   virtual void evaluate( double r ) = 0;
   
   /**
-    Gets the value of the correlation function for the last evaluated \f$r\f$.
-    */
+     Gets the value of the correlation function for the last evaluated \f$r\f$.
+  */
   virtual double getFunctionValue() = 0;
 
+  /**
+     Evaluate the function as fast as possible by skipping
+     the evaluation of the derivatives.
+  */
+  virtual double getFunctionValue(double r) = 0;
+  
   /**
      Partial derivative of function with respect to parameter ai.
   */
   virtual double get_p_a(int ai) = 0;
   
   /**
-    Gets the value of the first derivative of the correlation function 
-    for the last evaluated \f$r\f$.
-    */
+     Gets the value of the first derivative of the correlation function 
+     for the last evaluated \f$r\f$.
+  */
   virtual double getFirstDerivativeValue() = 0;
-
+  
   /**
      Second Partial derivative of function with respect to parameters x and ai.
   */
   virtual double get_p2_xa(int ai) = 0;
   
   /**
-    Gets the value of the second derivative of the correlation function 
-    for the last evaluated \f$r\f$.
-    */
+     Gets the value of the second derivative of the correlation function 
+     for the last evaluated \f$r\f$.
+  */
   virtual double getSecondDerivativeValue() = 0;
-
+  
   /**
      Third Partial derivative of function with respect to parameters x, x, and ai.
   */
   virtual double get_p3_xxa(int ai) = 0;
-
+  
   /**
-    Returns the coefficients for the numerator of the Jastrow's function
-    */
+     Returns the coefficients for the numerator of the Jastrow's function
+  */
   virtual Array1D<double> getNumeratorCoeffs() = 0;
   
   /**
-    Returns the coefficients for the denominator of the Jastrow's function
-    */
+     Returns the coefficients for the denominator of the Jastrow's function
+  */
   virtual Array1D<double> getDenominatorCoeffs() = 0;
-
+  
   /**
      Override this function if there's some Jastrow specific
      message you want to print.

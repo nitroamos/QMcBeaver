@@ -170,6 +170,9 @@ class QMCElectronNucleusCusp
 		    Array2D<qmcfloat> & GradZ,
 		    Array2D<qmcfloat> & Laplacian_D);
 
+  void replaceCusps(Array2D<double> & X,
+		    int Start, int Stop,
+		    Array2D<qmcfloat> & D);
   /**
     Fits exponential functions for each orbital in the region of each nucleus.
   */

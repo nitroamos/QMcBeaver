@@ -37,25 +37,20 @@ class QMCMolecule
   /**
      Creates an instance of the class.
   */
-
   QMCMolecule();
-
 
   /**
      Initializes the object.
 
      @param nAtoms number of atoms in the molecule.
   */
-
-  void initialize(int nAtoms);
-
+  void initialize(int nAtoms, int GridLevel);
 
   /**
      Gets the number of atoms in the molecule.
 
      @return number of atoms in the molecule.
   */
-
   int getNumberAtoms();
 
   /**
@@ -65,43 +60,96 @@ class QMCMolecule
   */
   int getNuclearCharge();
 
-
   /**
      Array containing the labels for the atoms.  The ith element is the
      label for the ith atom.
   */
   Array1D <string> Atom_Labels;
 
-
   /**
      Array containing the 3-dimensional cartesian positions for the atoms.
      The ith element is the position for the ith atom.
   */
-
   Array2D <double> Atom_Positions;
-
 
   /**
      Array containing the nuclear charges for the atoms.  The ith element is 
      the charge for the ith atom.
   */
-
   Array1D <int>  Z;
 
+  /**
+     If we used psuedopotentials, then we removed Z-Zeff electrons.
+  */
+  Array1D <int>  Zeff;
+
+  /**
+     Each element in the array corresponds to a nucleus index. If the
+     element is true, then that nucleus uses an ecp.
+  */
+  Array1D<bool> usesPsuedo;
+
+  /**
+     Save some of the text description of the ecp so that we
+     can write it in the restart file.
+  */
+  Array2D< string > psuedoTitle;
+
+  /**
+     The local part of the ecp.
+  */
+  Array1D< Array2D<double> > Vlocal;
+
+  /**
+     The nonlocal part of the ecp.
+  */
+  Array1D< Array1D< Array2D<double> > > Vnonlocal;
+
+  /**
+     This function helps to evaluate Vlocal and Vnonlocal
+     at distance r.
+
+     @param V a slice of Vlocal or Vnonlocal
+     @param r the value at which to evaluate
+     @return the value of the potential
+  */
+  double evaluatePotential(Array2D<double> & V, double r);
+
+  /**
+     Each grid point from the Lebedev-Laikov functions
+     has an associated weight, stored here.
+  */
+  Array1D< Array1D<double> > gridWeights;
+
+  /**
+     In order to perform the ecp integration, we need
+     to evaluate the legendre function at each point.
+     Dim L,nuc; grid point
+  */
+  Array1D< Array2D<double> > gridLegendre;
+
+  /**
+     We store the grid as points on the unit sphere centered
+     at the origin. This function is called to provide scales
+     and translated grid points.
+
+     @param nuc the index of the nucleus
+     @param R the distance of the points from the nucleus
+     @param translate should be false if you want to keep
+     it centered at the origin
+  */
+  Array2D<double> getGrid(int nuc, double R, bool translate);
 
   /**
      Array containing all of the different atom labels used in the molecule.
   */
-
   Array1D <string> NucleiTypes;
-
 
   /**
      Sets two QMCMolecule objects equal.
 
      @param rhs object to set this object equal to.
   */
-
   QMCMolecule operator=( const QMCMolecule & rhs );
 
   /**
@@ -117,27 +165,46 @@ class QMCMolecule
   /**
      Loads the state of the object from an input stream.
   */
-
   friend istream& operator >>(istream& strm, QMCMolecule &rhs);
 
 
   /**
      Writes the state of the object to an output stream.
   */
-
   friend ostream& operator <<(ostream& strm, QMCMolecule &rhs);
-
 
   /**
      Loads the state of the object from a file.
 
      @param runfile file to load the object state from.
   */
+  void readGeometry(string runfile);
 
-  void read(string runfile);
+  /**
+     Read the psuedopotentials, if any, in an input file. The format
+     should be the same as GAMESS.
+
+     @return 1 if there were some psuedopotentials read in
+  */
+  int readPsuedoPotential(string runfile);
 
  private:
   int Natoms;
+
+  /**
+     This will be initialized to the same value as:
+     globalInput.flags.psuedo_gridLevel
+     And indicates how many grid points to use.
+  */
+  int gridLevel;
+
+  /**
+     We access the Lebedev-Laikov functions once, and
+     save the grid points in these arrays.
+     indexed: num nuclei; num grid points, 3
+  */
+  Array1D< Array2D<double> > grid;
+
 };
 
 #endif

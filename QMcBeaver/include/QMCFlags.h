@@ -166,7 +166,7 @@ class QMCFlags
   */
   int set_debug;
 
-  /*
+  /**
     These are debugging flags. They might be used in QMCSurfer.
   */
   int use_jastrow;
@@ -323,6 +323,11 @@ class QMCFlags
   */
   double dt;
 
+  /**
+     These two parameters are used by Umrigar's metropolis acceleration
+     scheme, labeled here umrigar93_accelerated_sampling.
+     See QMCWalker for details.
+  */
   double accel_delta;
   double accel_tm;
 
@@ -437,6 +442,35 @@ class QMCFlags
      Smallest point to use in interpolating the radial basis functions.
   */
   double basis_function_interpolation_first_point;
+
+  /**
+    This is the index of the Lebedev-Laikov grid to use for the run
+    on each nucleus.
+    6  pts for psuedo_gridLevel = 0
+    14 pts for psuedo_gridLevel = 1
+    26 pts for psuedo_gridLevel = 2
+    38 pts for psuedo_gridLevel = 3
+    50 pts for psuedo_gridLevel = 4
+    etc
+    see QMCMolecule::readPsuedoPotential for the other sizes
+
+    There are 32 levels to choose from but 14 or 26 points should
+    be sufficient.
+  */
+  int psuedo_gridLevel;
+  
+  /**
+    If the local part of the psuedopotential is sufficiently small,
+    then we can forgo the calculation of the nonlocal part.
+  */
+  double psuedo_cutoff;
+
+  /**
+    This is an internal flag, not an input flag.
+    It is turned on if we read any ECPs.
+    It helps control memory allocation.
+  */
+  int use_psuedopotential;
 
   /**
      Number of time steps taken between producing output.

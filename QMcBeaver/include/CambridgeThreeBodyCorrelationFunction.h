@@ -85,6 +85,7 @@ class CambridgeThreeBodyCorrelationFunction : public QMCThreeBodyCorrelationFunc
   void evaluate(Array1D<double> &xyz12, double r12);
 
   double getFunctionValue();
+  double getFunctionValue(double r12, double r1, double r2);
   double get_p_a(int ai);
 
   double getLapPoly(double term,
