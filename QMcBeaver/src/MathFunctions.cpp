@@ -409,3 +409,58 @@ double MathFunctions::gamma_cf(double a, double x)
     }
   return exp(gamma_log(a)) - exp(-x + a * log(x)) * h;
 }
+
+double MathFunctions::legendre(int l, double x)
+{
+  if ( l == 0 )
+    return 1.0;
+  if ( l == 1 )
+    return x;
+  
+  return ( (2.0*l-1.0)*x*legendre(l-1, x) - (l-1.0)*legendre(l-2, x) ) / l;
+}
+
+double MathFunctions::rij(Array2D<double> &position, int i, int j)
+{
+  double r;
+  r = sqrt((position(i,0)-position(j,0))*
+           (position(i,0)-position(j,0))+
+           (position(i,1)-position(j,1))*
+           (position(i,1)-position(j,1))+
+           (position(i,2)-position(j,2))*
+           (position(i,2)-position(j,2)));
+  return r;
+}
+
+double MathFunctions::rij(Array2D<double> &positioni,
+			  Array2D<double> &positionj,
+			  int i, int j)
+{
+  double r;
+  r = sqrt((positioni(i,0)-positionj(j,0))*
+           (positioni(i,0)-positionj(j,0))+
+           (positioni(i,1)-positionj(j,1))*
+           (positioni(i,1)-positionj(j,1))+
+           (positioni(i,2)-positionj(j,2))*
+           (positioni(i,2)-positionj(j,2)));
+  return r;
+}
+
+#define EXP_A (1048576/M_LN2) 
+#define EXP_C 60801 	
+double MathFunctions::fast_exp(double y)
+{
+  union 
+  { 
+    double d; 
+#ifdef LITTLE_ENDIAN 
+    struct { int j, i; } n; 
+#else 
+    struct { int i, j; } n; 
+#endif 
+  } 
+  _eco; 
+  _eco.n.i = (int)(EXP_A*(y)) + (1072693248 - EXP_C); 
+  _eco.n.j = 0; 
+  return  _eco.d; 
+} 

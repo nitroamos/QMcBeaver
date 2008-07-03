@@ -103,6 +103,11 @@ double FixedCuspPadeCorrelationFunction::getFunctionValue()
   return FunctionValue;
 }
 
+double FixedCuspPadeCorrelationFunction::getFunctionValue(double r)
+{
+  return Numerator.getFunctionValue(r) / Denominator.getFunctionValue(r);
+}
+
 double FixedCuspPadeCorrelationFunction::get_p_a(int ai)
 {
   if(ai < Numerator.getNumberCoefficients() - 2)

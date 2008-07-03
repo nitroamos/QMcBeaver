@@ -120,6 +120,31 @@ double JuliusCorrelationFunction::getFunctionValue()
   return FunctionValue;
 }
 
+double JuliusCorrelationFunction::getFunctionValue(double r)
+{
+  /**
+     I'm not going to separate the evaluate function t
+  */
+  if (type == 0.0)
+    {
+      return Numerator.getFunctionValue(r);
+    }
+  else if (type == 1.0)
+    {
+      // define Jastrow of form 
+      //  f(r) = (1 - (a0 - a1 r^2 - a2 r^3) Exp(-((1/a0) - 1) r))^1/2
+      double a0 = params[0], a1 = params[1], a2 = params[2]; 
+      double t1;
+      t1 = exp(-(1-a0)*r/a0);
+      return sqrt(1-(a0-r*r*(a1+a2*r))* t1);
+    } 
+  else
+    {
+      printf("Jastrow type %f unknown in JuliusCorrelationFunction, exiting.\n", type); 
+      exit(1);
+    }
+}
+
 double JuliusCorrelationFunction::get_p_a(int ai)
 {
   cout << "Parameter derivatives not implemented!\n";

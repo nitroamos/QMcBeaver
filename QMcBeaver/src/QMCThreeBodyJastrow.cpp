@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCThreeBodyJastrow.h"
+#include "MathFunctions.h"
 
 QMCThreeBodyJastrow::QMCThreeBodyJastrow()
 {
@@ -52,8 +53,8 @@ void QMCThreeBodyJastrow::evaluate(QMCJastrowParameters & JP,
 
 void QMCThreeBodyJastrow::updateOne(QMCJastrowParameters & JP, Array2D<double> & X)
 {
-  int nalpha = globalInput.WF.getNumberAlphaElectrons();
-  int nbeta = globalInput.WF.getNumberBetaElectrons();
+  int nalpha = globalInput.WF.getNumberElectrons(true);
+  int nbeta = globalInput.WF.getNumberElectrons(false);
   int E = wd->whichE;
   bool isAlpha = E < nalpha ? true : false;
 
@@ -186,10 +187,109 @@ void QMCThreeBodyJastrow::updateOne(QMCJastrowParameters & JP, Array2D<double> &
   xyz.deallocate();
 }
 
+double QMCThreeBodyJastrow::jastrowOnGrid(QMCJastrowParameters & JP,
+					  int E,
+					  Array2D<double> & R,
+					  Array2D<double> & grid,
+					  Array1D<double> & integrand)
+{
+  int nalpha = globalInput.WF.getNumberElectrons(true);
+  int nbeta = globalInput.WF.getNumberElectrons(false);
+  bool isAlpha = E < nalpha ? true : false;
+
+  double denom = 0.0;
+  Array1D<double> sumU(integrand.dim1());
+  sumU = 0.0;
+
+  Array1D<string> * NucleiTypes = JP.getNucleiTypes();
+
+  EupEdnNuclear = JP.getElectronUpElectronDownNuclearParameters();
+  EupEupNuclear = JP.getElectronUpElectronUpNuclearParameters();
+  EdnEdnNuclear = JP.getElectronDownElectronDownNuclearParameters();
+
+  for(int Nuclei=0; Nuclei<globalInput.Molecule.getNumberAtoms(); Nuclei++)
+    {
+      // Find the number of the current nucleus in the nuclei list
+      int NucleiType = -1;
+      for( int i=0; i<NucleiTypes->dim1(); i++ )
+	if( globalInput.Molecule.Atom_Labels(Nuclei) == (*NucleiTypes)(i) )
+	  {
+	    NucleiType = i;
+	    break;
+	  } 
+
+      QMCThreeBodyCorrelationFunction *U_Function;
+
+      double r1 = MathFunctions::rij(R,globalInput.Molecule.Atom_Positions,E,Nuclei);
+      double r1g[grid.dim1()];
+      for(int gp=0; gp<grid.dim1(); gp++)
+	r1g[gp] = MathFunctions::rij(grid,globalInput.Molecule.Atom_Positions,gp,Nuclei);
+
+      // Now we do all opposite spin pairs with this nucleus	 
+      if((*EupEdnNuclear)(NucleiType).isUsed()){
+	U_Function = (*EupEdnNuclear)(NucleiType).getThreeBodyCorrelationFunction();
+	if (nalpha > 0 && nbeta > 0)
+	  if(isAlpha){
+	    for (int EB=nalpha; EB<R.dim1(); EB++){
+	      double r2 = MathFunctions::rij(R,globalInput.Molecule.Atom_Positions,EB,Nuclei);
+	      denom += U_Function->getFunctionValue(MathFunctions::rij(R,EB,E),r1,r2);
+	      for(int gp=0; gp<grid.dim1(); gp++)
+		sumU(gp) += U_Function->getFunctionValue(MathFunctions::rij(grid,R,gp,EB),r1g[gp],r2);
+	    }
+	  } else {
+	    for (int EA=0; EA<nalpha; EA++){
+	      double r2 = MathFunctions::rij(R,globalInput.Molecule.Atom_Positions,EA,Nuclei);
+	      denom += U_Function->getFunctionValue(MathFunctions::rij(R,EA,E),r1,r2);
+	      for(int gp=0; gp<grid.dim1(); gp++)
+		sumU(gp) += U_Function->getFunctionValue(MathFunctions::rij(grid,R,gp,EA),r1g[gp],r2);
+	    }
+	  }
+      }
+
+      // First we do all pairs of two alphas with this nucleus
+      if((*EupEupNuclear)(NucleiType).isUsed()){
+	U_Function = (*EupEupNuclear)(NucleiType).getThreeBodyCorrelationFunction();
+	if (nalpha > 1)
+	  if(isAlpha)
+	    {
+	      for(int EA=0; EA<nalpha; EA++)
+		{
+		  if(EA == E) continue;
+		  double r2  = MathFunctions::rij(R,globalInput.Molecule.Atom_Positions,EA,Nuclei);
+		  denom += U_Function->getFunctionValue(MathFunctions::rij(R,EA,E),r1,r2);
+		  for(int gp=0; gp<grid.dim1(); gp++)
+		    sumU(gp) += U_Function->getFunctionValue(MathFunctions::rij(grid,R,gp,EA),r1g[gp],r2);
+		}
+	    }
+      }      
+
+      // Finally we do all beta spin pairs with this nucleus
+      if((*EdnEdnNuclear)(NucleiType).isUsed()){
+	U_Function = (*EdnEdnNuclear)(NucleiType).getThreeBodyCorrelationFunction();
+	if (nbeta > 1)
+	  if(!isAlpha)
+	    {
+	      for(int EB=nalpha; EB<R.dim1(); EB++)
+		{
+		  if(EB == E) continue;
+		  double r2  = MathFunctions::rij(R,globalInput.Molecule.Atom_Positions,EB,Nuclei);
+		  denom += U_Function->getFunctionValue(MathFunctions::rij(R,EB,E),r1,r2);
+		  for(int gp=0; gp<grid.dim1(); gp++)
+		    sumU(gp) += U_Function->getFunctionValue(MathFunctions::rij(grid,R,gp,EB),r1g[gp],r2);
+		}
+	    }
+      }
+    }
+
+  for(int gp=0; gp<grid.dim1(); gp++)
+    integrand(gp) *= exp(sumU(gp));
+  return exp(denom);
+}
+
 void QMCThreeBodyJastrow::updateAll(QMCJastrowParameters & JP, Array2D<double> & X)
 {
-  int nalpha = globalInput.WF.getNumberAlphaElectrons();
-  int nbeta = globalInput.WF.getNumberBetaElectrons();
+  int nalpha = globalInput.WF.getNumberElectrons(true);
+  int nbeta = globalInput.WF.getNumberElectrons(false);
 
   for(int E1=0; E1<wd->UijA.dim1(); E1++)
     for(int E2=0; E2<E1; E2++)

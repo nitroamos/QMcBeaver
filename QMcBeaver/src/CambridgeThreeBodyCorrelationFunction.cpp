@@ -482,6 +482,48 @@ double CambridgeThreeBodyCorrelationFunction::getFunctionValue()
   return FunctionValue;
 }
 
+double CambridgeThreeBodyCorrelationFunction::getFunctionValue(double r12,
+							       double r1,
+							       double r2)
+{
+  r1 *= L;
+  r2 *= L;
+  d1 = r1 - 1.0;
+  d2 = r2 - 1.0;
+  if(d1 > 0.0 || d2 > 0.0) return 0.0;
+  
+  r12 = r12 * L;  
+
+  for (int i=1; i<Nee; i++)
+    r12pow[i]  = r12pow[i-1]*r12;
+  for (int i=1; i<Nen; i++)
+    {
+      d1pow[i]  = d1pow[i-1]*r1;
+      d2pow[i]  = d2pow[i-1]*r2;
+    }
+  
+  register double polynomial_sum   = 0.0;
+  register double coeff = 0.0; 
+  int ai = 0;
+  /*
+    This is the same as above, except without the parameter derivative code.
+  */
+  for (int l=0; l<Nen; l++)
+    for (int m=0; m<Nen; m++)
+      {
+	register double   lm = d1pow[l]*d2pow[m];	
+	for (int n=0; n<Nee; n++)
+	  {
+	    coeff = coeffs[ai];
+	    ai++;
+	    if(fabs(coeff) < 1e-30) continue;
+	    polynomial_sum += coeff * lm*r12pow[n];
+	  }
+      }
+  
+  return pow(d1,C)*pow(d2,C)*polynomial_sum;
+}
+
 double CambridgeThreeBodyCorrelationFunction::get_p_a(int ai)
 {
   if(d1 > 0.0 || d2 > 0.0) return 0.0;

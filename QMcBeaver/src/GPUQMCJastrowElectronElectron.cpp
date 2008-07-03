@@ -48,8 +48,8 @@ GPUQMCJastrowElectronElectron::GPUQMCJastrowElectronElectron(
   allocatedRows = nRows;
   allocatedCols = nCols;
 
-  numA = Input->WF.getNumberAlphaElectrons();
-  numB = Input->WF.getNumberBetaElectrons();
+  numA = Input->WF.getNumberElectrons(true);
+  numB = Input->WF.getNumberElectrons(false);
   numE = numA + numB;
   if(numA > numB) numLarger = numA;
   else numLarger = numB;

@@ -143,14 +143,6 @@ void QMCJastrow::evaluate(QMCJastrowParameters & JP,
 
   for(int walker = start; walker < start+num; walker++)
     {
-      /*
-      if(walkerData(walker)->whichE == -1)
-	{
-	  walkerData(walker)->U    = 0;
-	  walkerData(walker)->U_x  = 0;
-	  walkerData(walker)->U_xx = 0;
-	}
-      */
       JastrowElectronNuclear.evaluate(JP,walkerData(walker),*X(walker));
 
       if(showTimings){sw.start();}

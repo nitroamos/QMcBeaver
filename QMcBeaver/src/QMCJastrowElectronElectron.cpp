@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCJastrowElectronElectron.h"
+#include "MathFunctions.h"
 
 QMCJastrowElectronElectron::QMCJastrowElectronElectron(){}
 
@@ -69,8 +70,8 @@ void QMCJastrowElectronElectron::updateOne(QMCJastrowParameters & JP,
 {
   int E = wd->whichE;
 
-  int nalpha = globalInput.WF.getNumberAlphaElectrons();
-  int nbeta  = globalInput.WF.getNumberBetaElectrons();
+  int nalpha = globalInput.WF.getNumberElectrons(true);
+  int nbeta  = globalInput.WF.getNumberElectrons(false);
   bool isAlpha = E < nalpha ? true : false;
   
   // Get values from JP that will be needed during the calc
@@ -99,14 +100,15 @@ void QMCJastrowElectronElectron::updateOne(QMCJastrowParameters & JP,
     {
       U_Function = EupEdn->getCorrelationFunction();
       numP = EupEdn->getTotalNumberOfParameters();
-    }
-  if(isAlpha)
-    {
-      for(int EB=nalpha; EB<X.dim1(); EB++)
-	collectForPair(EB,E,U_Function,X,index,numP);
-    } else {
-      for(int EA=0; EA<nalpha; EA++)
-	collectForPair(E,EA,U_Function,X,index,numP);
+
+      if(isAlpha)
+	{
+	  for(int EB=nalpha; EB<X.dim1(); EB++)
+	    collectForPair(EB,E,U_Function,X,index,numP);
+	} else {
+	  for(int EA=0; EA<nalpha; EA++)
+	    collectForPair(E,EA,U_Function,X,index,numP);
+	}
     }
   
   index += numP;
@@ -115,15 +117,16 @@ void QMCJastrowElectronElectron::updateOne(QMCJastrowParameters & JP,
     {
       numP  = EupEup->getTotalNumberOfParameters();
       U_Function = EupEup->getCorrelationFunction();
+
+      if(isAlpha)
+	{
+	  for(int EA=0; EA<E; EA++)
+	    collectForPair(E,EA,U_Function,X,index,numP);
+	  for(int EA=E+1; EA<nalpha; EA++)
+	    collectForPair(EA,E,U_Function,X,index,numP);
+	}
     } else {
       numP = 0;
-    }
-  if(isAlpha)
-    {
-      for(int EA=0; EA<E; EA++)
-	collectForPair(E,EA,U_Function,X,index,numP);
-      for(int EA=E+1; EA<nalpha; EA++)
-	collectForPair(EA,E,U_Function,X,index,numP);
     }
 
   if(globalInput.flags.link_Jastrow_parameters == 0)
@@ -133,15 +136,16 @@ void QMCJastrowElectronElectron::updateOne(QMCJastrowParameters & JP,
     {
       numP  = EdnEdn->getTotalNumberOfParameters();
       U_Function = EdnEdn->getCorrelationFunction();
+
+      if(!isAlpha)
+	{
+	  for(int EB=nalpha; EB<E; EB++)
+	    collectForPair(E,EB,U_Function,X,index,numP);      
+	  for(int EB=E+1; EB<X.dim1(); EB++)
+	    collectForPair(EB,E,U_Function,X,index,numP);
+	}
     } else {
       numP  = 0;
-    }
-  if(!isAlpha)
-    {
-      for(int EB=nalpha; EB<E; EB++)
-	collectForPair(E,EB,U_Function,X,index,numP);      
-      for(int EB=E+1; EB<X.dim1(); EB++)
-	collectForPair(EB,E,U_Function,X,index,numP);
     }
 }
 
@@ -154,8 +158,8 @@ void QMCJastrowElectronElectron::updateAll(QMCJastrowParameters & JP,
   for(int ai=0; ai<p2_xa.dim1(); ai++)
     p2_xa(ai)      = 0.0;
 
-  int nalpha = globalInput.WF.getNumberAlphaElectrons();
-  int nbeta  = globalInput.WF.getNumberBetaElectrons();
+  int nalpha = globalInput.WF.getNumberElectrons(true);
+  int nbeta  = globalInput.WF.getNumberElectrons(false);
 
   // Get values from JP that will be needed during the calc
 
@@ -183,10 +187,11 @@ void QMCJastrowElectronElectron::updateAll(QMCJastrowParameters & JP,
     {
       U_Function = EupEdn->getCorrelationFunction();
       numP = EupEdn->getTotalNumberOfParameters();
+
+      for(int E1=0; E1<nalpha; E1++)
+	for(int E2=nalpha; E2<X.dim1(); E2++)
+	  collectForPair(E2,E1,U_Function,X,index,numP);
     }
-  for(int E1=0; E1<nalpha; E1++)
-    for(int E2=nalpha; E2<X.dim1(); E2++)
-      collectForPair(E2,E1,U_Function,X,index,numP);
   
   index += numP;
   
@@ -194,14 +199,14 @@ void QMCJastrowElectronElectron::updateAll(QMCJastrowParameters & JP,
     {
       numP  = EupEup->getTotalNumberOfParameters();
       U_Function = EupEup->getCorrelationFunction();
+
+      for(int E1=0; E1<nalpha; E1++)
+	for(int E2=0; E2<E1; E2++)
+	  collectForPair(E1,E2,U_Function,X,index,numP);
     } else {
       numP = 0;
     }
   
-  for(int E1=0; E1<nalpha; E1++)
-    for(int E2=0; E2<E1; E2++)
-      collectForPair(E1,E2,U_Function,X,index,numP);
-
   if(globalInput.flags.link_Jastrow_parameters == 0)
     index += numP;
 
@@ -209,12 +214,13 @@ void QMCJastrowElectronElectron::updateAll(QMCJastrowParameters & JP,
     {
       numP  = EdnEdn->getTotalNumberOfParameters();
       U_Function = EdnEdn->getCorrelationFunction();
+
+      for(int E1=nalpha; E1<X.dim1(); E1++)
+	for(int E2=nalpha; E2<E1; E2++)
+	  collectForPair(E1,E2,U_Function,X,index,numP);
     } else {
       numP  = 0;
     }
-  for(int E1=nalpha; E1<X.dim1(); E1++)
-    for(int E2=nalpha; E2<E1; E2++)
-      collectForPair(E1,E2,U_Function,X,index,numP);
 }
 
 inline void QMCJastrowElectronElectron::collectForPair(int E1, 
@@ -281,4 +287,104 @@ inline void QMCJastrowElectronElectron::collectForPair(int E1,
 	    }
 	}
     }
+}
+
+double QMCJastrowElectronElectron::jastrowOnGrid(QMCJastrowParameters & JP,
+						 int E,
+						 Array2D<double> & R,
+						 Array2D<double> & grid,
+						 Array1D<double> & integrand)
+{
+  int nalpha = globalInput.WF.getNumberElectrons(true);
+  int nbeta  = globalInput.WF.getNumberElectrons(false);
+  double denom = 0.0;
+
+  bool isAlpha = E < nalpha ? true : false;
+
+  Array1D<double> sumU(integrand.dim1());
+  sumU = 0.0;
+
+  if(integrand.dim1() != grid.dim1()){
+    cout << "Integrand dimensions don't match grid!\n";
+  }
+
+  // Get values from JP that will be needed during the calc
+
+  QMCCorrelationFunctionParameters * EupEdn = 0;
+
+  if(nalpha > 0 && nbeta > 0)
+    EupEdn = JP.getElectronUpElectronDownParameters();
+  
+  QMCCorrelationFunctionParameters * EupEup = 0;
+  
+  if(nalpha > 1)
+    EupEup = JP.getElectronUpElectronUpParameters();
+  
+  QMCCorrelationFunctionParameters * EdnEdn = 0;
+  
+  if(nbeta > 1 )
+    EdnEdn = JP.getElectronDownElectronDownParameters();
+
+  QMCCorrelationFunction *U_Function = 0;
+
+  if(EupEdn != 0)
+    {
+      U_Function = EupEdn->getCorrelationFunction();
+      numP = EupEdn->getTotalNumberOfParameters();
+
+      if(isAlpha)
+	{
+	  for(int EB=nalpha; EB<R.dim1(); EB++)
+	    {
+	      denom += U_Function->getFunctionValue(MathFunctions::rij(R,EB,E));
+	      for(int gr=0; gr<grid.dim1(); gr++)		
+		sumU(gr) += U_Function->getFunctionValue(MathFunctions::rij(grid,R,gr,EB));
+	    }
+	} else {
+	  for(int EA=0; EA<nalpha; EA++)
+	    {
+	      denom += U_Function->getFunctionValue(MathFunctions::rij(R,E,EA));
+	      for(int gr=0; gr<grid.dim1(); gr++)
+		sumU(gr) += U_Function->getFunctionValue(MathFunctions::rij(grid,R,gr,EA));
+	    }
+	}
+    }  
+  
+  if(EupEup != 0)
+    {
+      numP  = EupEup->getTotalNumberOfParameters();
+      U_Function = EupEup->getCorrelationFunction();
+
+      if(isAlpha)
+	{
+	  for(int EA=0; EA<nalpha; EA++)
+	    {
+	      if(EA == E) continue;
+	      denom += U_Function->getFunctionValue(MathFunctions::rij(R,E,EA));	  
+	      for(int gr=0; gr<grid.dim1(); gr++)
+		sumU(gr) += U_Function->getFunctionValue(MathFunctions::rij(grid,R,gr,EA));
+	    }
+	}
+    }
+
+  if(EdnEdn != 0)
+    {
+      numP  = EdnEdn->getTotalNumberOfParameters();
+      U_Function = EdnEdn->getCorrelationFunction();
+
+      if(!isAlpha)
+	{
+	  for(int EB=nalpha; EB<R.dim1(); EB++)
+	    {
+	      if(EB == E) continue;
+	      denom += U_Function->getFunctionValue(MathFunctions::rij(R,E,EB));
+	      for(int gr=0; gr<grid.dim1(); gr++)
+		sumU(gr) += U_Function->getFunctionValue(MathFunctions::rij(grid,R,gr,EB));	    
+	    }            
+	}
+    }
+
+  for(int gr=0; gr<grid.dim1(); gr++)
+    integrand(gr) *= exp(sumU(gr));
+  return exp(denom);
 }

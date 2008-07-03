@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCJastrowElectronNuclear.h"
+#include "MathFunctions.h"
 
 QMCJastrowElectronNuclear::QMCJastrowElectronNuclear(){}
 
@@ -63,8 +64,8 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
   for(int ai=0; ai<p2_xa.dim1(); ai++)
     p2_xa(ai)      = 0.0;
 
-  int nalpha = globalInput.WF.getNumberAlphaElectrons();
-  int nbeta  = globalInput.WF.getNumberBetaElectrons();
+  int nalpha = globalInput.WF.getNumberElectrons(true);
+  int nbeta  = globalInput.WF.getNumberElectrons(false);
 
   // Get values from JP that will be needed during the calc
 
@@ -184,3 +185,73 @@ void QMCJastrowElectronNuclear::evaluate(QMCJastrowParameters & JP,
 	}
     }
 }
+
+double QMCJastrowElectronNuclear::jastrowOnGrid(QMCJastrowParameters & JP,
+						int Electron,
+						Array2D<double> & R,
+						Array2D<double> & grid,
+						Array1D<double> & integrand)
+{
+  // initialize the results
+  double denom = 0.0;
+  double r;
+  Array1D<double> sumU(integrand.dim1());
+  sumU = 0.0;
+
+  int nalpha = globalInput.WF.getNumberElectrons(true);
+  int nbeta  = globalInput.WF.getNumberElectrons(false);
+
+  // Get values from JP that will be needed during the calc
+
+  Array1D<string> * NucleiTypes = JP.getNucleiTypes();
+
+  Array1D<QMCCorrelationFunctionParameters> * EupNuclear = 0;
+  if (nalpha > 0)
+    EupNuclear = JP.getElectronUpNuclearParameters();
+  
+  Array1D<QMCCorrelationFunctionParameters> * EdnNuclear = 0;
+  if (nbeta > 0)
+    EdnNuclear = JP.getElectronDownNuclearParameters();
+
+  // Loop over each atom calculating the e-n jastrow function
+  for(int Nuclei=0; Nuclei<globalInput.Molecule.getNumberAtoms(); Nuclei++)
+    {
+      // Find the number of the current nucleus in the nuclei list
+      int CurrentNucleiNumber = -1;
+      for( int i=0; i<NucleiTypes->dim1(); i++ )
+	if( globalInput.Molecule.Atom_Labels(Nuclei) == (*NucleiTypes)(i) )
+	  {
+	    CurrentNucleiNumber = i;
+	    break;
+	  }      
+
+      // Get the correct correlation function to use and evaluate it
+      QMCCorrelationFunction *U_Function = 0;
+      
+      if( Electron < nalpha )
+	{
+	  U_Function = 
+	    (*EupNuclear)(CurrentNucleiNumber).getCorrelationFunction();
+	}
+      else
+	{
+	  U_Function =
+	    (*EdnNuclear)(CurrentNucleiNumber).getCorrelationFunction();
+	}
+      
+      r = MathFunctions::rij(R,globalInput.Molecule.Atom_Positions,
+			     Electron,Nuclei);
+      denom += U_Function->getFunctionValue(r);
+      
+      for(int gr=0; gr<grid.dim1(); gr++){
+	r = MathFunctions::rij(grid,globalInput.Molecule.Atom_Positions,
+			       gr,Nuclei);
+	sumU(gr) += U_Function->getFunctionValue(r);
+      }
+    }
+
+  for(int gr=0; gr<grid.dim1(); gr++)
+    integrand(gr) *= exp(sumU(gr));
+  return exp(denom);
+}
+

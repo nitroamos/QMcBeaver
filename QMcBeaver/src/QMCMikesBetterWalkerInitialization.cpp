@@ -202,8 +202,8 @@ ObjectiveFunctionForWalkers(Array3D<double> &severalRs,Array2D<double> &Occupati
   double occ1,occ2;
   double r;
 
-  //int nbeta  = Input->WF.getNumberBetaElectrons();  //number of beta electrons
-  int nalpha = Input->WF.getNumberAlphaElectrons(); //number of alpha electrons
+  //int nbeta  = Input->WF.getNumberElectrons(false);  //number of beta electrons
+  int nalpha = Input->WF.getNumberElectrons(true); //number of alpha electrons
 
   //Get the electron-electron part of the energy
   //for each electron

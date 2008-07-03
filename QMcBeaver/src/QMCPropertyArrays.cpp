@@ -158,6 +158,7 @@ void QMCPropertyArrays::zeroOut()
       //second parameter refers to the number of terms necessary
       //to calculate derivatives of the optimization objective function
       der.allocate(numAI,5);
+      der = 0.0;
     } else {
       der.deallocate();
     }
@@ -178,6 +179,9 @@ void QMCPropertyArrays::zeroOut()
 	  } else {
 	    clog << "Error: unknown optimize_Psi_criteria\n";
 	  }
+
+      for(int i=0; i<hess.dim1(); i++)
+	hess(i) = 0.0;
     } else {
       for(int i=0; i<hess.dim1(); i++)
 	hess(i).deallocate();
@@ -188,9 +192,6 @@ void QMCPropertyArrays::zeroOut()
     cs_Energies(i).zeroOut();
 
   numDerHessSamples = 0;
-  der = 0.0;
-  for(int i=0; i<hess.dim1(); i++)
-    hess(i) = 0.0;
 
   if (calc_density)
     for (int i=0; i<nBasisFunc; i++)

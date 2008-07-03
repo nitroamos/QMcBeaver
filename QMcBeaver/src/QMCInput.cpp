@@ -27,8 +27,9 @@ void QMCInput::read(string inputfile)
 {
  flags.read_flags(inputfile);
 
- Molecule.initialize(flags.Natoms);
- Molecule.read(inputfile);
+ Molecule.initialize(flags.Natoms, flags.psuedo_gridLevel);
+ Molecule.readGeometry(inputfile);
+ flags.use_psuedopotential = Molecule.readPsuedoPotential(inputfile);
 
  BF.initialize(&flags, &Molecule);
  BF.read(inputfile);
@@ -46,7 +47,7 @@ void QMCInput::read(string inputfile)
    }
 
  JP.read(Molecule.NucleiTypes,flags.link_Jastrow_parameters,flags.replace_electron_nucleus_cusps,
-	 WF.getNumberAlphaElectrons(),WF.getNumberBetaElectrons(),inputfile);
+	 WF.getNumberElectrons(true),WF.getNumberElectrons(false),inputfile);
 
  outputer = QMCConfigIO(WF.getNumberElectrons());
 }

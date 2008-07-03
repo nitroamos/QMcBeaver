@@ -640,6 +640,57 @@ void QMCElectronNucleusCusp::replaceCusps(Array2D<double> & X,
     }
 }
 
+void QMCElectronNucleusCusp::replaceCusps(Array2D<double> & X, 
+					  int Start, int Stop,
+					  Array2D<qmcfloat> & D)
+{
+  // For each nucleus, for each electron, calculates x,y,z,r.
+  // For each orbital, checks if r<rc.  If so, replaces the appropriate element
+  // of the Slater matrices.
+  double xnuc,ynuc,znuc;
+  double xrel,yrel,zrel,rrel;
+  double temp_value;
+  int counter = 0;
+
+  if(Stop - Start + 1 != D.dim1())
+    {
+      cout << "Warning: dimensions don't match in QMCElectronNucleusCusp." << endl;  
+      cout << " Start = " << Start << endl;
+      cout << "  Stop = " << Stop << endl;
+      cout << "D.dim1 = " << D.dim1() << endl;
+    }
+
+  for (int i=0; i<natoms; i++)
+    {
+      xnuc = Molecule->Atom_Positions(i,0);
+      ynuc = Molecule->Atom_Positions(i,1);
+      znuc = Molecule->Atom_Positions(i,2);
+      
+      counter = 0;
+      for (int j=Start; j<=Stop; j++)
+	{
+	  xrel = X(j,0) - xnuc;
+	  yrel = X(j,1) - ynuc;
+	  zrel = X(j,2) - znuc;
+	  rrel = sqrt(xrel*xrel + yrel*yrel + zrel*zrel);
+
+	  for (int k=0; k<norbitals; k++)
+	    {
+	      if (rrel < ORParams(i,k).get_rc())
+		{
+		  temp_value = 0.0;
+
+		  ORParams(i,k).replaceOrbitalValues(xrel,yrel,zrel,rrel,
+						     temp_value);
+		  
+		  D(counter,k) += temp_value;
+		}
+	    }
+	  counter++;
+	}
+    }
+}
+
 double QMCElectronNucleusCusp::getOrigLocalEnergy(double r_orig)
 {
   double r_sq = r_orig*r_orig;

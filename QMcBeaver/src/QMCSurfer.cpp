@@ -143,7 +143,7 @@ void QMCSurfer::interparticleDistanceMatrix()
 {
   int numE = R.dim1();
   int numZ = globalInput.Molecule.getNumberAtoms();
-  int numA = globalInput.WF.getNumberAlphaElectrons();
+  int numA = globalInput.WF.getNumberElectrons(true);
   double dist_hilight = 0.3;
   for(int i=0; i<numA; i++){
     for(int j=0; j<i; j++){

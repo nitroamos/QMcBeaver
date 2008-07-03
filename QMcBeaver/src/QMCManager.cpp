@@ -388,8 +388,8 @@ void QMCManager::gatherForces()
 
 void QMCManager::gatherHistograms()
 {
-  int nalpha = globalInput.WF.getNumberAlphaElectrons();
-  int nbeta = globalInput.WF.getNumberBetaElectrons();
+  int nalpha = globalInput.WF.getNumberElectrons(true);
+  int nbeta = globalInput.WF.getNumberElectrons(false);
   int nucleiTypes = globalInput.Molecule.NucleiTypes.dim1();
 
 #ifdef PARALLEL
@@ -1295,8 +1295,8 @@ void QMCManager::writeElectronDensityHistograms()
 
 #define PI 3.14159265359
 
-  int nalpha = globalInput.WF.getNumberAlphaElectrons();
-  int nbeta = globalInput.WF.getNumberBetaElectrons();
+  int nalpha = globalInput.WF.getNumberElectrons(true);
+  int nbeta = globalInput.WF.getNumberElectrons(false);
 
   string baseFileName = globalInput.flags.base_file_name;
 

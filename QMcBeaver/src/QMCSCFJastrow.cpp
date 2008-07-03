@@ -62,16 +62,16 @@ void QMCSCFJastrow::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
 {
   Input = INPUT;
 
-  nalpha = Input->WF.getNumberAlphaElectrons();
-  nbeta  = Input->WF.getNumberBetaElectrons();
+  nalpha = Input->WF.getNumberElectrons(true);
+  nbeta  = Input->WF.getNumberElectrons(false);
 
   Alpha.initialize(Input,
 		   0,
-		   Input->WF.getNumberAlphaElectrons()-1,
+		   nalpha-1,
 		   true);
   
   Beta.initialize(Input,
-		  Input->WF.getNumberAlphaElectrons(),
+		  nalpha,
 		  Input->WF.getNumberElectrons()-1,
 		  false);
 
@@ -86,8 +86,8 @@ void QMCSCFJastrow::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
 }
 
 void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
-                            Array1D<Array2D<double> * > &xData,
-                            int num)
+			     Array1D<Array2D<double> * > &xData,
+			     int num)
 {
   /*
     For the GPU code, if the INT_FINISHES flags
@@ -120,8 +120,6 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
     Alpha.evaluate(xData,num-gpp,gpp,whichE);
   if(whichE >= nalpha || whichE == -1)
     Beta.evaluate(xData,num-gpp,gpp,whichE);
-  
-  PE.evaluate(xData,walkerData,num);
 
   if(Input->flags.nuclear_derivatives != "none")
     nf.evaluate(walkerData,xData,num);
@@ -142,6 +140,8 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
   //These are CPU if no GPU, otherwise mixed CPU/GPU
   Alpha.update_Ds(walkerData);
   Beta.update_Ds(walkerData);
+
+  PE.evaluate(xData,walkerData,num);
 #ifdef QMC_GPU
 
   Jastrow.gpuEvaluate(xData,gpp);
@@ -168,6 +168,8 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
     wd->eeEnergy               = getEnergyEE(i);
     wd->psi                    = getPsi();
     wd->singular              |= isSingular(i);
+
+    //checkParameterDerivatives(); 
   }
 
   /*
@@ -221,7 +223,7 @@ void QMCSCFJastrow::calculate_Psi_quantities()
   update_SCF();
   
   QMCDouble Jastrow_Psi = Jastrow.getJastrow(iWalker);
-  
+
   Psi = wd->D * Jastrow_Psi;    
 
   // \frac{\nabla^2 D}{D} + \nabla^2 U
@@ -267,8 +269,6 @@ void QMCSCFJastrow::calculate_Psi_quantities()
       //Convert the derivative wrt to the laplacian into
       //the derivative wrt the kinetic energy
       wd->p3_xxa *= -0.5;
-
-      //checkParameterDerivatives();
     }
 
   // Calculate the basis function density
@@ -662,7 +662,12 @@ void QMCSCFJastrow::checkParameterDerivatives()
 {
   if(Input->flags.iseed == 0)
     {
-      cout << "Error: to check parameters, iseed must not be 0\n";
+      cout << "Error: to check derivatives, iseed must not be 0\n";
+      exit(0);
+    }
+  if(Input->flags.calculate_Derivatives != 1)
+    {
+      cout << "Error: to check derivatives, you must calculate derivatives!\n";
       exit(0);
     }
   globalInput.printAISummary();
@@ -674,8 +679,8 @@ void QMCSCFJastrow::checkParameterDerivatives()
   globalInput.printAIParameters(cout,"Parameters:",25,params,false);
   printf("function %23c p   %25.15e p2_xx  %25.15e\n",
 	 ' ',
-	 (double)Psi,
-	 -0.5*Laplacian_PsiRatio);
+	 (double)wd->psi,
+	 wd->localEnergy);
   for(int ai=aStart; ai<aStop; ai++)
     printf("ai %3i %25.15e p_a %25.15e p3_xxa %25.15e\n",
 	   ai,

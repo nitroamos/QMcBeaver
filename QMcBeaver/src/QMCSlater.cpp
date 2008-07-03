@@ -45,8 +45,9 @@ void QMCSlater::operator=(const QMCSlater & rhs )
 {
   Input              = rhs.Input;
   Dwc                = rhs.Dwc;
-  rDwc_xx = rhs.rDwc_xx;
-  rDwc_x      = rhs.rDwc_x;
+  rDwc_x             = rhs.rDwc_x;
+  rDwc_xx            = rhs.rDwc_xx;
+
   if (Input->flags.calculate_bf_density == 1)
     Xw_Density      = rhs.Xw_Density;
 
@@ -214,7 +215,7 @@ void QMCSlater::allocate()
 
 void QMCSlater::allocateIteration(int whichE, int & start, int & stop)
 {
-  int nOR = WF->getNumberOrbitals();
+  int nOR = WF->getNumberOrbitals(isAlpha);
   int nEL = getNumberElectrons();
   int nBF = WF->getNumberBasisFunctions();
   int wpp = Input->flags.walkers_per_pass;
@@ -392,28 +393,41 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
     return;
 
   for(int w=0; w<wpp; w++)
-    if(globalInput.flags.one_e_per_iter)
-      {
-	/*
-	  Even if we didn't move any of our electrons, we will
-	  still be asked for our data, so we need to assign the
-	  pointers.
-	*/
-	if(isAlpha)
-	  {
-	    pointer_Dwc(w)     = & walkerData(w+gpp)->DcA;
-	    pointer_rDwc_x(w)  = & walkerData(w+gpp)->rDc_xA;
-	    pointer_rDwc_xx(w) = & walkerData(w+gpp)->rDc_xxA;
-	  } else {
-	    pointer_Dwc(w)     = & walkerData(w+gpp)->DcB;
-	    pointer_rDwc_x(w)  = & walkerData(w+gpp)->rDc_xB;
-	    pointer_rDwc_xx(w) = & walkerData(w+gpp)->rDc_xxB;
-	  }
-      } else {
-	pointer_Dwc(w)     = & Dwc(w);
-	pointer_rDwc_x(w)  = & rDwc_x(w);
-	pointer_rDwc_xx(w) = & rDwc_xx(w);
-      }
+    {
+      /*
+	Even if we didn't move any of our electrons, we will
+	still be asked for our data, so we need to assign the
+	pointers.
+      */
+
+      if(globalInput.flags.one_e_per_iter ||
+	 globalInput.flags.use_psuedopotential == 1)
+	{
+	  if(isAlpha)
+	    {
+	      pointer_Dwc(w)     = & walkerData(w+gpp)->DcA;
+	    } else {
+	      pointer_Dwc(w)     = & walkerData(w+gpp)->DcB;
+	    }
+	} else {
+	  pointer_Dwc(w)     = & Dwc(w);
+	}
+      
+      if(globalInput.flags.one_e_per_iter)
+	{
+	  if(isAlpha)
+	    {
+	      pointer_rDwc_x(w)  = & walkerData(w+gpp)->rDc_xA;
+	      pointer_rDwc_xx(w) = & walkerData(w+gpp)->rDc_xxA;
+	    } else {
+	      pointer_rDwc_x(w)  = & walkerData(w+gpp)->rDc_xB;
+	      pointer_rDwc_xx(w) = & walkerData(w+gpp)->rDc_xxB;
+	    }
+	} else {
+	  pointer_rDwc_x(w)  = & rDwc_x(w);
+	  pointer_rDwc_xx(w) = & rDwc_xx(w);
+	}
+    }
       
   if(whichE != -1)
     if(whichE < Start || whichE > Stop)
@@ -480,7 +494,8 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
       
       for(int ci=0; ci<WF->getNumberDeterminants(); ci++)
 	{
-	  if(globalInput.flags.one_e_per_iter)
+	  if(globalInput.flags.one_e_per_iter ||
+	     globalInput.flags.use_psuedopotential == 1)
 	    {
 	      if(isAlpha) inv =   &  walkerData(off)->Dc_invA(ci);
 	      else        inv =   &  walkerData(off)->Dc_invB(ci);
@@ -510,12 +525,14 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
 #else
 	  psi = & Dw(w);
 #endif
+
 	  (Singular(off))(ci) = calculate_DerivativeRatios(ci,whichE - Start,
 							   *psi,*inv,*lap,
 							   *gradx, *grady, *gradz,
 							   *pointer_Dwc(w),
 							   *pointer_rDwc_x(w),
 							   *pointer_rDwc_xx(w));
+
 	}
     }
 

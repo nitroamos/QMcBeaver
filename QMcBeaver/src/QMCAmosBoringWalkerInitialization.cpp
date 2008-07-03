@@ -15,8 +15,6 @@
 Array2D<double> QMCAmosBoringWalkerInitialization::initializeWalkerPosition()
 {
   int nelectrons = Input->WF.getNumberElectrons();
-  //int nbeta  = Input->WF.getNumberBetaElectrons();
-  //int nalpha = Input->WF.getNumberAlphaElectrons();
   int numDimensions = Input->WF.getNumberBasisFunctions();
 
   /**

@@ -196,8 +196,8 @@ void QMCRun::initialize(QMCInput *INPUT)
       fwProperties.zeroOut();
     }
 
-  int nalpha = Input->WF.getNumberAlphaElectrons();
-  int nbeta = Input->WF.getNumberBetaElectrons();
+  int nalpha = Input->WF.getNumberElectrons(true);
+  int nbeta = Input->WF.getNumberElectrons(false);
 
   if (Input->flags.write_electron_densities == 1)
     {
@@ -508,8 +508,8 @@ void QMCRun::calculateElectronDensities()
     wp->calculateElectronDensities(max_pair_distance, dr, pllSpinHistogram,
 			    oppSpinHistogram, alphaHistograms, betaHistograms);
 
-  int nalpha = Input->WF.getNumberAlphaElectrons();
-  int nbeta = Input->WF.getNumberBetaElectrons();
+  int nalpha = Input->WF.getNumberElectrons(true);
+  int nbeta = Input->WF.getNumberElectrons(false);
 
   if (nalpha > 1 || nbeta > 1)
     {

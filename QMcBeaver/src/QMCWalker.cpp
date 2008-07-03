@@ -1741,8 +1741,8 @@ void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
 		                     Array1D< Array1D<double> > &alpha_density,
                                       Array1D< Array1D<double> > &beta_density)
 {
-  int nalpha = Input->WF.getNumberAlphaElectrons();
-  int nbeta = Input->WF.getNumberBetaElectrons();
+  int nalpha = Input->WF.getNumberElectrons(true);
+  int nbeta = Input->WF.getNumberElectrons(false);
   
   double dist = 0.0;
   int index = 0;
@@ -1844,8 +1844,8 @@ void QMCWalker::calculateElectronDensities(double max_pair_distance, double dr,
 void QMCWalker::calculatePllCorrelationDiagram(int coord, double min, 
 		    double max, Array1D< Array1D<double> > &CorrelationDiagram)
 {
-  int nalpha = Input->WF.getNumberAlphaElectrons();
-  int nbeta = Input->WF.getNumberBetaElectrons();
+  int nalpha = Input->WF.getNumberElectrons(true);
+  int nbeta = Input->WF.getNumberElectrons(false);
   
   double dr = (max-min)/CorrelationDiagram.dim1();
   int index1 = -1;
@@ -1875,8 +1875,8 @@ void QMCWalker::calculatePllCorrelationDiagram(int coord, double min,
 void QMCWalker::calculateOppCorrelationDiagram(int coord, double min, 
 		    double max, Array1D< Array1D<double> > &CorrelationDiagram)
 {
-  int nalpha = Input->WF.getNumberAlphaElectrons();
-  int nbeta = Input->WF.getNumberBetaElectrons();
+  int nalpha = Input->WF.getNumberElectrons(true);
+  int nbeta = Input->WF.getNumberElectrons(false);
   
   double dr = (max-min)/CorrelationDiagram.dim1();
   int index1 = 0;

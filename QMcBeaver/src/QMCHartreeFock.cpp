@@ -38,8 +38,8 @@ void QMCHartreeFock::Initialize(QMCInput* IN)
 {
   PsiPotential.Initialize(IN);
 
-  numalphas = IN->WF.getNumberAlphaElectrons();
-  numbetas = IN->WF.getNumberBetaElectrons();
+  numalphas = IN->WF.getNumberElectrons(true);
+  numbetas = IN->WF.getNumberElectrons(false);
   numelecs = numalphas + numbetas;
   maxsamples = IN->flags.hf_num_average;
   sample = 0; // current sample

@@ -66,8 +66,8 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
   atom_centers = Input->Molecule.Atom_Positions;
 
   int nelectrons = Input->WF.getNumberElectrons();
-  int nbeta = Input->WF.getNumberBetaElectrons();
-  int nalpha = Input->WF.getNumberAlphaElectrons();
+  int nbeta = Input->WF.getNumberElectrons(false);
+  int nalpha = Input->WF.getNumberElectrons(true);
 
   // This array holds the numbers of total, alpha, and beta electrons on each
   // center.

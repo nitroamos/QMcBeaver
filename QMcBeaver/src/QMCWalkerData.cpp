@@ -55,15 +55,14 @@ void QMCWalkerData::initialize(int numDimensions, int numNucForceDim1, int numNu
   int numElectrons = globalInput.WF.getNumberElectrons();
   int numNuclei    = globalInput.Molecule.getNumberAtoms();
   int numCI        = globalInput.WF.getNumberDeterminants();
+  int na           = globalInput.WF.getNumberElectrons(true);
+  int nb           = globalInput.WF.getNumberElectrons(false);
 
   //Initialization probably requires all to be updated immediately
   whichE = -1;
-  if(globalInput.flags.one_e_per_iter)
+  if(globalInput.flags.one_e_per_iter ||
+     globalInput.flags.use_psuedopotential)
     {
-      int na = globalInput.WF.getNumberAlphaElectrons();
-      int nb = globalInput.WF.getNumberBetaElectrons();
-      int no = globalInput.WF.OrbitalCoeffs.dim1();
-
       Dc_invA.allocate(numCI);
       Dc_invB.allocate(numCI);
 
@@ -71,7 +70,14 @@ void QMCWalkerData::initialize(int numDimensions, int numNucForceDim1, int numNu
 	{
 	  Dc_invA(ci).allocate(na,na);
 	  Dc_invB(ci).allocate(nb,nb);
-	}
+	}      
+      DcA.allocate(numCI);
+      DcB.allocate(numCI);
+    }
+
+  if(globalInput.flags.one_e_per_iter)
+    {
+      int no = globalInput.WF.OrbitalCoeffs.dim1();
 	 
       D_xxA.allocate(na,no);
       D_xxB.allocate(nb,no);
@@ -83,8 +89,6 @@ void QMCWalkerData::initialize(int numDimensions, int numNucForceDim1, int numNu
 	  D_xB(i).allocate(nb,no);
 	}
 
-      DcA.allocate(numCI);
-      DcB.allocate(numCI);
       rDc_xxA.allocate(numCI);
       rDc_xxB.allocate(numCI);
       rDc_xA.allocate(numCI,numElectrons,3);
@@ -299,15 +303,14 @@ void QMCWalkerData::updateDistances(Array2D<double> & R)
 	{
 	  for(int j=0; j<i; j++)
 	    {
-	      rij(i,j) = 
-		QMCPotential_Energy::rij(R,i,j);
+	      rij(i,j) = MathFunctions::rij(R,i,j);
 	      for(int xyz=0; xyz<3; xyz++)
 		rij_uvec(i,j,xyz) = (R(i,xyz) - R(j, xyz)) / rij(i,j);
 	    }
 
 	  for(int j=0; j<globalInput.Molecule.getNumberAtoms(); j++)
 	    {
-	      double r = QMCPotential_Energy::rij(R,globalInput.Molecule.Atom_Positions,i,j);
+	      double r = MathFunctions::rij(R,globalInput.Molecule.Atom_Positions,i,j);
 	      riA(i,j) = r;
 	      for(int xyz=0; xyz<3; xyz++)
 		riA_uvec(i,j,xyz) = (R(i,xyz) - globalInput.Molecule.Atom_Positions(j,xyz)) / r;
@@ -317,7 +320,7 @@ void QMCWalkerData::updateDistances(Array2D<double> & R)
       for(int j=0; j<R.dim1(); j++)
 	{
 	  if(j == whichE) continue;
-	  double r = QMCPotential_Energy::rij(R,j,whichE);
+	  double r = MathFunctions::rij(R,j,whichE);
 	  int e1 = max(whichE,j);
 	  int e2 = min(whichE,j);
 
@@ -329,7 +332,7 @@ void QMCWalkerData::updateDistances(Array2D<double> & R)
       for(int j=0; j<globalInput.Molecule.getNumberAtoms(); j++)
 	{
 	  riA(whichE,j) =
-	    QMCPotential_Energy::rij(R,globalInput.Molecule.Atom_Positions,whichE,j);
+	    MathFunctions::rij(R,globalInput.Molecule.Atom_Positions,whichE,j);
 	  for(int xyz=0; xyz<3; xyz++)
 	    riA_uvec(whichE,j,xyz) = (R(whichE,xyz) - globalInput.Molecule.Atom_Positions(j,xyz)) / riA(whichE,j);
 	}

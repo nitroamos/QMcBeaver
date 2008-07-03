@@ -37,6 +37,11 @@ double ZeroThreeBodyCorrelationFunction::getFunctionValue()
   return 0.0;
 }
 
+double ZeroThreeBodyCorrelationFunction::getFunctionValue(double r12, double r1, double r2)
+{
+  return 0.0;
+}
+
 double ZeroThreeBodyCorrelationFunction::get_p_a(int ai)
 {
   return 0.0;

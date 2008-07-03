@@ -154,6 +154,11 @@ double Polynomial::getFunctionValue()
   return f;
 }
 
+double Polynomial::getFunctionValue(double x)
+{
+  return evaluate(x,coefficients);
+}
+
 double Polynomial::get_p_a(int ai)
 {
   return pow(x,ai);

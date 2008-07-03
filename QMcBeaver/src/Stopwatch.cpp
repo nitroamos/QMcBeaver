@@ -65,7 +65,7 @@ void Stopwatch::start()
     {
 #ifdef QMC_DEBUG
       //stopped a stopwatch that was not running
-      cerr << "Warning: You just started a stopwatch that was already running." << endl;
+      //cerr << "Warning: You just started a stopwatch that was already running." << endl;
 #endif
     }
   else
@@ -128,9 +128,9 @@ void Stopwatch::lap()
 void Stopwatch::print(string title)
 {
   cout << setw(10) << title << ": " << (int)(total_us+0.5);
-  cout << " ( " << setw(8);
+  cout << " ( avg = " << setw(8);
   if(numSamples > 0)
-    cout << (int)(average_us/(numSamples)+0.5) << ")\n";
+    cout << (int)(average_us/(numSamples)+0.5) << ", n=" << numSamples << ")\n";
   else
     cout << 0 << ")\n";
 }

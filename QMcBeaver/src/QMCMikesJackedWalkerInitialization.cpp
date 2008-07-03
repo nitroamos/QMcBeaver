@@ -29,8 +29,8 @@ Array2D<double> QMCMikesJackedWalkerInitialization::initializeWalkerPosition()
 
   int nelectrons = Input->WF.getNumberElectrons();
   int nelectrons_left = nelectrons;
-  int nbeta  = Input->WF.getNumberBetaElectrons();  //number of beta electrons
-  int nalpha = Input->WF.getNumberAlphaElectrons(); //number of alpha electrons
+  int nbeta  = Input->WF.getNumberElectrons(false);  //number of beta electrons
+  int nalpha = Input->WF.getNumberElectrons(true); //number of alpha electrons
   int nbeta_left  = nbeta;
   int nalpha_left = nalpha;
 

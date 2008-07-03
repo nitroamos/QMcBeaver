@@ -41,6 +41,11 @@ double ZeroCorrelationFunction::getFunctionValue()
   return 0.0;
 }
 
+double ZeroCorrelationFunction::getFunctionValue(double r)
+{
+  return 0.0;
+}
+
 double ZeroCorrelationFunction::get_p_a(int ai)
 {
   return 0.0;

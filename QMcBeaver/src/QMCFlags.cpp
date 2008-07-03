@@ -87,9 +87,12 @@ void QMCFlags::read_flags(string InFileName)
   //Computation parameters
   parallelization_method         = "manager_worker";
   iseed                          = -5135696;
-  use_basis_function_interpolation = 0;
+  use_basis_function_interpolation                = 0;
   number_basis_function_interpolation_grid_points = 1000;
-  basis_function_interpolation_first_point = 1e-10;
+  basis_function_interpolation_first_point        = 1e-10;
+  psuedo_gridLevel               = 1;
+  psuedo_cutoff                  = 1e-4;
+  use_psuedopotential            = 0;
   walkers_per_pass               = 1;
   mpireduce_interval             = 1000;
   mpipoll_interval               = 1;
@@ -467,6 +470,16 @@ void QMCFlags::read_flags(string InFileName)
       else if(temp_string == "trial_function_type")
         {
           input_file >> trial_function_type;
+        }
+      else if(temp_string == "psuedo_gridLevel")
+        {
+          input_file >> temp_string;
+	  psuedo_gridLevel = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "psuedo_cutoff")
+        {
+          input_file >> temp_string;
+	  psuedo_cutoff = atof(temp_string.c_str());
         }
       else if(temp_string == "calculate_bf_density")
         {
@@ -1145,6 +1158,8 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "charge\n " << flags.charge << endl;
   strm << "energy\n " << flags.energy_trial << endl;
   strm << "trial_function_type\n " << flags.trial_function_type << endl;
+  strm << "psuedo_gridLevel\n " << flags.psuedo_gridLevel << endl;
+  strm << "psuedo_cutoff\n " << flags.psuedo_cutoff << endl;
   strm << "norbitals\n " << flags.Norbitals << endl;
   strm << "nbasisfunc\n " << flags.Nbasisfunc << endl;
   strm << "ndeterminants\n " << flags.Ndeterminants << endl;
@@ -1430,6 +1445,14 @@ bool QMCFlags::checkFlags()
 	   << ") than walkers (" << number_of_walkers << "), resetting walkers_per_pass." << endl;
       walkers_per_pass = number_of_walkers;
     }
+
+  if(psuedo_gridLevel > 31){
+    clog << "Error: our Lebedev-Laikov grids are only defined up to psuedo_gridLevel = 31.\n";
+    clog << "You requested psuedo_gridLevel = " << psuedo_gridLevel << endl;
+    return false;
+  } else {
+
+  }
 
 #ifdef QMC_GPU
   if( getNumGPUWalkers() == 0)

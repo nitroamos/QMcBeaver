@@ -87,6 +87,11 @@ double PadeCorrelationFunction::getFunctionValue()
   return FunctionValue;
 }
 
+double PadeCorrelationFunction::getFunctionValue(double r)
+{
+  return Numerator.getFunctionValue(r) / Denominator.getFunctionValue(r);
+}
+
 double PadeCorrelationFunction::get_p_a(int ai)
 {
   cout << "Parameter derivatives not implemented yet!!\n";

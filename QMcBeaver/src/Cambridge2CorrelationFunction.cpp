@@ -156,6 +156,24 @@ double Cambridge2CorrelationFunction::getFunctionValue()
   return FunctionValue;
 }
 
+double Cambridge2CorrelationFunction::getFunctionValue(double r)
+{
+  if(!active) return 0.0;
+
+  d   = fL * r - 1.0;
+
+  //This is the Heaviside function
+  if( d > 0.0 )
+    return 0.0;
+
+  //The polynomial and its derivatives
+  alpha.evaluate(fL * r);
+   P     =           alpha.getFunctionValue();
+  dpc    = pow(d, C);
+
+  return dpc * P;
+}
+
 double Cambridge2CorrelationFunction::get_p_a(int ai)
 {
   double p_a = 0.0;

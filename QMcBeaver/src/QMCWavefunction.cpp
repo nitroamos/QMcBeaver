@@ -93,14 +93,12 @@ int QMCWavefunction::getNumberBasisFunctions()
   return Nbasisfunc;
 }
 
-int QMCWavefunction::getNumberAlphaElectrons()
+int QMCWavefunction::getNumberElectrons(bool isAlpha)
 {
-  return Nalpha;
-}
-
-int QMCWavefunction::getNumberBetaElectrons()
-{
-  return Nbeta;
+  if(isAlpha)
+    return Nalpha;
+  else
+    return Nbeta;
 }
 
 int QMCWavefunction::getNumberElectrons()
@@ -484,10 +482,9 @@ void QMCWavefunction::read(int charge, int numberOrbitals, int numberBasisFuncti
   }
   input_file >> *this;
 
-  if(getNumberAlphaElectrons() + 
-     getNumberBetaElectrons() != getNumberElectrons()){
-    cerr << "Error: We are expecting number alpha electrons " << getNumberAlphaElectrons() <<
-      " + number beta electrons " << getNumberBetaElectrons() << " to add up to the total " <<
+  if(getNumberElectrons(true) + getNumberElectrons(false) != getNumberElectrons()){
+    cerr << "Error: We are expecting number alpha electrons " << getNumberElectrons(true) <<
+      " + number beta electrons " << getNumberElectrons(false) << " to add up to the total " <<
       getNumberElectrons() << endl;
   }
 

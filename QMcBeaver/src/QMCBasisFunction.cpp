@@ -29,10 +29,9 @@ FITNESS FOR A  PARTICULAR PURPOSE.  See the GNU General Public License
 for more details. 
 **************************************************************************/
 
-
-
 #include "QMCBasisFunction.h"
 #include "IeeeMath.h"
+#include "MathFunctions.h"
 
 QMCBasisFunction::QMCBasisFunction()
 {}
@@ -406,18 +405,18 @@ void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X,
 void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X,
 					      Array2D<qmcfloat>& chi_val)
 {
-  int el = 0, bf;
+  int bf;
   int a, b, c;
 
   qmcfloat r_sq;
-  qmcfloat p0, exp_term, temp1;
+  qmcfloat p0, temp1;
   qmcfloat x_val;
 
   temp1 = 0;
   for (int idx=0; idx<X.dim1(); idx++)
     {
       bf = 0;
-      p0 = -100;
+      p0 = 0.0;
       for (int atom=0; atom<flags->Natoms; atom++)
         {
           for (int xyz=0; xyz<3; xyz++)
@@ -469,18 +468,198 @@ void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X,
 		  if(fabs(p0 - coeffs[i][0]) > 1e-10){
 		    p0     = coeffs[i][0];
 		    temp1  = exp(-p0*r_sq);		    
+		    temp1  = MathFunctions::fast_exp(-p0*r_sq);
 		  }
 
-                  exp_term = temp1*coeffs[i][1]*xyzA[a][b][c];
-                  x_val += exp_term;
+                  x_val += temp1*coeffs[i][1];
                 }
 
-              chi_val(el,bf) = (qmcfloat)x_val;
+              chi_val(idx,bf) = (qmcfloat)x_val*xyzA[a][b][c];
               bf++;
             }
         }
-      el++;
     }
+}
+
+void QMCBasisFunction::basisFunctionsOnGrid(Array2D<double>& grid,
+					    int nuc,
+					    Array2D< Array1D<double> > & angularCi,
+					    Array2D<qmcfloat>& chi_val)
+{
+  int bf;
+
+  qmcfloat p0, temp1;
+  temp1 = 0;
+  //First just handle the radial gaussians: X = \sum pi1 exp(-pi0 r)
+  for (int idx=0; idx<grid.dim1(); idx++)
+    {
+      bf = 0;
+      p0 = 0.0;
+      for (int atom=0; atom<flags->Natoms; atom++)
+        {
+	  if(atom == nuc && idx > 0){
+
+	    const int numBF = BFCoeffs(atom).getNumberBasisFunctions();
+	    for (int j=0; j<numBF; j++)
+	      {
+		// All of the grid points are the same distance from this nucleus, so the radial
+		// parts are identical
+		chi_val(idx,bf) = chi_val(0,bf);		
+		bf++;
+	      }
+
+	  } else {
+
+	    double r_sq = 0.0;
+	    for (int xyz=0; xyz<3; xyz++){
+	      Xcalc(xyz) = grid(idx,xyz) - Molecule->Atom_Positions(atom,xyz);
+	      r_sq += Xcalc(xyz)*Xcalc(xyz);
+	    }
+	    
+	    const int numBF = BFCoeffs(atom).getNumberBasisFunctions();	   
+	    for (int j=0; j<numBF; j++)
+	      {
+		qmcfloat** coeffs = BFCoeffs(atom).Coeffs.array()[j];
+		
+		double x_val = 0;
+		const int nGaussians = BFCoeffs(atom).N_Gauss(j);
+		for (int i=0; i<nGaussians; i++)
+		  {
+		    if(fabs(p0 - coeffs[i][0]) > 1e-10){
+		      p0     = coeffs[i][0];
+		      double x = -p0*r_sq;
+		      temp1 = exp(x);
+		    }
+		    
+		    x_val += temp1*coeffs[i][1];
+		  }
+		
+		chi_val(idx,bf) = (qmcfloat)x_val;
+		bf++;
+	      }
+	  }
+        }
+    }
+
+  //Now add in the angular components x^a y^b z^c
+  double r = 0.0;
+  for (int xyz=0; xyz<3; xyz++)
+    {
+      Xcalc(xyz) = grid(0,xyz) - Molecule->Atom_Positions(nuc,xyz);
+      r += Xcalc(xyz)*Xcalc(xyz);
+    }
+  r = sqrt(r);
+
+  const int maxrn = 4;
+  double rn[maxrn];
+  rn[0] = 1.0;
+  for(int i=1; i<maxrn; i++)
+    rn[i] = rn[i-1]*r;
+
+  Array2D<double> ang(angularCi.dim1(),angularCi.dim2());
+  ang = 0.0;
+  double * chi_p = chi_val.array();
+  Array1D<double> * angci_p = angularCi.array();
+  for(int i=0; i<angularCi.dim1()*angularCi.dim2(); i++)
+    {
+      double * ang_p = angci_p[i].array();
+      register double sum = ang_p[0];
+      for(int l=1; l<angci_p[i].dim1(); l++)
+	sum += ang_p[l] * rn[l];
+      chi_p[i] *= sum;
+    }
+}
+
+
+void QMCBasisFunction::angularGrid(Array2D<double>& grid,
+				   int nuc,
+				   Array2D< Array1D<double> > & angularCi)
+{
+  int bf;
+  int a, b, c;
+
+  angularCi.allocate(grid.dim1(),N_BasisFunctions);
+
+  for (int idx=0; idx<grid.dim1(); idx++)
+    {
+      bf = 0;
+
+      double x = grid(idx,0);
+      double y = grid(idx,1);
+      double z = grid(idx,2);
+      //double r = sqrt(x*x+y*y+z*z);//this should be 1.0
+
+      for (int atom=0; atom<flags->Natoms; atom++)
+        {
+	  double x0 = Molecule->Atom_Positions(atom,0) - Molecule->Atom_Positions(nuc,0);
+	  double y0 = Molecule->Atom_Positions(atom,1) - Molecule->Atom_Positions(nuc,1);
+	  double z0 = Molecule->Atom_Positions(atom,2) - Molecule->Atom_Positions(nuc,2);
+
+          const int numBF = BFCoeffs(atom).getNumberBasisFunctions();
+          for (int j=0; j<numBF; j++)
+            {
+              a = BFCoeffs(atom).xyz_powers(j,0);
+              b = BFCoeffs(atom).xyz_powers(j,1);
+              c = BFCoeffs(atom).xyz_powers(j,2);
+	      const int numl = a+b+c+1;	      
+	      Array1D<double> poly(numl);
+	      poly = 0.0;
+	      poly(0) = 1.0;
+
+	      bool print = !true;
+	      if(idx != 0) print = false;
+	      if(print){
+		if(a > 0)	printf("(%8.5f r-%8.5f)^%i ",x,x0,a);
+		else	printf("%24s","");
+		if(b > 0)	printf("(%8.5f r-%8.5f)^%i ",y,y0,b);
+		else	printf("%24s","");
+		if(c > 0)	printf("(%8.5f r-%8.5f)^%i ",z,z0,c);
+		else	printf("%24s","");
+		printf(" %i%i%i = ",a,b,c);
+	      }
+
+	      for(int ai=0; ai<a; ai++)
+		{
+		  Array1D<double> temp = poly;
+		  for(int l=1; l<numl; l++)
+		    poly(l) = x*temp(l-1) - x0*temp(l);
+		  poly(0) = - x0*temp(0);
+		}
+
+	      for(int bi=0; bi<b; bi++)
+		{
+		  Array1D<double> temp = poly;
+		  for(int l=1; l<numl; l++)
+		    poly(l) = y*temp(l-1) - y0*temp(l);
+		  poly(0) = - y0*temp(0);
+		}
+
+	      for(int ci=0; ci<c; ci++)
+		{
+		  Array1D<double> temp = poly;
+		  for(int l=1; l<numl; l++)
+		    poly(l) = z*temp(l-1) - z0*temp(l);
+		  poly(0) = - z0*temp(0);
+		}
+
+	      int firstNonZero = 0;
+	      for(int i=poly.dim1()-1; i>=0; i--)
+		if(fabs(poly(i)) > 1e-15) {
+		  firstNonZero = i;
+		  break;
+		}
+
+	      Array1D<double> temp(firstNonZero+1);
+	      for(int i=0; i<temp.dim1(); i++)
+		temp(i) = poly(i);
+	      poly = temp;
+	      
+	      if(print) cout << poly << endl;
+	      angularCi(idx,bf) = poly;
+              bf++;
+            }//bf
+        }//atom
+    }//grid
 }
 
 

@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCBasisFunctionCoefficients.h"
+#include "StringManipulation.h"
 #include <iomanip>
 
 QMCBasisFunctionCoefficients::QMCBasisFunctionCoefficients() 
@@ -37,32 +38,46 @@ void QMCBasisFunctionCoefficients::operator=(
 
 void type_to_xyz(string type, int &x, int &y, int &z)
 {
-  if(type == "s" )         {x=0; y=0; z=0;}
-  else if(type == "px" )   {x=1; y=0; z=0;}
-  else if(type == "py" )   {x=0; y=1; z=0;}
-  else if(type == "pz" )   {x=0; y=0; z=1;}
-  else if(type == "dxx" )  {x=2; y=0; z=0;}
-  else if(type == "dxy" )  {x=1; y=1; z=0;}
-  else if(type == "dxz" )  {x=1; y=0; z=1;}
-  else if(type == "dyy" )  {x=0; y=2; z=0;}
-  else if(type == "dyz" )  {x=0; y=1; z=1;}
-  else if(type == "dzz" )  {x=0; y=0; z=2;}
-  else if(type == "fxxx" ) {x=3; y=0; z=0;}
-  else if(type == "fyyy" ) {x=0; y=3; z=0;}
-  else if(type == "fzzz" ) {x=0; y=0; z=3;}
-  else if(type == "fyyx" ) {x=1; y=2; z=0;}
-  else if(type == "fxxy" ) {x=2; y=1; z=0;}
-  else if(type == "fxxz" ) {x=2; y=0; z=1;}
-  else if(type == "fzzx" ) {x=1; y=0; z=2;}
-  else if(type == "fzzy" ) {x=0; y=1; z=2;}
-  else if(type == "fyyz" ) {x=0; y=2; z=1;}
-  else if(type == "fxyz" ) {x=1; y=1; z=1;}
+  type = StringManipulation::toAllLower(type);
+  const char * bf = type.c_str();
+  const int maxl = 7;
+  char lnames[maxl] = {'s','p','d','f','g','h','i'};
 
-  else
+  int idx = -1;
+  for(int i=0; i<maxl; i++)
+    if(bf[0] == lnames[i]){
+      idx = i;
+      break;
+    }
+  
+  if(idx == -1){
+    clog << "ERROR: Unknown Basis Function (" << type
+	 << ")" << endl;
+    clog << "You requested type = " << bf[0] << " but we  only have ";
+    for(int i=0; i<maxl; i++)
+      clog << lnames[i];
+    clog << " available." << endl;
+    exit(1);
+  }
+
+  if((int)type.size()-1 != idx){
+    clog << "ERROR: Basis Function (" << type << ")"
+	 << " doesn't have angular momentum = " << idx << "." << endl;
+    exit(1);
+  }
+
+  x = y = z = 0;
+  for(unsigned int i=1; i<type.size(); i++)
     {
-      cerr << "ERROR: Unknown Basis Function Type (" << type
-           << ")" << endl;
-      exit(1);
+      switch (bf[i]){
+      case 'x': x++; break;
+      case 'y': y++; break;
+      case 'z': z++; break;
+      default:
+	clog << "Error: unknown angular component " << bf[i]
+	     << " in basis function " << type << endl;
+	exit(0);
+      }
     }
 }
 

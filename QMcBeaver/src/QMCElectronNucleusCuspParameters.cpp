@@ -147,6 +147,34 @@ void QMCElectronNucleusCuspParameters::replaceOrbitalValues(double x, double y,
     }
 }
 
+void QMCElectronNucleusCuspParameters::replaceOrbitalValues(double x, double y,
+							    double z, double r, double& orb_value)
+{
+  if (r > rc)
+    {
+      // do nothing
+    }
+
+  else if (r < rc)
+    {
+      // First we evaluate the part of the original orbital due to the s type 
+      // Gaussians centered on this nucleus.
+
+      double temp_value;
+  
+      evaluateOriginalOrbital(x,y,z,r,temp_value);
+
+      // Then we subtract these values and replace them with those of the new 
+      // orbital.
+
+      orb_value -= temp_value;
+
+      evaluateReplacementOrbital(x,y,z,r,temp_value);
+
+      orb_value += temp_value;
+    }
+}
+
 void QMCElectronNucleusCuspParameters::evaluateOriginalOrbital(double x, 
           double y, double z, double r, double& orig_value, double& orig_gradx,
                 double& orig_grady, double& orig_gradz, double& orig_laplacian)
@@ -188,6 +216,33 @@ void QMCElectronNucleusCuspParameters::evaluateOriginalOrbital(double x,
     }
 }
 
+void QMCElectronNucleusCuspParameters::evaluateOriginalOrbital(double x, 
+							       double y, double z, double r, double& orig_value)
+{
+  // This function evaluates the value, gradient, and laplacian of the part of
+  // the original orbital due to s type Gaussian basis functions centered on 
+  // this nucleus.
+
+  double r_sq = r*r;
+
+  int nGaussians = orbitalCoefficients.dim1();
+
+  double term_value = 0.0;
+  double p0 = 0.0;
+  double p1 = 0.0;
+
+  orig_value = 0.0;
+
+  for (int i=0; i<nGaussians; i++)
+    {
+      p0 = orbitalCoefficients(i,0);
+      p1 = orbitalCoefficients(i,1);
+      term_value = p1*exp(-p0*r_sq);
+      
+      orig_value += term_value;
+    }
+}
+
 void QMCElectronNucleusCuspParameters::evaluateReplacementOrbital(double x,
             double y, double z, double r, double& rep_value, double& rep_gradx,
                    double& rep_grady, double& rep_gradz, double& rep_laplacian)
@@ -212,6 +267,21 @@ void QMCElectronNucleusCuspParameters::evaluateReplacementOrbital(double x,
 
   rep_laplacian = exp_value*(alpha.getSecondDerivativeValue() + 
       alpha.getFirstDerivativeValue()*(2.0/r+alpha.getFirstDerivativeValue()));
+}
+
+void QMCElectronNucleusCuspParameters::evaluateReplacementOrbital(double x,
+								  double y, double z, double r, double& rep_value)
+{
+  // This function evaluates the value, gradient, and laplacian of the 
+  // replacement orbital.
+
+  double exp_value = 0.0;
+
+  alpha.evaluate(r);
+
+  exp_value = sgn0*exp(alpha.getFunctionValue());
+
+  rep_value = C + exp_value;
 }
       
 double QMCElectronNucleusCuspParameters::calculateLocalEnergy(double r, 
