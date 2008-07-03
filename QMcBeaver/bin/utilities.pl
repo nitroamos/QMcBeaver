@@ -48,14 +48,11 @@ sub getFormula {
     my ($one, $two) = @_;
     my @od = split/&/,$one;
     my @td = split/&/,$two;
-    
-    if($od[0] != $td[0]){
-	return (0,0) if($od[0] == $td[0] ||
-			$od[1] != $td[1] ||
-			!($od[3] eq $td[3]));
-    } else {
-	return (0,0);
-    }
+
+    return (0,0) if($od[0] == $td[0] || #compare energies
+		    $od[1] != $td[1] || #compare dt
+		    $od[4] != $td[4] || #compare num walkers
+		    $od[3] ne $td[3]);  #compare jastrows
 
     $or = $od[2];
     $tr = $td[2];
@@ -456,7 +453,7 @@ sub getFileList
 	    }
 	}
 	@$files = @newfiles;
-		
+
 	if($loops > 8)
 	{
 	    print "Stopping recursion at $loops.\n";

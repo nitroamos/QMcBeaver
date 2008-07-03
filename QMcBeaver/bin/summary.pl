@@ -7,7 +7,11 @@ require "$path/utilities.pl";
 
 my $useVar     = 0;
 my $dtFilter   = 0.01;
+my $orbFilter  = 1;
+my $compareE   = 0;
+my $sumResults = 1;
 my @fileFilters;
+my @exclusionFilters;
 
 #my $extraTag  = "trail_eps2";
 
@@ -24,6 +28,7 @@ my @fileFilters;
 #hartrees (=1) or kcal/mol (=627.50960803) or eV (27.211399)?
 #my $units = 27.211399;
 my $units = 627.50960803;
+my $unitsL = "kcal/mol";
 
 
 #absolute energies (=0) or relative (=1) to each other?
@@ -64,9 +69,43 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
 	$param = shift(@ARGV);
 	push(@fileFilters,$param);
 	print "Adding file filter $param\n";
+    } elsif($type eq "-x"){
+	$param = shift(@ARGV);
+	push(@exclusionFilters,$param);
+	print "Adding file exclusion filter $param\n";
     } elsif($type eq "-u"){
-	$units = 27.211399;
-	print "Using energy eV units\n";
+	$param = shift(@ARGV);
+	if($param == 0){
+	    $units  = 627.50960803;
+	    $unitsL = "kcal/mol";
+	    print "Using energy kcal/mol units, conversion = $units.\n";
+	} elsif($param == 1) {
+	    $units  = 27.211399;
+	    $unitsL = "eV"; 
+	} elsif($param == 2) {
+	    $units  = 2625.5002;
+	    $unitsL = "kJ/mol"; 
+	} elsif($param == 3) {
+	    $units  = 219474.63;
+	    $unitsL = "cm^-1"; 
+	} elsif($param == 4) {
+	    $units  = 1;
+	    $unitsL = "au"; 
+	}
+	print "Using $unitsL energy units, conversion = $units\n";
+    } elsif($type eq "-o"){
+	$orbFilter = 1;
+	if($orbFilter == 1){
+	    print "Filtering to only include balanced orbitals\n";
+	} else {
+	    print "Not filtering results based on orbital usage.\n";
+	}
+    } elsif($type eq "-c"){
+	$compareE = 1;
+	print "Comparing with reference energies.\n";
+    } elsif($type eq "-s"){
+	$sumResults = 0;
+	print "Extended report.\n";
     } else {
 	print "Unrecognized option: $type\n";
 	die;
@@ -88,12 +127,6 @@ if($#ARGV < 0)
 #getFileList(".out",\@files);
 getFileList(".qmc",\@files);
 
-my $y_min = 0;
-my $y_max = 0;
-
-my $all_dt = 0;
-my $all_nw = 0;
-
 if($ARGV[0] =~ /.dat$/)
 {
     print "Adding data to $ARGV[0]\n";
@@ -103,6 +136,10 @@ if($ARGV[0] =~ /.dat$/)
     open (DATFILE, ">plotfile.dat");
 }
 
+my $Cnormal = "\x1b[0m";
+my $Chilite = "\x1b[37m";
+
+my $lenLong = 0;
 my $num_results;
 my $ave_result;
 my $headerLine = "";
@@ -115,18 +152,27 @@ my %dt_num_results;
 my %dt_nme_results;
 my %summary;
 my %shortnames;
+my %referenceE = ();
 
 my $lastlines = "";
 for(my $index=0; $index<=$#files; $index++){
     my $cur = $files[$index];
     next if(!(-f $cur));
 
-    my $isIncluded = 0;
+    my $isIncluded = 1;
+    my $filterMatch = 0;
     foreach $filter (@fileFilters){
 	#we only include a file if it matches one of the filters
-	$isIncluded = 1 if($cur =~ /$filter/);
+	$filterMatch = 1  if($cur =~ /$filter/);
     }
-    next if($isIncluded == 0 && $#fileFilters >= 0);
+    $isIncluded = 0 if($filterMatch == 0 && $#fileFilters >= 0);
+
+    foreach $filter (@exclusionFilters){
+	#exclude a file if it matches one of the exclusion filters
+	#print "filter = $filter cur = $cur\n";
+	$isIncluded = 0 if($cur =~ /$filter/);
+    }
+    next if($isIncluded == 0);
 
     my $base = "";
     if($cur =~ /.out$/){
@@ -153,15 +199,26 @@ for(my $index=0; $index<=$#files; $index++){
     my $hfe = 0;
     my $numbf = 0;
     my $numci = 0;
+    my $numor = 0;
     my $use3 = 0;
     my $extraVal = 0;
+    my %refEnergies = ();
+
     open (CKMFFILE, "$base.ckmf");
     while(<CKMFFILE>){
 	if($_ =~ /^\#/ && $_ !~ /[A-DF-Za-df-z]+/ && $vare eq ""){
 	    chomp;
 	    my @line = split/[ ]+/;
+	    #This is from the header; the top energy is the best
 	    $vare    = $line[2];
+	    $refEnergies{"VMC"} = $vare;
 	}
+
+	$refEnergies{"RHF"} = (split/\s+/)[5] if(/FINAL RHF ENERGY/);
+	$refEnergies{"RHF"} = (split/\s+/)[5] if(/FINAL ROHF ENERGY/);
+	$refEnergies{"GVB"} = (split/\s+/)[5] if(/FINAL GVB ENERGY/);
+	$refEnergies{"CI"} = (split/\s+/)[4] if(/^\#/ && /STATE/ && /ENERGY/);
+	$refEnergies{"$1"} = (split/\s+/)[3] if(/^\#/ && /\s+([\w\d\(\)]+)\s+ENERGY:/);
 
 	if($_ =~ m/^\s*run_type\s*$/){
 	    $_ = <CKMFFILE>;
@@ -202,6 +259,12 @@ for(my $index=0; $index<=$#files; $index++){
 	    my @line = split/[ ]+/;
 	    $numbf = $line[1];
 	}
+	if($_ =~ m/^\s*norbitals\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $numor = $line[1];
+	}
 	if($_ =~ m/^\s*ndeterminants\s*$/){
 	    $_ = <CKMFFILE>;
 	    chomp;
@@ -231,7 +294,10 @@ for(my $index=0; $index<=$#files; $index++){
     if($useVar == 0){
 	next if($isd eq "variational");
     }
-    next if($nw != 100);
+    if($nw < 100){
+	print "Not including $base because it has $nw walkers.\n";
+	next;
+    }
     next if($dtFilter != 0 && $dt != $dtFilter);
     
     while(<CKMFFILE> !~ /Jastrow/){}
@@ -253,19 +319,8 @@ for(my $index=0; $index<=$#files; $index++){
 	}
     }
     $numjw = "$numjwID=$numjw";
-
-    if($all_dt == 0){
-	$all_dt = $dt;
-    } elsif($all_dt != $dt){
-	$all_dt = -1;
-    }
-    if($all_nw == 0){
-	$all_nw = $nw;
-    } elsif($all_nw != $nw){
-	$all_nw = -1;
-    }
     close CKMFFILE;
-    
+
     open(RUNFILE, "$base.run");
     my $machine = "";
     while(<RUNFILE>){
@@ -277,49 +332,28 @@ for(my $index=0; $index<=$#files; $index++){
     }
     close(RUNFILE);
 
-    open (OUTFILE,  "$cur");
+    open (QMCFILE,  "$cur");
     my $line;
     my @data;
     my $more = 1;
     my $eavg;
     my $estd;
     my $iteration;
-    my $num_samples;
+    my $num_samples = 0.00001;
     my $fordatfile = "";
     my $counter = 0;
-    my $numwarnings = 0;
-    my $numerrors = 0;
     my $wallclock = "";
     my $totalclock = "";
     my $sampleclock = "";
     my $effdt = 0;
     my $sampleVar = 0;
     my $sampleVarCorLen = 0;
+    my $corLength = 0;
 
-    while(<OUTFILE>){
-	if(/WARNING/)
-	{
-	    if($numwarnings == 0)
-	    {
-		#$base = "?" . $base;
-	    }
-	    $numwarnings++;
-	}
-	if(/ERROR/)
-	{
-	    if($numerrors == 0)
-	    {
-		#$base = "!" . $base;
-	    }
-	    $numerrors++;
-	}
-	$wallclock = (split/[ ]+/)[11] if(/Wallclock/);
-	$totalclock = (split/[ ]+/)[11] if(/Total Time/);
-	$sampleclock = (split/[ ]+/)[8] if(/Average microseconds per sample per num initial walkers/);
-	$sampleVar = (split/[ ]+/)[3] if(/Sample variance/ && $sampleVar == 0);	    
+    while(<QMCFILE>){
 	$headerLine = $_ if(/iteration/ && /Eavg/ && /Samples/);
 
-	#this is to avoid processing warnings
+	#this is to avoid processing lines with warnings
 	next if( $_ =~ /[=:]/ && $_ !~ /Results/);
 
 	chomp;
@@ -332,21 +366,22 @@ for(my $index=0; $index<=$#files; $index++){
 	    $iteration   = $data[1];
 	    $eavg        = $data[2];
 	    $estd        = $data[3];
-	    $effnw       = $data[4];
-	    
-	    if($effnw > 1000)
+
+	    #In the old format, this was trial energy
+	    #In the new format, this is the acceptance probability, which uses parenthesis
+	    if($data[6] =~ /\(/)
 	    {
 		#new output format
+		$num_samples = $data[4];
+		$corLength   = $data[5];
 		$effnw       = $data[7];
 		if($isd eq "variational"){
 		    $effdt       = $dt;
-		    $num_samples = $data[4];
 		} else {
 		    $effdt       = $data[10];
-		    $num_samples = $data[4];
-		    
 		}
 	    } else {
+		$effnw       = $data[4];
 		#old output format
 		if($isd eq "variational"){
 		    $effdt       = $data[5];
@@ -361,9 +396,6 @@ for(my $index=0; $index<=$#files; $index++){
 	    #this is equal to sample variance * correlation length
 	    $sampleVarCorLen = $estd * $estd * $num_samples;
 
-	    #$num_samples = $data[$#data];
-
-	    #printf "$#data $more %20i %20.10f %20.10f %20i\n", $num_samples, $eavg, $estd, $iteration; 
 	    next if($num_samples <= 0);
 
 	    #make sure we have the first and last data points included
@@ -380,14 +412,30 @@ for(my $index=0; $index<=$#files; $index++){
 	    $more = 0;
 	}
     }    
-    close OUTFILE;
-    $lastlines .= "$line";
+    close QMCFILE;
 
+    my @times = `grep Time $base.out`;
+    $wallclock = (split/\s+/,$times[0])[11];
+    $totalclock = (split/\s+/,$times[1])[11];
+    $sampleclock = (split/\s+/,`grep "per sample per" $base.out`)[8];
+    chomp($sampleclock);
+    my $numwarnings = `grep WARNING $base.out | wc -l`;
+    #This is "number of warnings per 1000 samples"
+    $numwarnings /= $num_samples/1e3;
+    $numwarnings = sprintf "%4.2f", $numwarnings;
+    $numwarnings = " $Chilite$numwarnings$Cnormal" if($numwarnings > 0.5);
+    my $numerrors = `grep ERROR $base.out | wc -l`;
+    $numerrors /= $num_samples/1e3;
+    $numerrors = sprintf "%4.2f",$numerrors;
+
+    $lastlines .= "$line";
     my $key;
     if($vare eq ""){
-	$key =  "$hfe&$dt&$numbf&$numjw&$nw&$numci";
+	#use the value for energy in the key
+	$key =  "$hfe&$dt&$numbf&$numjw&$nw&$numci&$numor";
     } else {
-	$key = "$vare&$dt&$numbf&$numjw&$nw&$numci";
+	#use the variational energy from the header in the key
+	$key = "$vare&$dt&$numbf&$numjw&$nw&$numci&$numor";
     }
 
     if(exists $shortnames{$key}){
@@ -395,6 +443,11 @@ for(my $index=0; $index<=$#files; $index++){
 	$shortnames{$key} = $short if(length $orig > length $short);
     } else {
 	$shortnames{$key} = $short;
+    }
+    $lenLong = length $short if(length $short > $lenLong);
+
+    foreach $etype (keys %refEnergies){
+	$referenceE{$key}{$etype} = $refEnergies{$etype};
     }
 
     if($eavg < 0){
@@ -415,25 +468,25 @@ for(my $index=0; $index<=$#files; $index++){
     my $in_kcal = $eavg*$units;
     #printf "%50s %15s %15s E_h=%20.14f E_kcal=%20.10f Err=%i Warn=%i\n","$base","dt=$dt","nw=$nw",$eavg,$in_kcal,$numerrors,$numwarnings;
 
-    chomp($sampleclock);
-    chomp($sampleVar);
     $summary{$key} .= 
-	sprintf "..  %-30s%1s%7s %5s  %10.5f %10.5f %3i:%-3i %5i %16.10f %4i %5i",
+	sprintf "..  %-30s%1s%7s %5s  %10.5f %10.5f %3i:%-3i %5i %16.10f %4s %5s",
 	"$base","$machine","$dt","$effnw","$hfe","$vare",
 	$numci,$numbf,$numjw,$eavg,
 	$numerrors,$numwarnings;
 
     if($wallclock ne ""){
 	#the calculation completed, and some extra data is available
+	if(abs($corLength) < 1e-10){
+	    #The old format of output printed the Sample variance directly
+	    $sampleVar = (split/\s+/,`grep "Sample variance" $base.out`)[3];
+	    $corLength = $sampleVarCorLen / $sampleVar;
+	} else {
+	    $sampleVar       = $sampleVarCorLen / $corLength;
+	}
 
-	#my $corLength = $dt * $sampleVarCorLen / $sampleVar;
-	my $corLength = $sampleVarCorLen / $sampleVar;
-
-	#this is supposed to represent the quality of the wavefunction.
-	#the higher it is, the worse
-	#my $wfEfficiency = $sampleVarCorLen * $sampleclock / 100.0;
-	#my $wfEfficiency = $sampleVar * $sampleclock / 10.0;
-	my $wfEfficiency = $sampleVar * $sampleclock * $dt / $effdt;
+	#This is similiar to the Kappa from the 2007 Dolg ECP paper.
+	#Lower is better. Sample clock is in microseconds.
+	my $wfEfficiency = $dt * $sampleVar * $corLength * $sampleclock * 10.0;
 
 	$summary{$key} .= 
 	    sprintf " %10.3e %10.2f %10.2f %10s %10s %10s %15.5f\n",
@@ -486,9 +539,10 @@ foreach $sum (sort bydt keys %summary)
 if($num_results > 0){
     $ave_result /= $num_results;
     #print "Average result = $ave_result\n";
-    
-    printf "%5s %20s %10s %20s %5s %7s   %-25s %5s %20s %20s %20s %10s\n",
-    "ID","Label",
+    $labelLen = $lenLong;
+    $labelLen = length "Label" if(length "Label" > $labelLen);
+    printf "%5s %*s %10s %20s %5s %7s   %-25s %5s %20s %20s %20s %10s\n",
+    "ID",$labelLen,"Label",
     "dt","Ref. Energy","Num","CI:BF","NumJW","NumW","Average","Error (kcal)","Corr. E.","Weight";
     my %qref;
     my %href;
@@ -505,8 +559,9 @@ if($num_results > 0){
 
 	}
 
-	printf "%5i %20s %10s %20s %5i %3i:%-3i   %-25s %5i %20.10f %20.10f %20.10f %10.5f\n",
+	printf "%5i %*s %10s %20s %5i %3i:%-3i   %-25s %5i %20.10f %20.10f %20.10f %10.5f\n",
 	$label{$key},
+	$labelLen,
 	$shortnames{$key},
 	"$keydata[1]", "$keydata[0]",
 	$dt_num{$key},
@@ -542,45 +597,77 @@ if($num_results > 0){
 
 	    my $r = $dt_ave_results{$row};
 	    my $c = $dt_ave_results{$col};
+	    my $rOrb = $rowdata[6];
+	    my $cOrb = $coldata[6];
 
-	    #$rMult = 1;
-	    #$cMult = 1;
 	    #the results are not comparable if either is zero
 	    next if($rMult == 0 || $cMult == 0);
 	    #otherwise we'll get two of every comparison
 	    next if($r < $c);
+	    #This eliminates a lot of the meaningless comparisons
+	    next if($orbFilter && $rMult * $rOrb != $cMult * $cOrb);
 
-	    my $diff = $r*$rMult - $c*$cMult;
-	    my $diffe = $dt_err_results{$row}*$rMult +
-		$dt_err_results{$col}*$cMult;
+	    #So that we're comparing the difference
+	    $cMult *= -1;
+
+	    my $diff = $r*$rMult + $c*$cMult;
+	    my $diffe = abs($dt_err_results{$row}*$rMult) +
+		abs($dt_err_results{$col}*$cMult);
 	    
-	    $diff *= -$units;
+	    $diff *=  $units;
 	    $diffe *= $units;
 
 	    my $comparison = "";
-	    if($newrow == 1 || true){
-		$comparison .= sprintf "%3i) %20s %15.10f x $rMult %9s %2s:%-3s %5s | ",
-		$label{$row},
-		$shortnames{$row},
-		$r,$rowdata[1],$rowdata[5],$rowdata[2],
-		$rowJW;
-		$newrow = 0;
+
+	    if($sumResults == 1){
+		$comparison .= sprintf "%3i %3i)",$label{$row},$label{$col};
+		my $rM = $rMult;
+		my $cM = $cMult;
+		$rM = " " if($rMult == 1);
+		$cM = "- " if($cMult == -1);
+
+		$compType = sprintf " ${rM} %*s +${cM} %*s ",
+		$lenLong,$shortnames{$row},
+		$lenLong,$shortnames{$col};
+		$compType =~ s/\+\-/\-/g;
+		$comparison .= sprintf "%s =", $compType;
 	    } else {
-		$comparison .= sprintf "%49s | "," ";
+		$comparison .= sprintf "%3i) %*s %15.10f %6s %3s:%2s:%-3s %5s | ",
+		$label{$row},$lenLong,$shortnames{$row},
+		$r,$rowdata[1],$rowdata[5],$rOrb,$rowdata[2],$rowJW;
+		$comparison .= sprintf "%3i) %*s %15.10f %6s %3s:%2s:%-3s %5s | ",
+		$label{$col},$lenLong,$shortnames{$col},
+		$c,$coldata[1],$coldata[5],$cOrb,$coldata[2],$colJW;
+		$compType = "${rMult}A+${cMult}B";
+		$compType =~ s/1//g;
+		$compType =~ s/\+\-/\-/g;
+		$comparison .= sprintf "%6s=", $compType;
 	    }
-	    $comparison .= sprintf "%3i) %20s %15.10f x $cMult %9s %2s:%-3s %5s | ",
-	    $label{$col},
-	    $shortnames{$col},
-	    $c,$coldata[1],$coldata[5],$coldata[2],$colJW;
-	    $comparison .= sprintf " %9.3f",$diff;
-	    $comparison .= sprintf " +/- %-9.3f", $diffe;
+
+	    $comparison .= sprintf " %9.5f",$diff;
+	    $comparison .= sprintf " +/- %-9.5f $unitsL", $diffe;
 	    $comparison .= sprintf "\n";
+
+	    if($compareE){
+		foreach $etype (keys %{$referenceE{$row}}){
+		    $eRow = $referenceE{$row}{$etype} * $rMult;
+		    $eCol = $referenceE{$col}{$etype} * $cMult;
+		    my $temp = ($eRow + $eCol)*$units;
+		    
+		    next if(!exists $referenceE{$col}{$etype} || abs($temp) < 1e-10);
+
+		    if($sumResults == 1){  		    
+			$comparison .= sprintf " %*s = %9.5f %s\n",(2*$lenLong+15),"",$temp,$etype;
+		    } else {
+			$comparison .= sprintf "     %*s %15.10f %20s |      %*s %15.10f %20s | %6s  %9.5f %s\n",
+			$lenLong,"",$referenceE{$row}{$etype},"",$lenLong,"",$referenceE{$col}{$etype},"","",$temp,$etype;
+		    }
+		}
+	    }
 	    $comparisons{$comparison} = $diff;
 	}
     }
 
-    print "sorted\n";
-    #foreach $key (sort {$comparisons{a} <=> $comparisons{$b}} keys %comparisons){
     foreach $key (sort {$comparisons{$a} <=> $comparisons{$b}} keys %comparisons){
 	print "$key";
     }
