@@ -1,3 +1,27 @@
+Thu, Jul 3, 2008 Amos Anderson
+1.  I commited all my psuedopotential code, and added a new test for the test directory.
+    The code is not quite complete, we're still waiting for Dan to finish modifying his
+    initialization code so that it can handle the whole periodic table. I'm worried that
+    there are ways to do things faster that i haven't found yet... Known issues are:
+
+    a) For WF optimization, we are ignoring these psuedopotentials. Is this a problem?
+    It's like we're optimizing the kinetic energy, and hope it's minima is the same as
+    for the total energy. It seems to be producing acceptable results, so I won't worry
+    for now. 
+
+    b) How large a grid is necessary? I'm using different grids than the other papers mention
+    because I assume that Lebedev-Laikov grids are better. I'm ignoring their discussion of
+    "randomly rotating" the grids to eliminate bias. They said large enough grids are less biased
+    anyway.
+
+    c) I haven't done whatever modifications for DMC are necessary yet.
+
+2.  There are a bunch of other minor changes I made. For example, I added getNumberOrbitals(bool)
+    and getNumberElectrons(bool) and changed other parts of the code accordingly.
+
+3.  To evaluate psuedopotentials, I added a new function to all parts of the wavefunction. This function
+    evaluates the value of the contribution only, and none of the derivatives.
+
 Wed, Jul 2, 2008 Amos Anderson
 1.  I fixed a bug which prevented the obsolete QMCReadAndEvaluateConfigs from working.
     The problem was in QMCJastrow.evaluate(R). We rely on the QMCWalkerData being here,
