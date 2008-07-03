@@ -1,5 +1,5 @@
 QMcBeaver version 20080229 was compiled in double precision.
-Compiled on May  6 2008 14:20:21
+Compiled on Jun 28 2008 15:58:51
 Compiler version 3.4.6 20060404 (Red Hat 3.4.6-8)
 With the libraries: MPI BLAS LAPACK
 Signaling: CHANNEL1 = 23 CHANNEL2 = 40
@@ -125,7 +125,7 @@ x12 = r12 / 3.065843
 **************** Start of Results *****************
 
 ------------------- Energy -------------------
-   -231.071319371109 +/- 1.000000000000e+300  (30 samples, Tcorr   -2.00000)
+   -231.071319371108 +/- 1.000000000000e+300  (30 samples, Tcorr   -2.00000)
   DeCorr_depth       samples           Ave           Std        StdStd           Var        VarStd    Corr. Len.      Variance          Skew      Kurtosis
 0                         30   -231.071319  4.206249e-01  5.523075e-02  1.769253e-01  4.646286e-02      0.000000      5.130833      1.073100      0.783190
 1                         15   -231.071319  5.456316e-01  1.031147e-01  2.977138e-01  1.125253e-01      1.682709      4.167994      0.995125      0.500505
@@ -137,13 +137,13 @@ x12 = r12 / 3.065843
   5.339908546938e+04 +/- 1.000000000000e+300  (30 samples, Tcorr   -2.00000)
 
 --------------- Kinetic Energy ---------------
-    357.055886207175 +/- 1.000000000000e+300  (30 samples, Tcorr   -2.00000)
+    357.055886207174 +/- 1.000000000000e+300  (30 samples, Tcorr   -2.00000)
 
 -------------- Potential Energy --------------
-   -588.127205578284 +/- 1.000000000000e+300  (30 samples, Tcorr   -2.00000)
+   -588.127205578282 +/- 1.000000000000e+300  (30 samples, Tcorr   -2.00000)
 
 -------------- Nuc-Elec Energy ---------------
-  -1079.179648669429 +/- 1.000000000000e+300  (30 samples, Tcorr   -2.00000)
+  -1079.179648669428 +/- 1.000000000000e+300  (30 samples, Tcorr   -2.00000)
 
 -------------- Elec-Elec Energy --------------
     287.439305505334 +/- 1.000000000000e+300  (30 samples, Tcorr   -2.00000)
@@ -168,20 +168,20 @@ dt_effective: 0.00658 +/- inf
 
 **************** End of Results *****************
 ***************  Finalize
-Average iterations per hour:                              2.1079e+05
-Average iterations*walkers per hour:                      2.1079e+05
-Average microseconds per sample:                          11401
-Average microseconds per sample per num initial walkers:  11401
+Average iterations per hour:                              2.9056e+05
+Average iterations*walkers per hour:                      2.9056e+05
+Average microseconds per sample:                          6903
+Average microseconds per sample per num initial walkers:  6903
 
-Wallclock Time:                          853 ms   =                0.853 s    =             0.014217 mins =           0.00023694 hrs 
-Total Time:                              853 ms   =                0.853 s    =             0.014217 mins =           0.00023694 hrs     100.00 %
-Initialization Time:                      14 ms   =                0.014 s    =           0.00023333 mins =           3.8889e-06 hrs       1.72 %
-Equilibration Time:                      227 ms   =                0.227 s    =            0.0037833 mins =           6.3056e-05 hrs      26.62 %
-Propagation Time:                        342 ms   =                0.342 s    =               0.0057 mins =              9.5e-05 hrs      40.05 %
+Wallclock Time:                          619 ms   =                0.619 s    =             0.010317 mins =           0.00017194 hrs 
+Total Time:                              619 ms   =                0.619 s    =             0.010317 mins =           0.00017194 hrs     100.00 %
+Initialization Time:                       9 ms   =                0.009 s    =              0.00015 mins =              2.5e-06 hrs       1.60 %
+Equilibration Time:                      136 ms   =                0.136 s    =            0.0022667 mins =           3.7778e-05 hrs      22.05 %
+Propagation Time:                        207 ms   =                0.207 s    =              0.00345 mins =             5.75e-05 hrs      33.43 %
 Send Command Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
-Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.05 %
+Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.07 %
 Synchronization Time:                      0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Poll for Command Time:                     0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Optimization Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 
-Wallclock Time:                          921 ms   =                0.921 s    =              0.01535 mins =           0.00025583 hrs 
+Wallclock Time:                          684 ms   =                0.684 s    =               0.0114 mins =              0.00019 hrs 

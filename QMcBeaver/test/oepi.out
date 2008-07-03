@@ -1,5 +1,5 @@
 QMcBeaver version 20080229 was compiled in double precision.
-Compiled on May  6 2008 14:20:21
+Compiled on Jun 28 2008 15:58:51
 Compiler version 3.4.6 20060404 (Red Hat 3.4.6-8)
 With the libraries: MPI BLAS LAPACK
 Signaling: CHANNEL1 = 23 CHANNEL2 = 40
@@ -107,20 +107,20 @@ dt_effective: 0.00995 +/- inf
 
 **************** End of Results *****************
 ***************  Finalize
-Average iterations per hour:                              9.2164e+06
-Average iterations*walkers per hour:                      9.2164e+06
-Average microseconds per sample:                          2538.2
-Average microseconds per sample per num initial walkers:  2538.2
+Average iterations per hour:                              9.4645e+06
+Average iterations*walkers per hour:                      9.4645e+06
+Average microseconds per sample:                          2394.2
+Average microseconds per sample per num initial walkers:  2394.2
 
-Wallclock Time:                           39 ms   =                0.039 s    =              0.00065 mins =           1.0833e-05 hrs 
-Total Time:                               39 ms   =                0.039 s    =              0.00065 mins =           1.0833e-05 hrs     100.00 %
-Initialization Time:                       1 ms   =                0.001 s    =           1.6667e-05 mins =           2.7778e-07 hrs       4.54 %
-Equilibration Time:                        3 ms   =                0.003 s    =                5e-05 mins =           8.3333e-07 hrs       9.84 %
-Propagation Time:                         12 ms   =                0.012 s    =               0.0002 mins =           3.3333e-06 hrs      32.49 %
+Wallclock Time:                           38 ms   =                0.038 s    =           0.00063333 mins =           1.0556e-05 hrs 
+Total Time:                               38 ms   =                0.038 s    =           0.00063333 mins =           1.0556e-05 hrs     100.00 %
+Initialization Time:                       1 ms   =                0.001 s    =           1.6667e-05 mins =           2.7778e-07 hrs       4.31 %
+Equilibration Time:                        3 ms   =                0.003 s    =                5e-05 mins =           8.3333e-07 hrs       9.54 %
+Propagation Time:                         11 ms   =                0.011 s    =           0.00018333 mins =           3.0556e-06 hrs      31.47 %
 Send Command Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.02 %
-Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.48 %
-Synchronization Time:                      0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.04 %
+Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.49 %
+Synchronization Time:                      0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.01 %
 Poll for Command Time:                     0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Optimization Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 
-Wallclock Time:                           52 ms   =                0.052 s    =           0.00086667 mins =           1.4444e-05 hrs 
+Wallclock Time:                           50 ms   =                 0.05 s    =           0.00083333 mins =           1.3889e-05 hrs 

@@ -1,5 +1,5 @@
 QMcBeaver version 20080229 was compiled in double precision.
-Compiled on May  6 2008 14:20:21
+Compiled on Jun 28 2008 15:58:51
 Compiler version 3.4.6 20060404 (Red Hat 3.4.6-8)
 With the libraries: MPI BLAS LAPACK
 Signaling: CHANNEL1 = 23 CHANNEL2 = 40
@@ -69,9 +69,9 @@ x12 = r12 / 3.811493
        -15    0.0000000000   0.0000000e+00               0   -2.0000000000         0.00000              10   10.0260360774  -79.3083323812   2.0736994e-03 
        -10    0.0000000000   0.0000000e+00               0   -2.0000000000         0.00000              11    9.9938241565  -77.6860586102   1.6770610e-03 
         -5    0.0000000000   0.0000000e+00               0   -2.0000000000         0.00000              10    9.9795785922  -76.4565135473   1.2793119e-03 
-         0  -77.9911523760   1.6684429e-01             100    5.0011275585         0.93261              11    9.9850147951  -76.3512960641   8.8052243e-04 
+         0  -77.9911523760   1.6684429e-01             100    5.0011275584         0.93261              11    9.9850147951  -76.3512960641   8.8052243e-04 
        105  -77.9354843704   1.7885826e-01             105    5.6193179019         0.93520              10    9.9785583212  -76.7918295279   9.8659969e-04 
-       110  -77.8949444871   1.7885826e-01             110    5.7677003151         0.93755              11    9.9871896860  -76.9043968454   9.8701710e-04 
+       110  -77.8949444871   1.7885826e-01             110    5.7677003152         0.93755              11    9.9871896860  -76.9043968454   9.8701710e-04 
        115  -77.8642878029               0             115   -1.0000000000         0.93970              10    9.9994411219  -76.9924423524   9.8757467e-04 
        120  -77.8526507935               0             120   -1.0000000000         0.94185              11   10.0239951736  -77.1398211861   9.8864324e-04 
        125  -77.8443873274               0             125   -1.0000000000         0.94366              10   10.0480917317  -77.2419097699   9.8811588e-04 
@@ -106,7 +106,7 @@ x12 = r12 / 3.811493
 6                          1    -78.126467
 
 ----------------- Energy^2 -------------------
-   6109.744192307406 +/- 99.000000000000      (100 samples, Tcorr   -1.00000)
+   6109.744192307405 +/- 99.000000000000      (100 samples, Tcorr   -1.00000)
 
 --------------- Kinetic Energy ---------------
     110.825390404915 +/- 99.000000000000      (100 samples, Tcorr   -1.00000)
@@ -149,20 +149,20 @@ dt_effective: 0.00098 +/- 0.00035
 
 **************** End of Results *****************
 ***************  Finalize
-Average iterations per hour:                              3.5124e+05
-Average iterations*walkers per hour:                      3.5124e+06
-Average microseconds per sample:                          9997.2
-Average microseconds per sample per num initial walkers:  999.72
+Average iterations per hour:                              4.4311e+05
+Average iterations*walkers per hour:                      4.4311e+06
+Average microseconds per sample:                          7948
+Average microseconds per sample per num initial walkers:  794.8
 
-Wallclock Time:                         2049 ms   =                2.049 s    =              0.03415 mins =           0.00056917 hrs 
-Total Time:                             2049 ms   =                2.049 s    =              0.03415 mins =           0.00056917 hrs     100.00 %
-Initialization Time:                      11 ms   =                0.011 s    =           0.00018333 mins =           3.0556e-06 hrs       0.54 %
-Equilibration Time:                     1014 ms   =                1.014 s    =               0.0169 mins =           0.00028167 hrs      49.47 %
-Propagation Time:                        999 ms   =                0.999 s    =              0.01665 mins =            0.0002775 hrs      48.77 %
+Wallclock Time:                         1624 ms   =                1.624 s    =             0.027067 mins =           0.00045111 hrs 
+Total Time:                             1624 ms   =                1.624 s    =             0.027067 mins =           0.00045111 hrs     100.00 %
+Initialization Time:                       9 ms   =                0.009 s    =              0.00015 mins =              2.5e-06 hrs       0.57 %
+Equilibration Time:                      796 ms   =                0.796 s    =             0.013267 mins =           0.00022111 hrs      48.99 %
+Propagation Time:                        794 ms   =                0.794 s    =             0.013233 mins =           0.00022056 hrs      48.91 %
 Send Command Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.02 %
 Synchronization Time:                      0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Poll for Command Time:                     0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Optimization Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 
-Wallclock Time:                         2063 ms   =                2.063 s    =             0.034383 mins =           0.00057306 hrs 
+Wallclock Time:                         1637 ms   =                1.637 s    =             0.027283 mins =           0.00045472 hrs 
