@@ -1,3 +1,17 @@
+Wed, Jul 2, 2008 Amos Anderson
+1.  I fixed a bug which prevented the obsolete QMCReadAndEvaluateConfigs from working.
+    The problem was in QMCJastrow.evaluate(R). We rely on the QMCWalkerData being here,
+    but it wasn't being initialized.
+
+2.  I added all my stuff to jaguar2qmcbeaver.py. It uses menu selection to choose
+    a ckmft file to facilitate creating an input file.
+
+3.  I added some recent changes to summary.pl. I wanted it to compare the energies for the VMC
+    and SCF energies, if available.
+
+4.  I added some tinkering I did to the eigenvector optimization method. Basically, i limit
+    iteration increases to 500,000, and choose better a_diag values for the correlated sampling.
+
 Sat, Jun 28, 2008 Amos Anderson
 1.  I figured out a way to speed up basis function evaluation in QMCBasisFunction.cpp .
     The code is more messy, but examples/ne0.ckmf goes twice as fast now. The most benefit
