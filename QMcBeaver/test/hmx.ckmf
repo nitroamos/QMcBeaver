@@ -1,5 +1,3 @@
-# This will test a large molecule (516 basisfunctions, 172 electrons)
-
 &flags
 # Parameters for QMC
 run_type
@@ -9,7 +7,7 @@ dt
 number_of_walkers
  1
 max_time_steps
- 100
+ 20
 max_time
  0
 one_e_per_iter
@@ -49,11 +47,11 @@ branching_method
 branching_threshold
  2
 fusion_threshold
- 0.45
+ 0.5
 population_control_parameter
  1
 correct_population_size_bias
- 1
+ 0
 old_walker_acceptance_parameter
  50
 
@@ -63,9 +61,9 @@ dt_equilibration
 use_equilibration_array
  0
 equilibration_steps
- 10
+ 1
 equilibration_function
- ramp
+ step
 CKAnnealingEquilibration1_parameter
  500
 walker_initialization_method
@@ -89,15 +87,15 @@ future_walking
 
 # Parameters relating to output
 output_interval
- 5
+ 1
 checkpoint
  0
 checkpoint_interval
- 2
+ 1000
 use_available_checkpoints
  0
 checkpoint_input_name
- HMX_2
+ hmx
 zero_out_checkpoint_statistics
  1
 checkpoint_energy_only
@@ -209,9 +207,9 @@ iseed
 parallelization_method
  manager_worker
 mpireduce_interval
- 2
+ 10
 mpipoll_interval
- 1
+ 5
 walkers_per_pass
  1
 use_basis_function_interpolation
@@ -237,7 +235,7 @@ nbasisfunc
 ndeterminants
  1
 link_Jastrow_parameters
- 1
+ 0
 link_NEE_Jastrows
  2
 link_Orbital_parameters
@@ -16503,10 +16501,10 @@ H      7    3
  -0.00305031723542           0                         -0.289868452637           
 
 Alpha Occupation
-1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   
+1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   0   0   0   0   0   0   0   0   0   0   
 
 Beta Occupation
-1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   
+1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   0   0   0   0   0   0   0   0   0   0   
 
 CI Coeffs
   1                        
@@ -16515,40 +16513,103 @@ CI Coeffs
 
 &Jastrow
 ParticleTypes:	Electron_up	Electron_down
-CorrelationFunctionType:	Cambridge2
+CorrelationFunctionType:	FixedCuspPade
 NumberOfParameterTypes:	2
-NumberOfParametersOfEachType:	1	8
-Parameters:	0.177508609968	0.542851263266	12.2274843379	-65.7528425716	190.620635695	-293.620751446	240.202560047	-98.6334370919	23.0616670705
-NumberOfConstantTypes:	2
-NumberOfConstantsOfEachType:	1	1
-Constants:	0.5	3
+NumberOfParametersOfEachType:	0	1
+Parameters:	3
+NumberOfConstantTypes:	1
+NumberOfConstantsOfEachType:	1
+Constants:	0.5
 
 ParticleTypes:	Electron_up	Electron_up
-CorrelationFunctionType:	Cambridge2
+CorrelationFunctionType:	FixedCuspPade
 NumberOfParameterTypes:	2
-NumberOfParametersOfEachType:	1	8
-Parameters:	0.172181234282	0.337842976146	3.82432902077	-9.46488320391	4.16762115009	8.63206761435	31.2669081917	-88.4746048492	55.4710941392
-NumberOfConstantTypes:	2
-NumberOfConstantsOfEachType:	1	1
-Constants:	0.25	3
+NumberOfParametersOfEachType:	0	1
+Parameters:	100
+NumberOfConstantTypes:	1
+NumberOfConstantsOfEachType:	1
+Constants:	0.25
+
+ParticleTypes:	Electron_down	Electron_down
+CorrelationFunctionType:	FixedCuspPade
+NumberOfParameterTypes:	2
+NumberOfParametersOfEachType:	0	1
+Parameters:	100
+NumberOfConstantTypes:	1
+NumberOfConstantsOfEachType:	1
+Constants:	0.25
 
 ParticleTypes:	Electron_up	C
-CorrelationFunctionType:	Cambridge2
+CorrelationFunctionType:	FixedCuspPade
 NumberOfParameterTypes:	2
-NumberOfParametersOfEachType:	1	8
-Parameters:	0.154057849717	-1.39715455504	19.2474418527	-73.8912926294	196.450437914	-306.381807155	159.810523361	114.850713779	-113.601596489
-NumberOfConstantTypes:	2
-NumberOfConstantsOfEachType:	1	1
-Constants:	0	3
+NumberOfParametersOfEachType:	0	1
+Parameters:	100
+NumberOfConstantTypes:	1
+NumberOfConstantsOfEachType:	1
+Constants:	-6
+
+ParticleTypes:	Electron_down	C
+CorrelationFunctionType:	FixedCuspPade
+NumberOfParameterTypes:	2
+NumberOfParametersOfEachType:	0	1
+Parameters:	100
+NumberOfConstantTypes:	1
+NumberOfConstantsOfEachType:	1
+Constants:	-6
+
+ParticleTypes:	Electron_up	N
+CorrelationFunctionType:	FixedCuspPade
+NumberOfParameterTypes:	2
+NumberOfParametersOfEachType:	0	1
+Parameters:	100
+NumberOfConstantTypes:	1
+NumberOfConstantsOfEachType:	1
+Constants:	-7
+
+ParticleTypes:	Electron_down	N
+CorrelationFunctionType:	FixedCuspPade
+NumberOfParameterTypes:	2
+NumberOfParametersOfEachType:	0	1
+Parameters:	100
+NumberOfConstantTypes:	1
+NumberOfConstantsOfEachType:	1
+Constants:	-7
+
+ParticleTypes:	Electron_up	O
+CorrelationFunctionType:	FixedCuspPade
+NumberOfParameterTypes:	2
+NumberOfParametersOfEachType:	0	1
+Parameters:	100
+NumberOfConstantTypes:	1
+NumberOfConstantsOfEachType:	1
+Constants:	-8
+
+ParticleTypes:	Electron_down	O
+CorrelationFunctionType:	FixedCuspPade
+NumberOfParameterTypes:	2
+NumberOfParametersOfEachType:	0	1
+Parameters:	100
+NumberOfConstantTypes:	1
+NumberOfConstantsOfEachType:	1
+Constants:	-8
 
 ParticleTypes:	Electron_up	H
-CorrelationFunctionType:	Cambridge2
+CorrelationFunctionType:	FixedCuspPade
 NumberOfParameterTypes:	2
-NumberOfParametersOfEachType:	1	8
-Parameters:	0.174786861481	-0.11085998621	-3.92028776426	36.0838085691	-147.95983079	294.418094243	-233.483526054	-17.4488539736	74.9476174357
-NumberOfConstantTypes:	2
-NumberOfConstantsOfEachType:	1	1
-Constants:	0	3
+NumberOfParametersOfEachType:	0	1
+Parameters:	100
+NumberOfConstantTypes:	1
+NumberOfConstantsOfEachType:	1
+Constants:	-1
+
+ParticleTypes:	Electron_down	H
+CorrelationFunctionType:	FixedCuspPade
+NumberOfParameterTypes:	2
+NumberOfParametersOfEachType:	0	1
+Parameters:	100
+NumberOfConstantTypes:	1
+NumberOfConstantsOfEachType:	1
+Constants:	-1
 
 &Jastrow
 
