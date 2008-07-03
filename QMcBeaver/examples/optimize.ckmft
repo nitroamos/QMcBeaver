@@ -3,11 +3,11 @@
 run_type
  variational
 dt
- 0.1
+ 0.01
 number_of_walkers
  100
 max_time_steps
- 5000
+ 10000
 max_time
  -1
 one_e_per_iter
