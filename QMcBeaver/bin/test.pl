@@ -92,9 +92,9 @@ for(my $index=0; $index<=$#files; $index++){
     $avg /= $num if($num > 0);
 
     if($pass == 0 || $num <= 0 || abs($avg) > $tol){
-	printf "Test FAILED, average error %20.10e for $num samples\n", $avg;
+	printf "Test\n*****----> FAILED <----*****\naverage error %20.10e for $num samples\n", $avg;
     } else {
-	printf "Test PASSED, average error %20.10e for $num samples\n", $avg;
+	printf "Test passed, average error %20.10e for $num samples\n", $avg;
     }
     print "\n";
 }
