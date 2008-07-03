@@ -28,18 +28,6 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 
   QMCDerivativeProperties dp(&lastRun,&fwLastRun,0);
   
-  if(optStep == 1)
-    {
-      if(fabs(globalInput.WF.getCINorm() - 1.0) > 1.0e-7)
-	clog << "Notice: CI norm = " << globalInput.WF.getCINorm() << endl;
-      clog.precision(12);
-      clog.width(20);
-      clog.unsetf(ios::fixed);
-      clog.setf(ios::scientific);
-      globalInput.printAIParameters(clog,"Best Step params:",20,orig_parameters,false);
-      clog << endl << endl;
-    }
-
   if( globalInput.flags.my_rank == 0 )
     {
       // initialize the objective function
@@ -184,7 +172,7 @@ void QMCCorrelatedSamplingVMCOptimization::optimize(QMCInput * input,
 #endif
 
   globalInput.setAIParameters(Guess_parameters);
-  //globalInput.WF.normalizeCI();
+  globalInput.WF.normalizeCI();
 
   if(globalInput.flags.a_diag > 0 ||
      optStep%2 == 1)

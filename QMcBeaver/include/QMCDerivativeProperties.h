@@ -96,6 +96,7 @@ public:
      QMCObjectiveFunctionResult::set_score
   */
   double getParameterValue();
+  double getSampleVariance();
 
   /**
      Convert the der terms collected in QMCPropertyArrays

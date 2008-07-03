@@ -127,6 +127,12 @@ double QMCDerivativeProperties::getParameterValue()
   return properties->energy.getSeriallyCorrelatedVariance();
 }
 
+double QMCDerivativeProperties::getSampleVariance()
+{
+  //return properties->energy.getSeriallyCorrelatedVariance();
+  return properties->energy.getVariance();
+}
+
 Array1D<double> QMCDerivativeProperties::getParameterGradient()
 {
   Array1D<double> gradient;

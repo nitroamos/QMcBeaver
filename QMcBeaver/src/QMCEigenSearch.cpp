@@ -16,6 +16,7 @@
 #include <sstream>
 #include "CubicSpline.h"
 #include "IeeeMath.h"
+#include "svdcmp.h"
 
 bool QMCEigenSearch::currentlyHalf = true;
 int QMCEigenSearch::orig_steps = 0;
@@ -25,6 +26,7 @@ Array2D<double> QMCEigenSearch::hamiltonian;
 Array2D<double> QMCEigenSearch::overlap;
 
 vector<double> QMCEigenSearch::f;
+vector<double> QMCEigenSearch::variance;
 vector< Array1D<double> > QMCEigenSearch::x;
 
 QMCEigenSearch::QMCEigenSearch(QMCObjectiveFunction *function, 
@@ -81,9 +83,7 @@ double QMCEigenSearch::get_a_diag(QMCDerivativeProperties & dp, double a_diag_fa
 
   double eng_frac = 0.95;
   double var_frac = 1.0 - eng_frac;
-  printf("Correlated Sampling Results, Energy = %g%% Variance = %g%%:\n",100*eng_frac,100*var_frac);
-  printf("       a_diag = %15s Energy %20.10g Sample Variance %20.10e\n",
-	 "guide", samplesE(0), samplesV(0));
+  printf(" %3s %10s %20s %20s %20s %20s   %g%% * OE + %g%% * OV\n","CS","a_diag","Energy","Sample Variance","Objective Energy","Objective Variance",100*eng_frac,100*var_frac);
 
   double best = -99;
   int best_idx = -1;
@@ -104,14 +104,16 @@ double QMCEigenSearch::get_a_diag(QMCDerivativeProperties & dp, double a_diag_fa
 	    best     = obj;
 	    a_diag   = adiag_tests[cs];
 	  }
-      
-      printf("CS %3i a_diag = %15.5g Energy %20.10g Sample Variance %20.10e objE %15.5e objV %15.5e obj %15.5e\n",
+
+      printf(" %3i %10.5g %20.10e %20.10e %20.10e %20.10e %20.10e\n",
 	     cs, adiag_tests[cs], samplesE(si), samplesV(si), obje, objv, obj);
     }
+  printf(" %3s %10s %20.10e %20.10e\n","","guide", samplesE(0), samplesV(0));
 
-  cout << "Best a_diag = " << a_diag << " with objective value " << best << " idx = " << best_idx << endl;
-  return a_diag;
-
+  cout << "Best correlated sample used a_diag = " << a_diag
+       << " with objective value " << best << " idx = " << best_idx << endl;
+  //return a_diag;
+  
   CubicSpline findmin;
   findmin.initializeWithFunctionValues(xvals,yvals,0,0);
 
@@ -156,7 +158,8 @@ double QMCEigenSearch::get_a_diag(QMCDerivativeProperties & dp, double a_diag_fa
   printf("min3 = %20.10e fmin3 = %20.10e\n",min3,fmin3);
   printf("min  = %20.10e fmin  = %20.10e\n",min,fmin);
 
-  a_diag = exp(min);
+  //a_diag = exp(min);
+  cout << "Fitted a_diag = " << exp(min) << endl;
   cout << "Best a_diag = " << a_diag << " with objective value " << fmin << endl;
 
   return a_diag;
@@ -167,6 +170,7 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 					 double a_diag_factor,
 					 int step)  
 {
+  bool verbose = false;
   optStep = step;
   stepinfo.clear();
   stepinfo << "(Step = " << setw(3) << optStep << "):";
@@ -176,11 +180,10 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
   cout << endl;
   
   dim = CurrentParams.dim1();
-  
-  double InitialValue = dp.getParameterValue();
     
   x.push_back(CurrentParams);
-  f.push_back(InitialValue);  
+  f.push_back(dp.getParameterValue());  
+  variance.push_back(dp.getSampleVariance());  
 
   if(globalInput.flags.a_diag > 0)
     {
@@ -194,9 +197,13 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
   cout << "Beginning Generalized Eigenvector Optimization ";
   cout << (currentlyHalf ? "half" : "full");
   cout << " step " << optStep << " for " << dim
-       << " parameters, max steps = " << maximumSteps << ", with: " << endl;
-  cout << "        InitialValue = " << InitialValue << endl;
-  globalInput.printAIParameters(cout,"Parameters",20,CurrentParams,false);
+       << " parameters: " << endl;
+
+  if(verbose){
+    //This will all be in the step files anyway...
+    globalInput.printAIParameters(cout,"Parameters",20,CurrentParams,false);
+  }
+
   Array1D<double> gradient = dp.getParameterGradient();
   globalInput.printAIParameters(cout,"Gradient",20,gradient,true);
 
@@ -220,16 +227,21 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 	  while(adiag_tests[adiag_tests.size()-1] < 1000)
 	    adiag_tests.push_back(fac * adiag_tests[adiag_tests.size()-1]);
 	} else {
-	  adiag_tests.push_back(1.0e-9);
-	  while(adiag_tests[adiag_tests.size()-1] < 1000)
-	    adiag_tests.push_back(100.0 * adiag_tests[adiag_tests.size()-1]);	  
+	  adiag_tests.push_back(1.0e-7);
+	  adiag_tests.push_back(1.0e-5);
+	  adiag_tests.push_back(1.0e-3);
+	  adiag_tests.push_back(1.0e-1);
+	  adiag_tests.push_back(1.0e0);
+	  adiag_tests.push_back(1.0e1);
+	  adiag_tests.push_back(1.0e2);
+	  adiag_tests.push_back(1.0e3);
 	}
 
       int numTests = adiag_tests.size();
       globalInput.cs_Parameters.allocate(adiag_tests.size()+1);
       for(int cs=0; cs<numTests; cs++)
 	{
-	  Array1D<double> aParams = getParameters(dp,adiag_tests[cs],false);
+	  Array1D<double> aParams = getParameters(dp,adiag_tests[cs],verbose);
 	  globalInput.cs_Parameters(cs+1) = aParams;
 
 	  stepinfo << endl;
@@ -276,7 +288,12 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 	clog << "-L";
       clog << " params)";
 
-      if(optStep >= 4 && f[optStep-2] > f[optStep-4] && f[optStep-2] < globalInput.flags.energy_trial)
+      printf("\nstep-4 f+v %20.10g f=%20.10g v=%20.10e\n",f[optStep-4] + variance[optStep-4],f[optStep-4], variance[optStep-4]);
+      printf("step-2 f=  %20.10g v=%20.10e steps increase %20.10f\n",f[optStep-2],variance[optStep-2],variance[optStep-2]/variance[optStep-4]);
+
+      if(optStep >= 4 &&
+	 f[optStep-2] > (f[optStep-4] + variance[optStep-4]) &&
+	 f[optStep-2] < globalInput.flags.energy_trial)
 	{
 	  /*
 	    If our energy actually went up between two successive (full) optimization steps,
@@ -291,7 +308,7 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 	  globalInput.flags.max_time_steps = (long)(orig_steps * frac);
 
 	  //with a cutoff
-	  unsigned long cutoff = 1000*1000;
+	  unsigned long cutoff = 500*1000;
 	  if(globalInput.flags.max_time_steps > cutoff)
 	    globalInput.flags.max_time_steps = cutoff;
 
@@ -343,8 +360,37 @@ Array1D<double> QMCEigenSearch::getParameters(QMCDerivativeProperties & dp, doub
 	}
     }
 
+  /*
+  Array1D<double> W(olap.dim1());
+  Array2D<double> r(olap.dim1(),olap.dim2());
+  Array2D<double> inverse(olap.dim1(),olap.dim2());
+
+  if(a_diag < 1e-06){
+    //olap.printArray2D(cout,12,7,-1,',',true);
+    SVDecompose(olap, W, r, 10);
+    double small = W(0);
+    double large = W(0);
+    double det   = 1.0;
+    for(int i=0; i<W.dim1(); i++)
+      {
+	det *= W(i);
+	small = min(fabs((double)W(i)),small);
+	large = max(fabs((double)W(i)),large);
+	if(i%5 == 0)
+	  printf("\nW(%2i) = %20.10e ",i,W(i));
+	else
+	  printf(" %20.10e",W(i));
+      }
+    printf("\nSmall W = %20.10e Large W = %20.10e Det = %20.10e\n",small,large,det);
+    SVDFwBackSubst(olap,W,r,inverse);
+  }
+  olap = overlap;
+  */
+
   Array2D<double> eigvec;
   Array1D<Complex> eigval;
+
+  //Hamiltonian . E = lambda . Overlap . E
   eigvec.generalizedEigenvectors(ham,
 				 olap,
 				 eigval);
@@ -366,8 +412,15 @@ Array1D<double> QMCEigenSearch::getParameters(QMCDerivativeProperties & dp, doub
   cout.precision(12);
   for(int i=0; i<dim+1; i++)
     {
+
       if(verbose){
-	cout << "Eigenvalue(" << setw(3) << i << "): " << eigval(i) << endl;
+	stringstream eigvalSS;
+	eigvalSS << eigval(i);
+	if(i%5 == 0){
+	  cout << endl << "Eigenvalue(" << setw(3) << i << "): " << setw(20) << eigvalSS.str();
+	} else {
+	  cout << setw(20) << eigvalSS.str();
+	}
       }
       double val = eigval(i).real();
       if( fabs(eigval(i).imaginary()) < 1e-50 &&
@@ -381,7 +434,9 @@ Array1D<double> QMCEigenSearch::getParameters(QMCDerivativeProperties & dp, doub
     }
 
   if(verbose){
-    cout << "Lowest Eigenvalue = " << best_val << endl;
+    cout << endl;
+    cout << "Lowest Eigenvalue(" << setw(3) << best_idx << "): " << best_val << endl;
+    cout << endl;
   }
 
   stepinfo << " lowest eigenvalue = " << setw(20) << best_val;
@@ -392,8 +447,8 @@ Array1D<double> QMCEigenSearch::getParameters(QMCDerivativeProperties & dp, doub
 
   delta_x /= eigvec[best_idx][0];
 
-  if(verbose)
-    globalInput.printAIParameters(cout,"Eigenvector",20,delta_x,true); 
+  //if(verbose)
+  //  globalInput.printAIParameters(cout,"Eigenvector",20,delta_x,true); 
   
   /*
     Some methods have fancy ways of modifying the distance
@@ -418,7 +473,8 @@ Array1D<double> QMCEigenSearch::getParameters(QMCDerivativeProperties & dp, doub
 
   if(IeeeMath::isNaN(rescale) || rescale < 0.05)
     {
-      cout << "Warning: invalid rescale = " << rescale << endl;
+      cout << "Warning: invalid rescale = " << setw(20) << rescale
+	   << " for a_diag = " << a_diag << endl;
 
       if(IeeeMath::isNaN(rescale))
 	{
@@ -430,8 +486,6 @@ Array1D<double> QMCEigenSearch::getParameters(QMCDerivativeProperties & dp, doub
     }
   // Calculate the next step
   delta_x *= rescale;
-
-
 
   if(verbose)
     globalInput.printAIParameters(cout,"Delta params",20,delta_x,true);

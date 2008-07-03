@@ -72,6 +72,7 @@ protected:
   stringstream stepinfo;
 
   static vector<double> f;
+  static vector<double> variance;
   static vector< Array1D<double> > x;
   
 private:
