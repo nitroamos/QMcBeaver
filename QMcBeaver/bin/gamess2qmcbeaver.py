@@ -131,33 +131,33 @@ OUT = open(Outfile,'w')
 run_type = "ENERGY"
 scf_type = "RHF"
 ci_type  = "NONE"
+pp_type  = "NONE"
 spin_mult = 1
 
 detcutoff = 0
 if len(sys.argv) == 3:
     detcutoff = string.atof(sys.argv[2])
+    print "Removing all determinants with coefficients less than ",detcutoff
 	
 # Get run type and scf type
 
 for i in range(len(gamess_output)):
     if string.find(gamess_output[i],'$CONTRL OPTIONS') != -1:
-	
-        line = re.split('[\s=]+',gamess_output[i+2])
-	for j in range(len(line)):
-	    if string.find(line[j],'SCFTYP') != -1:
-		scf_type = line[j+1]
-	    if string.find(line[j],'RUNTYP') != -1:
-		run_type = line[j+1]
-	
-	line = re.split('[\s=]+',gamess_output[i+3])
-	for j in range(len(line)):
-            if string.find(line[j],'CITYP') != -1:
-                ci_type = line[j+1]
-
-	line = re.split('[\s=]+',gamess_output[i+4])
-	for j in range(len(line)):
-            if string.find(line[j],'MULT') != -1:
-                spin_mult = string.atoi(line[j+1])
+	k = i
+	while string.find(gamess_output[k],'$SYSTEM OPTIONS') == -1:
+	    line = re.split('[\s=]+',gamess_output[k])
+	    for j in range(len(line)):
+		if string.find(line[j],'SCFTYP') != -1:
+		    scf_type = line[j+1]
+		if string.find(line[j],'RUNTYP') != -1:
+		    run_type = line[j+1]
+		if string.find(line[j],'CITYP') != -1:
+		    ci_type = line[j+1]
+		if string.find(line[j],'MULT') != -1:
+		    spin_mult = string.atoi(line[j+1])
+		if string.find(line[j],'PP') != -1:
+		    pp_type = line[j+1]
+	    k += 1
 
 if ci_type == "GENCI":
     #These are effectively the same kind of calculation
@@ -295,9 +295,9 @@ for line in gamess_output:
     if string.find(line,'TOTAL NUMBER OF ATOMS') !=-1 :
         atoms = string.atoi(string.split(line)[5])
     if string.find(line,'NUMBER OF OCCUPIED ORBITALS (ALPHA)') != -1 :
-        nalpha = string.atoi(string.split(line)[6])
+	nalpha = string.atoi(line.split('=')[1])
     if string.find(line,'NUMBER OF OCCUPIED ORBITALS (BETA )') != -1 :
-        nbeta = string.atoi(string.split(line)[7])
+	nbeta = string.atoi(line.split('=')[1])
 
 #################### EXTRACT BASIS SET: END #######################
 
@@ -537,6 +537,7 @@ if ci_type != "ALDET" and scf_type != "GVB":
     for j in range(nbeta,norbitals):
         BetaOccupation[0][j] = 0
 
+    ncore = norbitals
     ndeterminants = 1
     CI_coeffs = [1]
 
@@ -593,6 +594,7 @@ elif scf_type == "GVB":
 	index = 2
 	idet = 0
 	for p in range(npair):
+	#for p in range(npair-1,-1,-1):
 	    old = len(CI_coeffs)
 	    coef1 = string.atof(cicoef[index])
 	    index += 1
@@ -608,17 +610,28 @@ elif scf_type == "GVB":
 	    for i in range(len(pairAlpha)):
 		pairAlpha[i] = range(norbitals)
 	    
-	    for orb in range(len(pairCI)):
-		for i in range(len(AlphaOccupation[orb%old])):
-		    pairAlpha[orb][i] = AlphaOccupation[orb%old][i]
-	    
-		if orb < old:
-		    pairCI[orb] = CI_coeffs[orb%old] * coef1
-		    pairAlpha[orb][orb1] = 1
+	    for ci in range(len(pairCI)):
+		branch1 = ci%old
+		branch2 = old-1-ci%old
+		#branch2 = branch1
+		for i in range(len(AlphaOccupation[ci%old])):
+		    if ci < old:
+			pairAlpha[ci][i] = AlphaOccupation[branch1][i]
+		    else:
+			pairAlpha[ci][i] = AlphaOccupation[branch2][i]
+			
+		if ci < old:
+		    pairCI[ci] = CI_coeffs[branch1] * coef1
+		    pairAlpha[ci][orb1] = 1
 		else:
-		    pairCI[orb] = CI_coeffs[orb%old] * coef2
-		    pairAlpha[orb][orb2] = 1
+		    pairCI[ci] = CI_coeffs[branch2] * coef2
+		    pairAlpha[ci][orb2] = 1
 
+	    #for ci in range(len(pairAlpha)):
+	#	for o in range(2*(p+1)):
+	#	    if o % 2 == 0:
+	#		print pairAlpha[ci][o+ncore],
+	#	print
 	    print "Geminal ",p," with coeffs ",coef1, ", ",coef2, " uses orbitals ", orb1, " and ", orb2
 	    #print "Determinant CI coefficients = ",pairCI	
 	    
@@ -626,6 +639,7 @@ elif scf_type == "GVB":
 	    AlphaOccupation = pairAlpha
 	BetaOccupation = copy.deepcopy(AlphaOccupation)
 	ndeterminants = pow(2,(end_ci - start_ci))
+	
 	#end npair > 0
 
     if nseto > 0 and nseto != 2 and npair > 0:
@@ -735,7 +749,7 @@ elif scf_type == "NONE" and ci_type == "ALDET":
 
     for i in range(ndeterminants):
         ci_line = string.split(gamess_output[i+start_ci])
-        CI_coeffs[i] = ci_line[4]
+        CI_coeffs[i] = string.atof(ci_line[4])
         alpha_occ = ci_line[0]
         beta_occ = ci_line[2]
         for j in range(len(alpha_occ)):
@@ -772,6 +786,13 @@ elif (ci_type != "ALDET"):
     elif (nbeta > nalpha):
         norbitals = nbeta
 
+for i in range(ndeterminants-1,-1,-1):
+    if abs(CI_coeffs[i]) < detcutoff:
+	#print "Removing",i,"with",CI_coeffs[i]
+	del CI_coeffs[i]
+	del AlphaOccupation[i]
+	del BetaOccupation[i]
+ndeterminants = len(CI_coeffs)
 ##################  PRINT FLAGS: BEGIN    ########################
 #
 # We'll use ckmf template files (extension ckmft) to help make
@@ -795,6 +816,7 @@ for i in range(len(templates)):
     print " %3i : " % i, templates[i]
 
 try:
+    #choice = 1
     choice = string.atoi(raw_input("Your choice [0]:"))
 except:
     choice = 0
@@ -811,11 +833,15 @@ for i in range(len(gamess_output)):
     line = -1;
     if string.find(gamess_output[i],'RUN TITLE') != -1:
 	    line = i+2
-    if string.find(gamess_output[i],'REFERENCE ENERGY:') != -1:
-	    line = i
     if string.find(gamess_output[i],' STATE') != -1 and string.find(gamess_output[i],'ENERGY') != -1:
 	    line = i
     if string.find(gamess_output[i],'CCSD(T) ENERGY:') != -1:
+	    line = i
+    if string.find(gamess_output[i],'CCSD[T] ENERGY:') != -1:
+	    line = i
+    if string.find(gamess_output[i],'CCSD    ENERGY:') != -1:
+	    line = i
+    if string.find(gamess_output[i],'MBPT(2) ENERGY:') != -1:
 	    line = i
     if string.find(gamess_output[i],'FINAL') != -1:
 	    line = i
@@ -848,9 +874,15 @@ OUT.write('&\n')
 ##################  PRINT GEOMETRY: BEGIN #######################
 
 OUT.write('&geometry\n')
+p = re.compile("[0-9]+")
 for line in geometry:
+    atom = line[0]
+    # if the atom title has a number in it, then we need to remove it
+    # so that QMC believes that all the atoms are the same,
+    # since Jastrows are specific to the label.
+    atom = p.sub("",atom)
     OUT.write('%s\t%i\t%f\t%f\t%f\n'\
-                       %(line[0],string.atof(line[1]),line[2],line[3],line[4]))
+	      %(atom,string.atof(line[1]),line[2],line[3],line[4]))
 OUT.write('&\n')
 
 ##################  PRINT GEOMETRY: END  ########################
@@ -1042,7 +1074,8 @@ for i in range(ndeterminants):
     for j in range(norbitals):
 	nume += AlphaOccupation[i][j]
         OUT.write('%i\t'%AlphaOccupation[i][j])
-	print '%i\t'%AlphaOccupation[i][j],
+	if j >= ncore:
+	    print '%i'%AlphaOccupation[i][j],
     OUT.write('\n')
     print " (=",nume,")"
 OUT.write('\n')
@@ -1054,7 +1087,8 @@ for i in range(ndeterminants):
     for j in range(norbitals):
 	nume += BetaOccupation[i][j]
         OUT.write('%i\t'%BetaOccupation[i][j])
-	print '%i\t'%BetaOccupation[i][j],	
+	if j >= ncore:
+	    print '%i'%BetaOccupation[i][j],	
     OUT.write('\n')
     print " (=",nume,")"
 OUT.write('\n')
@@ -1163,5 +1197,28 @@ OUT.write('&Jastrow\n')
 
 ################## PRINT JASTROW: END ################################
 
+################## PRINT PSUEDOPOTENTIAL: BEGIN  #####################
+if pp_type != "NONE":
+    Inpfile = filebase + "inp"	
+    INP = open(Inpfile,'r')
+    gamess_input = INP.readlines()
+    INP.close()
+
+    #Copy the PP right from the input file. QMcBeaver is programmed to use
+    #exactly the same format, except it needs to be a GEN PP
+    OUT.write('&psuedopotential\n')
+    for i in range(len(gamess_input)):
+	if string.find(gamess_input[i].upper(),'$ECP') != -1:
+	    k = i+1
+	    while string.find(gamess_input[k].upper(),'$END') == -1:
+		line = string.split(gamess_input[k])
+		if len(line) == 4 and line[1].upper() != "GEN" and line[1].upper() != "NONE":
+		    print "Psuedoptential for",line[0], "is",line[1],
+		    print ": is unknown. It needs to be GEN or NONE.\n";
+		OUT.write(gamess_input[k])
+		k += 1
+    OUT.write('&psuedopotential\n')
+################## PRINT PSUEDOPOTENTIAL: END  #######################
+    
 print "\nFinished writing file ", Outfile
 
