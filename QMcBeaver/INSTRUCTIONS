@@ -7,7 +7,7 @@
        Daniel R. Fisher
      Amos Gerald Anderson
 
- Copyright 2006.  All rights reserved.
+ Copyright 2008.  All rights reserved.
 
 drkent@users.sourceforge.net
 mtfeldmann@users.sourceforge.net
@@ -27,13 +27,23 @@ settings for quite a few systems. See docs/beaver.pdf for a more complete
 description on how to run QMcBeaver.
 
 ***************************************************** 0) Download the code.
-You've probably already done this somehow, but it's worth mentioning
-that you might want to use CVS to stay up-to-date. Sourceforge has
-instructions for this.
+We recommend getting our code directly from CVS, and not using the tar files,
+which are not frequently updated.
+
+Sourceforge recommends these commands for anonymous downloads:
+cvs -d:pserver:anonymous@qmcbeaver.cvs.sourceforge.net:/cvsroot/qmcbeaver login 
+cvs -z3 -d:pserver:anonymous@qmcbeaver.cvs.sourceforge.net:/cvsroot/qmcbeaver co -P QMcBeaver
+The recommendation, and further suggestions, are here:
+http://sourceforge.net/cvs/?group_id=69347
+
+You can browse our code online here:
+http://qmcbeaver.cvs.sourceforge.net/qmcbeaver/QMcBeaver/
 
 ***************************************************** 1) Read the file 'lib/README'
 You'll almost certainly want to use the BLAS and LAPACK libraries
 to get fast matrix multiplication and matrix inversion routines.
+
+LAPACK is necessary for some of the optimization routines.
 
 ***************************************************** 2) Run './configure.py'
 If you run ./configure.py with no parameters, then it will
@@ -48,8 +58,21 @@ for a serial executable, or
 
 for a parallel executable.
 
+For each set of ./configure.py options, the compiled objective files
+will be saved in separate folders in the src directory. This is so that
+you can easily swap between options without having to recompile everything.
+
+If you add --debug to the options, then some more code will be added
+via the compile macro "QMC_DEBUG". This means that you might get warning
+messages for things in the code that can probably be ignored. It also means
+that there is a lot more index checking in Array2D.h for example, making it
+easier to find bugs.
+
 ***************************************************** 3) Type 'gmake'
-When it's done, your executable should show up in the bin directory.
+When it's done, your executable should show up in the bin directory, and
+will be named something like:
+QMcBeaver.MPICC_blas_parallel_lapack.20080703.x
+depending on your ./configure.py options.
 
 If it failed in the linking stage, the one configuration that you
 might have to do by hand for your system is to tell QMcBeaver
@@ -57,14 +80,15 @@ how fortran bindings work, since we link directly to the fortran versions
 of BLAS and LAPACK. The question is whether the fortran functions
 have an underscore after their names or not. The default behavior
 works with gcc, but you might need to take a look at FORTRAN_FUNC in
-
 include/cppblas.h
-
 if your compile is complaining.
+
+If your machine is multicore or something, try compiling with multiple
+processors. For example "gmake -j4".
 
 ***************************************************** 4) Make an input file
 This step requires a fair amount of Quantum Chemistry intuition
-if you want to use anything beyond Hartree-Fock orbitals.
+if you want to use anything beyond Hartree-Fock or DFT orbitals.
 We have some old sample files in our test and examples directories.
 
 Essentially, you'll need to start by modeling your molecule in Jaguar
@@ -72,19 +96,39 @@ or GAMESS. Use the output from one of those calculations as input to our
 bin/gamess2qmcbeaver.py
 or
 bin/jaguar2qmcbeaver.py
-scripts, and it will produce a ckmf file for you.
+scripts, and it will produce a ckmf file for you. Note: for Jaguar, you
+need to add the option ip164=2. 
 
-You'll probably want to manually add Jastrows to the ckmf file
-based on whatever you can find in our test or examples directories.
-You will want to optimize those Jastrows by setting optimize_Psi = 1
+These scripts should automatically find (along some search paths I've picked) the file
+examples/optimize.ckmft
+which is useful for adding a good set of flags for optimization to your new
+ckmf file. You can make your own ckmf template (.ckmft) files to help automate
+the ckmf creation process.
+
+***************************************************** 4) Paste Jastrows into your input file
+You'll need to manually add Jastrows to the ckmf file
+based on whatever you can find in our test or examples directories, or your
+own calculations. We highly recommend Jastrows similar to
+examples/ne0.ckmf (just 2 particle)
+examples/ne4.ckmf (3 particle Jastrows)
+But for whatever system you study, you'll want to copy and paste the best
+Jastrows you have into your ckmf file. Almost any change in basis set or
+active orbitals warrants more Jastrow optimization, which is done by setting
+optimize_Psi = 1
 before attempting any science.
 
 ***************************************************** 5) Run the program.
 You'll almost certainly need to submit calculations to
-a queue. In our bin directory, we have included scripts
-to submit jobs using bsub (LSF), qsub (PBS), and psub (LCRM),
-but you'll almost certainly need to modify these scripts for
-your own system. Basically, the scripts produce a .run
+a queue. In our bin directory, we provide a queue submission
+script:
+bin/qmcsub.py
+which is tuned to some of the systems I have used, including
+bsub (LSF), qsub (PBS), and psub (LCRM). You'll need
+to modify it for your own cluster, but hopefully, you'll only need
+to change stuff within the first 50 lines or so. Also in the bin
+directory are older run scripts that have been useful for us in the past.
+
+Basically, the script produce a .run
 file, and will start the run with commands like these:
 
 for serial:
@@ -94,11 +138,26 @@ for parallel:
 mpirun -np <num procs> ./bin/QMcBeaver.<params>.<version>.x input.ckmf >& input.out & 
 
 ***************************************************** 6) Make the help files
+We don't update the help files very often, unfortunately. They're provided
+as is, but hopefully you won't have too many problems if you just use
+flags from the optimize.ckmft file.
 
-To generate API documentations:
+If you do have questions about a parameter, the first thing I'd
+recommend trying is doing a grep for the parameter in the src files,
+since we name the variables the same as the flags in the input file.
+Scattered in the code (and hopefully extracted in the doxygen API) are
+literature references and commenting that is hopefully clear.
+
+Another interesting place to look is the CHANGELOG. This is where we
+register changes we've made to the code. You can track our progress
+over the years here.
+
+Also, feel free to email me (nitroamos@yahoo.com) since I'm the one who
+spends the most time programming these days.
+
+The program doxygen can extract comments from our header files to
+automatically generate API documentation. To generate these files:
 
 1) download and install doxygen from the web
-
 2) Type 'gmake help'
-
 3) look in ./docs/ for the documentation
