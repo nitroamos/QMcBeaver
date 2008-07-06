@@ -26,6 +26,8 @@ been tested with LAM/MPI, MPICH, and OpenMPI. Our configure.py script has
 settings for quite a few systems. See docs/beaver.pdf for a more complete
 description on how to run QMcBeaver.
 
+Updated: Jul 5, 2008
+
 ***************************************************** 0) Download the code.
 We recommend getting our code directly from CVS, and not using the tar files,
 which are not frequently updated.
@@ -71,7 +73,7 @@ easier to find bugs.
 ***************************************************** 3) Type 'gmake'
 When it's done, your executable should show up in the bin directory, and
 will be named something like:
-QMcBeaver.MPICC_blas_parallel_lapack.20080703.x
+./bin/QMcBeaver.MPICC_blas_parallel_lapack.20080703.x
 depending on your ./configure.py options.
 
 If it failed in the linking stage, the one configuration that you
@@ -80,7 +82,7 @@ how fortran bindings work, since we link directly to the fortran versions
 of BLAS and LAPACK. The question is whether the fortran functions
 have an underscore after their names or not. The default behavior
 works with gcc, but you might need to take a look at FORTRAN_FUNC in
-include/cppblas.h
+./include/cppblas.h
 if your compile is complaining.
 
 If your machine is multicore or something, try compiling with multiple
@@ -93,11 +95,13 @@ We have some old sample files in our test and examples directories.
 
 Essentially, you'll need to start by modeling your molecule in Jaguar
 or GAMESS. Use the output from one of those calculations as input to our
-bin/gamess2qmcbeaver.py
+./bin/gamess2qmcbeaver.py
 or
-bin/jaguar2qmcbeaver.py
-scripts, and it will produce a ckmf file for you. Note: for Jaguar, you
-need to add the option ip164=2. 
+./bin/jaguar2qmcbeaver.py
+scripts, and it will produce a ckmf file for you.
+
+Note: for Jaguar, you need to add the option ip164=2
+for Jaguar to write the basis sets. 
 
 These scripts should automatically find (along some search paths I've picked) the file
 examples/optimize.ckmft
@@ -105,7 +109,7 @@ which is useful for adding a good set of flags for optimization to your new
 ckmf file. You can make your own ckmf template (.ckmft) files to help automate
 the ckmf creation process.
 
-***************************************************** 4) Paste Jastrows into your input file
+***************************************************** 5) Paste Jastrows into your input file
 You'll need to manually add Jastrows to the ckmf file
 based on whatever you can find in our test or examples directories, or your
 own calculations. We highly recommend Jastrows similar to
@@ -117,7 +121,7 @@ active orbitals warrants more Jastrow optimization, which is done by setting
 optimize_Psi = 1
 before attempting any science.
 
-***************************************************** 5) Run the program.
+***************************************************** 6) Run the program.
 You'll almost certainly need to submit calculations to
 a queue. In our bin directory, we provide a queue submission
 script:
@@ -129,7 +133,7 @@ to change stuff within the first 50 lines or so. Also in the bin
 directory are older run scripts that have been useful for us in the past.
 
 Basically, the script produce a .run
-file, and will start the run with commands like these:
+file, which is a shell script wrapper for commands like these:
 
 for serial:
 ./bin/QMcBeaver.<params>.<version>.x input.ckmf >& input.out &
@@ -137,10 +141,12 @@ for serial:
 for parallel:
 mpirun -np <num procs> ./bin/QMcBeaver.<params>.<version>.x input.ckmf >& input.out & 
 
-***************************************************** 6) Make the help files
-We don't update the help files very often, unfortunately. They're provided
-as is, but hopefully you won't have too many problems if you just use
-flags from the optimize.ckmft file.
+***************************************************** 7) Make the help files
+We keep a copy of all our help files, including the doxygen
+API, online at:
+http://qmcbeaver.sourceforge.net/
+but they might not be up to date. We haven't updated the manual in a couple
+years.
 
 If you do have questions about a parameter, the first thing I'd
 recommend trying is doing a grep for the parameter in the src files,
