@@ -603,6 +603,9 @@ void QMCElectronNucleusCusp::replaceCusps(Array2D<double> & X,
 
   for (int i=0; i<natoms; i++)
     {
+      if(globalInput.Molecule.usesPsuedo(i))
+	continue;
+
       xnuc = Molecule->Atom_Positions(i,0);
       ynuc = Molecule->Atom_Positions(i,1);
       znuc = Molecule->Atom_Positions(i,2);
@@ -662,6 +665,9 @@ void QMCElectronNucleusCusp::replaceCusps(Array2D<double> & X,
 
   for (int i=0; i<natoms; i++)
     {
+      if(globalInput.Molecule.usesPsuedo(i))
+	continue;
+
       xnuc = Molecule->Atom_Positions(i,0);
       ynuc = Molecule->Atom_Positions(i,1);
       znuc = Molecule->Atom_Positions(i,2);
