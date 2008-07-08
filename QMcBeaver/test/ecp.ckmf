@@ -1,4 +1,4 @@
-# This will test the psuedopotential code
+# This will test the pseudopotential code
 
 &flags
 # Parameters for QMC
@@ -230,9 +230,9 @@ energy
  -13.3895887181
 trial_function_type
  restricted
-psuedo_gridLevel
+pseudo_gridLevel
  1
-psuedo_cutoff
+pseudo_cutoff
  0.0001
 norbitals
  8
@@ -267,7 +267,7 @@ H    1      0                    -1.743778             -2.320144
 H    1      0                     1.743778             -2.320144            
 H    1      0                    -1.743778              2.320144            
 &
-&psuedopotential
+&pseudopotential
 C--ECP GEN 2 1
     3
                    4    1          8.35973821

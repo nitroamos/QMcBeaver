@@ -79,7 +79,7 @@ class QMCMolecule
   Array1D <int>  Z;
 
   /**
-     If we used psuedopotentials, then we removed Z-Zeff electrons.
+     If we used pseudopotentials, then we removed Z-Zeff electrons.
   */
   Array1D <int>  Zeff;
 
@@ -87,13 +87,13 @@ class QMCMolecule
      Each element in the array corresponds to a nucleus index. If the
      element is true, then that nucleus uses an ecp.
   */
-  Array1D<bool> usesPsuedo;
+  Array1D<bool> usesPseudo;
 
   /**
      Save some of the text description of the ecp so that we
      can write it in the restart file.
   */
-  Array2D< string > psuedoTitle;
+  Array2D< string > pseudoTitle;
 
   /**
      The local part of the ecp.
@@ -181,19 +181,19 @@ class QMCMolecule
   void readGeometry(string runfile);
 
   /**
-     Read the psuedopotentials, if any, in an input file. The format
+     Read the pseudopotentials, if any, in an input file. The format
      should be the same as GAMESS.
 
-     @return 1 if there were some psuedopotentials read in
+     @return 1 if there were some pseudopotentials read in
   */
-  int readPsuedoPotential(string runfile);
+  int readPseudoPotential(string runfile);
 
  private:
   int Natoms;
 
   /**
      This will be initialized to the same value as:
-     globalInput.flags.psuedo_gridLevel
+     globalInput.flags.pseudo_gridLevel
      And indicates how many grid points to use.
   */
   int gridLevel;

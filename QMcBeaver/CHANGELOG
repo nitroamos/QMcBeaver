@@ -1,3 +1,8 @@
+Tue, Jul 8, 2008 Amos Anderson
+1.  I turned off cusp replacement for atoms with pseudopotentials. They
+    don't have cusps.
+2.  I fixed the spelling for pseudo.
+
 Mon, Jul 7, 2008 Daniel R Fisher
 1.  Updated QMCDansWalkerInitialization to work with the new
     pseudopotential code.

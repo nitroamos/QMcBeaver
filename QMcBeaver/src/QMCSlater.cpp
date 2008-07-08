@@ -401,7 +401,7 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
       */
 
       if(globalInput.flags.one_e_per_iter ||
-	 globalInput.flags.use_psuedopotential == 1)
+	 globalInput.flags.use_pseudopotential == 1)
 	{
 	  if(isAlpha)
 	    {
@@ -495,7 +495,7 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
       for(int ci=0; ci<WF->getNumberDeterminants(); ci++)
 	{
 	  if(globalInput.flags.one_e_per_iter ||
-	     globalInput.flags.use_psuedopotential == 1)
+	     globalInput.flags.use_pseudopotential == 1)
 	    {
 	      if(isAlpha) inv =   &  walkerData(off)->Dc_invA(ci);
 	      else        inv =   &  walkerData(off)->Dc_invB(ci);

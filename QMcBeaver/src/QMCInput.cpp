@@ -27,9 +27,9 @@ void QMCInput::read(string inputfile)
 {
  flags.read_flags(inputfile);
 
- Molecule.initialize(flags.Natoms, flags.psuedo_gridLevel);
+ Molecule.initialize(flags.Natoms, flags.pseudo_gridLevel);
  Molecule.readGeometry(inputfile);
- flags.use_psuedopotential = Molecule.readPsuedoPotential(inputfile);
+ flags.use_pseudopotential = Molecule.readPseudoPotential(inputfile);
 
  BF.initialize(&flags, &Molecule);
  BF.read(inputfile);

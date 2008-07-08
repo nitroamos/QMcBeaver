@@ -1197,7 +1197,7 @@ OUT.write('&Jastrow\n')
 
 ################## PRINT JASTROW: END ################################
 
-################## PRINT PSUEDOPOTENTIAL: BEGIN  #####################
+################## PRINT PSEUDOPOTENTIAL: BEGIN  #####################
 if pp_type != "NONE":
     Inpfile = filebase + "inp"	
     INP = open(Inpfile,'r')
@@ -1206,19 +1206,19 @@ if pp_type != "NONE":
 
     #Copy the PP right from the input file. QMcBeaver is programmed to use
     #exactly the same format, except it needs to be a GEN PP
-    OUT.write('&psuedopotential\n')
+    OUT.write('&pseudopotential\n')
     for i in range(len(gamess_input)):
 	if string.find(gamess_input[i].upper(),'$ECP') != -1:
 	    k = i+1
 	    while string.find(gamess_input[k].upper(),'$END') == -1:
 		line = string.split(gamess_input[k])
 		if len(line) == 4 and line[1].upper() != "GEN" and line[1].upper() != "NONE":
-		    print "Psuedoptential for",line[0], "is",line[1],
+		    print "Pseudoptential for",line[0], "is",line[1],
 		    print ": is unknown. It needs to be GEN or NONE.\n";
 		OUT.write(gamess_input[k])
 		k += 1
-    OUT.write('&psuedopotential\n')
-################## PRINT PSUEDOPOTENTIAL: END  #######################
+    OUT.write('&\n')
+################## PRINT PSEUDOPOTENTIAL: END  #######################
     
 print "\nFinished writing file ", Outfile
 

@@ -229,7 +229,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 
   for (int i=0; i<natoms; i++)
     {
-      if (Input->Molecule.usesPsuedo(i) == true)
+      if (Input->Molecule.usesPseudo(i) == true)
 	{
 	  int pseudo = Input->Molecule.Z(i) - Input->Molecule.Zeff(i);
 	  if (pseudo == 0)
@@ -407,7 +407,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 
   for (int i=0; i<natoms; i++)
     {
-      if (Input->Molecule.usesPsuedo(i) == true)
+      if (Input->Molecule.usesPseudo(i) == true)
 	{
 	  int pseudo = Input->Molecule.Z(i) - Input->Molecule.Zeff(i);
 

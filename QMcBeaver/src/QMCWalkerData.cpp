@@ -61,7 +61,7 @@ void QMCWalkerData::initialize(int numDimensions, int numNucForceDim1, int numNu
   //Initialization probably requires all to be updated immediately
   whichE = -1;
   if(globalInput.flags.one_e_per_iter ||
-     globalInput.flags.use_psuedopotential)
+     globalInput.flags.use_pseudopotential)
     {
       Dc_invA.allocate(numCI);
       Dc_invB.allocate(numCI);

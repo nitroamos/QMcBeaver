@@ -84,7 +84,7 @@ public:
   double get_p3_xxa_ln(int ai);
 
   /**
-     When calculating the overlap integral for psuedopotentials, we need to
+     When calculating the overlap integral for pseudopotentials, we need to
      evaluate the ratio of the Jastrow at each grid point to the Jastrow at
      its original position.
      

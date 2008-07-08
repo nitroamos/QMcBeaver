@@ -69,14 +69,14 @@ void QMCPotential_Energy::initialize(QMCInput * Ip, QMCHartreeFock * HF)
   int numN = MOL->Atom_Positions.dim1();
   angularGrids.allocate(numN);
   for(int nuc=0; nuc<numN; nuc++)
-    if(MOL->usesPsuedo(nuc)) 
+    if(MOL->usesPseudo(nuc)) 
       {
 	Array2D<double> grTemp = MOL->getGrid(nuc,1.0,false);
 	globalInput.BF.angularGrid(grTemp,nuc,angularGrids(nuc));
       }
 }
 
-double QMCPotential_Energy::evaluatePsuedoPotential(Array2D<double> & R, int elec, int nuc)
+double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int elec, int nuc)
 {
   bool isAlpha;
   int elecIndex;
@@ -87,7 +87,7 @@ double QMCPotential_Energy::evaluatePsuedoPotential(Array2D<double> & R, int ele
   Array1D<double> integral(lmax);
 
   /*
-    Most psuedopotentials have local and nonlocal (i.e. requiring a separate integration)
+    Most pseudopotentials have local and nonlocal (i.e. requiring a separate integration)
     contributions.
   */
   double Vlocal = MOL->evaluatePotential(MOL->Vlocal(nuc),r);
@@ -97,7 +97,7 @@ double QMCPotential_Energy::evaluatePsuedoPotential(Array2D<double> & R, int ele
   for(int l=0; l<lmax; l++)
     {
       vnl(l) = MOL->evaluatePotential((MOL->Vnonlocal(nuc))(l),r);
-      if(fabs(vnl(l)) > globalInput.flags.psuedo_cutoff) small = false;
+      if(fabs(vnl(l)) > globalInput.flags.pseudo_cutoff) small = false;
     }
 
   //If all the nonlocal components are small, then we can cut out early.
@@ -129,7 +129,7 @@ double QMCPotential_Energy::evaluatePsuedoPotential(Array2D<double> & R, int ele
 
   /*
     Take a look at the paper from 1991:
-    Nonlocal psuedopotentials and diffusion Monte Carlo
+    Nonlocal pseudopotentials and diffusion Monte Carlo
     Mitas, Shirley, Ceperley 
     http://link.aip.org/link/?JCPSA6/95/3467/1
 
@@ -242,10 +242,10 @@ void QMCPotential_Energy::calc_P_en(Array2D<double> &R)
 
   for(int nuc=0; nuc<MOL->Atom_Positions.dim1(); nuc++)
     {
-      if(MOL->usesPsuedo(nuc))
+      if(MOL->usesPseudo(nuc))
 	{
 	  for(int el=0; el<R.dim1(); el++)
-	    P_en += evaluatePsuedoPotential(R,el,nuc);
+	    P_en += evaluatePseudoPotential(R,el,nuc);
 	} else {
 	  Zeff = MOL->Zeff(nuc);	  
 	  for(int el=0; el<R.dim1(); el++)

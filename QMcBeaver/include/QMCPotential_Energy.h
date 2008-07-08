@@ -46,13 +46,13 @@ public:
   void initialize(QMCInput *input, QMCHartreeFock *HF);
 
   /**
-     If psuedopotentials are used, call this function to evaluate it.
+     If pseudopotentials are used, call this function to evaluate it.
 
      @param R the list of electron positions
      @param elec the electron for which the ecp is evaluated
      @param nuc the nucleus with the ecp
   */
-  double evaluatePsuedoPotential(Array2D<double> & R, int elec, int nuc);
+  double evaluatePseudoPotential(Array2D<double> & R, int elec, int nuc);
 
   /**
     Evaluates the potential energy for the given electronic configuration.

@@ -50,7 +50,7 @@ QMCMolecule QMCMolecule::operator=( const QMCMolecule & rhs )
 
   gridLevel      = rhs.gridLevel;
   Zeff           = rhs.Zeff;
-  usesPsuedo     = rhs.usesPsuedo;
+  usesPseudo     = rhs.usesPseudo;
   Vlocal         = rhs.Vlocal;
   Vnonlocal      = rhs.Vnonlocal;
   grid           = rhs.grid;
@@ -83,7 +83,7 @@ istream& operator >>(istream &strm, QMCMolecule &rhs)
   rhs.Atom_Labels.allocate(rhs.Natoms);
   rhs.Atom_Positions.allocate(rhs.Natoms,3);
   rhs.Z.allocate(rhs.Natoms);
-  rhs.usesPsuedo.allocate(rhs.Natoms);
+  rhs.usesPseudo.allocate(rhs.Natoms);
 
   for(int i=0; i<rhs.Natoms; i++)
     {
@@ -101,7 +101,7 @@ istream& operator >>(istream &strm, QMCMolecule &rhs)
       strm >> rhs.Atom_Positions(i,0);
       strm >> rhs.Atom_Positions(i,1);
       strm >> rhs.Atom_Positions(i,2);
-      rhs.usesPsuedo(i) = false;
+      rhs.usesPseudo(i) = false;
     }
 
   rhs.Zeff = rhs.Z;
@@ -158,7 +158,7 @@ void QMCMolecule::readGeometry(string runfile)
   }
 }
 
-int QMCMolecule::readPsuedoPotential(string runfile)
+int QMCMolecule::readPseudoPotential(string runfile)
 {
   if(Natoms == 0) return 0;
 
@@ -172,12 +172,12 @@ int QMCMolecule::readPsuedoPotential(string runfile)
 
   string temp_string;
   input_file >> temp_string;
-  while((temp_string != "&psuedopotential") && (input_file.eof() != 1))
+  while((temp_string != "&pseudopotential") && (input_file.eof() != 1))
     {
       input_file >> temp_string;
     }
 
-  //No psuedopotential to read?
+  //No pseudopotential to read?
   if(input_file.eof() == 1) return 0;
 
   int gridSizes[32] = {6,14,26,38,50,74,86,110,
@@ -192,7 +192,7 @@ int QMCMolecule::readPsuedoPotential(string runfile)
   grid.allocate(Natoms);
   gridWeights.allocate(Natoms);
   gridLegendre.allocate(Natoms);  
-  psuedoTitle.allocate(Natoms,2);
+  pseudoTitle.allocate(Natoms,2);
   Vlocal.allocate(Natoms);
   Vnonlocal.allocate(Natoms);
 
@@ -212,8 +212,8 @@ int QMCMolecule::readPsuedoPotential(string runfile)
       ppTypes[i] = item;
       lineSS >> ws;
 
-      psuedoTitle(i,0) = item;
-      psuedoTitle(i,1) = "";
+      pseudoTitle(i,0) = item;
+      pseudoTitle(i,1) = "";
 
       if(lineSS.eof()){
 	// No type (e.g. NONE or GEN) was listed, this means it's all exactly
@@ -222,7 +222,7 @@ int QMCMolecule::readPsuedoPotential(string runfile)
 	for(int j=0; j<i; j++){
 	  if(ppTypes(j) == item){
 	    matched = j;
-	    usesPsuedo(i) = usesPsuedo(j);
+	    usesPseudo(i) = usesPseudo(j);
 	    Zeff(i) = Zeff(j);
 	    Vlocal(i) = Vlocal(j);
 	    Vnonlocal(i) = Vnonlocal(j);
@@ -235,18 +235,18 @@ int QMCMolecule::readPsuedoPotential(string runfile)
 	if(matched >= 0){
 	  continue;
 	} else {
-	  clog << "Error: Psuedopotential " << i << " didn't list a type, and didn't match a type.\n";
+	  clog << "Error: Pseudopotential " << i << " didn't list a type, and didn't match a type.\n";
 	  exit(1);
 	}
       }
 
       lineSS >> item;
-      psuedoTitle(i,1) = item;
+      pseudoTitle(i,1) = item;
       StringManipulation::toAllUpper(item);
       if(item != "GEN" && item != "NONE"){
 	//In GAMESS, the other available options correspond to things like
 	//SBKJC or HW
-	clog << "Error: psuedopotential for " << psuedoTitle(i,0)
+	clog << "Error: pseudopotential for " << pseudoTitle(i,0)
 	     << " has unknown type " << item << ".\n";
 	exit(1);
       }
@@ -261,7 +261,7 @@ int QMCMolecule::readPsuedoPotential(string runfile)
 	  continue;
 	} 
 
-      usesPsuedo(i) = true;
+      usesPseudo(i) = true;
 
       lineSS >> item;
       elec_removed = atoi(item.c_str());
@@ -284,7 +284,7 @@ int QMCMolecule::readPsuedoPotential(string runfile)
 	  (Vlocal(i))(vloc,2) = atof(item.c_str());//zeta
 	}
 
-      //This psuedopotential defines numl projection operators
+      //This pseudopotential defines numl projection operators
       Vnonlocal(i).allocate(numl);
       for(int l=0; l<numl; l++)
 	{
@@ -335,11 +335,11 @@ int QMCMolecule::readPsuedoPotential(string runfile)
 	}
     }
 
-  int usePsuedo = 0;
+  int usePseudo = 0;
   for(int i=0; i<Natoms; i++){
-    if(usesPsuedo(i)){
-      usePsuedo = 1;
-      cout << "On atom " << i << ": replacing " << (Z(i)-Zeff(i)) << " electrons with the " << psuedoTitle(i,0) << " ecp"
+    if(usesPseudo(i)){
+      usePseudo = 1;
+      cout << "On atom " << i << ": replacing " << (Z(i)-Zeff(i)) << " electrons with the " << pseudoTitle(i,0) << " ecp"
 	   << " using " << grid(i).dim1() << " grid points." << endl;
       /*
       cout << "Zeff(" << ppTypes(i) << ") = " << Zeff(i) << " gridSize = " << grid(i).dim1() << endl;
@@ -348,7 +348,7 @@ int QMCMolecule::readPsuedoPotential(string runfile)
       */
     }
   }
-  return usePsuedo;
+  return usePseudo;
 }
 
 Array2D<double> QMCMolecule::getGrid(int nuc, double r, bool translate)
@@ -414,18 +414,18 @@ ostream& operator <<(ostream& strm, QMCMolecule& rhs)
   strm << "&" << endl;
   strm << right;
 
-  bool printPsuedo = false;
+  bool printPseudo = false;
   for(int i=0; i<rhs.Natoms; i++)
-    if(rhs.usesPsuedo(i)) printPsuedo = true;
-  if(!printPsuedo) return strm;
+    if(rhs.usesPseudo(i)) printPseudo = true;
+  if(!printPseudo) return strm;
 
-  strm << "&psuedopotential" << endl;
+  strm << "&pseudopotential" << endl;
   for(int i=0; i<rhs.Natoms; i++){
-    strm << rhs.psuedoTitle(i,0);
-    strm << " " << rhs.psuedoTitle(i,1);
+    strm << rhs.pseudoTitle(i,0);
+    strm << " " << rhs.pseudoTitle(i,1);
 
-    if(!rhs.usesPsuedo(i) ||
-       rhs.psuedoTitle(i,1) == ""){
+    if(!rhs.usesPseudo(i) ||
+       rhs.pseudoTitle(i,1) == ""){
       strm << endl;
       continue;
     }

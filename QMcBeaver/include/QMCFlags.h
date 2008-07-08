@@ -446,31 +446,31 @@ class QMCFlags
   /**
     This is the index of the Lebedev-Laikov grid to use for the run
     on each nucleus.
-    6  pts for psuedo_gridLevel = 0
-    14 pts for psuedo_gridLevel = 1
-    26 pts for psuedo_gridLevel = 2
-    38 pts for psuedo_gridLevel = 3
-    50 pts for psuedo_gridLevel = 4
+    6  pts for pseudo_gridLevel = 0
+    14 pts for pseudo_gridLevel = 1
+    26 pts for pseudo_gridLevel = 2
+    38 pts for pseudo_gridLevel = 3
+    50 pts for pseudo_gridLevel = 4
     etc
-    see QMCMolecule::readPsuedoPotential for the other sizes
+    see QMCMolecule::readPseudoPotential for the other sizes
 
     There are 32 levels to choose from but 14 or 26 points should
     be sufficient.
   */
-  int psuedo_gridLevel;
+  int pseudo_gridLevel;
   
   /**
-    If the local part of the psuedopotential is sufficiently small,
+    If the local part of the pseudopotential is sufficiently small,
     then we can forgo the calculation of the nonlocal part.
   */
-  double psuedo_cutoff;
+  double pseudo_cutoff;
 
   /**
     This is an internal flag, not an input flag.
     It is turned on if we read any ECPs.
     It helps control memory allocation.
   */
-  int use_psuedopotential;
+  int use_pseudopotential;
 
   /**
      Number of time steps taken between producing output.
