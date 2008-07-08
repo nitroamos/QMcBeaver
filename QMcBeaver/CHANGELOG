@@ -1,3 +1,7 @@
+Mon, Jul 7, 2008 Daniel R Fisher
+1.  Updated QMCDansWalkerInitialization to work with the new
+    pseudopotential code.
+
 Thu, Jul 3, 2008 Amos Anderson
 1.  I commited all my psuedopotential code, and added a new test for the test directory.
     The code is not quite complete, we're still waiting for Dan to finish modifying his
