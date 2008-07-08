@@ -156,6 +156,7 @@ void QMCFlags::read_flags(string InFileName)
   use_three_body_jastrow         = 0;
   use_jastrow = 1;
   detailed_energies = -1;
+
   reproduce_NE_with_NEE_jastrow  = 0;
   reproduce_EE_with_NEE_jastrow  = 0;
 
@@ -1472,6 +1473,12 @@ bool QMCFlags::checkFlags()
 
 #endif
 
+  if(use_surfer && iseed == 0)
+    {
+      iseed = 1000;
+      clog << "Warning: you want a fixed seed for surfing... setting to " << iseed << endl;
+
+    }
   if(chip_and_mike_are_cool != "Yea_Baby!")
     {
       clog << "ERROR: Incorrect value for chip_and_mike_are_cool set" << endl;

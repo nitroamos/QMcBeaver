@@ -6,6 +6,8 @@
 
 using namespace std;
 
+static int swapE = -1;
+
 QMCSurfer::QMCSurfer()
 {
   QMF = 0;
@@ -32,7 +34,7 @@ int QMCSurfer::mainMenu(QMCFunctions * useQMF, int iteration,
   static char ok = 's';
   static int iteration_to_stop = iteration + 100 - 1;
   cout << "iteration_to_stop = " << iteration_to_stop << endl;
-  string prompt = "[e]xit [c]usp toggle [j]astrow toggle [d]etailed [r]eset [n]ext [s]can [p]ositions [a]nother walker [i]terations ";
+  string prompt = "[e]xit [c]usp toggle [j]astrow toggle [d]etailed [r]eset [n]ext [s]can s[w]apper s[v]d cutoff [p]ositions [a]nother walker [i]terations ";
   if( iteration >= iteration_to_stop)
     {
       iteration_to_stop += 1000;
@@ -40,16 +42,20 @@ int QMCSurfer::mainMenu(QMCFunctions * useQMF, int iteration,
       cout << "We're at iteration " << iteration << ", next stop will be at " << iteration_to_stop << endl;
 
       string mystr;
-      cout << prompt << "[" << ok << "]: ";
+      cout << "[h]elp [" << ok << "]: ";
       getline(cin,mystr);
       if(mystr != "") ok = (mystr.c_str())[0];
       ok = tolower(ok);
 
-      while(ok != 'n' && ok != 'N' && ok != 'a' && ok != 'A')
+      while(ok != 'n' && ok != 'a')
 	{
 	  int skip;
 	  switch(ok)
 	    {
+	    case 'h':
+	      cout << prompt << endl;
+	      break;
+
 	    case 'e':
 	      exit(0);
 	      break;
@@ -58,19 +64,23 @@ int QMCSurfer::mainMenu(QMCFunctions * useQMF, int iteration,
 	      interparticleDistanceMatrix();
 	      break;
 
-	    case 'r':
-	      R = newR;
-	      walkerData.whichE = -1;
-	      walkerData.updateDistances(R);
-	      QMF->evaluate(R,walkerData);
-	      break;
-
 	    case 'n':
 	      //just so we don't fall to the default
 	      break;
 
 	    case 's':
+	      R = newR;
+	      walkerData.whichE = -1;
+	      walkerData.updateDistances(R);
+	      //QMF->evaluate(R,walkerData);
 	      surfaceExplorer();
+	      break;
+
+	    case 'r':
+	      R = newR;
+	      walkerData.whichE = -1;
+	      walkerData.updateDistances(R);
+	      QMF->evaluate(R,walkerData);
 	      break;
 
 	    case 'a':
@@ -88,6 +98,19 @@ int QMCSurfer::mainMenu(QMCFunctions * useQMF, int iteration,
 	      iteration_to_stop += skip;
 	      cout << "Next stop will be at iteration " << iteration_to_stop << endl;
 	      break;
+
+	    case 'w':
+	      cout << "Electron to swap with [" << swapE << "]: ";
+	      getline(cin,mystr);
+	      if(mystr != "") stringstream(mystr) >> swapE;
+
+	      /*
+	    case 'v':
+	      cout << "New SVD cutoff [" << globalInput.flags.svd_cutoff << "]: ";
+	      getline(cin,mystr);
+	      if(mystr != "") stringstream(mystr) >> globalInput.flags.svd_cutoff;
+	      break;
+	      */
 
 	    case 'c':
 	      if(globalInput.flags.replace_electron_nucleus_cusps == 1)
@@ -110,7 +133,39 @@ int QMCSurfer::mainMenu(QMCFunctions * useQMF, int iteration,
 		  globalInput.flags.use_jastrow = 1;
 		}
 	      break;
-	      
+
+	      /*
+	    case '1':
+	      if(globalInput.flags.use_jEp == 1)
+		{
+		  cout << "Turning Ep jastrows off..." << endl;
+		  globalInput.flags.use_jEp = 0;
+		} else {
+		  cout << "Turning Ep jastrows on..." << endl;
+		  globalInput.flags.use_jEp = 1;
+		}
+	      break;
+	    case '2':
+	      if(globalInput.flags.use_jEa == 1)
+		{
+		  cout << "Turning Ea jastrows off..." << endl;
+		  globalInput.flags.use_jEa = 0;
+		} else {
+		  cout << "Turning Ea jastrows on..." << endl;
+		  globalInput.flags.use_jEa = 1;
+		}
+	      break;
+	    case '3':
+	      if(globalInput.flags.use_jNE == 1)
+		{
+		  cout << "Turning NE jastrows off..." << endl;
+		  globalInput.flags.use_jNE = 0;
+		} else {
+		  cout << "Turning NE jastrows on..." << endl;
+		  globalInput.flags.use_jNE = 1;
+		}
+	      break;
+	      */
 	    case 'd':
 	      if(globalInput.flags.detailed_energies > -1)
 		{
@@ -124,11 +179,12 @@ int QMCSurfer::mainMenu(QMCFunctions * useQMF, int iteration,
 
 	    default:
 	      cout << "Error: selected \'" << ok << "\'" << endl; 
+	      ok = 'e';
 	      break;
 	    }
 
 	  string mystr;
-	  cout << prompt << "[" << ok << "]: ";
+	  cout << "[h]elp [" << ok << "]: ";
 	  getline(cin,mystr);
 	  if(mystr != "") ok = (mystr.c_str())[0];
 	}
@@ -288,7 +344,7 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
     cout << " at " << x << ", " << y << ", " << z;
 
     if(nucStop < numA){
-      cout << "\nto atom " << nucStop << "\n " << globalInput.Molecule.Atom_Labels(nucStop) << " at ";
+      cout << "\nto atom " << nucStop << "\n " << globalInput.Molecule.Atom_Labels(nucStop);
       dx = globalInput.Molecule.Atom_Positions(nucStop,0);
       dy = globalInput.Molecule.Atom_Positions(nucStop,1);
       dz = globalInput.Molecule.Atom_Positions(nucStop,2);
@@ -325,7 +381,7 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
     */
     //printf("Electron 2: x = %20.10e y = %20.10e z = %20.10e\n",R(1,0),R(1,1),R(1,2));
   }
-
+  if(swapE > -1) cout << "Swapping with " << swapE << endl;
   double delta;
   if(nucStop != -2)
     {
@@ -362,7 +418,8 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
 
   printf("\n");
   double ee_start = 0;
-  bool odd = true;
+  double wf_scale = 0;
+  bool odd = false;
   for(double frac=startFrac; (frac - stopFrac) < delta; frac += delta)
     {
       double dist;
@@ -404,8 +461,6 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
 	       R(electron,2));
       //*/
       //equipotentialSurface();
-
-      int swapE = -1;
       
       if(odd && swapE > -1)
 	for(int xyz=0; xyz<3; xyz++)
@@ -417,6 +472,7 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
 
       walkerData.whichE = -1;
       walkerData.updateDistances(R);
+      //interparticleDistanceMatrix();
       QMF->evaluate(R,walkerData);
 
       if(odd && swapE > -1)
@@ -520,8 +576,11 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
 	  printf(" %20.14f",
 		 walkerData.potentialEnergy);
 	}
+
+      if(fabs(wf_scale) < 1e-200)
+	wf_scale = (double)walkerData.psi;
       printf(" %20.10e",
-	     (double)walkerData.psi);
+	     (double)(walkerData.psi/wf_scale));
 
       /*
       //double f = (78.278 + 0.5*walkerData.SCF_Laplacian_PsiRatio + 0.5*walkerData.lnJ)/grade;
@@ -603,8 +662,13 @@ void QMCSurfer::surfaceExplorer()
   static double startFrac = 0.0;
   static double stopFrac = 1.0;
   static int moveE = 0;
+  /*
   static int startAtom = heaviest;
   static int stopAtom = lightest;
+  /*/
+  static int startAtom = 0;
+  static int stopAtom = 1;
+  //*/
   if(startAtom == stopAtom)
     stopAtom = -2;
 
