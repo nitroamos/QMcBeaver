@@ -65,6 +65,8 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
   Array2D<double> atom_centers(natoms,3);
   atom_centers = Input->Molecule.Atom_Positions;
 
+  // This will return the number of explicit electrons.  Electrons replaced by
+  // pseudopotentials are not included in these numbers.
   int nelectrons = Input->WF.getNumberElectrons();
   int nbeta = Input->WF.getNumberElectrons(false);
   int nalpha = Input->WF.getNumberElectrons(true);
@@ -76,16 +78,18 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
   ab_count = assign_electrons_to_nuclei();
 
   // Redistribute electrons if there are charged centers.
+  // We use Zeff here- the effective nuclear charge shielded by pseudo 
+  // pseudo electrons because we are only placing the explicit electrons.
 
   int icharge_init, icharge, kcharge, partner, partnercharge, give, get;
 
   for (int i=0; i<natoms; i++)
-    if (Input->Molecule.Z(i) != ab_count(i,0)) // If this atom is charged
+    if (Input->Molecule.Zeff(i) != ab_count(i,0)) // If this atom is charged
       {
-	icharge_init = Input->Molecule.Z(i) - ab_count(i,0);
+	icharge_init = Input->Molecule.Zeff(i) - ab_count(i,0);
         for (int j=0; j<abs(icharge_init); j++)
 	  {
-	    icharge = Input->Molecule.Z(i) - ab_count(i,0);
+	    icharge = Input->Molecule.Zeff(i) - ab_count(i,0);
 	    partner = -1;
 	    give = -1;
 	    get = -1;
@@ -94,7 +98,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	      {
 		if (k != i)
 		  {
-		    kcharge = Input->Molecule.Z(k) - ab_count(k,0);
+		    kcharge = Input->Molecule.Zeff(k) - ab_count(k,0);
 		    if (icharge < 0 && kcharge >= icharge+2)
 		      {
 			if (partner == -1)
@@ -218,6 +222,27 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
   // neutral.  One example of what we want to prevent in this section is a Li
   // atom with three alphas.  It is neutral, but the first energy level was not
   // filled before we started occupying the second.
+
+  // We are going to add the pseudo electrons back into ab_count for this
+  // section.  Trying to tally the energy levels with some electrons missing 
+  // would be too complicated.
+
+  for (int i=0; i<natoms; i++)
+    {
+      if (Input->Molecule.usesPsuedo(i) == true)
+	{
+	  int pseudo = Input->Molecule.Z(i) - Input->Molecule.Zeff(i);
+	  if (pseudo == 0)
+	    {
+	      cerr << "ERROR: Atom " << i << " has a pseudopotential, but ";
+	      cerr << "Zeff = Z = " << Input->Molecule.Z(i) << endl;
+	      exit(1);
+	    }
+	  ab_count(i,0) += pseudo;
+	  ab_count(i,1) += pseudo/2;
+	  ab_count(i,2) += pseudo/2;
+	}
+    }
 
   for (int i=0; i<natoms; i++)
     {
@@ -378,6 +403,20 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
         }       
     }
 
+  // Now we take the pseudo electrons back out of the ab_count.
+
+  for (int i=0; i<natoms; i++)
+    {
+      if (Input->Molecule.usesPsuedo(i) == true)
+	{
+	  int pseudo = Input->Molecule.Z(i) - Input->Molecule.Zeff(i);
+
+	  ab_count(i,0) -= pseudo;
+	  ab_count(i,1) -= pseudo/2;
+	  ab_count(i,2) -= pseudo/2;
+	}
+    }
+
   // Check to see that all electrons have been assigned.
 
   int check_elec = 0;
@@ -435,7 +474,7 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
       if (n_e > 0)
 	{
 	  temp_coords.allocate(n_e,3);
-	  temp_coords = dist_center(Input->Molecule.Z(i),n_e,n_a,n_b);
+	  temp_coords = dist_center(Input->Molecule.Z(i),Input->Molecule.Zeff(i),n_e,n_a,n_b);
 	
 	  for (int j=0; j<n_a; j++)
 	    {
@@ -563,67 +602,116 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 }
 
 Array2D<double> QMCDansWalkerInitialization::
-dist_center(int atomic_charge, int n_e, int n_a, int n_b)
+dist_center(int atomic_charge, int eff_charge, int n_e, int n_a, int n_b)
 {
+  // The positions of the electrons are held in this array
   Array2D<double> e_locs(n_e,3);
   e_locs = 1e20;
 
-  if (n_e <= 2) 
-    e_locs = dist_energy_level(atomic_charge,1,n_a,n_b);
-      
-  else if (n_e > 2 && n_e <= 10)
+  Array2D<double> temp;
+
+  int alpha_index = 0;
+  int beta_index  = n_a;
+
+  // These are how many electrons we still have to place
+  int elecs_left = n_e;
+  int alphas_left = n_a;
+  int betas_left  = n_b;
+
+  // These are the number of electrons being placed in an energy level
+  int alphas_now  = 0;
+  int betas_now   = 0;
+
+  // This keeps track of which energy level we are working on
+  int energy_level = 0;
+
+  // If a pseudopotential is used on this atom, we skip the core energy levels
+  if (atomic_charge == eff_charge) // no pseudopotential
+    energy_level = 1;
+  else if (atomic_charge-eff_charge == 2) // He core
+    energy_level = 2;
+  else if (atomic_charge-eff_charge == 10) // Ne core
+    energy_level = 3;
+  else if (atomic_charge-eff_charge == 18) // Ar core
+    energy_level = 4;
+  else if (atomic_charge-eff_charge == 36) // Kr core
+    energy_level = 5;
+  else if (atomic_charge-eff_charge == 54) // Xe core
+    energy_level = 6;
+  else if (atomic_charge-eff_charge == 86) // Rn core
+    energy_level = 7;
+
+  while (elecs_left > 0)
     {
-      Array2D<double> level_1_of_2(2,3);
-      level_1_of_2 = dist_energy_level(atomic_charge,1,1,1);
-      for (int i=0; i<3; i++)
+      if (energy_level == 1)
 	{
-	  e_locs(0,i) = level_1_of_2(0,i);
-	  e_locs(n_a,i) = level_1_of_2(1,i);
+	  if (alphas_left >= 1)
+	    alphas_now = 1;
+	  else
+	    alphas_now = 0;
+
+	  if (betas_left >= 1)
+	    betas_now = 1;
+	  else
+	    betas_now = 0;
+
+	}
+      else if (energy_level == 2 || energy_level == 3)
+	{
+	  if (alphas_left >= 4)
+	    alphas_now = 4;
+	  else
+	    alphas_now = alphas_left;
+
+	  if (betas_left >= 4)
+	    betas_now = 4;
+	  else
+	    betas_now = betas_left;
+	}
+      else if (energy_level == 4 || energy_level == 5)
+	{
+	  if (alphas_left >= 9)
+	    alphas_now = 9;
+	  else
+	    alphas_now = alphas_left;
+	  
+	  if (betas_left >= 9)
+	    betas_now = 9;
+	  else
+	    betas_now = betas_left;
+	}
+      else if (energy_level == 6 || energy_level == 7)
+	{
+	  if (alphas_left >= 16)
+	    alphas_now = 16;
+	  else
+	    alphas_now = alphas_left;
+
+	  if (betas_left >= 16)
+	    betas_now = 16;
+	  else
+	    betas_now = betas_left;
 	}
 
-      Array2D<double> level_2_of_2(n_e-2,3);
-      level_2_of_2 = dist_energy_level(atomic_charge,2,n_a-1,n_b-1); 
+      temp = dist_energy_level(atomic_charge,energy_level,alphas_now,betas_now);
 
-      for (int j=0; j<n_a-1; j++)
-	for (int k=0; k<3; k++)
-	  e_locs(1+j,k) = level_2_of_2(j,k);
-
-      for (int m=0; m<n_b-1; m++)
-	for (int n=0; n<3; n++)
-	  e_locs(1+n_a+m,n) = level_2_of_2(n_a-1+m,n);
-    }
-
-  else if (n_e > 10 && n_e <=18)
-    {
-      Array2D<double> level_1_of_3(2,3); 
-      level_1_of_3 = dist_energy_level(atomic_charge,1,1,1);
-      
-      for (int i=0; i<3; i++)
-        {
-	  e_locs(0,i) = level_1_of_3(0,i);
-	  e_locs(n_a,i) = level_1_of_3(1,i);
+      for (int i=0; i<alphas_now; i++)
+	{
+	  for (int j=0; j<3; j++)
+	    e_locs(alpha_index,j) = temp(i,j);
+	  alpha_index++;
+	}
+      for (int i=0; i<betas_now; i++)
+	{
+	  for (int j=0; j<3; j++)
+	    e_locs(beta_index,j) = temp(alphas_now+i,j);
+	  beta_index++;
 	}
 
-      Array2D<double> level_2_of_3(8,3);
-      level_2_of_3 = dist_energy_level(atomic_charge,2,4,4); 
-
-      for (int j=0; j<4; j++)
-	for (int k=0; k<3; k++)
-	  {
-	    e_locs(1+j,k) = level_2_of_3(j,k);
-	    e_locs(n_a+1+j,k) = level_2_of_3(4+j,k);
-	  }
-
-      Array2D<double> level_3_of_3(n_e-10,3);
-      level_3_of_3 = dist_energy_level(atomic_charge,3,n_a-5,n_b-5);
-
-      for (int j=0; j<n_a-5; j++)
-	for (int k=0; k<3; k++)
-	  e_locs(5+j,k) = level_3_of_3(j,k);
-
-      for (int m=0; m<n_b-5; m++)
-	for (int n=0; n<3; n++)
-	  e_locs(n_a+5+m,n) = level_3_of_3(n_a-5+m,n);
+      alphas_left -= alphas_now;
+      betas_left -= betas_now;
+      elecs_left -= alphas_now + betas_now;
+      energy_level++;
     }
   return e_locs;
 }

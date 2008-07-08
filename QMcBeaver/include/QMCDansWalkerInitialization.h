@@ -106,14 +106,15 @@ class QMCDansWalkerInitialization : public QMCInitializeWalker
 
   /**
     Distributes electrons around a nucleus.
-    @param atomic_charge atomic charge of the nucleus.
-    @n_e total number of electrons.
-    @n_a number of alpha electrons.
-    @n_b number of beta electrons.
+    @param atomic_charge atomic charge of the nucleus
+    @param eff_charge effective charge of the nucleus
+    @n_e total number of electrons
+    @n_a number of alpha electrons
+    @n_b number of beta electrons
 
     @return cartesian coordinates of the electrons around this nucleus.
   */  
-  Array2D<double> dist_center(int atomic_charge, int n_e, int n_a, int n_b);
+  Array2D<double> dist_center(int atomic_charge, int eff_charge, int n_e, int n_a, int n_b);
 
   /** 
     Generates a phi coordinate with respect to the distribution indicated by 
