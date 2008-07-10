@@ -1,34 +1,33 @@
 #!/usr/bin/env python
 
-# Get the SCF type, run type, and CI type of the calculation.  Usable run types
-# are ENERGY and OPTIMIZE.    Usable SCF types are RHF, UHF, ROHF, and NONE.
-
-#This script requires 1 argument, which is the output from a gamess run
-#due to this script's method of searching for the rest of the files, the
-#extension of the script needs to be .inp.out (7 characters)
-
-#MCSCF notes:
-#This script chooses the number of determinants that it will use based on
-#the number of determinants chosen with the tolerance PRTTOL in the $DET section
-#A QMC wavefunction does not have to be normalized, so the coefficients used
-#do not need to be normalized.
-
-# To make a multideterminant trial function, do a MCSCF calculation, then do a
-# calculation with SCFTYP=NONE and CITYP=ALDET with the natural orbitals of the
-# MCSCF as the read in $VEC.  This will provide the right CI expansion
-# coefficients for the MCSCF wavefunction.
-
-#to come up with an MCSCF input file that is based on a molecular minimum:
-#1) run gamess with some method like mp2 to generate an initial guess wavefunction
-# this is necessary since any CI method will require a $VEC section.
+# This script will convert the output from a GAMESS calculation into an input
+# file for QMcBeaver.
+# * It will copy all the basis function data and orbitals
+# * It will look for the energies calculated in GAMESS
+#   and add them as comments.
+# * To find a good set of QMcBeaver flags, it will look for a "ckmft" file
+#   in a few directories (see "templatedir" variable below)
+#   to copy a good set of defaults.
 #
-#2) using the new $VEC and minimized geometry, make a new gamess input file
-# to use the CI parameters of your choice. Run an MCSCF calculation. This calculation
-# will not provide the expansion coefficients.
+# Usage:
+# gamess2qmcbeaver.py <GAMESS output file> [determinant cutoff = 0.0]
+# * We recognize .log and .inp.out as GAMESS output extensions.
+# * If the absolute value of the CI coefficient is below the determinant
+#   cutoff, then it will not be included in the ckmf file.
 #
-#3) make a 3rd gamess input file with a $VEC section from the natural orbitals
-# and minimized geometry of the previous run. Specify SCFTYPE=NONE and CITYP=ALDET
-# meaning that this will be a single point calculation, using the provided wavefunction.
+# Permissible RUNTYP = ENERGY and OPTIMIZE
+# Permissible SCFTYP = anything other than MCSCF
+#
+# To use SCFTYP=MCSCF:
+# 1) Run the MCSCF calculation in GAMESS. This is the hardest part... Look in
+#    the GAMESS manual and the "Further Information" document for hints.
+# 2) Make a 2nd GAMESS input file with a $VEC section from the natural orbitals
+#    and minimized geometry of the MCSCF run. Specify SCFTYP=NONE and CITYP=ALDET.
+#    This will produce a CI expansion in these orbitals. You might be able to use
+#    other CITYP, but we haven't programmed them.
+# 3) This script can read the ALDET output file, and will find as many determinants
+#    as were printed out, and put them in the ckmf file. You might need to modify
+#    PRTTOL in the $DET section to get more determinants.
 
 import re
 import sys
@@ -39,73 +38,59 @@ import time
 import os
 
 if len(sys.argv) < 2: 
-    print "gamess2qmcbeaver.py <filename>[.log, .inp.out] [detcutoff]"
+    print "gamess2qmcbeaver.py <filename>[.log, .inp.out] [detcutoff=0.0]"
     sys.exit(0)
 
 PI = 3.14159265359
 
-def normalize( xexp, yexp, zexp, precoeff, expcoeff):
-    precoeff = string.atof(precoeff)
-    expcoeff = string.atof(expcoeff)
+#double factorial
+def fact2( i ) :
+    if i == 1 or i == 0 or i == -1: return 1.0
+    else : return i * fact2( i-2 )
 
-    value = 0
-    if xexp == 0 and yexp == 0 and zexp == 0:
-        value = 2.0 * expcoeff**(3.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 1 and yexp == 0 and zexp == 0:
-        value = 4.0 * expcoeff**(5.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 0 and yexp == 1 and zexp == 0:
-        value = 4.0 * expcoeff**(5.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 0 and yexp == 0 and zexp == 1:
-        value = 4.0 * expcoeff**(5.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 2 and yexp == 0 and zexp == 0:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                3.0**(-0.5)
-    elif xexp == 0 and yexp == 2 and zexp == 0:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                3.0**(-0.5)
-    elif xexp == 0 and yexp == 0 and zexp == 2:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                3.0**(-0.5)
-    elif xexp == 1 and yexp == 1 and zexp == 0:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 1 and yexp == 0 and zexp == 1:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 0 and yexp == 1 and zexp == 1:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 3 and yexp == 0 and zexp == 0:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 0 and yexp == 3 and zexp == 0:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 0 and yexp == 0 and zexp == 3:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 2 and yexp == 1 and zexp == 0:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 2 and yexp == 0 and zexp == 1:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 1 and yexp == 2 and zexp == 0:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 0 and yexp == 2 and zexp == 1:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 1 and yexp == 0 and zexp == 2:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 0 and yexp == 1 and zexp == 2:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 1 and yexp == 1 and zexp == 1:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
+#calculate the normalization coefficient for a GTO (see pg 280 in the HLR book)
+def normalize( a, b, c, pf, ef ) :
+    prefactor = string.atof(pf)
+    expfactor = string.atof(ef)
+	
+    temp = (fact2(2*a-1)*fact2(2*b-1)*fact2(2*c-1))**(-0.5)
+    temp *= (2.0 * expfactor / PI)**(0.75)
+    temp *= (4.0 * expfactor)**( 0.5*(a+b+c) )
+    return temp*prefactor
+
+#This function will make all the basis functions for m
+def getM(type):
+    type = string.lower(type)
+    mterms = []
+    
+    if type == 's':
+	l = 0
+    elif type == 'p':
+	l = 1
+    elif type == 'd':
+	l = 2
+    elif type == 'f':
+	l = 3
+    elif type == 'g':
+	l = 4
+    elif type == 'h':
+	l = 5
+    elif type == 'i':
+	l = 6
     else:
-        print "ERROR in normalize!"
-        value = 0
-    return value * precoeff
-
+	# If you're looking for some of the hybrid types,
+	# then don't program them in this function.
+	print "Unknown basis function type: ", type
+	sys.exit(0)
+	
+    for a in range(l+1):
+	for b in range(l+1):
+	    for c in range(l+1):
+		if a+b+c == l:
+		    name = type + 'x'*a + 'y'*b + 'z'*c
+		    mterms = [[name,a,b,c]] + mterms
+    return mterms
+    
 Infile = sys.argv[1]
 IN = open(Infile,'r')
 gamess_output = IN.readlines()
@@ -833,20 +818,30 @@ for i in range(len(gamess_output)):
     line = -1;
     if string.find(gamess_output[i],'RUN TITLE') != -1:
 	    line = i+2
-    if string.find(gamess_output[i],' STATE') != -1 and string.find(gamess_output[i],'ENERGY') != -1:
+    if string.find(gamess_output[i],' STATE') != -1 and \
+	   string.find(gamess_output[i],'ENERGY=') != -1 and \
+	   string.find(gamess_output[i],'SYM=') != -1:
 	    line = i
     if string.find(gamess_output[i],'CCSD(T) ENERGY:') != -1:
 	    line = i
     if string.find(gamess_output[i],'CCSD[T] ENERGY:') != -1:
 	    line = i
-    if string.find(gamess_output[i],'CCSD    ENERGY:') != -1:
+    if string.find(gamess_output[i],'CCSD') != -1 and \
+	   string.find(gamess_output[i],'ENERGY:') != -1 and \
+	   string.find(gamess_output[i],'CORR.') != -1:
 	    line = i
     if string.find(gamess_output[i],'MBPT(2) ENERGY:') != -1:
+	    line = i
+    if string.find(gamess_output[i],'CORR.') != -1 and \
+	   string.find(gamess_output[i],'CR-CC') != -1:
 	    line = i
     if string.find(gamess_output[i],'FINAL') != -1:
 	    line = i
     if string.find(gamess_output[i],'$BASIS') != -1:
 	    line = i
+    if string.find(gamess_output[i],'ITER:') != -1:
+	    line = -1
+	    
     if line > 0:
 	    OUT.write('#%s' % gamess_output[line])
 	    print '#%s' % gamess_output[line],
@@ -914,107 +909,29 @@ for atom in geometry :
     atomicbasis = atomicbasis[1:]
     OUT.write('%s\t%i\t%i\n'%(head[0],head[1],head[2]))
     for pbf in atomicbasis :
-        if pbf[0][0] == 'S' :
-            OUT.write('\t%i\t%s\n'%(len(pbf),'s'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,0,0,gaussian[2],gaussian[1])))
-        if pbf[0][0] == 'P' :
-            OUT.write('\t%i\t%s\n'%(len(pbf),'px'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(1,0,0,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'py'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,1,0,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'pz'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,0,1,gaussian[2],gaussian[1])))
-        if pbf[0][0] == 'D' :
-            OUT.write('\t%i\t%s\n'%(len(pbf),'dxx'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(2,0,0,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'dyy'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,2,0,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'dzz'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,0,2,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'dxy'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(1,1,0,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'dxz'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(1,0,1,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'dyz'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,1,1,gaussian[2],gaussian[1])))
-        if pbf[0][0] == 'F' :
-            OUT.write('\t%i\t%s\n'%(len(pbf),'fxxx'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(3,0,0,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'fyyy'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,3,0,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'fzzz'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,0,3,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'fxxy'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(2,1,0,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'fxxz'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(2,0,1,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'fyyx'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(1,2,0,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'fyyz'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,2,1,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'fzzx'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(1,0,2,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'fzzy'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,1,2,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'fxyz'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(1,1,1,gaussian[2],gaussian[1])))
+	# There are a few special basis function types, and you have to
+	# program them individually
         if pbf[0][0] == 'L' :
-            OUT.write('\t%i\t%s\n'%(len(pbf),'s'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,0,0,gaussian[2],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'px'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(1,0,0,gaussian[3],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'py'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,1,0,gaussian[3],gaussian[1])))
-            OUT.write('\t%i\t%s\n'%(len(pbf),'pz'))
-            for gaussian in pbf :
-                OUT.write('\t\t%s\t%s\n'%(gaussian[1], \
-                             normalize(0,0,1,gaussian[3],gaussian[1])))
+	    mterms = getM('S')
+	    for m in mterms:
+		OUT.write('\t%i\t%s\n'%(len(pbf),m[0]))
+		for gs in pbf:
+		    OUT.write('\t\t%s\t%s\n'%(gs[1], \
+					      normalize(m[1],m[2],m[3],gs[2],gs[1])))
+	    mterms = getM('P')
+	    for m in mterms:
+		OUT.write('\t%i\t%s\n'%(len(pbf),m[0]))
+		for gs in pbf:
+		    OUT.write('\t\t%s\t%s\n'%(gs[1], \
+					      normalize(m[1],m[2],m[3],gs[3],gs[1])))
+	else:
+	    mterms = getM(pbf[0][0])
+	    for m in mterms:
+		OUT.write('\t%i\t%s\n'%(len(pbf),m[0]))
+		for gs in pbf:
+		    OUT.write('\t\t%s\t%s\n'%(gs[1], \
+					      normalize(m[1],m[2],m[3],gs[2],gs[1])))
+		    
 
 OUT.write('&\n')
 
