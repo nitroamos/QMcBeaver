@@ -1,3 +1,13 @@
+Mon, Jul 14,2008 Amos Anderson
+1.  I chose better default flags in QMCFlags.cpp.
+2.  I uploaded the modifications I made to orbital optimation. You now have the option
+    that if the coefficient was a zero in the input file, it will remain fixed to zero. This
+    can eliminate a lot of parameters.
+3.  I upgraded FixedCuspPade Jastrows, so that it is now general enough to include any Pade type
+    Jastrow with a polynomial in the numerator and denominator. You can pick the first n terms in the
+    numerator and the first d terms in the denominator to be fixed. Pade jastrow is obsolete now, I'll
+    remove it eventually. ZeroCorelation is also obsolete.
+
 Tue, Jul 8, 2008 Amos Anderson
 1.  I turned off cusp replacement for atoms with pseudopotentials. They
     don't have cusps.
