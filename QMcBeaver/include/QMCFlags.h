@@ -391,7 +391,7 @@ class QMCFlags
   */
   long walkers_per_pass;
 
-  /*
+  /**
     Implemented here is the future walking method described in:
     J. Casulleras and J. Boronat, Phys. Rev. B 52, 3654 (1995)
 
@@ -709,7 +709,7 @@ class QMCFlags
   */
   int calculate_Derivatives;
 
-  /*
+  /**
     These next flags control which part of the wavefunction
     we're optimizing. If the optimization method is set to
     automatic, then these parameters will automatically be changed.
@@ -720,7 +720,7 @@ class QMCFlags
   int optimize_CI;
   int optimize_Orbitals;
 
-  /*
+  /**
     Some Jastrows (e.g. the cambridge ones) use cutoffs which can be difficult
     to optimize. this one parameter will let you decide whether to optimize them.
   */
@@ -728,19 +728,19 @@ class QMCFlags
 
   int use_three_body_jastrow;
 
-  /*
+  /**
     If this flag is true, we allow the terms in the three body Jastrow that
     overlap the NE Jastrow to be nonzero.
   */
   int reproduce_NE_with_NEE_jastrow;
 
-  /*
+  /**
     If this flag is true, we allow the terms in the three body Jastrow that
     overlap the EE Jastrow to be nonzero.
   */
   int reproduce_EE_with_NEE_jastrow;
 
-  /*
+  /**
     This controls the initial value used by QMCLineSearch for
     modifying the hessian. If this is large, then the optimization
     will be more like steepest descent, which is slower but more
@@ -750,7 +750,7 @@ class QMCFlags
   */
   double a_diag;
 
-  /*
+  /**
     A parameter used by the Linearize step length method, must
     be between 0 and 1.
 
@@ -856,7 +856,8 @@ class QMCFlags
      The restart file will have more orbitals than the input file.
   */
   int link_Orbital_parameters;
-
+  int constrain_Orbital_zeros;
+  int constrain_Orbital_same;
   /**
      Just because the determinants shared orbitals when they
      were defined using the input file, that doesn't mean we

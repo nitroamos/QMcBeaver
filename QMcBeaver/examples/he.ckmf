@@ -106,7 +106,7 @@ future_walking
 
 # Parameters relating to output
 output_interval
- 1000
+ 100
 checkpoint
  0
 checkpoint_interval

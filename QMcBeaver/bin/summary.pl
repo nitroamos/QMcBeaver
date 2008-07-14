@@ -78,7 +78,6 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
 	if($param == 0){
 	    $units  = 627.50960803;
 	    $unitsL = "kcal/mol";
-	    print "Using energy kcal/mol units, conversion = $units.\n";
 	} elsif($param == 1) {
 	    $units  = 27.211399;
 	    $unitsL = "eV"; 
@@ -94,7 +93,7 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
 	}
 	print "Using $unitsL energy units, conversion = $units\n";
     } elsif($type eq "-o"){
-	$orbFilter = 1;
+	$orbFilter = 0;
 	if($orbFilter == 1){
 	    print "Filtering to only include balanced orbitals\n";
 	} else {
@@ -605,7 +604,8 @@ if($num_results > 0){
 	    #otherwise we'll get two of every comparison
 	    next if($r < $c);
 	    #This eliminates a lot of the meaningless comparisons
-	    next if($orbFilter && $rMult * $rOrb != $cMult * $cOrb);
+	    my $orbsMatch = ($rMult * $rOrb == $cMult * $cOrb);
+	    next if($orbFilter && !$orbsMatch);
 
 	    #So that we're comparing the difference
 	    $cMult *= -1;
@@ -620,7 +620,7 @@ if($num_results > 0){
 	    my $comparison = "";
 
 	    if($sumResults == 1){
-		$comparison .= sprintf "%3i %3i)",$label{$row},$label{$col};
+		$comparison .= sprintf "%3i %3i) %6s",$label{$row},$label{$col},$rowdata[1];
 		my $rM = $rMult;
 		my $cM = $cMult;
 		$rM = " " if($rMult == 1);
@@ -644,26 +644,33 @@ if($num_results > 0){
 		$comparison .= sprintf "%6s=", $compType;
 	    }
 
+	    if($orbsMatch){
+		$comparison .= " ";
+	    } else {
+		$comparison .= "*";
+	    }
+
 	    $comparison .= sprintf " %9.5f",$diff;
 	    $comparison .= sprintf " +/- %-9.5f $unitsL", $diffe;
-	    $comparison .= sprintf "\n";
 
 	    if($compareE){
-		foreach $etype (keys %{$referenceE{$row}}){
+		foreach $etype (reverse sort keys %{$referenceE{$row}}){
 		    $eRow = $referenceE{$row}{$etype} * $rMult;
 		    $eCol = $referenceE{$col}{$etype} * $cMult;
 		    my $temp = ($eRow + $eCol)*$units;
 		    
 		    next if(!exists $referenceE{$col}{$etype} || abs($temp) < 1e-10);
 
-		    if($sumResults == 1){  		    
-			$comparison .= sprintf " %*s = %9.5f %s\n",(2*$lenLong+15),"",$temp,$etype;
+		    if($sumResults == 1){
+			#$comparison .= sprintf " %*s = %9.5f %s\n",(2*$lenLong+22),"",$temp,$etype;
+			$comparison .= sprintf " %s = %9.5f",$etype,$temp;
 		    } else {
-			$comparison .= sprintf "     %*s %15.10f %20s |      %*s %15.10f %20s | %6s  %9.5f %s\n",
+			$comparison .= sprintf "\n     %*s %15.10f %23s |      %*s %15.10f %23s | %7s  %9.5f %s",
 			$lenLong,"",$referenceE{$row}{$etype},"",$lenLong,"",$referenceE{$col}{$etype},"","",$temp,$etype;
 		    }
 		}
 	    }
+	    $comparison .= sprintf "\n";
 	    $comparisons{$comparison} = $diff;
 	}
     }

@@ -556,14 +556,20 @@ void QMCSCFJastrow::calculate_CIDerivatives(int & ai)
     }
 }
 
-void QMCSCFJastrow::calculate_OrbitalDerivatives(int & ai)
+void QMCSCFJastrow::calculate_OrbitalDerivatives(int & aic)
 {
   int numDet = Input->WF.getNumberDeterminants();
   int unusedIndicator = Input->WF.getUnusedIndicator();
   Array1D<double> dtermPsi_dai(numDet);
-  if(ai >= Input->getNumberAIParameters())
+  if(aic >= Input->getNumberAIParameters())
     return;
 
+  Array1D<double> rp_a(Input->WF.OR_constraints.dim1());
+  rp_a   = 0.0;
+  Array1D<double> p3_xxa(Input->WF.OR_constraints.dim1());
+  p3_xxa = 0.0;
+
+  int ai = -1;
   for(int o=0; o<Input->WF.getNumberOrbitals(); o++)
     {
       bool used = false;
@@ -583,6 +589,10 @@ void QMCSCFJastrow::calculate_OrbitalDerivatives(int & ai)
       //If it is used, then we can add the BF to the loop
       for(int bf=0; bf<Input->WF.getNumberBasisFunctions(); bf++)
 	{
+	  ai++;
+	  if(globalInput.WF.OR_constraints(ai) == -2)
+	    continue;
+
 	  dtermPsi_dai = 0.0;
 	  double dSCF_Psi_dai = 0.0;
 	  
@@ -605,7 +615,7 @@ void QMCSCFJastrow::calculate_OrbitalDerivatives(int & ai)
 	      dSCF_Psi_dai += dtermPsi_a;
 	    }
 	  
-	  wd->rp_a(ai) = dSCF_Psi_dai / wd->D;
+	  rp_a(ai) = dSCF_Psi_dai / wd->D;
 	  
 	  for(int ci=0; ci<numDet; ci++)
 	    {
@@ -618,14 +628,14 @@ void QMCSCFJastrow::calculate_OrbitalDerivatives(int & ai)
 	      
 	      // d ( N * (A + B) ) = dN * (A + B) + N * (dA + dB)
 	      if(nalpha > 0)
-		wd->p3_xxa(ai) += dtermPsiRatio_dai * (*alphaLaplacian)(ci);
+		p3_xxa(ai) += dtermPsiRatio_dai * (*alphaLaplacian)(ci);
 	      if(nbeta > 0)
-		wd->p3_xxa(ai) += dtermPsiRatio_dai * (*betaLaplacian)(ci);
+		p3_xxa(ai) += dtermPsiRatio_dai * (*betaLaplacian)(ci);
 	      
 	      if(oa != unusedIndicator)
-		wd->p3_xxa(ai) += termPR(ci) * Alpha.get_p3_xxa(iWalker,ci)->get(oa,bf);
+		p3_xxa(ai) += termPR(ci) * Alpha.get_p3_xxa(iWalker,ci)->get(oa,bf);
 	      if(ob != unusedIndicator)
-		wd->p3_xxa(ai) += termPR(ci) * Beta.get_p3_xxa(iWalker,ci)->get(ob,bf);
+		p3_xxa(ai) += termPR(ci) * Beta.get_p3_xxa(iWalker,ci)->get(ob,bf);
 	      
 	      //And now add in the terms from the gradient
 	      double Term_dSlater_a = 0.0;
@@ -651,10 +661,33 @@ void QMCSCFJastrow::calculate_OrbitalDerivatives(int & ai)
 		  Slater_dTerm_a += term_BetaGrad[i][j]  * wd->U_x(i+nalpha,j);
 	      Slater_dTerm_a *= 2.0 * dtermPsiRatio_dai;
 	      
-	      wd->p3_xxa(ai) += Slater_dTerm_a + Term_dSlater_a;
+	      p3_xxa(ai) += Slater_dTerm_a + Term_dSlater_a;
 	    }
-	  ai++;
 	}
+    }
+
+  /*
+    Above, we stored the derivatives in lists which ignored the constraints.
+  */
+  for(int ori=0; ori<Input->WF.OR_constraints.dim1(); ori++)
+    {
+      int c = Input->WF.OR_constraints(ori);
+      if(c > 0){
+	rp_a(c) += rp_a(ori);
+	rp_a(ori) = 0.0;
+	p3_xxa(c) += p3_xxa(ori);
+	p3_xxa(ori) = 0.0;
+      }
+    }
+
+  for(int ori=0; ori<Input->WF.OR_constraints.dim1(); ori++)
+    {
+      if(fabs(rp_a(ori)) > 1e-30){
+	//This is an independent parameter
+	wd->rp_a(aic) = rp_a(ori);
+	wd->p3_xxa(aic) = p3_xxa(ori);
+	aic++;
+      }
     }
 }
 
@@ -672,7 +705,6 @@ void QMCSCFJastrow::checkParameterDerivatives()
     }
   globalInput.printAISummary();
   
-  //int aStart = Input->getNumberAIParameters() - Input->WF.getNumberORParameters();
   int aStart = 0;
   int aStop  = Input->getNumberAIParameters();
   Array1D<double> params = Input->getAIParameters();
@@ -703,11 +735,15 @@ void QMCSCFJastrow::calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walke
 
       if(globalInput.flags.optimize_Orbitals == 1)
 	{
-	  /*
-	    should we account for modified orbital values?
-	    it might not make any difference (for a_diag)
-	    since jastrows will have a much larger effect.
-	  */
+	  //We don't need to revaluate the basis functions, so there is room
+	  //for efficiency improvement here
+	  Alpha.evaluate(xData,num-gpp,gpp,-1);
+	  Beta.evaluate(xData,num-gpp,gpp,-1);
+
+	  Alpha.update_Ds(walkerData);
+	  Beta.update_Ds(walkerData);
+
+	  //printf("cs=%i D=%20.10e\n",cs,(double)(*Alpha.getPsi(0))(0));
 	}
       
       /*
@@ -723,7 +759,8 @@ void QMCSCFJastrow::calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walke
 	  wd      = walkerData(iWalker);
 	  x       = xData(iWalker);
 
-	  if(globalInput.flags.optimize_CI == 1)
+	  if(globalInput.flags.optimize_CI == 1 ||
+	     globalInput.flags.optimize_Orbitals == 1)
 	    {
 	      alphaPsi       = Alpha.getPsi(iWalker);
 	      alphaGrad      = Alpha.getGradPsiRatio(iWalker);
@@ -738,6 +775,10 @@ void QMCSCFJastrow::calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walke
 	  
 	  QMCDouble Jastrow_Psi = Jastrow.getJastrow(w);
 
+	  /*
+	  if(w==0)
+	    printf("cs=%i D=%20.10e\n",cs,(double)wd->D); 
+	  */
 	  QMCDouble cs_Psi = wd->D * Jastrow_Psi;
 
 	  // \frac{\nabla^2 D}{D} + \nabla^2 U

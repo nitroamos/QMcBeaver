@@ -156,6 +156,11 @@ void QMCInput::printAIParameters(ostream & strm,
   printArray(strm, name + "  CI = ", WF.getNumberCIParameters(),
 	     array, shift, margin, width, prec, 5);
 
+  if(forcePrintOrbitals || WF.getNumberORParameters() < 25)
+    printArray(strm, name + "  OR = ", WF.getNumberORParameters(),
+	       array, shift, margin, width, prec, 5);
+
+  /*
   int numOR = WF.getNumberORParameters();
   if(numOR > 0)
     {
@@ -181,6 +186,7 @@ void QMCInput::printAIParameters(ostream & strm,
 	  strm << endl;
 	}
     }
+  */
 }
 
 void QMCInput::printAISummary()
@@ -206,10 +212,10 @@ void QMCInput::printAISummary()
   if(num != 0) clog << setw(width) << num << "  NEdnEdn Jastrow parameters" << endl;
   
   num = globalInput.WF.getNumberCIParameters();
-  if(num != 0) clog << setw(width) << num << " CI parameters" << endl;
+  if(num != 0) clog << setw(width) << num << "  CI parameters" << endl;
   
   num = globalInput.WF.getNumberORParameters();
-  if(num != 0) clog << setw(width) << num << " orbital parameters" << endl;
+  if(num != 0) clog << setw(width) << num << "  orbital parameters" << endl;
 }
 
 ostream& operator<<(ostream & strm, QMCInput & Input)

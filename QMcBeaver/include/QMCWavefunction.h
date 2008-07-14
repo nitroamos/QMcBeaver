@@ -162,8 +162,8 @@ class QMCWavefunction
   int getNumberBasisFunctions();
 
   /**
-    Gets the number of \f$\isAlpha\f$ spin electrons.
-    @return number of \f$\isAlpha\f$ spin electrons.
+    Gets the number of \f$isAlpha\f$ spin electrons.
+    @return number of \f$isAlpha\f$ spin electrons.
   */
   int getNumberElectrons(bool isAlpha);
 
@@ -262,13 +262,15 @@ class QMCWavefunction
     be identical.
   */
   Array2D<qmcfloat> OrbitalCoeffs;
+  Array1D<int>      OR_constraints;
+  int               numORIndependent;
   
   /**
     Array containing the CI coefficients for a multideterminant wavefunction.
   */
   Array1D<double> CI_coeffs;
   Array1D<int>    CI_constraints;
-  int             numIndependent;
+  int             numCIIndependent;
   /**
     Array which indicates how many \f$\alpha\f$ spin electron are in each
     orbital for each determinant.  

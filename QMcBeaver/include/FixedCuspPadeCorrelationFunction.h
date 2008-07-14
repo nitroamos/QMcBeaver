@@ -31,6 +31,9 @@ class FixedCuspPadeCorrelationFunction : public QMCCorrelationFunction
   double d2FunctionValue;
   
  private:    
+  int numNC, numDC;
+  int numNP, numDP;
+
   Polynomial Numerator;
   QMCPolynomial Denominator;
   

@@ -301,7 +301,7 @@ QMCWavefunction QMCWavefunction::operator=( const QMCWavefunction & rhs )
   OrbitalCoeffs     = rhs.OrbitalCoeffs;
   CI_coeffs         = rhs.CI_coeffs;
   CI_constraints    = rhs.CI_constraints;
-  numIndependent    = rhs.numIndependent;
+  numCIIndependent    = rhs.numCIIndependent;
   AlphaOccupation   = rhs.AlphaOccupation;
   BetaOccupation    = rhs.BetaOccupation;
   return *this;
@@ -385,7 +385,7 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
 
   rhs.CI_coeffs.allocate(rhs.Ndeterminants);
   rhs.CI_constraints.allocate(rhs.Ndeterminants);
-  rhs.numIndependent = rhs.Ndeterminants;
+  rhs.numCIIndependent = rhs.Ndeterminants;
   rhs.CI_constraints = -1;
   for(int i=0; i<rhs.Ndeterminants; i++)
     {
@@ -400,7 +400,7 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
 	  // This coefficient is constrainted
 	  // when optimizing
 	  rhs.CI_constraints(i) = c;
-	  rhs.numIndependent--;
+	  rhs.numCIIndependent--;
 	} else {
 	  rhs.CI_coeffs(i) = atof(temp.c_str());
 	}
@@ -490,7 +490,8 @@ void QMCWavefunction::read(int charge, int numberOrbitals, int numberBasisFuncti
 
   //rhs.scaleCoeffs(4.0);
   
-  if(globalInput.flags.optimize_Psi == 1)
+  if(globalInput.flags.optimize_Psi == 1 &&
+     globalInput.flags.optimize_Orbitals == 1)
     {
       if(globalInput.flags.link_Orbital_parameters == 0)
 	unlinkOrbitals();
@@ -506,10 +507,65 @@ void QMCWavefunction::read(int charge, int numberOrbitals, int numberBasisFuncti
 	  globalInput.flags.Norbitals = Norbitals;
 	}
       sortOccupations(true);
-    }
+      
+      int numOR = getNumberOrbitals();
+      int numORA= getNumberActiveOrbitals();
+      int numBF = getNumberBasisFunctions();
+      int numCI = getNumberDeterminants();      
 
+      numORIndependent = numORA*numBF;
+      OR_constraints.allocate(numORA*numBF);
+
+      //-2 means constrained to 0, -1 means free, i means constrained to free parameter i
+      OR_constraints = -1;
+
+      int ai = 0;
+      for(int o=0; o<numOR; o++)
+	{
+	  bool orbitalUsed = false;
+	  for(int ci=0; ci<numCI; ci++)
+	    {
+	      if(AlphaOccupation(ci,o) != unusedIndicator ||
+		 BetaOccupation(ci,o) != unusedIndicator)
+		{
+		  orbitalUsed = true;
+		  break;
+		}
+	    }
+	  
+	  if(!orbitalUsed) continue;
+	  int orbStart = ai;
+	  
+	  for(int bf=0; bf<numBF; bf++)
+	    {
+	      if(globalInput.flags.constrain_Orbital_zeros == 1 &&
+		 fabs(OrbitalCoeffs(o,bf)) < 1e-8 )
+		{
+		  numORIndependent--;
+		  OR_constraints(ai) = -2;
+		} else if(globalInput.flags.constrain_Orbital_same == 1) {
+
+		  for(int bfp=0; bfp<bf; bfp++)
+		    if(fabs(OrbitalCoeffs(o,bf) - OrbitalCoeffs(o,bfp)) < 1e-8)
+		      {
+			OR_constraints(ai) = orbStart+bfp;
+			numORIndependent--;
+			break;
+		      }
+		}	      
+	      ai++;
+	    }
+	}  
+
+      if(numORIndependent != OR_constraints.dim1())
+	cout << "Notice: wavefunction went from " << OR_constraints.dim1()
+	     << " optimizable orbital parameters to " << numORIndependent << endl;
+      
+    }
   else
-    sortOccupations(false);
+    {
+      sortOccupations(false);
+    }
 
   makeCoefficients(AlphaOccupation,
 		   OrbitalCoeffs,
@@ -614,7 +670,7 @@ int QMCWavefunction::getNumberCIParameters()
     Since the wavefunction is invariant to normalization,
     there are only N-1 independent CI coefficients.
   */
-  return numIndependent;
+  return numCIIndependent;
 }
 
 void QMCWavefunction::getCIParameters(Array1D<double> & params, int shift)
@@ -671,9 +727,7 @@ int QMCWavefunction::getNumberORParameters()
   if(globalInput.flags.optimize_Orbitals == 0)
     return 0;
 
-  int numBF = getNumberBasisFunctions();
-  int numOR = getNumberActiveOrbitals();
-  return numOR * numBF;
+  return numORIndependent;
 }
 
 void QMCWavefunction::getORParameters(Array1D<double> & params, int shift)
@@ -686,6 +740,7 @@ void QMCWavefunction::getORParameters(Array1D<double> & params, int shift)
   int numCI = getNumberDeterminants();
   
   int ai = shift;
+  int ind = 0;
   for(int o=0; o<numOR; o++)
     {
       bool orbitalUsed = false;
@@ -703,8 +758,12 @@ void QMCWavefunction::getORParameters(Array1D<double> & params, int shift)
 
       for(int bf=0; bf<numBF; bf++)
 	{
-	  params(ai) = OrbitalCoeffs(o,bf);
-	  ai++;
+	  if(OR_constraints(ind) == -1)
+	    {
+	      params(ai) = OrbitalCoeffs(o,bf);
+	      ai++;
+	    }
+	  ind++;
 	}
     }  
 }
@@ -719,6 +778,8 @@ void QMCWavefunction::setORParameters(Array1D<double> & params, int shift)
   int numCI = getNumberDeterminants();
   
   int ai = shift;
+  Array1D<double> newParams(OR_constraints.dim1());
+  int ind = 0;
   for(int o=0; o<numOR; o++)
     {
       bool orbitalUsed = false;
@@ -736,8 +797,18 @@ void QMCWavefunction::setORParameters(Array1D<double> & params, int shift)
 
       for(int bf=0; bf<numBF; bf++)
 	{
-	  OrbitalCoeffs(o,bf) = params(ai);
-	  ai++;
+	  int c = OR_constraints(ind);
+	  if(c == -1)
+	    {
+	      OrbitalCoeffs(o,bf) = params(ai);
+	      ai++;
+	    } else if(c == -2) {
+	      OrbitalCoeffs(o,bf) = 0.0;
+	    } else {
+	      OrbitalCoeffs(o,bf) = newParams(c);
+	    }
+	  newParams(ind) = OrbitalCoeffs(o,bf);
+	  ind++;
 	}
     }  
 

@@ -27,14 +27,15 @@ void QMCFlags::read_flags(string InFileName)
     Set parameter defaults
   *************************************************************************/
   //QMC Parameters
+  run_type                       = "variational";
   dt                             = 0.01;
   accel_delta                    = 5;
   accel_tm                       = 0.5*3.14159265359;
 
   desired_convergence            = 0.0;
-  max_time_steps                 = 1000000;
-  max_time                       = 0.0;
-  number_of_walkers              = 1;
+  max_time_steps                 = 2000000;
+  max_time                       = -1.0;
+  number_of_walkers              = 100;
   one_e_per_iter                 = 0;
   use_surfer                     = 0;
   set_debug                      = 0;
@@ -42,8 +43,8 @@ void QMCFlags::read_flags(string InFileName)
   //Initialization parameters
   walker_initialization_method   = "dans_walker_initialization";
   walker_initialization_combinations = 3;
-  dt_equilibration               = 0.02;
-  equilibration_steps            = 10000;
+  dt_equilibration               = 0.01;
+  equilibration_steps            = 2000;
   equilibration_function         = "ramp";
   CKAnnealingEquilibration1_parameter = 500;
   use_equilibration_array        = 0;
@@ -52,7 +53,7 @@ void QMCFlags::read_flags(string InFileName)
   branching_method               = "nonunit_weight_branching";
   walker_reweighting_method      = "umrigar93_probability_weighted";
   branching_threshold            = 2.0;
-  fusion_threshold               = 0.5;
+  fusion_threshold               = 0.45;
   correct_population_size_bias   = 1;
   population_control_parameter   = 1.0;
   old_walker_acceptance_parameter = 50;
@@ -86,20 +87,20 @@ void QMCFlags::read_flags(string InFileName)
 
   //Computation parameters
   parallelization_method         = "manager_worker";
-  iseed                          = -5135696;
-  use_basis_function_interpolation                = 0;
+  iseed                          = 0;
+  use_basis_function_interpolation = 0;
   number_basis_function_interpolation_grid_points = 1000;
   basis_function_interpolation_first_point        = 1e-10;
   pseudo_gridLevel               = 1;
   pseudo_cutoff                  = 1e-4;
   use_pseudopotential            = 0;
   walkers_per_pass               = 1;
-  mpireduce_interval             = 1000;
-  mpipoll_interval               = 1;
+  mpireduce_interval             = 100;
+  mpipoll_interval               = 5;
 
   //Output parameters
   output_interval                = 1000;
-  checkpoint_interval            = 1000;
+  checkpoint_interval            = 100000;
   checkpoint                     = 0;
   use_available_checkpoints      = 0;
   checkin_file_name              = "";
@@ -124,12 +125,12 @@ void QMCFlags::read_flags(string InFileName)
 
   //Wavefunction optmization parameters
   optimize_Psi                   = 0;
-  max_optimize_Psi_steps         = 10;
+  max_optimize_Psi_steps         = 30;
   optimize_Psi_barrier_parameter = 1.0;
   calculate_Derivatives          = 0;
-  optimize_Psi_criteria          = "analytical_energy_variance";
+  optimize_Psi_criteria          = "generalized_eigenvector";
   optimize_Psi_method            = "automatic";
-  a_diag                         = 0.1;
+  a_diag                         = -1e-5;
   ksi                            = 0.5;
   equilibrate_every_opt_step     = 1;
   equilibrate_first_opt_step     = 1;
@@ -145,17 +146,19 @@ void QMCFlags::read_flags(string InFileName)
   optimize_EE_Jastrows           = 1;
   optimize_EN_Jastrows           = 1;
   optimize_NEE_Jastrows          = 1;
-  optimize_L                     = 0;
-  optimize_CI                    = 0;
+  optimize_L                     = 1;
+  optimize_CI                    = 1;
   optimize_Orbitals              = 0;
-  link_Jastrow_parameters        = 0;
+  link_Jastrow_parameters        = 1;
   link_NEE_Jastrows              = 2;
   link_Orbital_parameters        = 1;
+  constrain_Orbital_zeros        = 1;
+  constrain_Orbital_same         = 0;
   link_Determinant_parameters    = 1;
 
   use_three_body_jastrow         = 0;
-  use_jastrow = 1;
-  detailed_energies = -1;
+  use_jastrow                    = 1;
+  detailed_energies              = -1;
 
   reproduce_NE_with_NEE_jastrow  = 0;
   reproduce_EE_with_NEE_jastrow  = 0;
@@ -649,6 +652,16 @@ void QMCFlags::read_flags(string InFileName)
         {
           input_file >> temp_string;
           link_Orbital_parameters = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "constrain_Orbital_zeros")
+        {
+          input_file >> temp_string;
+          constrain_Orbital_zeros = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "constrain_Orbital_same")
+        {
+          input_file >> temp_string;
+          constrain_Orbital_same = atoi(temp_string.c_str());
         }
       else if(temp_string == "link_Determinant_parameters")
         {
