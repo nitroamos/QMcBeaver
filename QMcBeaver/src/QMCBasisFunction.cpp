@@ -468,7 +468,7 @@ void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X,
 		  if(fabs(p0 - coeffs[i][0]) > 1e-10){
 		    p0     = coeffs[i][0];
 		    temp1  = exp(-p0*r_sq);		    
-		    temp1  = MathFunctions::fast_exp(-p0*r_sq);
+		    //temp1  = MathFunctions::fast_exp(-p0*r_sq);
 		  }
 
                   x_val += temp1*coeffs[i][1];
@@ -526,9 +526,10 @@ void QMCBasisFunction::basisFunctionsOnGrid(Array2D<double>& grid,
 		for (int i=0; i<nGaussians; i++)
 		  {
 		    if(fabs(p0 - coeffs[i][0]) > 1e-10){
-		      p0     = coeffs[i][0];
+		      p0       = coeffs[i][0];
 		      double x = -p0*r_sq;
-		      temp1 = exp(x);
+		      //temp1    = MathFunctions::fast_exp(x); 
+		      temp1  = exp(x);		      
 		    }
 		    
 		    x_val += temp1*coeffs[i][1];
@@ -555,6 +556,7 @@ void QMCBasisFunction::basisFunctionsOnGrid(Array2D<double>& grid,
   rn[0] = 1.0;
   for(int i=1; i<maxrn; i++)
     rn[i] = rn[i-1]*r;
+
 
   Array2D<double> ang(angularCi.dim1(),angularCi.dim2());
   ang = 0.0;
