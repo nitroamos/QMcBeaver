@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+use POSIX;
 
 #alphabet first, numerical second
 sub a1n2 {
@@ -44,6 +45,21 @@ sub gcf {
     return $x;
 }
 
+sub getEnergyWError {
+    my ($nrg, $err) = @_;
+    my $str = "";
+    if(abs($err) == 0){	
+	$str = "$nrg";
+    } else {
+	my $d = 1-int(floor(log($err)/log(10.0)));
+	my $energy = floor( $nrg * pow(10.0,$d) + 0.5) / pow(10.0,$d);
+	$str = sprintf "%.*f",$d,$energy;
+	my $error  = floor( $err * pow(10.0,$d) + 0.5);
+	$str = "$str($error)";
+    }
+    #printf("nrg=%10.5f err=%10.5f d=%3i energy=%20f str=%s\n",$nrg,$err,$d,$energy,$str);
+    return $str;
+}
 sub getFormula {
     my ($one, $two) = @_;
     my @od = split/&/,$one;

@@ -10,6 +10,7 @@ my $dtFilter   = 0.01;
 my $orbFilter  = 1;
 my $compareE   = 0;
 my $sumResults = 1;
+my $latexHelp  = 0;
 my @fileFilters;
 my @exclusionFilters;
 
@@ -105,6 +106,9 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
     } elsif($type eq "-s"){
 	$sumResults = 0;
 	print "Extended report.\n";
+    } elsif($type eq "-l"){
+	$latexHelp = 1;
+	print "LaTex Helper.\n";
     } else {
 	print "Unrecognized option: $type\n";
 	die;
@@ -540,9 +544,9 @@ if($num_results > 0){
     #print "Average result = $ave_result\n";
     $labelLen = $lenLong;
     $labelLen = length "Label" if(length "Label" > $labelLen);
-    printf "%5s %*s %10s %20s %5s %7s   %-25s %5s %20s %20s %20s %10s\n",
+    printf "%5s %*s %10s %20s %5s %7s   %-25s %5s %20s %20s %10s\n",
     "ID",$labelLen,"Label",
-    "dt","Ref. Energy","Num","CI:BF","NumJW","NumW","Average","Error (kcal)","Corr. E.","Weight";
+    "dt","Ref. Energy","Num","CI:BF","NumJW","NumW","Average","Corr. E.","Weight";
     my %qref;
     my %href;
     my $dtref = 0;
@@ -558,7 +562,7 @@ if($num_results > 0){
 
 	}
 
-	printf "%5i %*s %10s %20s %5i %3i:%-3i   %-25s %5i %20.10f %20.10f %20.10f %10.5f\n",
+	printf "%5i %*s %10s %20s %5i %3i:%-3i   %-25s %5i %20s %20.10f %10.5f\n",
 	$label{$key},
 	$labelLen,
 	$shortnames{$key},
@@ -568,8 +572,7 @@ if($num_results > 0){
 	$keydata[2],
 	$keydata[3],
 	$keydata[4],
-	$dt_ave_results{$key},
-	$dt_err_results{$key}*$units,
+	getEnergyWError($dt_ave_results{$key},$dt_err_results{$key}),
 	($keydata[0]-$dt_ave_results{$key}),
 	$dt_num_results{$key};
     }
@@ -611,13 +614,16 @@ if($num_results > 0){
 	    $cMult *= -1;
 
 	    my $diff = $r*$rMult + $c*$cMult;
-	    my $diffe = abs($dt_err_results{$row}*$rMult) +
-		abs($dt_err_results{$col}*$cMult);
+	    my $stdR = abs($dt_err_results{$row}*$rMult);
+	    my $stdC = abs($dt_err_results{$col}*$cMult);
+	    my $diffe = sqrt($stdR*$stdR + $stdC*$stdC);
 	    
 	    $diff *=  $units;
 	    $diffe *= $units;
 
 	    my $comparison = "";
+	    my $rStr = getEnergyWError($dt_ave_results{$row},$dt_err_results{$row});
+	    my $cStr = getEnergyWError($dt_ave_results{$col},$dt_err_results{$col});
 
 	    if($sumResults == 1){
 		$comparison .= sprintf "%3i %3i) %6s",$label{$row},$label{$col},$rowdata[1];
@@ -632,12 +638,12 @@ if($num_results > 0){
 		$compType =~ s/\+\-/\-/g;
 		$comparison .= sprintf "%s =", $compType;
 	    } else {
-		$comparison .= sprintf "%3i) %*s %15.10f %6s %3s:%2s:%-3s %5s | ",
+		$comparison .= sprintf "%3i) %*s %15s %6s %3s:%2s:%-3s %5s | ",
 		$label{$row},$lenLong,$shortnames{$row},
-		$r,$rowdata[1],$rowdata[5],$rOrb,$rowdata[2],$rowJW;
-		$comparison .= sprintf "%3i) %*s %15.10f %6s %3s:%2s:%-3s %5s | ",
+		$rStr,$rowdata[1],$rowdata[5],$rOrb,$rowdata[2],$rowJW;
+		$comparison .= sprintf "%3i) %*s %15s %6s %3s:%2s:%-3s %5s | ",
 		$label{$col},$lenLong,$shortnames{$col},
-		$c,$coldata[1],$coldata[5],$cOrb,$coldata[2],$colJW;
+		$cStr,$coldata[1],$coldata[5],$cOrb,$coldata[2],$colJW;
 		$compType = "${rMult}A+${cMult}B";
 		$compType =~ s/1//g;
 		$compType =~ s/\+\-/\-/g;
@@ -650,8 +656,13 @@ if($num_results > 0){
 		$comparison .= "*";
 	    }
 
-	    $comparison .= sprintf " %9.5f",$diff;
-	    $comparison .= sprintf " +/- %-9.5f $unitsL", $diffe;
+	    $dStr = getEnergyWError($diff,$diffe);
+	    if(0){
+		$comparison .= sprintf " %9.5f",$diff;
+		$comparison .= sprintf " +/- %-9.5f $unitsL", $diffe;
+	    } else {
+		$comparison .= sprintf " %10s $unitsL",$dStr;
+	    }
 
 	    if($compareE){
 		foreach $etype (reverse sort keys %{$referenceE{$row}}){
@@ -671,6 +682,14 @@ if($num_results > 0){
 		}
 	    }
 	    $comparison .= sprintf "\n";
+
+	    if($latexHelp){
+		$tempStr = sprintf "%5s & %20s & %15s & %20s & %15s & %15s \\\\",
+		$rowdata[1],$shortnames{$row},$rStr,$shortnames{$col},$cStr,$dStr;
+		$tempStr =~ s/\./\&/g;
+		$comparison = "$tempStr\n";
+	    }
+
 	    $comparisons{$comparison} = $diff;
 	}
     }

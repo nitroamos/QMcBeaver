@@ -151,7 +151,7 @@ for(my $index=0; $index<=$#files; $index++){
 	if($line =~ /full step/){
 	    $step += 1;
 	}
-	if($line =~ /Obj/ && $line !~ /params/){
+	if($line =~ /Objective Value/ && $line !~ /params/){
 	    $energy = (split/ +/,$line)[6];
 	    push(@optEnergies,$energy);
 	    print "Energy is $energy, num = $#optEnergies\n";
