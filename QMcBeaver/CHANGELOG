@@ -1,3 +1,47 @@
+Tue, Sep 2, 2008 Amos Anderson
+1.  I added new timing system, designed to look at the cost of evaluating each part of the wavefunction.
+    Throughout the code, there are functions called aggregateTimers, which will collect Stopwatch objects,
+    and percolate them up to QMCManager, for a report at the end of a run. To do this, I added a new function
+    Stopwatch::lap(), which helps obtain an average time for something measured repeatedly. The percentages
+    should add to 100%. If they go higher, then that's because one of the contributions is being overweighted.
+
+2.  I monkeyed around in QMCDerivativeProperties to help stabilize the measurment of effdt when there's
+    not a lot of data available.
+
+3.  I added some ceilings for optimization steps. While we're optimizing L, it will not increase the number of
+    steps to be higher than 50,000. If we're not optimizing L, then the ceiling is 500,000 iterations. I also
+    added a simple trigger in QMcBeaver such that if the code thinks the optimization has sufficiently converged,
+    it can turn off the L optimization on its own.
+
+4.  I sorted the printing of flags in QMCFlags, so that the more useful ones are collected at the top.
+    Further, I changed the usage of the "use_three_body_jastrow" flag so that it is no longer an input flag.
+    Instead, the code will look to see if you entered any 3 body jastrows in the ckmf file, and if you did, then
+    the flag will be activated.
+
+5.  I signficantly improved the warning reporting in QMCWalker. The goal is to get as close a look as possible
+    at walkers that go bad.
+
+6.  I've improved the CI coefficient constraint code. That is, you can constrain one of the coefficients to be
+    some constaint times one of the other coefficients during optimization. I haven't uploaded scripts that
+    automatically add the constraints to the ckmf file yet, but QMcBeaver itself can do it. The format is that
+    instead of a float for a CI coefficient, you enter "c N f" where N is the index of the independent CI coefficent,
+    and f is the constant value. For example, a open-shell singlet (2 determinants) might look like:
+    # WF = anti[12(ab - ba)] = anti[(12 + 21)ab] = anti[12ab] + anti[21ab]
+    Alpha:
+    1 0
+    0 1
+    Beta:
+    0 1
+    1 0
+    CI coeffs:
+    1.0
+    c 0 1.0 
+
+7.  I made some changes in Polynomial relating to how the terms are evaluated during optimization. Previously,
+    it would call pow(x,n) for each term to be optimized (super inefficient), but now it evaluates them all
+    together, and puts the results in an array. This *significantly* speeds up the optimization of 2 particle
+    Jastrows!!
+
 Mon, Jul 14,2008 Amos Anderson
 1.  I chose better default flags in QMCFlags.cpp.
 2.  I uploaded the modifications I made to orbital optimation. You now have the option
