@@ -155,7 +155,7 @@ int main(int argcTemp, char *argvTemp[])
 
 #ifdef QMC_GPU
   openGLBootStrap();
-#else
+#else 
   qmcbeaver();
 #endif
 
@@ -170,7 +170,6 @@ int main(int argcTemp, char *argvTemp[])
   //coyote will crash for some reason unless we explicitly exit:
   exit(0);
 #endif
-
 
   // Added to make the code totally ansi compliant
   return 0;
@@ -205,7 +204,7 @@ void qmcbeaver()
 
   bool ok = TheMan.run(false);
   TheMan.writeRestart();
-  
+
   if( globalInput.flags.my_rank == 0 && globalInput.flags.set_debug == 0)
     {
       clog << "***************  Print Results (ok = " << ok << ")" << endl;
@@ -214,6 +213,7 @@ void qmcbeaver()
     }
 
   int optloops = 1;
+  vector<double> optEnergies;
   while( globalInput.flags.optimize_Psi &&
          optloops <= globalInput.flags.max_optimize_Psi_steps &&
 	 ok)
@@ -224,7 +224,8 @@ void qmcbeaver()
       //if(optloops > 1) TheMan.resetTimers();
       TheMan.resetTimers();
 
-      TheMan.optimize();
+      //nrg = energy + std dev = upper bound on VMC energy
+      double nrg = TheMan.optimize();
       TheMan.zeroOut();
       ok = TheMan.run(globalInput.flags.equilibrate_every_opt_step);
 
@@ -248,12 +249,14 @@ void qmcbeaver()
 	    {
 	      TheMan.writeRestart(save_opt.str());
 	      TheMan.writeRestart();
+	      optEnergies.push_back(nrg);
 	    }
 	}
       else
 	{
 	  TheMan.writeRestart(save_opt.str());
 	  TheMan.writeRestart();
+	  optEnergies.push_back(nrg);
 	}
 
       if( globalInput.flags.my_rank == 0 )
@@ -263,6 +266,35 @@ void qmcbeaver()
           clog << TheMan;
           *TheMan.getResultsOutputStream() << TheMan;
         }
+
+      int n=optEnergies.size();
+      if(globalInput.flags.my_rank == 0 && n >= 3){
+	for(int i=0; i<n; i++)
+	  printf("optEnergies[%2i] = %20.10e\n",i,optEnergies[i]);
+
+	if(globalInput.flags.optimize_L == 1){
+	  double criteria = 1.0/627.51;
+	  if(fabs(optEnergies[n-3]-optEnergies[n-2]) < criteria &&
+	     fabs(optEnergies[n-3]-optEnergies[n-1]) < criteria){
+	    globalInput.flags.optimize_L = 0;
+	    clog << "Notice: energy converged enough to turn off L optimization";
+	    clog << " at Objective Value " << optEnergies[n-1] << endl;
+	  }
+	} else {
+	  double criteria = 0.25/627.51;
+	  if(fabs(optEnergies[n-3]-optEnergies[n-2]) < criteria &&
+	     fabs(optEnergies[n-3]-optEnergies[n-1]) < criteria){
+	    globalInput.flags.optimize_Psi = 0;
+	    clog << "Notice: the optimization converged";
+	    clog << " at Objective Value " << optEnergies[n-1] << endl;
+	  }
+	}
+      }
+
+#ifdef PARALLEL
+      MPI_Bcast(&globalInput.flags.optimize_L,1,MPI_INT,0,MPI_COMM_WORLD);
+      MPI_Bcast(&globalInput.flags.optimize_Psi,1,MPI_INT,0,MPI_COMM_WORLD);
+#endif
 
       optloops++;
     }

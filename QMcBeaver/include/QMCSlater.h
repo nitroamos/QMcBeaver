@@ -228,6 +228,10 @@ public:
   GPUQMCMatrix gpuMatMult;
 #endif
 
+  int getNumTimers();
+  void aggregateTimers(Array1D<Stopwatch> & timers,
+		       int & idx);
+
  private:
   /**
      Whether this set of Slater determinants refers to
@@ -322,6 +326,8 @@ public:
   Array1D< Array1D<double> * > pointer_Dwc;
   Array1D< Array3D<double> * > pointer_rDwc_x;
   Array1D< Array1D<double> * > pointer_rDwc_xx;
+
+  Array1D<Stopwatch> swTimers;
 
 #ifdef QMC_GPU
   /** 

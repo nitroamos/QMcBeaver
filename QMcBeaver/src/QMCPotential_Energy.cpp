@@ -74,6 +74,9 @@ void QMCPotential_Energy::initialize(QMCInput * Ip, QMCHartreeFock * HF)
 	Array2D<double> grTemp = MOL->getGrid(nuc,1.0,false);
 	globalInput.BF.angularGrid(grTemp,nuc,angularGrids(nuc));
       }
+
+  swTimers.allocate(1);
+  swTimers(0).reset("Potential Energy");
 }
 
 double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int elec, int nuc)
@@ -102,7 +105,7 @@ double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int ele
 
   //If all the nonlocal components are small, then we can cut out early.
   if(small) return Vlocal;
-
+  
   if(elec < WF->getNumberElectrons(true))
     {
       isAlpha = true;
@@ -178,9 +181,6 @@ double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int ele
 
   /*
     Now we move on to evaluating the Jastrow function at all the grid points.
-
-    We don't need to worry about electron-nucleus terms since \Jen(ri') = \Jen(ri), and therefore
-    the terms cancel in the integrand.
   */
   double denom;
   QMCJastrowElectronElectron jee;
@@ -205,7 +205,6 @@ double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int ele
   for(int l=0; l<lmax; l++)
     for(int gp=0; gp<grSize; gp++)
       integral(l) += integrand(gp) * (MOL->gridLegendre(nuc))(l,gp) * (MOL->gridWeights(nuc))(gp);
-
   /*
     This is the summation in formula 28
   */
@@ -224,8 +223,11 @@ void QMCPotential_Energy::evaluate(Array1D<Array2D<double>*> &R,
     {
       wd = walkerData(walker);
 
+      swTimers(0).start();
       calc_P_en(*R(walker));
       calc_P_ee(*R(walker));
+      swTimers(0).lap();
+
       Energy_total(walker) = P_nn + P_ee + P_en;
 
       Energy_ne(walker) = P_en;
@@ -245,7 +247,9 @@ void QMCPotential_Energy::calc_P_en(Array2D<double> &R)
       if(MOL->usesPseudo(nuc))
 	{
 	  for(int el=0; el<R.dim1(); el++)
-	    P_en += evaluatePseudoPotential(R,el,nuc);
+	    {
+	      P_en += evaluatePseudoPotential(R,el,nuc);
+	    }
 	} else {
 	  Zeff = MOL->Zeff(nuc);	  
 	  for(int el=0; el<R.dim1(); el++)
@@ -319,3 +323,14 @@ double QMCPotential_Energy::getEnergyEE(int which)
   return Energy_ee(which);
 }
 
+int QMCPotential_Energy::getNumTimers()
+{
+  return swTimers.dim1();
+}
+
+void QMCPotential_Energy::aggregateTimers(Array1D<Stopwatch> & timers,
+					  int & idx)
+{
+  for(int i=0; i<swTimers.dim1(); i++)
+    timers(idx++).aggregateTimer(swTimers(i));
+}

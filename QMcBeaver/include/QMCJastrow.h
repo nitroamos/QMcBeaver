@@ -186,6 +186,10 @@ public:
   
   void operator=(const QMCJastrow & rhs );
 
+  int getNumTimers();
+  void aggregateTimers(Array1D<Stopwatch> & timers,
+		       int & idx);
+
 protected:
   Array1D<double> sum_U;
   Array1D< Array2D<double> > grad_sum_U;
@@ -197,6 +201,8 @@ protected:
   
 private:
   QMCJastrowElectronNuclear JastrowElectronNuclear;
+
+  Array1D<Stopwatch> swTimers;
 
 #ifdef QMC_GPU
   GPUQMCJastrowElectronElectron gpuJEE;

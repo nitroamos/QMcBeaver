@@ -127,7 +127,8 @@ void Cambridge2CorrelationFunction::evaluate( double _r )
   dpc_r  = C * fL * dpc / d;
   dpc_rr = (C - 1.0) * fL * dpc_r / d;
 
-  if(globalInput.flags.calculate_Derivatives == 1)
+  if(globalInput.flags.calculate_Derivatives == 1 &&
+     optimizeL)
     {
       dP_L   = f * r *   alpha.getFirstDerivativeValue();
       dP_Lr  = dP_L / r + f * fL * r * alpha.getSecondDerivativeValue();

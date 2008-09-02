@@ -339,12 +339,12 @@ int QMCMolecule::readPseudoPotential(string runfile)
   for(int i=0; i<Natoms; i++){
     if(usesPseudo(i)){
       usePseudo = 1;
-      cout << "On atom " << i << ": replacing " << (Z(i)-Zeff(i)) << " electrons with the " << pseudoTitle(i,0) << " ecp"
+      clog << "On atom " << i << ": replacing " << (Z(i)-Zeff(i)) << " electrons with the " << pseudoTitle(i,0) << " ecp"
 	   << " using " << grid(i).dim1() << " grid points." << endl;
       /*
-      cout << "Zeff(" << ppTypes(i) << ") = " << Zeff(i) << " gridSize = " << grid(i).dim1() << endl;
-      cout << "Vlocal(" << ppTypes(i) << ") = \n" << Vlocal(i);
-      cout << "Vnonlocal(" << ppTypes(i) << ") = " << Vnonlocal(i) << endl;
+	clog << "Zeff(" << ppTypes(i) << ") = " << Zeff(i) << " gridSize = " << grid(i).dim1() << endl;
+	clog << "Vlocal(" << ppTypes(i) << ") = \n" << Vlocal(i);
+	clog << "Vnonlocal(" << ppTypes(i) << ") = " << Vnonlocal(i) << endl;
       */
     }
   }

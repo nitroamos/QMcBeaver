@@ -983,141 +983,19 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "# Parameters for QMC\n";
   strm << "run_type\n " << flags.run_type << endl;
   strm << "dt\n " << flags.dt_run << endl;
+  strm << "dt_equilibration\n " << flags.dt_equilibration << endl;
   strm << "number_of_walkers\n " << flags.number_of_walkers_initial<< endl;
   //strm << "max_time_steps\n " << flags.original_max_time_steps << endl;
   strm << "max_time_steps\n " << flags.max_time_steps << endl;
+  strm << "equilibration_steps\n " << flags.equilibration_steps << endl;
+  strm << "desired_convergence\n " << flags.desired_convergence << endl;
+  strm << "iseed\n " << flags.iseed << endl;
+  strm << "optimize_Psi\n " << flags.optimize_Psi << endl;
   strm << "max_time\n " << flags.max_time << endl;
   strm << "one_e_per_iter\n " << flags.one_e_per_iter << endl;
-  strm << "desired_convergence\n " << flags.desired_convergence << endl;
-  strm << "warn_verbosity\n " << flags.warn_verbosity << endl;
-  strm << "rel_cutoff\n " << flags.rel_cutoff << endl;
-  strm << "limit_branching\n " << flags.limit_branching << endl;
-  strm << "\n# Parameters specific to the Green's function\n";
-  strm << "sampling_method\n " << flags.sampling_method << endl;
-  strm << "QF_modification_type\n " << flags.QF_modification_type << endl;
-  strm << "umrigar93_equalelectrons_parameter\n "
-       << flags.umrigar93_equalelectrons_parameter << endl;
-  strm << "energy_modification_type\n "
-       << flags.energy_modification_type << endl;
-  strm << "energy_cutoff_type\n "
-       << flags.energy_cutoff_type << endl;
-  strm << "lock_trial_energy\n " << flags.lock_trial_energy << endl;
-  strm << "synchronize_dmc_ensemble\n "
-       << flags.synchronize_dmc_ensemble << endl;
-  strm << "synchronize_dmc_ensemble_interval\n "
-       << flags.synchronize_dmc_ensemble_interval << endl;
-  
-  strm << "\n# Parameters specific to weights, branching, and fusion\n";
-  strm << "walker_reweighting_method\n "
-       << flags.walker_reweighting_method << endl;
-  strm << "branching_method\n " << flags.branching_method << endl;
-  strm << "branching_threshold\n " << flags.branching_threshold << endl;
-  strm << "fusion_threshold\n " << flags.fusion_threshold << endl;
-  strm << "population_control_parameter\n "
-       << flags.population_control_parameter << endl;
-  strm << "correct_population_size_bias\n "
-       << flags.correct_population_size_bias << endl;
-  strm << "old_walker_acceptance_parameter\n "
-       << flags.old_walker_acceptance_parameter << endl;
-
-  strm << "\n# Parameters for initialization\n";
-  strm << "dt_equilibration\n " << flags.dt_equilibration << endl;
-  strm << "use_equilibration_array\n " << flags.use_equilibration_array << endl;
-  strm << "equilibration_steps\n " << flags.equilibration_steps << endl;
-  strm << "equilibration_function\n " << flags.equilibration_function << endl;
-  strm << "CKAnnealingEquilibration1_parameter\n "
-       << flags.CKAnnealingEquilibration1_parameter << endl;
-  strm << "walker_initialization_method\n "
-       << flags.walker_initialization_method << endl;
-  strm << "walker_initialization_combinations\n "
-       << flags.walker_initialization_combinations << endl;
-    
-  strm << "\n# Parameters for added functionality/improvements\n";
-  strm << "calculate_bf_density\n " << flags.calculate_bf_density << endl;
-  strm << "use_hf_potential\n " << flags.use_hf_potential << endl;
-  strm << "hf_num_average\n " << flags.hf_num_average << endl;
-  strm << "replace_electron_nucleus_cusps\n " 
-       << flags.replace_electron_nucleus_cusps << endl;
-  strm << "nuclear_derivatives\n " << flags.nuclear_derivatives << endl;
-  if(flags.future_walking.size() > 0)
-    {
-      strm << "future_walking\n";
-      for(unsigned int i=0; i<flags.future_walking.size(); i++)
-	{
-	  strm << " " << (double)(flags.future_walking[i]*flags.dt);
-	}
-      strm << endl;
-    }
-
-  strm << "\n# Parameters relating to output\n";
   strm << "output_interval\n " << flags.output_interval << endl;
-  strm << "checkpoint\n " << flags.checkpoint << endl;
-  strm << "checkpoint_interval\n " << flags.checkpoint_interval << endl;
-
-  if(flags.checkpoint)
-      strm << "use_available_checkpoints\n "
-	   << 1 << endl;
-  else
-      strm << "use_available_checkpoints\n "
-	   << flags.use_available_checkpoints << endl;
-
-  strm << "checkpoint_input_name\n "
-       << flags.checkout_file_name << endl;
-  strm << "zero_out_checkpoint_statistics\n "
-       << flags.zero_out_checkpoint_statistics << endl;
-  strm << "checkpoint_energy_only\n " << flags.checkpoint_energy_only << endl;
-  strm << "print_configs\n " << flags.print_configs << endl;
-  strm << "print_config_frequency\n " << flags.print_config_frequency << endl;
-  strm << "temp_dir\n " << flags.temp_dir << endl;
-  strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
-  strm << "write_electron_densities\n "
-       << flags.write_electron_densities << endl;
-  strm << "max_pair_distance\n " << flags.max_pair_distance << endl;
-  strm << "print_transient_properties\n "
-       << flags.print_transient_properties << endl;
-  strm << "print_transient_properties_interval\n "
-       << flags.print_transient_properties_interval << endl;
-
-  strm << "writePllxCorrelationDiagram\n " << flags.writePllxCorrelationDiagram
-       << endl;
-  strm << "pllxCorrelationDiagramMin\n " << flags.pllxCorrelationDiagramMin
-       << endl;
-  strm << "pllxCorrelationDiagramMax\n " << flags.pllxCorrelationDiagramMax
-       << endl;
-  strm << "writePllyCorrelationDiagram\n " << flags.writePllyCorrelationDiagram
-       << endl;
-  strm << "pllyCorrelationDiagramMin\n " << flags.pllyCorrelationDiagramMin
-       << endl;
-  strm << "pllyCorrelationDiagramMax\n " << flags.pllyCorrelationDiagramMax
-       << endl;
-  strm << "writePllzCorrelationDiagram\n " << flags.writePllzCorrelationDiagram
-       << endl;
-  strm << "pllzCorrelationDiagramMin\n " << flags.pllzCorrelationDiagramMin
-       << endl;
-  strm << "pllzCorrelationDiagramMax\n " << flags.pllzCorrelationDiagramMax
-       << endl;
-
-  strm << "writeOppxCorrelationDiagram\n " << flags.writeOppxCorrelationDiagram
-       << endl;
-  strm << "oppxCorrelationDiagramMin\n " << flags.oppxCorrelationDiagramMin
-       << endl;
-  strm << "oppxCorrelationDiagramMax\n " << flags.oppxCorrelationDiagramMax
-       << endl;
-  strm << "writeOppyCorrelationDiagram\n " << flags.writeOppyCorrelationDiagram
-       << endl;
-  strm << "oppyCorrelationDiagramMin\n " << flags.oppyCorrelationDiagramMin
-       << endl;
-  strm << "oppyCorrelationDiagramMax\n " << flags.oppyCorrelationDiagramMax
-       << endl;
-  strm << "writeOppzCorrelationDiagram\n " << flags.writeOppzCorrelationDiagram
-       << endl;
-  strm << "oppzCorrelationDiagramMin\n " << flags.oppzCorrelationDiagramMin
-       << endl;
-  strm << "oppzCorrelationDiagramMax\n " << flags.oppzCorrelationDiagramMax
-       << endl;
 
   strm << "\n# Parameters for wavefunction optimization\n";
-  strm << "optimize_Psi\n " << flags.optimize_Psi << endl;
   strm << "optimize_EE_Jastrows\n " << flags.optimize_EE_Jastrows << endl;
   strm << "optimize_EN_Jastrows\n " << flags.optimize_EN_Jastrows << endl;
   strm << "optimize_NEE_Jastrows\n " << flags.optimize_NEE_Jastrows << endl;
@@ -1151,10 +1029,134 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
        << flags.ck_genetic_algorithm_1_mutation_rate << endl;
   strm << "ck_genetic_algorithm_1_initial_distribution_deviation\n "
        << flags.ck_genetic_algorithm_1_initial_distribution_deviation << endl;
+
+  strm << "\n# Parameters specific to the Green's function\n";
+  strm << "sampling_method\n " << flags.sampling_method << endl;
+  strm << "QF_modification_type\n " << flags.QF_modification_type << endl;
+  strm << "umrigar93_equalelectrons_parameter\n "
+       << flags.umrigar93_equalelectrons_parameter << endl;
+  strm << "warn_verbosity\n " << flags.warn_verbosity << endl;
+  strm << "rel_cutoff\n " << flags.rel_cutoff << endl;
+  strm << "limit_branching\n " << flags.limit_branching << endl;
+  strm << "energy_modification_type\n "
+       << flags.energy_modification_type << endl;
+  strm << "energy_cutoff_type\n "
+       << flags.energy_cutoff_type << endl;
+  strm << "lock_trial_energy\n " << flags.lock_trial_energy << endl;
+  strm << "synchronize_dmc_ensemble\n "
+       << flags.synchronize_dmc_ensemble << endl;
+  strm << "synchronize_dmc_ensemble_interval\n "
+       << flags.synchronize_dmc_ensemble_interval << endl;
+  
+  strm << "\n# Parameters specific to weights, branching, and fusion\n";
+  strm << "walker_reweighting_method\n "
+       << flags.walker_reweighting_method << endl;
+  strm << "branching_method\n " << flags.branching_method << endl;
+  strm << "branching_threshold\n " << flags.branching_threshold << endl;
+  strm << "fusion_threshold\n " << flags.fusion_threshold << endl;
+  strm << "population_control_parameter\n "
+       << flags.population_control_parameter << endl;
+  strm << "correct_population_size_bias\n "
+       << flags.correct_population_size_bias << endl;
+  strm << "old_walker_acceptance_parameter\n "
+       << flags.old_walker_acceptance_parameter << endl;
+
+  strm << "\n# Parameters for initialization\n";
+  strm << "use_equilibration_array\n " << flags.use_equilibration_array << endl;
+  strm << "equilibration_function\n " << flags.equilibration_function << endl;
+  strm << "CKAnnealingEquilibration1_parameter\n "
+       << flags.CKAnnealingEquilibration1_parameter << endl;
+  strm << "walker_initialization_method\n "
+       << flags.walker_initialization_method << endl;
+  strm << "walker_initialization_combinations\n "
+       << flags.walker_initialization_combinations << endl;
+    
+  strm << "\n# Parameters for added functionality/improvements\n";
+  strm << "calculate_bf_density\n " << flags.calculate_bf_density << endl;
+  strm << "use_hf_potential\n " << flags.use_hf_potential << endl;
+  strm << "hf_num_average\n " << flags.hf_num_average << endl;
+  strm << "replace_electron_nucleus_cusps\n " 
+       << flags.replace_electron_nucleus_cusps << endl;
+  strm << "nuclear_derivatives\n " << flags.nuclear_derivatives << endl;
+  if(flags.future_walking.size() > 0)
+    {
+      strm << "future_walking\n";
+      for(unsigned int i=0; i<flags.future_walking.size(); i++)
+	{
+	  strm << " " << (double)(flags.future_walking[i]*flags.dt);
+	}
+      strm << endl;
+    }
+
+  strm << "\n# Parameters relating to output\n";
+  strm << "checkpoint\n " << flags.checkpoint << endl;
+  strm << "checkpoint_interval\n " << flags.checkpoint_interval << endl;
+
+  if(flags.checkpoint)
+      strm << "use_available_checkpoints\n "
+	   << 1 << endl;
+  else
+      strm << "use_available_checkpoints\n "
+	   << flags.use_available_checkpoints << endl;
+
+  strm << "checkpoint_input_name\n "
+       << flags.checkout_file_name << endl;
+  strm << "zero_out_checkpoint_statistics\n "
+       << flags.zero_out_checkpoint_statistics << endl;
+  strm << "checkpoint_energy_only\n " << flags.checkpoint_energy_only << endl;
+  strm << "print_configs\n " << flags.print_configs << endl;
+  strm << "print_config_frequency\n " << flags.print_config_frequency << endl;
+  strm << "temp_dir\n " << flags.temp_dir << endl;
+  strm << "write_all_energies_out\n " << flags.write_all_energies_out << endl;
+  strm << "write_electron_densities\n "
+       << flags.write_electron_densities << endl;
+  strm << "max_pair_distance\n " << flags.max_pair_distance << endl;
+  strm << "print_transient_properties\n "
+       << flags.print_transient_properties << endl;
+  strm << "print_transient_properties_interval\n "
+       << flags.print_transient_properties_interval << endl;
+
+  if(false){
+    strm << "writePllxCorrelationDiagram\n " << flags.writePllxCorrelationDiagram
+	 << endl;
+    strm << "pllxCorrelationDiagramMin\n " << flags.pllxCorrelationDiagramMin
+	 << endl;
+    strm << "pllxCorrelationDiagramMax\n " << flags.pllxCorrelationDiagramMax
+	 << endl;
+    strm << "writePllyCorrelationDiagram\n " << flags.writePllyCorrelationDiagram
+	 << endl;
+    strm << "pllyCorrelationDiagramMin\n " << flags.pllyCorrelationDiagramMin
+	 << endl;
+    strm << "pllyCorrelationDiagramMax\n " << flags.pllyCorrelationDiagramMax
+	 << endl;
+    strm << "writePllzCorrelationDiagram\n " << flags.writePllzCorrelationDiagram
+	 << endl;
+    strm << "pllzCorrelationDiagramMin\n " << flags.pllzCorrelationDiagramMin
+	 << endl;
+    strm << "pllzCorrelationDiagramMax\n " << flags.pllzCorrelationDiagramMax
+	 << endl;
+    
+    strm << "writeOppxCorrelationDiagram\n " << flags.writeOppxCorrelationDiagram
+	 << endl;
+    strm << "oppxCorrelationDiagramMin\n " << flags.oppxCorrelationDiagramMin
+	 << endl;
+    strm << "oppxCorrelationDiagramMax\n " << flags.oppxCorrelationDiagramMax
+	 << endl;
+    strm << "writeOppyCorrelationDiagram\n " << flags.writeOppyCorrelationDiagram
+	 << endl;
+    strm << "oppyCorrelationDiagramMin\n " << flags.oppyCorrelationDiagramMin
+	 << endl;
+    strm << "oppyCorrelationDiagramMax\n " << flags.oppyCorrelationDiagramMax
+	 << endl;
+    strm << "writeOppzCorrelationDiagram\n " << flags.writeOppzCorrelationDiagram
+	 << endl;
+    strm << "oppzCorrelationDiagramMin\n " << flags.oppzCorrelationDiagramMin
+	 << endl;
+    strm << "oppzCorrelationDiagramMax\n " << flags.oppzCorrelationDiagramMax
+	 << endl;
+  }
   
   strm << "\n# Parameters for computation/MPI\n";
-  if (flags.iseed > 0) strm << "iseed\n " << -1*flags.iseed << endl;
-  else if (flags.iseed <= 0) strm << "iseed\n " << flags.iseed << endl;
   strm << "parallelization_method\n " << flags.parallelization_method << endl;
   strm << "mpireduce_interval\n " << flags.mpireduce_interval << endl;
   strm << "mpipoll_interval\n " << flags.mpipoll_interval << endl;
@@ -1185,7 +1187,6 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
        << flags.link_Orbital_parameters << endl;
   strm << "link_Determinant_parameters\n "
        << flags.link_Determinant_parameters << endl;
-  strm << "use_three_body_jastrow\n " << flags.use_three_body_jastrow << endl;
   strm << "reproduce_NE_with_NEE_jastrow\n " 
        << flags.reproduce_NE_with_NEE_jastrow << endl;
   strm << "reproduce_EE_with_NEE_jastrow\n "

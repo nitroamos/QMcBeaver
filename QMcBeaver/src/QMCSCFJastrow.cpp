@@ -83,6 +83,9 @@ void QMCSCFJastrow::initialize(QMCInput *INPUT, QMCHartreeFock *HF)
 
   wd     = 0;
   x      = 0;
+
+  swTimers.allocate(1);
+  swTimers(0).reset("Psi Quantities");
 }
 
 void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
@@ -114,8 +117,8 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
   */
   //These are pure CPU routines
   Jastrow.evaluate(walkerData,xData,num-gpp,gpp);
-  int whichE = walkerData(0)->whichE;
 
+  int whichE = walkerData(0)->whichE;
   if((whichE >= 0 && whichE < nalpha) || whichE == -1)
     Alpha.evaluate(xData,num-gpp,gpp,whichE);
   if(whichE >= nalpha || whichE == -1)
@@ -123,19 +126,6 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
 
   if(Input->flags.nuclear_derivatives != "none")
     nf.evaluate(walkerData,xData,num);
-
-#ifdef QMC_GPU
-
-  if(true)
-  {
-    Stopwatch finisher = Stopwatch();
-    finisher.reset();
-    finisher.start();
-    glFinish();
-    finisher.stop();
-    printf("finish time: %15d\n", finisher.timeUS() );
-  }
-#endif
 
   //These are CPU if no GPU, otherwise mixed CPU/GPU
   Alpha.update_Ds(walkerData);
@@ -157,9 +147,11 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
     x  = xData(i);
     iWalker = i;
 
+    swTimers(0).start();
     calculate_Psi_quantities();
     calculate_Modified_Grad_PsiRatio();
     calculate_E_Local(i);
+    swTimers(0).lap();
 
     wd->localEnergy            = getLocalEnergy();
     wd->kineticEnergy          = getKineticEnergy();
@@ -538,9 +530,10 @@ void QMCSCFJastrow::calculate_CIDerivatives(int & ai)
     {
       int c = Input->WF.CI_constraints(ci);
       if(c != -1){
-	rp_a(c) += rp_a(ci);
+	double const_coeff = Input->WF.CI_const_coeffs(ci);
+	rp_a(c) += const_coeff * rp_a(ci);
 	rp_a(ci) = 0.0;
-	p3_xxa(c) += p3_xxa(ci);
+	p3_xxa(c) += const_coeff * p3_xxa(ci);
 	p3_xxa(ci) = 0.0;
       }
     }
@@ -814,4 +807,29 @@ void QMCSCFJastrow::calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walke
   wd      =  0;
   x       =  0;
   iWalker = -1;
+}
+
+int QMCSCFJastrow::getNumTimers()
+{
+  int numTimers = 1 +
+    Alpha.getNumTimers() +
+    Beta.getNumTimers() +
+    PE.getNumTimers() +
+    Jastrow.getNumTimers();
+
+  return numTimers;
+}
+
+void QMCSCFJastrow::aggregateTimers(Array1D<Stopwatch> & timers,
+				    int & idx)
+{
+  //int idxStart = idx;
+  Alpha.aggregateTimers(timers,idx);
+  //idx=idxStart;
+  Beta.aggregateTimers(timers,idx);
+  PE.aggregateTimers(timers,idx);
+  Jastrow.aggregateTimers(timers,idx);
+
+  for(int i=0; i<swTimers.dim1(); i++)
+    timers(idx++).aggregateTimer(swTimers(i));
 }

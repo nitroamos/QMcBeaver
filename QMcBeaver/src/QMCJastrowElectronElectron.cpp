@@ -269,15 +269,20 @@ inline void QMCJastrowElectronElectron::collectForPair(int E1,
   if(globalInput.flags.calculate_Derivatives == 1 &&
      globalInput.flags.optimize_EE_Jastrows == 1)
     {
-      double firstDeriv;
-
+      double firstDeriv = 1.0;
+      double pre1       = 4.0/r;
       for(int ai=0; ai<numP; ai++)
-	{	  
+	{
+	  //8 %
 	  p_a(ai+index)    += U_Function->get_p_a(ai);
-	  firstDeriv        = U_Function->get_p2_xa(ai);
-	  p3_xxa(ai+index) += 2.0*(2.0/r * firstDeriv +
-				   U_Function->get_p3_xxa(ai));
 	  
+	  //14%
+	  firstDeriv        = U_Function->get_p2_xa(ai);
+
+	  //23%
+	  p3_xxa(ai+index) += pre1 * firstDeriv + 2.0*U_Function->get_p3_xxa(ai);	  
+	  
+	  //21%	  
 	  for(int i=0; i<3; i++)
 	    {
 	      temp = firstDeriv * wd->rij_uvec(E1, E2,i);
@@ -327,6 +332,11 @@ double QMCJastrowElectronElectron::jastrowOnGrid(QMCJastrowParameters & JP,
 
   QMCCorrelationFunction *U_Function = 0;
 
+  Array2D<double> r_gE(R.dim1(),grid.dim1());
+  for(int el=0; el<R.dim1(); el++)
+    for(int gp=0; gp<grid.dim1(); gp++)
+      r_gE(el,gp) = MathFunctions::rij(grid,R,gp,el);
+
   if(EupEdn != 0)
     {
       U_Function = EupEdn->getCorrelationFunction();
@@ -337,14 +347,14 @@ double QMCJastrowElectronElectron::jastrowOnGrid(QMCJastrowParameters & JP,
 	    {
 	      denom += U_Function->getFunctionValue(MathFunctions::rij(R,EB,E));
 	      for(int gr=0; gr<grid.dim1(); gr++)		
-		sumU(gr) += U_Function->getFunctionValue(MathFunctions::rij(grid,R,gr,EB));
+		sumU(gr) += U_Function->getFunctionValue(r_gE(EB,gr));
 	    }
 	} else {
 	  for(int EA=0; EA<nalpha; EA++)
 	    {
 	      denom += U_Function->getFunctionValue(MathFunctions::rij(R,E,EA));
 	      for(int gr=0; gr<grid.dim1(); gr++)
-		sumU(gr) += U_Function->getFunctionValue(MathFunctions::rij(grid,R,gr,EA));
+		sumU(gr) += U_Function->getFunctionValue(r_gE(EA,gr)); 
 	    }
 	}
     }  
@@ -376,7 +386,7 @@ double QMCJastrowElectronElectron::jastrowOnGrid(QMCJastrowParameters & JP,
 	      if(EB == E) continue;
 	      denom += U_Function->getFunctionValue(MathFunctions::rij(R,E,EB));
 	      for(int gr=0; gr<grid.dim1(); gr++)
-		sumU(gr) += U_Function->getFunctionValue(MathFunctions::rij(grid,R,gr,EB));	    
+		sumU(gr) += U_Function->getFunctionValue(r_gE(EB,gr)); 
 	    }            
 	}
     }

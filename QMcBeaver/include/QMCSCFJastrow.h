@@ -121,7 +121,12 @@ public:
   */
   void operator=(const QMCSCFJastrow & rhs );
 
+  int getNumTimers();
+  void aggregateTimers(Array1D<Stopwatch> & timers,
+		       int & idx);
  private:
+  Array1D<Stopwatch> swTimers;
+
   QMCWalkerData * wd;
   Array2D<double> * x;
   int iWalker;

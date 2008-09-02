@@ -53,6 +53,12 @@ private:
   Array1D<double> thirdDerivativeCoefficients;
 
   /**
+     All the derivatives use similar terms, so if we're optimizing, go
+     ahead and precalculate all the powers of x.
+  */
+  Array1D<double> powX;
+
+  /**
     Last calculated function value.
     */
   double f;
@@ -95,6 +101,7 @@ private:
     */
   bool evaluatedD2F;
 
+  bool evaluatedPowX;
 public:
   /**
     Constructs an uninitialized instance of this class.

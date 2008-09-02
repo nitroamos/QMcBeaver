@@ -90,14 +90,19 @@ void Polynomial::initialize(Array1D<double> & coeffs)
     {
       thirdDerivativeCoefficients(i) = (i+3)*(i+2)*(i+1)*coefficients(i+3);
     }
+  
+  powX.allocate(coefficients.dim1());
+  if(coefficients.dim1() > 0)
+    powX(0) = 1.0;
 }
 
 void Polynomial::evaluate(double x)
 {
   this->x = x;
-  evaluatedF   = false;
-  evaluatedDF  = false;
-  evaluatedD2F = false;
+  evaluatedF    = false;
+  evaluatedDF   = false;
+  evaluatedD2F  = false;
+  evaluatedPowX = false;
 }
 
 double Polynomial::evaluate(double x, Array1D<double> &coeffs)
@@ -161,7 +166,12 @@ double Polynomial::getFunctionValue(double x)
 
 double Polynomial::get_p_a(int ai)
 {
-  return pow(x,ai);
+  if(!evaluatedPowX){
+    for(int i=1; i<powX.dim1(); i++)
+      powX(i) = x*powX(i-1);
+    evaluatedPowX = true;
+  }
+  return powX(ai);
 }
 
 double Polynomial::getFirstDerivativeValue()
@@ -178,7 +188,7 @@ double Polynomial::getFirstDerivativeValue()
 double Polynomial::get_p2_xa(int ai)
 {
   //only one term has a_i in it.
-  return ai * pow(x,ai-1);
+  return ai * powX(ai-1);
 }
 
 double Polynomial::getSecondDerivativeValue()
@@ -201,7 +211,7 @@ double Polynomial::getThirdDerivativeValue()
 
 double Polynomial::get_p3_xxa(int ai)
 {
-  return (ai-1) * ai * pow(x,ai-2);
+  return (ai-1) * ai * powX(ai-2);
 }
 
 int Polynomial::getNumberCoefficients()

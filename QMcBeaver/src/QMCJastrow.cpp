@@ -12,10 +12,6 @@
 
 #include "QMCJastrow.h"
 
-//this will print out stopwatch counts of
-//how much time Jastrow Electron-Electron took
-static const bool showTimings  = false;
-
 //This will print out the ln JEE result
 //as well as its laplacian
 static const bool printJastrow = false;
@@ -69,6 +65,11 @@ void QMCJastrow::initialize(QMCInput * input)
   GPUQMCJastrowElectronElectron temp(JastrowElectronElectron, Input->flags.getNumGPUWalkers());
   gpuJEE = temp;
 #endif
+
+  swTimers.allocate(3);
+  swTimers(0).reset("EN Jastrow");
+  swTimers(1).reset("EE Jastrow");
+  swTimers(2).reset("EEN Jastrow");
 }
 
 QMCDouble QMCJastrow::getJastrow(int which)
@@ -133,24 +134,21 @@ void QMCJastrow::evaluate(Array2D<double> & R)
 void QMCJastrow::evaluate(QMCJastrowParameters & JP,
 			  Array1D<QMCWalkerData *> &walkerData,
 			  Array1D<Array2D<double>*> &X, int num, int start)
-{
-  static double averageJ = 0, timeJ = 0;
-  static double numT = -5;
-  static int multiplicity = 1;
-  
-  Stopwatch sw = Stopwatch();
-  sw.reset();
-
+{  
   for(int walker = start; walker < start+num; walker++)
     {
+      swTimers(0).start();
       JastrowElectronNuclear.evaluate(JP,walkerData(walker),*X(walker));
-
-      if(showTimings){sw.start();}
+      swTimers(0).lap();
+      
+      swTimers(1).start();
       JastrowElectronElectron.evaluate(JP,walkerData(walker),*X(walker));
-      if(showTimings){sw.stop();}
+      swTimers(1).lap();
 
+      swTimers(2).start();
       if (Input->flags.use_three_body_jastrow == 1)
 	ThreeBodyJastrow.evaluate(JP,walkerData(walker),*X(walker));
+      swTimers(2).lap();
 
       sum_U(walker)           = walkerData(walker)->U;
       grad_sum_U(walker)      = walkerData(walker)->U_x;
@@ -185,13 +183,6 @@ void QMCJastrow::evaluate(QMCJastrowParameters & JP,
 	      p3_xxa(walker,ai) = ThreeBodyJastrow.get_p3_xxa_ln(ai-shift);
 	    }
 	}
-    }
-  if(showTimings)
-    {
-      timeJ = sw.timeUS();
-      if(numT >= 0) averageJ += sw.timeUS();
-      if( num > 1) numT++;
-      cout << "cpu ee: " << (int)(timeJ/multiplicity+0.5) << " ( " << (int)(averageJ/(numT*multiplicity)+0.5) << ")\n";
     }
 }
 
@@ -247,25 +238,7 @@ void QMCJastrow::gpuEvaluate(Array1D<Array2D<double>*> &X, int num)
 }
 void QMCJastrow::setUpGPU(GLuint aElectrons, GLuint bElectrons, int num)
 {
-  static double averageJ = 0, timeJ = 0;
-  static double numT = -5;
-  static int multiplicity = gpuJEE.getNumIterations();
-
-  Stopwatch sw = Stopwatch();
-  if(showTimings)
-  {
-      sw.reset(); sw.start();
-  }
   gpuJEE.runCalculation(aElectrons, bElectrons, num);
-  if(showTimings)
-  {
-    glFinish();
-    sw.stop();
-    timeJ = sw.timeUS();
-    if(numT >= 0) averageJ += sw.timeUS();
-    if( num > 1) numT++;
-    cout << "gpu ee: " << (int)(timeJ/multiplicity+0.5) << " ( " << (int)(averageJ/(numT*multiplicity)+0.5) << ")\n";
-  } 
 }
 #endif
 
@@ -286,4 +259,16 @@ void QMCJastrow::operator=(const QMCJastrow & rhs )
 #ifdef QMC_GPU
   gpuJEE = rhs.gpuJEE;
 #endif
+}
+
+int QMCJastrow::getNumTimers()
+{
+  return swTimers.dim1();
+}
+
+void QMCJastrow::aggregateTimers(Array1D<Stopwatch> & timers,
+				 int & idx)
+{
+  for(int i=0; i<swTimers.dim1(); i++)
+    timers(idx++).aggregateTimer(swTimers(i));
 }

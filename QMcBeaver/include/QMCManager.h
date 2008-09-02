@@ -86,8 +86,10 @@ class QMCManager
   /**
      Optimizes the parameters in a variational QMC (VMC) calculation using 
      the correlated sampling method.
+
+     @return the energy from the latest optimization
   */
-  void optimize();
+  double optimize();
 
   /**
      Zeroes out all of the statistical data calculated by this object.
@@ -190,6 +192,9 @@ class QMCManager
      <code>finalize</code> is called and only on the root node.
   */
   QMCStopwatches globalTimers;
+
+  Array1D<Stopwatch> globalSWTimers;
+  Array1D<Stopwatch> localSWTimers;
 
   /**
      <code>true</code> if the calculation is equilibrating and 

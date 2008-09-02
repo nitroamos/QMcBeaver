@@ -173,7 +173,7 @@ public:
      @param showTrail whether to print details for the Trial walker,
      or for the Original walker.
    */
-  string ID(bool showTrial);
+  string ID(bool showTrial, bool verbose);
 
   /*
     Call this function *after* branching. This will give it a new
@@ -284,8 +284,11 @@ private:
 
      This information can help track down the source of a problem.
   */
-  static const int numAncestors = 5;
-  long int genealogy[numAncestors];
+  static const int numAncestors = 10;
+  long   genealogy[numAncestors];
+  long   birthIter[numAncestors];
+  double birthWeight[numAncestors];
+  int    numMoves[numAncestors];
 
   /**
     These energies are calculated by QMCWalker using the acceptance probability

@@ -28,11 +28,6 @@ void QMCRun::propagateWalkers(bool writeConfigs, int iteration)
   int count = 0;
   int index = 0;
   int wpp = Input->flags.walkers_per_pass;
-  // Propagate all of the walkers
-  Array1D<QMCWalkerData *> dataPointers = 0;
-  Array1D<Array2D<double> *> rPointers = 0;
-  dataPointers.allocate(wpp);
-  rPointers.allocate(wpp);
   
   /*The point here is to collect WALKERS_PER_PASS amount of walkers
     to process at once. Once we have that many (or the last remaining), we 
@@ -45,7 +40,10 @@ void QMCRun::propagateWalkers(bool writeConfigs, int iteration)
   */
   for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
     {
+      swTimers(0).start();
       wp->initializePropagation(dataPointers(index),rPointers(index), iteration);
+      swTimers(0).stop();
+
       count++;
       index = count%wpp;
       if(index == 0 || count == (int)(wlist.size()))
@@ -57,8 +55,10 @@ void QMCRun::propagateWalkers(bool writeConfigs, int iteration)
 	    {
 	      //we don't need to do this if we're equilibrating, since we're just going
 	      //to throw the data away
+	      swTimers(1).start();
 	      if(iteration >= 0)
 		QMF->calculate_CorrelatedSampling(dataPointers,rPointers,num);
+	      swTimers(1).lap(num);
 	    }
 	  else
 	    {
@@ -78,8 +78,10 @@ void QMCRun::propagateWalkers(bool writeConfigs, int iteration)
     the next walker was evaluated) because random numbers are drawn in a
     different order.
    */
+  swTimers(0).start();
   for(list<QMCWalker>::iterator wp=wlist.begin();wp!=wlist.end();++wp)
       wp->processPropagation(*QMF, writeConfigs);
+  swTimers(0).lap(getNumberOfWalkers());
 }
 
 void QMCRun::branchWalkers()
@@ -152,6 +154,16 @@ void QMCRun::initialize(QMCInput *INPUT)
   Input = INPUT;
 
   initializeFunction();
+
+  swTimers.allocate(4);
+  swTimers(0).reset("Walker Propagation");
+  swTimers(1).reset("Correlated Sampling");
+  swTimers(2).reset("Calculate Observables");
+  swTimers(3).reset("Entire Step");
+
+  int wpp = Input->flags.walkers_per_pass;
+  dataPointers.allocate(wpp);
+  rPointers.allocate(wpp);
 
   if (Input->flags.calculate_bf_density == 1)
     {
@@ -1023,9 +1035,14 @@ int QMCRun::getNumberOfWalkers()
 
 bool QMCRun::step(bool writeConfigs, int iteration)
 {
+  swTimers(3).start();
+
   propagateWalkers(writeConfigs,iteration);
   calculatePopulationSizeBiasCorrectionFactor();
+
+  swTimers(2).start();
   calculateObservables();
+  swTimers(2).lap(getNumberOfWalkers());
 
   int step = iteration + Input->flags.equilibration_steps - 1;
 
@@ -1046,6 +1063,8 @@ bool QMCRun::step(bool writeConfigs, int iteration)
       growthRate -= getNumberOfWalkers();
     }
 
+  swTimers(3).lap(getNumberOfWalkers());
+
   if(getWeights() <= 0.0 || getNumberOfWalkers() == 0)
     {
       cerr << "Error on node " << Input->flags.my_rank << ":" << endl;
@@ -1054,8 +1073,17 @@ bool QMCRun::step(bool writeConfigs, int iteration)
       cerr << "       energy_estimated = " << Input->flags.energy_estimated << endl; 
       cerr << "       energy_trial     = " << Input->flags.energy_trial << endl; 
       cerr << "       energy_original  = " << Input->flags.energy_estimated_original << endl; 
-      cerr << "       we're going to reinitialize all walkers..." << endl;
-      
+
+      if(globalInput.flags.nprocs > 4)
+	{
+	  //Assume that the calculation can be salvaged; only this node was bad.
+	  cerr << "       we're going to reinitialize all walkers..." << endl;
+	} else {
+	  //You're screwed.
+	  cerr << "Your calculation is junk! Try lowering dt." << endl;
+	  exit(1);
+	}
+
       Input->flags.energy_estimated = Input->flags.energy_estimated_original;
       Input->flags.energy_trial     = Input->flags.energy_estimated_original;
       randomlyInitializeWalkers();
@@ -1132,4 +1160,17 @@ void QMCRun::updateHFPotential()
 				positions(i,1), positions(i, 2));
       HartreeFock.IncrementSample();
     }
+}
+
+int QMCRun::getNumTimers()
+{
+  return QMF->getNumTimers() + 4;
+}
+
+void QMCRun::aggregateTimers(Array1D<Stopwatch> & timers,
+			     int & idx)
+{
+  QMF->aggregateTimers(timers,idx);
+  for(int i=0; i<swTimers.dim1(); i++)
+    timers(idx++).aggregateTimer(swTimers(i));
 }

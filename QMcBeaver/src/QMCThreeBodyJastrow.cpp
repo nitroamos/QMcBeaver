@@ -425,18 +425,6 @@ inline void QMCThreeBodyJastrow::collectForPair(int E1,
   if(!used) return;
 
   U_Function->evaluate(xyz12, wd->rij(E1,E2));
-
-  if(IeeeMath::isNaN( U_Function->getLaplacianValue() ) && false ){
-    printf("(%2i,%2i) sum %20.10e cur %20.10e psi %20.10e r12 %20.10e r1 %20.10e r2 %20.10e \n",E1,E2,
-	   wd->UijA_xx(E1,E2),
-	   U_Function->getLaplacianValue(),
-	   U_Function->getFunctionValue(),
-	   wd->rij(E1,E2),wd->riA(E1,Nuclei),wd->riA(E2,Nuclei)
-	   );
-    U_Function->print(cerr);
-    //exit(0);
-  }
-
   wd->UijA(E1,E2)    += U_Function->getFunctionValue();
   wd->UijA_xx(E1,E2) += U_Function->getLaplacianValue();
 

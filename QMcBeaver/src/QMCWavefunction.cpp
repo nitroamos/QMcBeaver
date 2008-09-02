@@ -301,7 +301,8 @@ QMCWavefunction QMCWavefunction::operator=( const QMCWavefunction & rhs )
   OrbitalCoeffs     = rhs.OrbitalCoeffs;
   CI_coeffs         = rhs.CI_coeffs;
   CI_constraints    = rhs.CI_constraints;
-  numCIIndependent    = rhs.numCIIndependent;
+  CI_const_coeffs   = rhs.CI_const_coeffs;
+  numCIIndependent  = rhs.numCIIndependent;
   AlphaOccupation   = rhs.AlphaOccupation;
   BetaOccupation    = rhs.BetaOccupation;
   return *this;
@@ -385,8 +386,10 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
 
   rhs.CI_coeffs.allocate(rhs.Ndeterminants);
   rhs.CI_constraints.allocate(rhs.Ndeterminants);
+  rhs.CI_const_coeffs.allocate(rhs.Ndeterminants);
   rhs.numCIIndependent = rhs.Ndeterminants;
   rhs.CI_constraints = -1;
+  rhs.CI_const_coeffs = 1.0;
   for(int i=0; i<rhs.Ndeterminants; i++)
     {
       string temp;
@@ -396,10 +399,12 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
 	{
 	  int c;
 	  strm >> c;
-
-	  // This coefficient is constrainted
+	  double d;
+	  strm >> d;
+	  // This coefficient is constrained
 	  // when optimizing
 	  rhs.CI_constraints(i) = c;
+	  rhs.CI_const_coeffs(i) = d;
 	  rhs.numCIIndependent--;
 	} else {
 	  rhs.CI_coeffs(i) = atof(temp.c_str());
@@ -408,7 +413,7 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
 
   for(int i=0; i<rhs.Ndeterminants; i++)
     if(rhs.CI_constraints(i) != -1)
-      rhs.CI_coeffs(i) = rhs.CI_coeffs(rhs.CI_constraints(i));
+      rhs.CI_coeffs(i) = rhs.CI_const_coeffs(i) * rhs.CI_coeffs(rhs.CI_constraints(i));
   
   if(rhs.Ncharge != 0)
     {
@@ -653,7 +658,9 @@ ostream& operator <<(ostream& strm, QMCWavefunction& rhs)
 	  else                       strm << "  ";
 	  strm << setw(wf_width) << left << fabs(rhs.CI_coeffs(i)) << endl;
 	} else {
-	  strm << " c " << rhs.CI_constraints(i) << endl;
+	  strm << " c " << rhs.CI_constraints(i) << " ";
+	  strm.precision(wf_precision);
+	  strm << setw(wf_width) << left << rhs.CI_const_coeffs(i) << endl;
 	}
     }
   strm << endl;
@@ -706,7 +713,7 @@ void QMCWavefunction::setCIParameters(Array1D<double> & params, int shift)
   for(int i=0; i<getNumberDeterminants(); i++)
     {
       if(CI_constraints(i) != -1)
-	CI_coeffs(i) = CI_coeffs(CI_constraints(i));
+	CI_coeffs(i) = CI_const_coeffs(i) * CI_coeffs(CI_constraints(i));
     }
 }
 

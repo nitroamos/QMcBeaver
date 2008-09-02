@@ -32,7 +32,6 @@ for more details.
 
 #include "QMCSlater.h"
 
-static const bool showTimings = false;
 static const bool printPsi    = false;
 
 QMCSlater::QMCSlater()
@@ -211,6 +210,11 @@ void QMCSlater::allocate()
         }
     }
 #endif
+
+  swTimers.allocate(3);
+  swTimers(0).reset("Evaluate basis functions");
+  swTimers(1).reset("Matrix Multiplication");
+  swTimers(2).reset("Derivative Ratios");
 }
 
 void QMCSlater::allocateIteration(int whichE, int & start, int & stop)
@@ -491,7 +495,8 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
 	  grady = & Dw_x(w,1);
 	  gradz = & Dw_x(w,2);
 	}
-      
+
+      swTimers(2).start();
       for(int ci=0; ci<WF->getNumberDeterminants(); ci++)
 	{
 	  if(globalInput.flags.one_e_per_iter ||
@@ -532,8 +537,8 @@ void QMCSlater::update_Ds(Array1D< QMCWalkerData * > & walkerData)
 							   *pointer_Dwc(w),
 							   *pointer_rDwc_x(w),
 							   *pointer_rDwc_xx(w));
-
 	}
+      swTimers(2).lap();
     }
 
   if(Input->flags.optimize_Orbitals)
@@ -814,46 +819,9 @@ void QMCSlater::gpuEvaluate(Array1D<Array2D<double>*> &X, int num)
   double numOps = 5*num*(nBF * nOE * nOE * 2.0 - nOE * nOE) / 1000.0;
 
   GLuint texture;
-  Stopwatch sw = Stopwatch();
-  sw.reset();
-
-  if(showTimings)
-    {
-      sw.reset(); sw.start();
-    }
-
   texture = gpuBF.runCalculation(X,num, Start, Stop);
 
-  if(showTimings)
-    {
-      glFinish();
-      sw.stop();
-      timeB = sw.timeUS();
-      if(numT >= 0) averageB += sw.timeUS();
-    }
-
-  if(showTimings)
-    {
-      sw.reset(); sw.start();
-    }
-
   gpuMatMult.runCalculation(num,texture);
-
-  if(showTimings)
-    {
-      //the more standard timing test does not include the download time
-      //gpuMatMult.getResults(resultsCollector);
-      glFinish();
-      sw.stop();
-      timeM = sw.timeUS();
-      if(numT >= 0) averageM += sw.timeUS();
-
-      if( num > 1) numT++;
-      cout << "\ngpu bf: " << (int)(timeB/bas_multiplier+0.5) << " ( " << (int)(averageB/(numT*bas_multiplier)+0.5) << ") ";
-      cout << "mm: " << (int)(timeM/mat_multiplier+0.5) << " (" << (int)(averageM/(numT*mat_multiplier)+0.5) << ") ";
-      cout << "; mflops: " << (int)(mat_multiplier*numOps/timeM+0.5) <<
-      " (" << (int)(mat_multiplier*numOps/(averageM/numT)+0.5) << ")\n";
-    }
 }
 #endif
 
@@ -869,33 +837,13 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &R,
     if(whichE < Start || whichE > Stop)
       return;
 
-  static double averageM = 0, timeM = 0;
-  static double averageB = 0, timeB = 0;
-  static double numT = -5;
-  static int nBF = WF->getNumberBasisFunctions();
-  static int nOE = getNumberElectrons();
-  static int mat_multiplier = 1000;
-  static int bas_multiplier = 1000;
-  // 1 add + 1 mul per nBF * nOE * nOE
-  double numOps = 5*num*(nBF * nOE * nOE * 2.0 - nOE * nOE) / 1000.0;
-  int aveB=0, aveM=0, aveF=0;
-
-  Stopwatch sw = Stopwatch();
-  sw.reset();
-
-  timeB = 0; timeM = 0;
   for(int walker = 0; walker < num; walker++)
     {
-      if(showTimings)
-        {
-          sw.reset(); sw.start();
-        }
-
       int Chi_i = Xw.dim1() == 1 ? 0 : walker;
       int startE, stopE;
-
       allocateIteration(whichE,startE,stopE);
-      
+
+      swTimers(0).start();
       BF->evaluateBasisFunctions(*R(walker+start),
                                  startE,stopE,
                                  Xw(Chi_i),
@@ -903,17 +851,10 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &R,
                                  (Xw_x(Chi_i))(1),
                                  (Xw_x(Chi_i))(2),
                                  Xw_xx(Chi_i));
-
-      if(showTimings)
-        {
-          sw.stop();
-          timeB += sw.timeUS();
-          if(numT >= 0) averageB += sw.timeUS();
-          sw.reset(); sw.start();
-        }
+      swTimers(0).lap();
 
       Array2D<qmcfloat> * coeffs = WF->getCoeff(isAlpha);
-
+      swTimers(1).start();
       Xw(Chi_i).gemm( *coeffs, Dw(walker),true);
       Xw_xx(Chi_i).gemm( *coeffs, Dw_xx(walker),true);
       (Xw_x(Chi_i))(0).gemm( *coeffs, Dw_x(walker,0),true);
@@ -928,53 +869,18 @@ void QMCSlater::evaluate(Array1D<Array2D<double>*> &R,
 					 Dw_x(walker,1),
 					 Dw_x(walker,2),
 					 Dw_xx(walker));
-
-      if(showTimings)
-        {
-          sw.stop();
-          timeM += sw.timeUS();
-          if(numT >= 0) averageM += sw.timeUS();
-        }
+      swTimers(1).lap();
     }
 
-  for(int walker = 0; walker < num; walker++)
-    {
-      int Chi_i = Xw.dim1() == 1 ? 0 : walker;
-
-      if (Input->flags.calculate_bf_density == 1)
-        {
-          Xw_Density(walker+start) = 0.0;
-          for (int i=0; i<WF->getNumberBasisFunctions(); i++)
-            for (int j=0; j<getNumberElectrons(); j++)
-              {
-                (Xw_Density(walker))(i) += (Xw(Chi_i))(j,i);
-              }
-        }
-    }
-
-  if(showTimings)
-    {
-      //if you don't check this, your averages might be off
-      //when switching from equilibration calls to production calls
-      if(num>1) numT++;
-      if(numT > 0)
-        {
-          aveB = (int)(averageB/(numT*bas_multiplier)+0.5);
-          aveM = (int)(averageM/(numT*mat_multiplier)+0.5);
-          aveF = (int)(numOps/(averageM/(numT*mat_multiplier))+0.5);
-        }
-      else
-        {
-          aveB = 0;
-          aveM = 0;
-          aveF = 0;
-        }
-
-      cout << "cpu bf: " << (int)(timeB/bas_multiplier+0.5) << " (" << aveB << ") ";
-      cout << "mm: "     << (int)(timeM/mat_multiplier+0.5) << " (" << aveM << ") ";
-      cout << "; mflops: " << (int)(mat_multiplier*numOps/timeM+0.5) <<
-      " (" << aveF << ")\n";
-    }
+  if (Input->flags.calculate_bf_density == 1)
+    for(int walker = 0; walker < num; walker++)
+      {
+	int Chi_i = Xw.dim1() == 1 ? 0 : walker;
+	Xw_Density(walker+start) = 0.0;
+	for (int i=0; i<WF->getNumberBasisFunctions(); i++)
+	  for (int j=0; j<getNumberElectrons(); j++)
+	    (Xw_Density(walker))(i) += (Xw(Chi_i))(j,i);
+      }
 }
 
 Array1D<double>* QMCSlater::getPsi(int i)
@@ -1024,4 +930,16 @@ bool QMCSlater::isSingular(int j)
       if (Singular(j)(i)) return true;
     }
   return false;
+}
+
+int QMCSlater::getNumTimers()
+{
+  return swTimers.dim1();
+}
+
+void QMCSlater::aggregateTimers(Array1D<Stopwatch> & timers,
+				int & idx)
+{
+  for(int i=0; i<swTimers.dim1(); i++)
+    timers(idx++).aggregateTimer(swTimers(i));
 }

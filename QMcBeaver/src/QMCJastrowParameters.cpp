@@ -1021,137 +1021,159 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
     }
 
   // Read in the QMCThreeBodyCorrelationFunctionParameters
+  int NumberOfThreeBodyCorrelationFunctions = 0;
+  EupEdnNuclear.allocate( NucleiTypes.dim1() );
+  EupEupNuclear.allocate( NucleiTypes.dim1() );
+  EdnEdnNuclear.allocate( NucleiTypes.dim1() );
   
-  if (globalInput.flags.use_three_body_jastrow == 1)
+  if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
+    NumberOfThreeBodyCorrelationFunctions += NucleiTypes.dim1();
+  
+  if (NumberOfElectronsUp > 1 &&
+      globalInput.flags.link_NEE_Jastrows < 2)
+    NumberOfThreeBodyCorrelationFunctions += NucleiTypes.dim1();
+  
+  if (NumberOfElectronsDown > 1 &&
+      globalInput.flags.link_NEE_Jastrows < 1)
+    NumberOfThreeBodyCorrelationFunctions += NucleiTypes.dim1();
+  
+  // Load in the three body correlation functions
+  QMCThreeBodyCorrelationFunctionParameters CP3;
+  while(CP3.read( file ))
     {
-      int NumberOfThreeBodyCorrelationFunctions = 0;
-      EupEdnNuclear.allocate( NucleiTypes.dim1() );
-      EupEupNuclear.allocate( NucleiTypes.dim1() );
-      EdnEdnNuclear.allocate( NucleiTypes.dim1() );
-
-      if (NumberOfElectronsUp > 0 && NumberOfElectronsDown > 0)
-	NumberOfThreeBodyCorrelationFunctions += NucleiTypes.dim1();
-
-      if (NumberOfElectronsUp > 1 &&
-	  globalInput.flags.link_NEE_Jastrows < 2)
-	NumberOfThreeBodyCorrelationFunctions += NucleiTypes.dim1();
-      
-      if (NumberOfElectronsDown > 1 &&
-	  globalInput.flags.link_NEE_Jastrows < 1)
-	NumberOfThreeBodyCorrelationFunctions += NucleiTypes.dim1();
-
-      // Load in the three body correlation functions
-      QMCThreeBodyCorrelationFunctionParameters CP;
-      while(CP.read( file ))
+      bool foundMatch = false;
+      if( CP3.getParticle2Type() == "Electron_up" )
 	{
-	  bool foundMatch = false;
-	  if( CP.getParticle2Type() == "Electron_up" )
+	  if( CP3.getParticle3Type() == "Electron_down" )
 	    {
-	      if( CP.getParticle3Type() == "Electron_down" )
+	      if( NumberOfElectronsUp < 1 && NumberOfElectronsDown < 1 )
 		{
-		  if( NumberOfElectronsUp < 1 && NumberOfElectronsDown < 1 )
-		    {
-		      cerr << "ERROR: Electron_up-Electron_down nuclear "
-			   << "{correlation function loaded when one does not "
-			   << "belong!" << endl;
-		      exit(0);
-		    }
-		  for (int j=0; j<NucleiTypes.dim1(); j++)
-		    if (NucleiTypes(j) == CP.getParticle1Type() )
-		      {
-			foundMatch = true;
-			EupEdnNuclear(j) = CP;
-			break;
-		      }
-		}
-	      else if( CP.getParticle3Type() == "Electron_up" )
-		{
-		  if(NumberOfElectronsUp < 2)
-		    {
-		      cerr << "ERROR: Electron_up-Electron_up nuclear "
-			   << "correlation function loaded when one does not "
-			   << "belong!" << endl
-			   << "Maybe you are using an old ckmf file?" << endl;
-		      exit(0);
-		    }
-		  for (int j=0; j<NucleiTypes.dim1(); j++)
-		    if (NucleiTypes(j) == CP.getParticle1Type() )
-		      {
-			foundMatch = true;
-			EupEupNuclear(j) = CP;
-			break;
-		      }
-		}
-	    }
-	  else if (CP.getParticle2Type() == "Electron_down" && 
-		   CP.getParticle3Type() == "Electron_down")
-	    {
-	      if( NumberOfElectronsDown < 2 )
-		{
-		  cerr << "ERROR: Electron_down-Electron_down nuclear "
-		       << "correlation function loaded when one does not "
+		  cerr << "ERROR: Electron_up-Electron_down nuclear "
+		       << "{correlation function loaded when one does not "
 		       << "belong!" << endl;
 		  exit(0);
 		}
-
-	      for( int j=0; j<NucleiTypes.dim1(); j++ )
-		if( NucleiTypes(j) == CP.getParticle1Type() )
+	      for (int j=0; j<NucleiTypes.dim1(); j++)
+		if (NucleiTypes(j) == CP3.getParticle1Type() )
 		  {
 		    foundMatch = true;
-		    EdnEdnNuclear(j) = CP;
+		    EupEdnNuclear(j) = CP3;
 		    break;
 		  }
 	    }
-
-	  if(!foundMatch){
-	    clog << "Warning: Jastrow from input file ("
-		 << CP.getParticle1Type() << "," << CP.getParticle2Type() << ","
-		 << CP.getParticle3Type() << ") was not used:\n";
-	    CP.getThreeBodyCorrelationFunction()->print(clog);
-	    clog << endl << endl;
-	  }
+	  else if( CP3.getParticle3Type() == "Electron_up" )
+	    {
+	      if(NumberOfElectronsUp < 2)
+		{
+		  cerr << "ERROR: Electron_up-Electron_up nuclear "
+		       << "correlation function loaded when one does not "
+		       << "belong!" << endl
+		       << "Maybe you are using an old ckmf file?" << endl;
+		  exit(0);
+		}
+	      for (int j=0; j<NucleiTypes.dim1(); j++)
+		if (NucleiTypes(j) == CP3.getParticle1Type() )
+		  {
+		    foundMatch = true;
+		    EupEupNuclear(j) = CP3;
+		    break;
+		  }
+	    }
 	}
-
-      // if the particles are linked make the down electron parameters equal
-      // to the up electron parameters.
-      NumberOfNEupEdnParameters = 0;
-      NumberOfNEupEupParameters = 0;
-      NumberOfNEdnEdnParameters = 0;
-
-      for (int i=0; i<EupEdnNuclear.dim1(); i++)
-	NumberOfNEupEdnParameters += EupEdnNuclear(i).getNumberOfFreeParameters();
-
-      for (int i=0; i<EupEupNuclear.dim1(); i++)
-	NumberOfNEupEupParameters += EupEupNuclear(i).getNumberOfFreeParameters();
-
-      for (int i=0; i<EdnEdnNuclear.dim1(); i++)
-	NumberOfNEdnEdnParameters += EdnEdnNuclear(i).getNumberOfFreeParameters();
+      else if (CP3.getParticle2Type() == "Electron_down" && 
+	       CP3.getParticle3Type() == "Electron_down")
+	{
+	  if( NumberOfElectronsDown < 2 )
+	    {
+	      cerr << "ERROR: Electron_down-Electron_down nuclear "
+		   << "correlation function loaded when one does not "
+		   << "belong!" << endl;
+	      exit(0);
+	    }
+	  
+	  for( int j=0; j<NucleiTypes.dim1(); j++ )
+	    if( NucleiTypes(j) == CP3.getParticle1Type() )
+	      {
+		foundMatch = true;
+		EdnEdnNuclear(j) = CP3;
+		break;
+	      }
+	}
       
-      if(globalInput.flags.link_NEE_Jastrows == 1)
-	{
-	  // Now set the things equal that need to be
-	  if( NumberOfElectronsUp > 1 && NumberOfElectronsDown > 1 )
-	    for (int i=0; i<EupEupNuclear.dim1(); i++)
-	      {
-		EdnEdnNuclear(i) = EupEupNuclear(i);
-		EdnEdnNuclear(i).setParticle2Type("Electron_down");
-		EdnEdnNuclear(i).setParticle3Type("Electron_down");
-	      }
-	}
-      else if(globalInput.flags.link_NEE_Jastrows == 2)
-	{
-	  // Now set the things equal that need to be
-	  if( NumberOfElectronsUp > 1 && NumberOfElectronsDown > 1 )
-	    for (int i=0; i<EupEupNuclear.dim1(); i++)
-	      {
-		EdnEdnNuclear(i) = EupEdnNuclear(i);
-		EupEupNuclear(i) = EupEdnNuclear(i);
-		EdnEdnNuclear(i).setParticle2Type("Electron_down");
-		EdnEdnNuclear(i).setParticle3Type("Electron_down");
-		EupEupNuclear(i).setParticle2Type("Electron_up");
-		EupEupNuclear(i).setParticle3Type("Electron_up");
-	      }
-	}
+      if(!foundMatch){
+	clog << "Warning: Jastrow from input file ("
+	     << CP3.getParticle1Type() << "," << CP3.getParticle2Type() << ","
+	     << CP3.getParticle3Type() << ") was not used:\n";
+	CP3.getThreeBodyCorrelationFunction()->print(clog);
+	clog << endl << endl;
+      }
+    }
+  
+  // if the particles are linked make the down electron parameters equal
+  // to the up electron parameters.
+  NumberOfNEupEdnParameters = 0;
+  NumberOfNEupEupParameters = 0;
+  NumberOfNEdnEdnParameters = 0;
+  
+  for (int i=0; i<EupEdnNuclear.dim1(); i++)
+    NumberOfNEupEdnParameters += EupEdnNuclear(i).getNumberOfFreeParameters();
+  
+  for (int i=0; i<EupEupNuclear.dim1(); i++)
+    NumberOfNEupEupParameters += EupEupNuclear(i).getNumberOfFreeParameters();
+  
+  for (int i=0; i<EdnEdnNuclear.dim1(); i++)
+    NumberOfNEdnEdnParameters += EdnEdnNuclear(i).getNumberOfFreeParameters();
+  
+  if(globalInput.flags.link_NEE_Jastrows == 1)
+    {
+      // Now set the things equal that need to be
+      if( NumberOfElectronsUp > 1 && NumberOfElectronsDown > 1 )
+	for (int i=0; i<EupEupNuclear.dim1(); i++)
+	  {
+	    EdnEdnNuclear(i) = EupEupNuclear(i);
+	    EdnEdnNuclear(i).setParticle2Type("Electron_down");
+	    EdnEdnNuclear(i).setParticle3Type("Electron_down");
+	  }
+    }
+  else if(globalInput.flags.link_NEE_Jastrows == 2)
+    {
+      // Now set the things equal that need to be
+      if( NumberOfElectronsUp > 1 && NumberOfElectronsDown > 1 )
+	for (int i=0; i<EupEupNuclear.dim1(); i++)
+	  {
+	    EdnEdnNuclear(i) = EupEdnNuclear(i);
+	    EupEupNuclear(i) = EupEdnNuclear(i);
+	    EdnEdnNuclear(i).setParticle2Type("Electron_down");
+	    EdnEdnNuclear(i).setParticle3Type("Electron_down");
+	    EupEupNuclear(i).setParticle2Type("Electron_up");
+	    EupEupNuclear(i).setParticle3Type("Electron_up");
+	  }
+    }
+
+  bool use3 = false;
+  for(int i=0; i<EupEdnNuclear.dim1(); i++)
+    if(EupEdnNuclear(i).isUsed()) use3 = true;
+  for(int i=0; i<EdnEdnNuclear.dim1(); i++)
+    if(EdnEdnNuclear(i).isUsed()) use3 = true;
+  for(int i=0; i<EupEupNuclear.dim1(); i++)
+    if(EupEupNuclear(i).isUsed()) use3 = true;
+
+  if(!use3)
+    {
+      if(globalInput.flags.use_three_body_jastrow == 1)
+	clog << "Warning: setting use_three_body_jastrow = 0 since you didn't load any Jastrows.\n";
+      /*
+	The code should work fine if the switch is on,
+	but turning it off will help some parts save time.
+      */
+      globalInput.flags.use_three_body_jastrow = 0;
+      globalInput.flags.optimize_NEE_Jastrows  = 0;
+      
+      EupEdnNuclear.deallocate();
+      EupEupNuclear.deallocate();
+      EdnEdnNuclear.deallocate();
+    } else {
+      globalInput.flags.use_three_body_jastrow = 1;
     }
 
   print(clog);

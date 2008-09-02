@@ -270,6 +270,7 @@ class QMCWavefunction
   */
   Array1D<double> CI_coeffs;
   Array1D<int>    CI_constraints;
+  Array1D<double> CI_const_coeffs;
   int             numCIIndependent;
   /**
     Array which indicates how many \f$\alpha\f$ spin electron are in each

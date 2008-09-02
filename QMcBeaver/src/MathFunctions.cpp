@@ -450,6 +450,7 @@ double MathFunctions::rij(Array2D<double> &positioni,
 #define EXP_C 60801 	
 double MathFunctions::fast_exp(double y)
 {
+  if(y < -600.0) return 0.0;
   union 
   { 
     double d; 

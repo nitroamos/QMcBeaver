@@ -242,7 +242,14 @@ class QMCRun
 
   void updateHFPotential();
 
+  int getNumTimers();
+  void aggregateTimers(Array1D<Stopwatch> & timers,
+		       int & idx);
+
 private:
+
+  Array1D<QMCWalkerData *> dataPointers;
+  Array1D<Array2D<double> *> rPointers;
 
   /**
     List of all the walkers.
@@ -428,6 +435,8 @@ private:
     These objects allow HF calculations to be done with QMC.
   */
   QMCHartreeFock HartreeFock;
+
+  Array1D<Stopwatch> swTimers;
 };
 
 #endif

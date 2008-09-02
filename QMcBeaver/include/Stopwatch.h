@@ -106,83 +106,89 @@ static void gettimeofday(struct timeval* t,void* timezone){
 class Stopwatch
 {
  private:
-  longType stime1, stime2, result_us, total_us;
+  longType stime1, stime2, result_us;
   microType micro1, micro2;
   bool running;
 
+  longType total_us;
   longType average_us;
-  int numSamples;
+  longType numSamples;
 
   struct timeval tp;
   struct timezone tz;
 
+  string name;
 public:
   /**
     Creates an instance of the stopwatch that is zeroed and not running.
     */
 
   Stopwatch();
-
+  ~Stopwatch();
 
   /**
-    Resets and stops the stopwatch.
-    */
-
+     Resets and stops the stopwatch.
+  */
   void reset();
 
-
   /**
-    Starts the stopwatch.
-    */
+     Resets and stops the stopwatch.
+  */
+  void reset(string newName);
 
+  void setName(string newName);
+  string getName();
+  
+  /**
+     Starts the stopwatch.
+  */
   void start();
 
-
   /**
-    Stops the stopwatch.
-    */
-
+     Stops the stopwatch.
+  */
   void stop();
-
+  
   void lap();
-  void print(string title);
-
+  void lap(int weight);
+  void print(ostream & strm);
+  double getAverage();
   /**
-    Gets the time in milliseconds.
-    */
-
+     Gets the time in milliseconds.
+  */
   longType timeMS();
 
   /**
-    Gets the time in microseconds.
-    */
-
+     Gets the time in microseconds.
+  */
   longType timeUS();
 
   /**
-    Returns true if the stopwatch is running and false otherwise.
-    */
-
+     Returns true if the stopwatch is running and false otherwise.
+  */
   bool isRunning();
 
-
   /**
-    Gets the time formatted as a string.
-    */
-
+     Gets the time formatted as a string.
+  */
   string toString();
   
   /**
      Sets two objects equal.
-    */
-
+  */
   void operator = ( const Stopwatch &rhs);
 
   /**
-    Returns a stopwatch which contains the total time from two
-    stopwatch objects.
-    */
+     Returns a stopwatch which contains the total time from two
+     stopwatch objects.
+  */
   Stopwatch operator+(Stopwatch & rhs);
+
+  /**
+     Returns a stopwatch which contains the total time from two
+     stopwatch objects.
+  */
+  void aggregateTimer(Stopwatch & rhs);
 
   /**
     Formats and prints the time to a stream.

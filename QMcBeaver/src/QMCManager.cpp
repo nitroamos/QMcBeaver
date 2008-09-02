@@ -77,6 +77,8 @@ void QMCManager::initialize( int argc, char **argv )
     }
 
   QMCnode.initialize( &globalInput );
+  localSWTimers.allocate(QMCnode.getNumTimers());
+  globalSWTimers.allocate(QMCnode.getNumTimers());
 
   done = false;
   iteration = 0;
@@ -193,15 +195,26 @@ void QMCManager::finalize()
         *localTimers.getEquilibrationStopwatch()  +
         *QMCnode.getEquilibrationStopwatch();
     }
+  
+  int idx=0;
+  QMCnode.aggregateTimers(localSWTimers,idx);
 
 #ifdef PARALLEL
   MPI_Reduce( &localTimers,&globalTimers,1,QMCStopwatches::MPI_TYPE,
               QMCStopwatches::MPI_REDUCE,0,MPI_COMM_WORLD );
 
-#else
-  globalTimers = localTimers;
+  MPI_Reduce( localSWTimers.array(),
+	      globalSWTimers.array(),
+	      globalSWTimers.dim1(),Stopwatch::MPI_TYPE,
+              Stopwatch::MPI_REDUCE,0,MPI_COMM_WORLD );
 
+#else
+  globalTimers   = localTimers;
+  globalSWTimers = localSWTimers;
 #endif
+
+  for(int i=0; i<globalSWTimers.dim1(); i++)
+    globalSWTimers(i).setName(localSWTimers(i).getName());
 }
 
 void QMCManager::sendAllProcessorsACommand( int itag )
@@ -1186,7 +1199,7 @@ bool QMCManager::run(bool equilibrate)
   return true;
 }
 
-void QMCManager::optimize()
+double QMCManager::optimize()
 {
   localTimers.getOptimizationStopwatch() ->start();
 
@@ -1199,25 +1212,26 @@ void QMCManager::optimize()
                       globalInput.flags.print_config_frequency;
     }
 
-  if(  globalInput.flags.optimize_Psi )
+  QMCCorrelatedSamplingVMCOptimization::optimize( &globalInput,
+						  Properties_total,
+						  fwProperties_total,
+						  configsToSkip );
+  
+  // Print out the optimized parameters
+  if(  globalInput.flags.my_rank == 0 )
     {
-      QMCCorrelatedSamplingVMCOptimization::optimize( &globalInput,
-          Properties_total,
-          fwProperties_total,
-          configsToSkip );
-
-      // Print out the optimized parameters
-
-      if(  globalInput.flags.my_rank == 0 )
-        {
-          *qmcRslts << globalInput.JP << endl;
-        }
-
-      //reopen the config file
-      globalInput.openConfigFile();
+      *qmcRslts << globalInput.JP << endl;
     }
+  
+  //reopen the config file
+  globalInput.openConfigFile();
 
   localTimers.getOptimizationStopwatch() ->stop();
+
+  double eavg = Properties_total.energy.getAverage();
+  double estd = Properties_total.energy.getStandardDeviation();
+  //Return the upper bound on our energy measurement
+  return (eavg + estd);
 }
 
 void QMCManager::equilibration_step()
@@ -1808,6 +1822,22 @@ void QMCManager::writeTimingData( ostream & strm )
       strm << "Wallclock Time:         " << *localTimers.getTotalTimeStopwatch() << endl;
       strm << globalTimers << endl;
     }
+
+  int numT = globalSWTimers.dim1();
+  double totalTime = globalSWTimers(numT-1).getAverage();
+  double cumulative = 0.0;
+  for(int i=0; i<numT-1; i++)
+    {
+      double avg = globalSWTimers(i).getAverage();
+      double percent = 100.0*avg/totalTime;
+      cumulative += percent;
+      globalSWTimers(i).print(strm);
+      strm << setprecision(2) << setw(10) << percent << " % cumulative = "
+	   << setprecision(2) << setw(10) << cumulative << " %" << endl;
+    }
+  globalSWTimers(numT-1).print(strm);
+  strm << setprecision(2) << setw(10) << 100.0 << " % cumulative = "
+       << setprecision(2) << setw(10) << 100.0 << " %" << endl;
 }
 
 void QMCManager::writeRestart()
@@ -2220,8 +2250,9 @@ void QMCManager::updateTrialEnergy( double weights, int nwalkers_init )
        */
 
       //See formula 11 from UNR93
-      globalInput.flags.energy_trial = globalInput.flags.energy_estimated -
-                                       1.0 / globalInput.flags.dt_effective * logRatio;
+      if(globalInput.flags.dt_effective > 1e-20)
+	globalInput.flags.energy_trial = globalInput.flags.energy_estimated -
+	  1.0 / globalInput.flags.dt_effective * logRatio;
     }
   else
     {
@@ -2229,6 +2260,17 @@ void QMCManager::updateTrialEnergy( double weights, int nwalkers_init )
         globalInput.flags.energy_trial = globalInput.flags.energy_estimated -
                                          globalInput.flags.population_control_parameter * logRatio;
     }
+
+  if(IeeeMath::isNaN(globalInput.flags.energy_trial)){
+    cout << "Error: NaN trial energy!\n";
+    cout << "tenergy = " << globalInput.flags.energy_trial << endl;
+    cout << "energy = " << globalInput.flags.energy_estimated << endl;
+    cout << "dteff = " << globalInput.flags.dt_effective << endl;
+    cout << "ratio = " << ratio << endl;
+    cout << "logRatio = " << logRatio << endl;
+    cout << "pcp = " << globalInput.flags.population_control_parameter << endl;
+    
+  }
 }
 
 void QMCManager::updateEffectiveTimeStep( QMCProperties* Properties )

@@ -15,6 +15,7 @@
 
 #include <iostream>
 
+#include "Stopwatch.h"
 #include "Array1D.h"
 #include "Array2D.h"
 #include "QMCInput.h"
@@ -85,8 +86,14 @@ public:
     @param rhs object to set this object equal to
   */
   void operator=( const QMCPotential_Energy & rhs );
-  
+
+  int getNumTimers();
+  void aggregateTimers(Array1D<Stopwatch> & timers,
+		       int & idx);
+
  private:
+  Array1D<Stopwatch> swTimers;
+
   QMCInput *Input;
   QMCHartreeFock *HartreeFock;
   QMCWalkerData * wd;

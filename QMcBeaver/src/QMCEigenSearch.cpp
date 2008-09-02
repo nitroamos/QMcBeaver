@@ -288,9 +288,6 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 	clog << "-L";
       clog << " params)";
 
-      printf("\nstep-4 f+v %20.10g f=%20.10g v=%20.10e\n",f[optStep-4] + variance[optStep-4],f[optStep-4], variance[optStep-4]);
-      printf("step-2 f=  %20.10g v=%20.10e steps increase %20.10f\n",f[optStep-2],variance[optStep-2],variance[optStep-2]/variance[optStep-4]);
-
       if(optStep >= 4 &&
 	 f[optStep-2] > (f[optStep-4] + variance[optStep-4]) &&
 	 f[optStep-2] < globalInput.flags.energy_trial)
@@ -307,10 +304,17 @@ Array1D<double> QMCEigenSearch::optimize(Array1D<double> & CurrentParams,
 	  double frac = 2.0;
 	  globalInput.flags.max_time_steps = (long)(orig_steps * frac);
 
-	  //with a cutoff
-	  unsigned long cutoff = 500*1000;
-	  if(globalInput.flags.max_time_steps > cutoff)
-	    globalInput.flags.max_time_steps = cutoff;
+	  if(globalInput.flags.optimize_L == 1){
+	    //max if we're optimizing L
+	    unsigned long cutoff = 50000;
+	    if(globalInput.flags.max_time_steps > cutoff)
+	      globalInput.flags.max_time_steps = cutoff;
+	  } else {
+	    //with a cutoff
+	    unsigned long cutoff   = 500*1000;
+	    if(globalInput.flags.max_time_steps > cutoff)
+	      globalInput.flags.max_time_steps = cutoff;
+	  }
 
 	  clog << " new steps = " << globalInput.flags.max_time_steps << endl;
 	} else {

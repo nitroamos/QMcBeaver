@@ -19,6 +19,7 @@
 #include "QMCInput.h"
 #include "QMCHartreeFock.h"
 #include "QMCWalkerData.h"
+#include "Stopwatch.h"
 
 using namespace std;
 
@@ -76,6 +77,14 @@ public:
   virtual void calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walkerData,
 				    Array1D<Array2D<double> * > &xData,
 				    int num){};
+
+  virtual int getNumTimers()
+    {
+      return 0;
+    }
+
+  virtual void aggregateTimers(Array1D<Stopwatch> & timers,
+			       int & idx){};
 
   /**
     Sets two QMCFunctions objects equal.

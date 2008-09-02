@@ -27,8 +27,16 @@ double QMCDerivativeProperties::getEffectiveTimeStep()
   double value = dt;
   if (properties->distanceMovedAccepted.getNumberSamples() > 0)
     {
-      value = dt * properties->distanceMovedAccepted.getAverage()/
-	properties->distanceMovedTrial.getAverage();
+      value = dt;
+
+      /*
+	effdt = dt < p dR2 > / < dR2 >
+      */
+      if(fabs(properties->distanceMovedTrial.getAverage()) < 1e-20)
+	value *= properties->acceptanceProbability.getAverage();
+      else
+	value *= properties->distanceMovedAccepted.getAverage()/
+	  properties->distanceMovedTrial.getAverage();
     }
   return value;
 }

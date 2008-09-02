@@ -17,6 +17,7 @@
 
 const double QMCWalker::maxFWAsymp = 1.0;
 long int QMCWalker::nextID = 0;
+//const int QMCWalker::numAncestors = 10;
 
 QMCWalker::QMCWalker()
 {
@@ -29,20 +30,37 @@ QMCWalker::QMCWalker()
   dR2         =  0.0;
   ageMoved    = -1;
   numWarnings =  0;
+  iteration   =  0;
 }
 
 void QMCWalker::branchID()
 {
   for(int i=numAncestors-1; i > 0; i--)
-    genealogy[i] = genealogy[i-1];
-  genealogy[0] = ++nextID;
+    {
+      genealogy[i]   = genealogy[i-1];
+      birthIter[i]   = birthIter[i-1];
+      birthWeight[i] = birthWeight[i-1];
+      numMoves[i]    = numMoves[i-1];
+    }
+  birthIter[0]   = iteration;
+  birthWeight[0] = weight;
+  genealogy[0]   = ++nextID;
+  numMoves[0]    = 0;
 }
 
 void QMCWalker::newID()
 {
-  genealogy[0] = ++nextID;
+  birthIter[0]   = iteration;
+  birthWeight[0] = weight;
+  genealogy[0]   = ++nextID;
+  numMoves[0]    = 0;
   for(int i=1; i < numAncestors; i++)
-    genealogy[i] = -1;
+    {
+      genealogy[i]   = -1;
+      birthIter[i]   = -1;
+      birthWeight[i] = -1;
+      numMoves[i]    = -1;
+    }
 }
 
 QMCWalker::QMCWalker( const QMCWalker & rhs )
@@ -101,7 +119,12 @@ void QMCWalker::operator=( const QMCWalker & rhs )
   numWarnings = rhs.numWarnings;
 
   for(int i=0; i<numAncestors; i++)
-    genealogy[i] = rhs.genealogy[i];
+    {
+      birthIter[i]   = rhs.birthIter[i];
+      birthWeight[i] = rhs.birthWeight[i];
+      genealogy[i]   = rhs.genealogy[i];
+      numMoves[i]    = rhs.numMoves[i];
+    }
 
   Input = rhs.Input;
   move_accepted         = rhs.move_accepted;
@@ -179,7 +202,7 @@ void QMCWalker::processPropagation(QMCFunctions & QMF, bool writeConfigs)
       if(iteration == iteration_to_stop)
 	{
 	  static QMCSurfer s;
-	  cout << "\n**** Surfing walker " << ID(false);
+	  cout << "\n**** Surfing walker " << ID(false,false);
 	  iteration_to_stop = s.mainMenu(&QMF, iteration, R);
 	}
     }
@@ -247,7 +270,7 @@ void QMCWalker::processPropagation(QMCFunctions & QMF, bool writeConfigs)
   
   if( TrialWalker->isSingular() )
     {
-      cerr << "WARNING: Reinitializing a singular walker!! " << ID(true) << endl;
+      cerr << "WARNING: Reinitializing a singular walker!! " << ID(true,false) << endl;
       initializeWalkerPosition(QMF);
     }
 
@@ -1048,159 +1071,123 @@ void QMCWalker::reweight_walker()
   double S_original = 0.0;
   double trialEnergy    = TrialWalker->walkerData.localEnergy;
   double originalEnergy = OriginalWalker->walkerData.localEnergy;
+  double p = TrialWalker->getAcceptanceProbability();
+  double q = 1.0 - p;      
       
   // determine the weighting factor dW so that the new weight = weight*dW
   
   bool weightIsNaN = false;
 
   if( Input->flags.run_type == "variational")
-    // Keep weights constant for VMC
-    dW = 1.0;
-
-  else
-    {     
-      if( IeeeMath::isNaN(trialEnergy) )
-	{
-	  cerr << "WARNING: trial energy = ";
-	  cerr << TrialWalker->walkerData.localEnergy << "!" << endl;
-	  weightIsNaN = true;
-	}
-      else if( Input->flags.energy_modification_type == "none" )
-        {
-          S_trial    = Input->flags.energy_trial - trialEnergy;
-          S_original = Input->flags.energy_trial - originalEnergy;
-        }
-      else
-        {
-          Array2D<double> * tMGPR =
-            & TrialWalker->walkerData.modifiedGradPsiRatio;
-          Array2D<double> * tGPR = & TrialWalker->walkerData.gradPsiRatio;
-          Array2D<double> * oMGPR =
-            & OriginalWalker->walkerData.modifiedGradPsiRatio;
-          Array2D<double> * oGPR = & OriginalWalker->walkerData.gradPsiRatio;
-          
-          double lengthGradTrialModified =
-            sqrt((*tMGPR).dotAllElectrons(*tMGPR));
-          double lengthGradTrialUnmodified =
-            sqrt((*tGPR).dotAllElectrons(*tGPR));
-          double lengthGradOriginalModified =
-            sqrt((*oMGPR).dotAllElectrons(*oMGPR));
-          double lengthGradOriginalUnmodified =
-            sqrt((*oGPR).dotAllElectrons(*oGPR));
-
-	  if(Input->flags.energy_modification_type=="modified_umrigar93")
-            {
-              S_trial = (Input->flags.energy_trial - trialEnergy)*
-                        (lengthGradTrialModified/lengthGradTrialUnmodified);
-                        
-              S_original = (Input->flags.energy_trial - originalEnergy) *
-                           (lengthGradOriginalModified/lengthGradOriginalUnmodified);
-            }
-          else if( Input->flags.energy_modification_type == "umrigar93" )
-            {
-              S_trial =
-		(Input->flags.energy_trial - Input->flags.energy_estimated)
-		+(Input->flags.energy_estimated - trialEnergy)*
-                (lengthGradTrialModified/lengthGradTrialUnmodified);
-                
-              S_original =
-		(Input->flags.energy_trial - Input->flags.energy_estimated)
-		+(Input->flags.energy_estimated - originalEnergy) *
-                (lengthGradOriginalModified/lengthGradOriginalUnmodified);
-            }
-          else
-            {
-              cerr << "ERROR: unknown energy modification method!" << endl;
-              exit(0);
-            }
-        }
-
-      if (IeeeMath::isNaN(S_trial) || IeeeMath::isNaN(S_original))
-	{
-	  cerr << "Error: S_trial          = " << S_trial << endl;
-	  cerr << "       S_original       = " << S_original << endl;
-	  cerr << "       energy_trial     = " << Input->flags.energy_trial << endl;
-	  cerr << "       energy_estimated = " << Input->flags.energy_estimated << endl;
-	  cerr << "       trialEnergy      = " <<    TrialWalker->walkerData.localEnergy << endl;
-	  cerr << "       originalEnergy   = " << OriginalWalker->walkerData.localEnergy << endl;
-	}
-
-      if( Input->flags.walker_reweighting_method == "simple_symmetric" )
-        {
-          // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 8
-          // This is the "classical" reweighting factor most people use.
-          // umrigar says this has larger timestep and statistical errors than
-          // umrigar93_probability_weighted
-          double temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
-	  
-	  if (IeeeMath::isNaN(temp) || weightIsNaN == true)
-	    {
-	      cerr << "WARNING: dW = exp(" << temp << ")" << endl;
-	      cerr << "Walker's weight is being set to zero so that it does"
-		   << " not ruin the whole calculation." << endl;
-	      dW = 0.0;
-	    }
-	  else
-          dW = exp(temp);
-        }
-      else if( Input->flags.walker_reweighting_method == "simple_asymmetric" )
-        {
-          // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993 eq 23
-          // supposedly between simple_symmetric and
-          // umrigar93_probability_weighted in terms of its timestep error and
-          // statistical performance
-          double temp;
-          if( move_accepted )
-            temp = 0.5*(S_trial+S_original)*Input->flags.dt_effective;
-          else
-            temp = S_original*Input->flags.dt_effective;
-
-	  if (IeeeMath::isNaN(temp) || weightIsNaN == true)
-	    {
-	      cerr << "WARNING: dW = exp(" << temp << ")" << endl;
-	      cerr << "Walker's weight is being set to zero so that it does"
-		   << " not ruin the whole calculation." << endl;
-	      dW = 0.0;
-	    }
-	  else
-          dW = exp(temp);
-        }
-      else if( Input->flags.walker_reweighting_method ==
-               "umrigar93_probability_weighted" )
-        {
-          // from Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993
-          // Umrigar claims this has a small time step error and a small
-          // statistical error compared to simple_asymmetric and
-          // simple_symmetric
-          double p = TrialWalker->getAcceptanceProbability();
-	  double q = 1.0 - p;
-          
-	  double temp = (p*0.5*(S_original+S_trial) + q*S_original) *
-                        Input->flags.dt_effective;
-
-	  if (IeeeMath::isNaN(temp) || weightIsNaN == true)
-	    {
-	      cerr << "WARNING: dW = exp(" << temp << ")" << endl;
-	      cerr << "Walker's weight is being set to zero so that it does"
-		   << " not ruin the whole calculation." << endl;
-	      cerr << " p = " << p << "; q = " << q << endl;
-	      dW = 0.0;
-	    }
-	  else
-	    dW = exp(temp);
-	}
-      else
-	{
-	  cerr << "ERROR: unknown reweighting method!" << endl;
-          exit(0);
-        }
+    {
+      // Keep weights constant for VMC
+      dW = 1.0;
+      return;
     }
 
-  // now set the weight of the walker
+  if( IeeeMath::isNaN(trialEnergy) )
+    {
+      cerr << "WARNING: trial energy = ";
+      cerr << TrialWalker->walkerData.localEnergy << "!" << endl;
+      weightIsNaN = true;
+    }
+  else if( Input->flags.energy_modification_type == "none" )
+    {
+      S_trial    = Input->flags.energy_trial - trialEnergy;
+      S_original = Input->flags.energy_trial - originalEnergy;
+    }
+  else
+    {
+      Array2D<double> * tMGPR =
+	& TrialWalker->walkerData.modifiedGradPsiRatio;
+      Array2D<double> * tGPR = & TrialWalker->walkerData.gradPsiRatio;
+      Array2D<double> * oMGPR =
+	& OriginalWalker->walkerData.modifiedGradPsiRatio;
+      Array2D<double> * oGPR = & OriginalWalker->walkerData.gradPsiRatio;
+
+      //Limit[ Vbar/V , R->nucleus ] = 1
+      //Limit[ Vbar/V , R->node ]    = 0
+      double lengthGradTrialModified =
+	sqrt((*tMGPR).dotAllElectrons(*tMGPR));
+      double lengthGradTrialUnmodified =
+	sqrt((*tGPR).dotAllElectrons(*tGPR));
+      double lengthGradOriginalModified =
+	sqrt((*oMGPR).dotAllElectrons(*oMGPR));
+      double lengthGradOriginalUnmodified =
+	sqrt((*oGPR).dotAllElectrons(*oGPR));
+      
+      if(Input->flags.energy_modification_type=="modified_umrigar93")
+	{
+	  S_trial = (Input->flags.energy_trial - trialEnergy)*
+	    (lengthGradTrialModified/lengthGradTrialUnmodified);
+	  
+	  S_original = (Input->flags.energy_trial - originalEnergy) *
+	    (lengthGradOriginalModified/lengthGradOriginalUnmodified);
+	}
+      else if( Input->flags.energy_modification_type == "umrigar93" )
+	{
+	  S_trial =
+	    (Input->flags.energy_trial - Input->flags.energy_estimated)
+	    +(Input->flags.energy_estimated - trialEnergy)*
+	    (lengthGradTrialModified/lengthGradTrialUnmodified);
+	  
+	  S_original =
+	    (Input->flags.energy_trial - Input->flags.energy_estimated)
+	    +(Input->flags.energy_estimated - originalEnergy) *
+	    (lengthGradOriginalModified/lengthGradOriginalUnmodified);
+	}
+      else
+	{
+	  cerr << "ERROR: unknown energy modification method!" << endl;
+	  exit(0);
+	}
+    }
+
+  double reweight = 0.0;
+  if( Input->flags.walker_reweighting_method ==
+      "simple_symmetric" )
+    {
+      // This is the "classical" reweighting factor most people use.
+      // umrigar says this has larger timestep and statistical errors than
+      // umrigar93_probability_weighted
+
+      // Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993, eq 8
+      reweight = 0.5*(S_trial+S_original);
+    }
+  else if( Input->flags.walker_reweighting_method ==
+	   "simple_asymmetric" )
+    {
+      // supposedly between simple_symmetric and
+      // umrigar93_probability_weighted in terms of its timestep error and
+      // statistical performance
+
+      // Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993, eq 23
+      if( move_accepted )
+	reweight = 0.5*(S_trial+S_original);
+      else
+	reweight = S_original;
+    }
+  else if( Input->flags.walker_reweighting_method ==
+	   "umrigar93_probability_weighted" )
+    {
+      // Umrigar claims this has a small time step error and a small
+      // statistical error compared to simple_asymmetric and
+      // simple_symmetric
+
+      // Umrigar, Nightingale, and Runge JCP 99(4) 2865; 1993, eq 25
+      reweight = (p*0.5*(S_original+S_trial) + q*S_original);
+    }
+  else
+    {
+      cerr << "ERROR: unknown reweighting method!" << endl;
+      exit(0);
+    }
+
+  dW = exp(reweight*Input->flags.dt_effective);
   setWeight( getWeight() * dW );
 
-  if(getWeight() <= 0.0 || Input->flags.run_type == "variational")
-    return;
+  //if(getWeight() <= 0.0)
+  //  return;
 
   /*
     Below this line are the statistical manipulations.
@@ -1235,11 +1222,11 @@ void QMCWalker::reweight_walker()
       // the number of steps until warnings are printed
       int min_steps = 5;
 
-      if(getWeight() > 1.5*Input->flags.branching_threshold)
+      if(getWeight() > 2.0*Input->flags.branching_threshold)
 	{
 	  if(steps > min_steps)
 	    {
-	      cerr << "WARNING: Deleting heavy walker " << ID(move_accepted);
+	      cerr << "WARNING: Deleting heavy walker " << ID(move_accepted,false);
 	      cerr.flush();
 	    }
 	  setWeight(0.0);
@@ -1250,24 +1237,20 @@ void QMCWalker::reweight_walker()
 	{
 	  if(steps > min_steps)
 	    {
-	      cerr << "WARNING: Deleting light walker " << ID(move_accepted);
+	      cerr << "WARNING: Deleting light walker " << ID(move_accepted,false);
 	      cerr.flush();
 	    }
 	  setWeight(0.0);
 	  return;
 	}
 
-      if(dW > 1.5 || dW < 0.5)
+      if(dW > 1.5 || dW < 0.5 || IeeeMath::isNaN(dW))
 	{
 	  if(steps > min_steps)
 	    {
-
-	      if(dW > 2.0 || dW < 0.25)
+	      if(dW > 2.0 || dW < 0.25 || IeeeMath::isNaN(dW))
 		{
-		  double p = TrialWalker->getAcceptanceProbability();
-		  double q = 1.0 - p;
-		  
-		  cerr << "WARNING: Deleting walker with bad dW " << ID(move_accepted);
+		  cerr << "WARNING: Deleting walker with bad dW " << ID(move_accepted,false);
 		  cerr << "       p = " << p << "; q = " << q;
 		  cerr << "       energy_trial     = " << Input->flags.energy_trial << endl;
 		  cerr << "       energy_estimated = " << Input->flags.energy_estimated << endl;
@@ -1302,7 +1285,7 @@ void QMCWalker::reweight_walker()
 	    Is there any argument suggesting that a Local Energy can never be +'ve?
 	   */
 	  if(rel_diff > rel_cutoff && steps > 2*min_steps){
-	    cerr << "WARNING: Deleting walker with bad energy " << ID(move_accepted);
+	    cerr << "WARNING: Deleting walker with bad energy " << ID(move_accepted,false);
 	    cerr.flush();
 	  }
 	  setWeight(0.0);
@@ -1315,7 +1298,7 @@ void QMCWalker::reweight_walker()
 	  // I don't see how a warning here could be very useful...
 	  if(steps > age_cutoff && false)
 	    {
-	      cerr << "WARNING: Deleting aged walker " << ID(move_accepted);
+	      cerr << "WARNING: Deleting aged walker " << ID(move_accepted,false);
 	      cerr.flush();
 	    }
 	  setWeight(0.0);
@@ -1331,34 +1314,58 @@ void QMCWalker::reweight_walker()
 
 	How aggressive can we be?
       */
-      if(getWeight() > 50.0)
+      if(dW > 4.0 || IeeeMath::isNaN(dW))
 	{
-	  cerr << "ERROR: Deleting heavy walker " << ID(move_accepted);
-	  cerr.flush();
-	  setWeight(0.0);
-	  return;
-	}
+	  stringstream strm;	  
+	  strm << "ERROR: Deleting fast growth walker " << ID(move_accepted,true);
+	  int wi = 25;
+	  int pr = 15;
 
-      if(rel_diff > globalInput.flags.rel_cutoff)
-	{
-	  cerr << "ERROR: Deleting walker with bad energy " << ID(move_accepted);
-	  cerr.flush();
-	  setWeight(0.0);
-	  return;
-	}
+	  strm.width(10);
+	  strm << " p = "
+	       << setw(wi) << setprecision(pr)
+	       << fixed << p;
+	  strm.width(10);
+	  strm << "  q = "
+	       << setw(wi) << setprecision(pr)
+	       << fixed << q;
+	  strm.width(10);
+	  strm << endl;
 
-      if(dW > 4.0)
-	{
-	  stringstream strm;
-	  double p = TrialWalker->getAcceptanceProbability();
-	  double q = 1.0 - p;
-	  
-	  strm << "ERROR: Deleting fast growth walker " << ID(move_accepted);
-	  strm << "       p = " << p << "; q = " << q;
-	  strm << "       energy_trial     = " << Input->flags.energy_trial << endl;
-	  strm << "       energy_estimated = " << Input->flags.energy_estimated << endl;
-	  strm << "       S_trial          = " << S_trial << endl;
-	  strm << "       S_original       = " << S_original << endl;
+	  strm.width(10);
+	  strm << "Trial E = "
+	       << setw(wi) << setprecision(pr)
+	       << fixed << Input->flags.energy_trial;
+	  strm.width(10);
+	  strm << "  Est E = "
+	       << setw(wi) << setprecision(pr)
+	       << fixed << Input->flags.energy_estimated;
+	  strm.width(10);
+	  strm << endl;
+
+	  strm.width(10);
+	  strm << "reweight= "
+	       << setw(wi) << setprecision(pr)
+	       << scientific << reweight;
+	  strm.width(10);
+	  strm << " Eff dt = "
+	       << setw(wi) << setprecision(pr)
+	       << scientific << Input->flags.dt_effective;
+	  strm.width(10);
+	  strm << endl;
+
+	  strm.width(10);
+	  strm << "S_trial = "
+	       << setw(wi) << setprecision(pr)
+	       << scientific << S_trial;
+	  strm.width(10);
+	  strm << " S_orig = "
+	       << setw(wi) << setprecision(pr)
+	       << scientific << S_original;
+	  strm.width(10);
+	  strm << endl;
+
+
 	  strm << "TrialWalker:" << endl << TrialWalker->walkerData;
 	  strm << "OriginalWalker:" << endl << OriginalWalker->walkerData;
 	  strm << endl;
@@ -1367,6 +1374,23 @@ void QMCWalker::reweight_walker()
 	  setWeight(0.0);
 	  return;
 	}
+
+      if(getWeight() > 50.0)
+	{
+	  cerr << "ERROR: Deleting heavy walker " << ID(move_accepted,true);
+	  cerr.flush();
+	  setWeight(0.0);
+	  return;
+	}
+
+      if(rel_diff > globalInput.flags.rel_cutoff)
+	{
+	  cerr << "ERROR: Deleting walker with bad energy " << ID(move_accepted,!true);
+	  cerr.flush();
+	  setWeight(0.0);
+	  return;
+	}
+
     }
 }
 
@@ -1400,22 +1424,22 @@ bool QMCWalker::branchRecommended()
     5) 
    */
   bool shouldRecommend = true;
-  bool shouldWarn = false;
+  string shouldWarn = "";
   //int aged = age - 10;
 
   if(age > 4)
     {
       shouldRecommend = false;
       if(age >= Input->flags.old_walker_acceptance_parameter && age%10 == 0)
-	shouldWarn = true;
+	shouldWarn = "lazy";
     }
   if(dW > 1.5)
     {
       shouldRecommend = false;
       if(iteration%10 == 0 && getWeight() > 2.0*Input->flags.branching_threshold)
-	shouldWarn = true;
+	shouldWarn = "dW";
       if(dW > 2.0)
-	shouldWarn = true;
+	shouldWarn = "dW";
     }
   if(getWeight() > 2.0*Input->flags.branching_threshold)
     {
@@ -1423,19 +1447,19 @@ bool QMCWalker::branchRecommended()
       if(iteration%50 == 0 &&
 	 getWeight() > 2.0*Input->flags.branching_threshold &&
 	 dW > 1.0)
-	shouldWarn = true;
+	shouldWarn = "W";
     }
 
   double virial = -TrialWalker->walkerData.potentialEnergy/TrialWalker->walkerData.kineticEnergy;
 
   // Relatively large virial ratios do not appear to correlate with bad E_L.
   // It's hard to know how this would be a good indicator given rel_diff
-  if(fabs(virial) < 0.1)
+  if(fabs(virial) < 1e-3)
     {
       shouldRecommend = false;
       //only warn when we arrive at a bad spot
       if(age == 0)
-	shouldWarn = true;
+	shouldWarn = "virial";
     }
 
   double rel_diff = fabs( (TrialWalker->walkerData.localEnergy -
@@ -1443,23 +1467,35 @@ bool QMCWalker::branchRecommended()
 			  Input->flags.energy_estimated_original);
 
   //should I use rel_diff > globalInput.flags.rel_cutoff here?
-  if(rel_diff > 1.0)
+  if(rel_diff > globalInput.flags.rel_cutoff)
     {
       shouldRecommend = false;
       if(age == 0)
-	shouldWarn = true;
+	shouldWarn = "rel E";
     }
 
-  if(shouldWarn && !shouldRecommend && iteration > 0)
+  if(shouldWarn != "" && !shouldRecommend && iteration > 0)
     {
-      cerr << "WARNING: Not recommending a branch for walker " << ID(move_accepted);
+      if(shouldWarn == "lazy")
+	{
+	  /*
+	  cerr << "WARNING: Not recommending (reason = " << shouldWarn << ") a branch for walker";
+	  cerr << " age = " << setw(4) << age;
+	  cerr << " (" << genealogy[0] << "::r" << Input->flags.my_rank << ")" << endl;
+	  */
+	}
+      else
+	{
+	  cerr << "WARNING: Not recommending (reason = " << shouldWarn << ") a branch for walker";
+	  cerr << ID(move_accepted,false);
+	}
       cerr.flush();
     }
 
   return shouldRecommend;
 }
 
-string QMCWalker::ID(bool showTrial)
+string QMCWalker::ID(bool showTrial, bool verbose)
 {
   /*
     The output only depends upon move_accepted if
@@ -1469,10 +1505,13 @@ string QMCWalker::ID(bool showTrial)
    */
   QMCWalkerData * wd;
   if(showTrial)
-    wd = & TrialWalker->walkerData;
+    {
+      wd = & TrialWalker->walkerData;
+    }
   else
-    wd = & OriginalWalker->walkerData;
-
+    {
+      wd = & OriginalWalker->walkerData;
+    }
   int w = 25;
   int p = 15;
 
@@ -1487,15 +1526,39 @@ string QMCWalker::ID(bool showTrial)
   */
   stringstream id;
 
-  id << "(" << genealogy[0];
-  for(int i=1; i<numAncestors; i++)
-    {
-      if(genealogy[i] == -1)
-	break;
-      id << "<" << genealogy[i];
-    }
-
-  id << "::" << Input->flags.my_rank << ")" << endl;
+  if(verbose){
+    id << "(r" << Input->flags.my_rank << ")" << endl;
+    id << setw(15) << "ID";
+    id << setw(15) << "Born";
+    id << setw(15) << "Age Branch";
+    id << setw(15) << "Num Moves";
+    id << setw(15) << "Weight" << endl;
+    id << setw(15) << genealogy[0];
+    id << setw(15) << birthIter[0];
+    id << setw(15) << iteration-birthIter[0];
+    id << setw(15) << numMoves[0];
+    id << setw(15) << setprecision(5) << birthWeight[0] << endl;
+    for(int i=1; i<numAncestors; i++)
+      {
+	if(genealogy[i] == -1)
+	  break;
+	id << setw(15) << genealogy[i];
+	id << setw(15) << birthIter[i];
+	id << setw(15) << birthIter[i-1]-birthIter[i];
+	id << setw(15) << numMoves[i];
+	id << setw(15) << setprecision(5) << birthWeight[i] << endl;
+      }
+  } else {
+    id << "(" << genealogy[0];
+    long numPrint = numAncestors < 5 ? numAncestors : 5;
+    for(int i=1; i<numPrint; i++)
+      {
+	if(genealogy[i] == -1)
+	  break;
+	id << "<" << genealogy[i];
+      }
+    id << "::r" << Input->flags.my_rank << ")" << endl;
+  }
 
   id << *wd;
 
@@ -1507,8 +1570,11 @@ string QMCWalker::ID(bool showTrial)
 	 << scientific << getWeight();
       id.width(10);
       id << "   dW = "
-	 << setw(w) << setprecision(p)
-	 << fixed << dW;
+	 << setw(w) << setprecision(p);
+      if(fabs(dW) > 100)
+	id << scientific << dW;
+      else
+	id << fixed << dW;
       id.width(10);
       id << endl;
     }
@@ -1561,7 +1627,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
     } else {
       // if the aratio is NaN then reject the move
       numWarnings++;
-      cerr << "WARNING: Rejecting trial walker with NaN p! " << ID(true);
+      cerr << "WARNING: Rejecting trial walker with NaN p! " << ID(true,false);
       cerr << "         PsiRatio    = " << PsiRatio << endl;
       cerr << "         GreensRatio = " << GreensRatio << endl;
       p = 0.0;
@@ -1574,7 +1640,7 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
   if( TrialWalker->isSingular() )
     {
       numWarnings++;
-      cerr << "WARNING: Rejecting singular trial walker! " << ID(true);
+      cerr << "WARNING: Rejecting singular trial walker! " << ID(true,false);
       p = 0.0;
       TrialWalker->walkerData.zero();
     }
@@ -1618,6 +1684,7 @@ void QMCWalker::acceptOrRejectMove()
       ageMoved = age;
       age = 0;
       move_accepted = true;
+      numMoves[0]++;
     }
   else
     {
@@ -1632,8 +1699,13 @@ void QMCWalker::acceptOrRejectMove()
     {
       if(ageMoved > Input->flags.old_walker_acceptance_parameter + 15)
 	{
-	  //cerr << "WARNING: Old walker moved after " << ageMoved << " iterations " << ID(false);
+	  //cerr << "WARNING: Old walker moved after " << ageMoved << " iterations " << ID(false,true);
 	  cerr << "WARNING: Old walker moved after " << ageMoved << " iterations." << endl;
+	  cerr << "Original Walker ";
+	  cerr << ID(false,true);
+	  cerr << "Trial Walker ";
+	  cerr << ID(true,false);
+	  //cerr << "WARNING: Old walker " moved after " << ageMoved << " iterations." << endl;
 	}
       /*
       if(aged >= 50 && aged%50 == 0)
@@ -2308,18 +2380,9 @@ void QMCWalker::calculateObservables( QMCProperties & props )
     {
       if(age == 0)
 	{
-	  bool shouldWarn = false;
-	  switch(Input->flags.warn_verbosity)
-	    {
-	    case 0: break;
-	    case 1: if(rel_diff > 5.0) shouldWarn = true; break;
-	    case 2: if(rel_diff > 2.0) shouldWarn = true; break;
-	    case 3: if(rel_diff > 1.0) shouldWarn = true; break;
-	    default:shouldWarn = true; break;
-	    }
-
+	  bool shouldWarn = true;
 	  if(shouldWarn && iteration + Input->flags.equilibration_steps > 5){
-	    cerr << "ERROR: Not including walker in average " << ID(move_accepted);
+	    cerr << "ERROR: Not including walker in average " << ID(move_accepted,false);
 	    cerr << "   localEnergy = " << localEnergy << endl;
 	    cerr.flush();
 	  }
