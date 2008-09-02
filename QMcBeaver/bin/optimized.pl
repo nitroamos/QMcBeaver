@@ -6,9 +6,9 @@ require "$path/utilities.pl";
 
 my $printFunc = 1;
 my $useScaled = 0;
-my $useVar    = 0;
 my $multiPlot = 1;
-
+my $showOpt   = 0;
+my $makeGraph = 0;
 #put the jastrow in the exponential
 my $useExp    = 1;
 #square the whole thing (so that the y axis
@@ -18,33 +18,74 @@ my $useSqr    = 0;
 my $date = `date`;
 chomp $date;
 
-my $showOpt;
-my @files = @ARGV;
-if($#files < 0)
-{
-    push(@files,".");
-} elsif($#files == 0 && $files[0] =~ /out/){
-    $showOpt = 1;
-    $useVar  = 1;
-    print "Showing optimization steps\n";
+while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
+    $type = shift(@ARGV);
+    $param = "";
+
+    if($type eq "-o"){
+	$showOpt = ! $showOpt;
+	print "Using showOpt = $showOpt\n";
+    } elsif($type eq "-p"){
+	$makeGraph = 1;
+	print "Using makeGraph = $makeGraph\n";
+    } elsif($type eq "-f"){
+	$param = shift(@ARGV);
+	push(@fileFilters,$param);
+	print "Adding file filter $param\n";
+    } elsif($type eq "-x"){
+	$param = shift(@ARGV);
+	push(@exclusionFilters,$param);
+	print "Adding file exclusion filter $param\n";
+    } elsif($type eq "-u"){
+	$param = shift(@ARGV);
+	if($param == 0){
+	    $units  = 627.50960803;
+	    $unitsL = "kcal/mol";
+	} elsif($param == 1) {
+	    $units  = 27.211399;
+	    $unitsL = "eV"; 
+	} elsif($param == 2) {
+	    $units  = 2625.5002;
+	    $unitsL = "kJ/mol"; 
+	} elsif($param == 3) {
+	    $units  = 219474.63;
+	    $unitsL = "cm^-1"; 
+	} elsif($param == 4) {
+	    $units  = 1;
+	    $unitsL = "au"; 
+	}
+	print "Using $unitsL energy units, conversion = $units\n";
+    } else {
+	print "Unrecognized option: $type\n";
+	die;
+    }
 }
 
-if($showOpt != 1){
-    getFileList(".out",\@files);
+my @files = sort @ARGV;
+if($#files < 0){
+    push(@files,".");
 }
+
+getFileList(".out",\@files);
 
 %jastrows;
 %plotters;
-my @optEnergies;
+my %optEnergies;
 my $base = "";
 my $numjw = "";
 my $numjwID = 0;
 my $numbf = 0;
 my $numci = 1;
+my $refE  = 0;
+my $step  = 1;
+my $lastS = "";
+my $short = "";
 for(my $index=0; $index<=$#files; $index++){
+    $lastS = $short;
     $base = substr($files[$index],0,-4);
-
-    #next if($base !~ /tw/);
+    $short = `basename $base`;
+    chomp $short;
+    $short =~ s/_[\d]+$//g;
 
     #print "base = $base\n";
     open (CKMFFILE, "$base.ckmf");
@@ -55,10 +96,6 @@ for(my $index=0; $index<=$#files; $index++){
 	    chomp;
 	    my @line = split/[ ]+/;
 	    $isd = $line[1];
-	    if($useVar == 0)
-	    {
-		last if($isd eq "variational");
-	    }
 	}
 	if($_ =~ m/^\s*nbasisfunc\s*$/){
 	    $_ = <CKMFFILE>;
@@ -72,13 +109,15 @@ for(my $index=0; $index<=$#files; $index++){
 	    my @line = split/[ ]+/;
 	    $numci = $line[1];
 	}
+	if($_ =~ m/^\s*energy\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $refE = $line[1];
+	}
 	if($_ =~ m/&geometry$/){
 	    last;
 	}
-    }
-
-    if($useVar == 0){
-	next if($isd eq "variational");
     }
 
     $numjw = "";
@@ -107,9 +146,18 @@ for(my $index=0; $index<=$#files; $index++){
     my $line = <FILE>;
     my $name = "";
     my $L = 0;
-    my $step = 0;
-    while( ($line !~ /TheMan/ && $line !~ /There/) ||
-	   ($showOpt == 1))
+    my $best;
+    if($showOpt == 1){
+	$best = $step;
+    }
+
+    if($lastS ne $short){
+	$step = 1;
+	if($showOpt == 1){
+	    $best = $step;
+	}
+    }
+    while(!eof FILE)
     {
 	my $func = "";
 	if(($line =~ /Eup/ || $line =~ /Edn/) && $line !~ /parameters/){
@@ -124,7 +172,6 @@ for(my $index=0; $index<=$#files; $index++){
 		chomp;
 		my @line = split/[\s]+/,$line;
 		$L = $line[4];
-		#printf "%-30s %-20s %-20s\n",$files[$index],$name,$L;
 	    } else {
 		#it's a 2 body jastrow	    
 		while($line !~ /x/){
@@ -135,67 +182,80 @@ for(my $index=0; $index<=$#files; $index++){
 		$L = $line[4];
 		$func = <FILE>;
 		chomp($func);
-		#printf "%-30s %-20s %-20s\n",$files[$index],$name,$L;
 	    }
 
 	    $name =~ s/[:()]//g;
-	    my $val = "";
-	    if($showOpt){
-		$val = "$name&$numci,$numbf&$L&$step&$func";
-	    } else {
-		$val = "$name&$numci,$numbf&$L&$numjw&$func";
-	    }
-	    $jastrows{$val} = $base;
+	    $name =~ s/Nuclear//;
+	    $name =~ s/EupEup/aa/g;
+	    $name =~ s/EupEdn/ab/g;
+	    $name =~ s/Eup/u/g;
+	    
+	    $jastrows{"$name&$best&$refE&$numci,$numbf&$numjw&$short"} = "$step&$L&$func&$base";
 	}
 
 	if($line =~ /full step/){
-	    $step += 1;
+	    $step += 2;
+	    if($showOpt == 1){
+		$best = $step;
+	    }
 	}
 	if($line =~ /Objective Value/ && $line !~ /params/){
-	    $energy = (split/ +/,$line)[6];
-	    push(@optEnergies,$energy);
-	    print "Energy is $energy, num = $#optEnergies\n";
+	    $optEnergies{"$short&$best"} = (split/ +/,$line)[6];
 	}
-	$line = <FILE>;
-	last if( eof FILE );
+	$line = <FILE>;	
     }
 
     close(FILE);
 }
 
-if($showOpt){
-    printf "Jastrow = $numjw; NumCI = $numci; NumBF = $numbf\n";
-    printf "%-30s %-15s %6s %-30s %5s   %-40s\n",
-    "Type","L (bohr)","% diff","Step","NumBF","File Name";
-} else {
-    printf "%-30s %-15s %6s %-30s %5s   %-40s\n",
-    "Type","L (bohr)","% diff","Jastrow","NumBF","File Name";
-}
+printf "%4s %4s %11s %11s %10s %8s %10s %8s   %-30s   %5s   %-s\n",
+    "Type","Iter","RefE","VMC E","Corr E","% diff","L (bohr)","% diff","Jastrow","NumBF","File Name";
 
 my $lastL = 0;
-foreach $key (sort a1n2 keys %jastrows)
+my $lastE = 0;
+my $lastN = "";
+foreach $key (sort a2n3 keys %jastrows)
 {
-    my @keydata = split/&/,$key;
-    printf "%-30s %-15s", $keydata[0], $keydata[2];
+    #$jastrows{"$name&$best&$refE&$numci,$numbf&$numjw&$base"} = "$step&$L&$func";
+    ($jName,$best,$refE,$dType,$jType,$short) = split/&/,$key;
+    ($step,$L,$func,$base) = split/&/,$jastrows{$key};
 
-    printf " %6.2f", 100.0*($keydata[2] - $lastL)/$keydata[2];
-    $lastL = $keydata[2];
+    $nrg = $optEnergies{"$short&$best"};
 
-    printf " %-30s %5s   %-40s", $keydata[3], $keydata[1], $jastrows{$key};
+    $corrE = ($refE-$nrg)*627.5095;
 
-    #printf " $keydata[4]";
-    printf "\n";
+    printf "%-4s %4i %11.6f %11.6f", $jName, $step, $refE, $nrg, $corrE;
+    if($jName ne $lastN){
+	$lastL = $L;
+	$lastE = $corrE;
+	$lastN = "$jName";
+	printf " %10.3f %8s", $corrE, " ";
+	printf " %10.5f %8s", $L, " ";
+    } else {
+	$diffE = $corrE - $lastE;
+	if(abs($corrE) > 1e4){
+	    printf " %10.1e ", $corrE;
+	} else {
+	    printf " %10.3f ", $corrE;
+	}
+	if(abs($diffE) > 1e4){
+	    printf "%8.1e", $diffE;
+	} else {
+	    printf "%8.2f", $diffE;
+	}
+	printf " %10.5f %8.2f", $L, 100.0*($L - $lastL)/$L;
+    }
+    $lastL = $L;
+    #$lastE = $corrE;
+
+    printf "   %-30s %7s   %-s\n", $jType, $dType, $base;
     
-    my $example = `basename $jastrows{$key}`;
-    chomp($example);
-
-    #remove any run index identifiers
-    $example =~ s/_[\d]+$//g;
-
-    if(!($keydata[4] eq "")){
-	$plotters{$keydata[0]} .= "$key&$example#";
+    if(!($func eq "")){
+	$plotters{$jName} .= "$jName&$dType&$L&$jType&$func&$nrg&$short#";
     }    
 }
+
+die if($makeGraph == 0);
 
 my $gnuplot = "/ul/amosa/bin/gnuplot";
 $base =~ s/_[\d]+$//g if(!$showOpt);
@@ -232,7 +292,7 @@ foreach $key (reverse sort keys %plotters)
 	}
     }
 
-    print "Writing graph in: $file_name\n";
+    print "Adding graph of $key to: $file_name\n";
 
     if(!$printedHeader){
 
@@ -301,6 +361,7 @@ gnuplot_Commands_Done
     }
     $printedHeader = 1;
 
+    #$jastrows{"$name&$best&$refE&$numci,$numbf&$numjw&$base"} = "$step&$L&$func&$energy"; 
     my @plots = split/\#/,$plotters{$key};
 
     my $xmax = 0;
@@ -319,26 +380,22 @@ gnuplot_Commands_Done
 
     print GNUPLOT "plot [0:$xmax]";
     for(my $i=0; $i<=$#plots; $i++){
-	my @kd = split/&/,$plots[$i];
-	my $func = $kd[4];
-	my $max = $kd[2];
-	my $jw = $kd[3];
-
+	($jName,$dType,$max,$jw,$func,$optE,$example) = split/&/,$plots[$i];
 	$jw =~ s/18,//g;
 	$jw =~ s/18//g;
 
 	my $title;
 
 	if($showOpt){
-	    $title = sprintf "%2i %8.4f", $i, $optEnergies[$i];
+	    $title = sprintf "%2i %8.4f", $i, $optE;
 	} else {
 	    if($max >= 10.0){
 		$title = sprintf "%-4.1f;",$max;
 	    } else {
 		$title = sprintf "%-4.2f;",$max;
 	    }
-	    $title = "";
-	    $title .= sprintf " %3s; %s; %s", $kd[1], $jw, $kd[5];
+	    #$title = "";
+	    $title .= sprintf " %3s; %s; %s", $dType, $jw, $example;
 	}
 	$title =~ s/_/\\\\_/g;
 	#change the font size of the key
@@ -349,7 +406,7 @@ gnuplot_Commands_Done
 	
 	#a polynomial might not be completed. it might end with a +)
 	$func =~ s/\+\)/\)/g;
-
+	
 	#add in the implicit multiplications
 	#this line confuses emacs' indentation algorithm...
 	$func =~ s/([\d])([x(])/$1*$2/g;
@@ -367,7 +424,7 @@ gnuplot_Commands_Done
 	    }
 	}
 	
-	my $linetype = int($i / 4) + 1;
+	#my $linetype = int($i / 4) + 1;
 	#print "line number $i has type $linetype\n";
 	$func = "x > $max ? 1/0 : $func";
 	#$func = "x";
@@ -381,6 +438,8 @@ gnuplot_Commands_Done
     }
 
     if($multiPlot){
+	#In order to only include the key once, we must make sure that the
+	#plots are always sorted the same!!!
 	print GNUPLOT "set nokey\n";
     } else {
 	close(GNUPLOT);
