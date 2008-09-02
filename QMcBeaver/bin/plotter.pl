@@ -18,7 +18,7 @@ my $every    = 1;
 if($withErr){
     #error lines can be very messy, so decrease the
     #freqency of points
-    $every    = 25;
+    $every    = 100;
 }
 #hartrees (=1) or kcal/mol (=627.50960803)?
 my $units = 627.50960803;

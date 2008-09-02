@@ -6,7 +6,7 @@ chomp($path);
 require "$path/utilities.pl";
 
 my $useVar     = 0;
-my $dtFilter   = 0.01;
+my $dtFilter   = 0;
 my $orbFilter  = 1;
 my $compareE   = 0;
 my $sumResults = 1;
@@ -30,7 +30,6 @@ my @exclusionFilters;
 #my $units = 27.211399;
 my $units = 627.50960803;
 my $unitsL = "kcal/mol";
-
 
 #absolute energies (=0) or relative (=1) to each other?
 my $shift = 1;
@@ -61,7 +60,7 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
     if($type eq "-v"){
 	$param = shift(@ARGV);
 	$useVar = $param if($param == 1 || $param == 0);
-	print "Using useVar = $useVar  $useVar\n";
+	print "Using useVar = $useVar\n";
     } elsif($type eq "-t"){
 	$param = shift(@ARGV);
 	$dtFilter = $param if($param >= 0);
@@ -194,16 +193,17 @@ for(my $index=0; $index<=$#files; $index++){
 
     my $vare = "";
 
-    my $dt = 0;
-    my $nw = 0;
+    my $dt    = 0;
+    my $oepi  = 0;
+    my $nw    = 0;
     my $effnw = 0;
-    my $opt = -1;
-    my $isd = -1;
-    my $hfe = 0;
+    my $opt   = -1;
+    my $isd   = -1;
+    my $hfe   = 0;
     my $numbf = 0;
     my $numci = 0;
     my $numor = 0;
-    my $use3 = 0;
+    my $use3  = 0;
     my $extraVal = 0;
     my %refEnergies = ();
 
@@ -237,6 +237,12 @@ for(my $index=0; $index<=$#files; $index++){
 	    chomp;
 	    my @line = split/[ ]+/;
 	    $dt = $line[1];
+	}
+	if($_ =~ m/^\s*one_e_per_iter\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $oepi = $line[1];
 	}
 	if($_ =~ m/^\s*number_of_walkers\s*$/){
 	    $_ = <CKMFFILE>;
@@ -293,7 +299,7 @@ for(my $index=0; $index<=$#files; $index++){
 	}
     }
 
-    next if($opt == 1);
+    #next if($opt == 1);
     if($useVar == 0){
 	next if($isd eq "variational");
     }
@@ -432,19 +438,23 @@ for(my $index=0; $index<=$#files; $index++){
     $numerrors = sprintf "%4.2f",$numerrors;
 
     $lastlines .= "$line";
-    my $key;
+    my $key = "$dt&$numbf&$numjw&$nw&$numci&$numor&$oepi";
     if($vare eq ""){
 	#use the value for energy in the key
-	$key =  "$hfe&$dt&$numbf&$numjw&$nw&$numci&$numor";
+	$key =  "$hfe&$key";
     } else {
 	#use the variational energy from the header in the key
-	$key = "$vare&$dt&$numbf&$numjw&$nw&$numci&$numor";
+	$key = "$vare&$key";
     }
 
+    my $runage = getFileAge("$base.out",1);
+    # updated in the last 15 minutes
+    $short = "*$short" if($runage < 900);
     if(exists $shortnames{$key}){
 	my $orig = $shortnames{$key};
 	$shortnames{$key} = $short if(length $orig > length $short);
     } else {
+	
 	$shortnames{$key} = $short;
     }
     $lenLong = length $short if(length $short > $lenLong);
@@ -472,10 +482,8 @@ for(my $index=0; $index<=$#files; $index++){
     #printf "%50s %15s %15s E_h=%20.14f E_kcal=%20.10f Err=%i Warn=%i\n","$base","dt=$dt","nw=$nw",$eavg,$in_kcal,$numerrors,$numwarnings;
 
     $summary{$key} .= 
-	sprintf "..  %-30s%1s%7s %5s  %10.5f %10.5f %3i:%-3i %5i %16.10f %4s %5s",
-	"$base","$machine","$dt","$effnw","$hfe","$vare",
-	$numci,$numbf,$numjw,$eavg,
-	$numerrors,$numwarnings;
+	sprintf "..  %-30s%1s%7s %5s %16s %4s %5s",
+	"$base","$machine","$dt","$effnw",getEnergyWError($eavg,$estd),$numerrors,$numwarnings;
 
     if($wallclock ne ""){
 	#the calculation completed, and some extra data is available
@@ -526,10 +534,8 @@ foreach $key (sort byenergy keys %dt_ave_results)
 	$label{$key} = sprintf "%2i", (scalar keys %label) + 1;
     }
 }
-printf "ID  %-30s %7s %5s  %10s %10s %7s %5s %16s %4s %5s %10s %10s %10s %10s %10s %10s %15s\n",
-    "File Name","dt","nw","HF E",
-    "Var E","CI:BF",
-    "NumJW","Avg E","Err","Warn",
+printf "ID  %-30s %7s %5s %16s %4s %5s %10s %10s %10s %10s %10s %10s %15s\n",
+    "File Name","dt","nw","Avg E","Err","Warn",
     "Variance",
     "Corr Len","WF Eff","Wall","Total","Iter","effdt*iters";
 
@@ -544,9 +550,9 @@ if($num_results > 0){
     #print "Average result = $ave_result\n";
     $labelLen = $lenLong;
     $labelLen = length "Label" if(length "Label" > $labelLen);
-    printf "%5s %*s %10s %20s %5s %7s   %-25s %5s %20s %20s %10s\n",
+    printf "%5s %*s %10s %1s %20s %5s %7s   %-25s %5s %20s %20s %10s\n",
     "ID",$labelLen,"Label",
-    "dt","Ref. Energy","Num","CI:BF","NumJW","NumW","Average","Corr. E.","Weight";
+    "dt","e","Ref. Energy","Num","CI:BF","NumJW","NumW","Average","Corr. E.","Weight";
     my %qref;
     my %href;
     my $dtref = 0;
@@ -562,11 +568,11 @@ if($num_results > 0){
 
 	}
 
-	printf "%5i %*s %10s %20s %5i %3i:%-3i   %-25s %5i %20s %20.10f %10.5f\n",
+	printf "%5i %*s %10s %1i %20s %5i %3i:%-3i   %-25s %5i %20s %20.10f %10.5f\n",
 	$label{$key},
 	$labelLen,
 	$shortnames{$key},
-	"$keydata[1]", "$keydata[0]",
+	"$keydata[1]", $keydata[7], "$keydata[0]",
 	$dt_num{$key},
 	$keydata[5],
 	$keydata[2],

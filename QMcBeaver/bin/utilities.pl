@@ -17,6 +17,23 @@ sub a1n2 {
     }
 }
 
+sub a2n3 {
+    my @adata = split/&/,$a;
+    my @bdata = split/&/,$b;
+    if($adata[0] eq $bdata[0]){
+	if($adata[5] eq $bdata[5]){
+	    #sort by opt iter
+	    $bdata[1] <=> $adata[1];
+	} else {
+	    #sort by reference energy
+	    $adata[5] cmp $bdata[5];
+	}
+    } else {
+	#Sort by jastrow type (e.g. s, t, UC, etc)
+	$bdata[0] cmp $adata[0];
+    }
+}
+
 sub byenergy {
     my @adata = split/&/,$a;
     my @bdata = split/&/,$b;
@@ -68,6 +85,7 @@ sub getFormula {
     return (0,0) if($od[0] == $td[0] || #compare energies
 		    $od[1] != $td[1] || #compare dt
 		    $od[4] != $td[4] || #compare num walkers
+		    $od[7] != $td[7] || #compare oepi
 		    $od[3] ne $td[3]);  #compare jastrows
 
     $or = $od[2];
@@ -89,6 +107,37 @@ sub getFormula {
     } else {
 	return (0, 0);
     }
+}
+
+sub getFileAge
+{
+    my ($file,$abstime) = @_;
+    my $curTime = qx! date +%s !; 
+    my $data = `/bin/ls -lh --time-style=+%s $file`;
+    my @list = split/ +/,$data;
+    $outSize = $list[4];
+    my $outModTime = $curTime - $list[5];
+
+    return $outModTime if($abstime == 1);
+    $char = " ";
+    
+    if($outModTime > 3600){
+	$outModTime /= 3600;
+	$char = "h";
+	if($outModTime > 24){
+	    $outModTime /= 24;
+	    $char = "d";
+	}
+    }
+    if($char eq " "){
+	$outModTime = sprintf "%5.0f $char", $outModTime;
+    } else {
+	$outModTime = sprintf "%5.1f $char", $outModTime;
+    }
+    #$outModTime .= sprintf " %3s", $list[5];
+    #$outModTime .= sprintf " %2s", $list[6];
+    #$outModTime .= sprintf " %5s", $list[7];    
+    return $outModTime;
 }
 
 sub estimateTimeToFinish
@@ -142,8 +191,8 @@ sub estimateTimeToFinish
 
 sub getCKMFHeader
 {
-    my $header = sprintf "%-30s %2s %3s %11s %-7s %-7s %1s%1s%1s%1s %-15s %8s %8s\n",
-    "Name","  ","NW","EQ/Steps","dt","nci:nbf","O","L","C","3","HF","Age","Size";
+    my $header = sprintf "%-30s %2s %3s %11s %1s %-7s %-7s %1s%1s%1s%1s %-15s %8s %8s\n",
+    "Name","  ","NW","EQ/Steps","e","dt","nci:nbf","O","L","C","3","HF","Age","Size";
     return $header;
 }
 
@@ -165,7 +214,6 @@ sub getCKMFSummary
     }
 
     chomp ($shortbase);
-    my $curTime = qx! date +%s !; 
     open (CKMFFILE, "$ckmf");
 
     while(<CKMFFILE> !~ /&flags/){};
@@ -182,6 +230,7 @@ sub getCKMFSummary
     $steps   = 0;
     $eqsteps = 0;
     $iseed   = 0;
+    $oepi    = 0;
 
     while(<CKMFFILE>){
 	if($_ =~ m/^\s*run_type\s*$/){
@@ -213,6 +262,12 @@ sub getCKMFSummary
 	    chomp;
 	    my @line = split/[ ]+/;
 	    $dt = $line[1];
+	}
+	if($_ =~ m/^\s*one_e_per_iter\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $oepi = $line[1];
 	}
 	if($_ =~ m/^\s*number_of_walkers\s*$/){
 	    $_ = <CKMFFILE>;
@@ -290,29 +345,7 @@ sub getCKMFSummary
     my $failed     = 0;
 
     if(-e "$base.out"){
-	my $data = `/bin/ls -lh --time-style=+%s $base.out`;
-	my @list = split/ +/,$data;
-
-	$outSize = $list[4];
-	$outModTime = $curTime - $list[5];
-	$char = " ";
-
-	if($outModTime > 3600){
-	    $outModTime /= 3600;
-	    $char = "h";
-	    if($outModTime > 24){
-		$outModTime /= 24;
-		$char = "d";
-	    }
-	}
-	if($char eq " "){
-	    $outModTime = sprintf "%5.0f $char", $outModTime;
-	} else {
-	    $outModTime = sprintf "%5.1f $char", $outModTime;
-	}
-	#$outModTime .= sprintf " %3s", $list[5];
-	#$outModTime .= sprintf " %2s", $list[6];
-	#$outModTime .= sprintf " %5s", $list[7];
+	$outModTime = getFileAge("$base.out",0);
     }
 
     if(-e "$base.out" && $opt){
@@ -375,10 +408,10 @@ sub getCKMFSummary
     }
 
     my $oneliner = "";
-    $oneliner .= sprintf "%-30s %2s %3i %5s/%-5s %-7s %3i:%-3s %1i%1i%1i%1i %-15s",
+    $oneliner .= sprintf "%-30s %2s %3i %5s/%-5s %1s %-7s %3i:%-3s %1i%1i%1i%1i %-15s",
     $shortbase,$rt,
     $nw,$eqsteps_str,$steps_str,
-    $dt,
+    $oepi,$dt,
     ${numci},${numbf},$opt,$optl,$optci,$opt3,$hfe;
     $oneliner .= sprintf " %10s", $outModTime;
     $oneliner .= sprintf " %7s", $outSize;
@@ -451,7 +484,7 @@ sub getFileList
 	    if(-d $cur && $cur !~ /src$/ && $cur !~ /bin$/ && $cur !~ /include$/ && 
 	       ($cur !~ /hide$/ || $loops <= 1))
 	    {
-		my @list = `ls $cur`;
+		my @list = `ls -rt $cur`;
 		foreach $item (@list)
 		{
 		    #we have a directory in the list, so we're going to need to loop again
