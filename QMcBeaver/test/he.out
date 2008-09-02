@@ -1,5 +1,5 @@
-QMcBeaver version 20080229 was compiled in double precision.
-Compiled on Jun 28 2008 15:58:51
+QMcBeaver version 20080716 was compiled in double precision.
+Compiled on Aug 24 2008 20:01:57
 Compiler version 3.4.6 20060404 (Red Hat 3.4.6-8)
 With the libraries: MPI BLAS LAPACK
 Signaling: CHANNEL1 = 23 CHANNEL2 = 40
@@ -140,20 +140,35 @@ dt_effective: 0.00991 +/- 0.00125
 
 **************** End of Results *****************
 ***************  Finalize
-Average iterations per hour:                              9.9849e+06
-Average iterations*walkers per hour:                      9.9849e+07
-Average microseconds per sample:                          339.4
-Average microseconds per sample per num initial walkers:  33.94
+Average iterations per hour:                              8.538e+06
+Average iterations*walkers per hour:                      8.538e+07
+Average microseconds per sample:                          399.57
+Average microseconds per sample per num initial walkers:  39.957
 
-Wallclock Time:                          180 ms   =                 0.18 s    =                0.003 mins =                5e-05 hrs 
-Total Time:                              180 ms   =                 0.18 s    =                0.003 mins =                5e-05 hrs     100.00 %
-Initialization Time:                       1 ms   =                0.001 s    =           1.6667e-05 mins =           2.7778e-07 hrs       0.59 %
-Equilibration Time:                       37 ms   =                0.037 s    =           0.00061667 mins =           1.0278e-05 hrs      20.73 %
-Propagation Time:                        135 ms   =                0.135 s    =              0.00225 mins =             3.75e-05 hrs      75.31 %
+Wallclock Time:                          210 ms   =                 0.21 s    =               0.0035 mins =           5.8333e-05 hrs 
+Total Time:                              210 ms   =                 0.21 s    =               0.0035 mins =           5.8333e-05 hrs     100.00 %
+Initialization Time:                       1 ms   =                0.001 s    =           1.6667e-05 mins =           2.7778e-07 hrs       0.54 %
+Equilibration Time:                       43 ms   =                0.043 s    =           0.00071667 mins =           1.1944e-05 hrs      20.60 %
+Propagation Time:                        159 ms   =                0.159 s    =              0.00265 mins =           4.4167e-05 hrs      75.81 %
 Send Command Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.01 %
-Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.23 %
+Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.22 %
 Synchronization Time:                      0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Poll for Command Time:                     0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Optimization Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 
-Wallclock Time:                          191 ms   =                0.191 s    =            0.0031833 mins =           5.3056e-05 hrs 
+      Evaluate basis functions: 0 ( avg =       3.05 us, n=           4995)      7.64 % cumulative =       7.64 %
+         Matrix Multiplication: 0 ( avg =       2.58 us, n=           4995)      6.47 % cumulative =      14.11 %
+             Derivative Ratios: 0 ( avg =       2.08 us, n=           4995)      5.22 % cumulative =      19.33 %
+      Evaluate basis functions: 0 ( avg =       2.75 us, n=           4995)      6.90 % cumulative =      26.23 %
+         Matrix Multiplication: 0 ( avg =       2.06 us, n=           4995)      5.18 % cumulative =      31.40 %
+             Derivative Ratios: 0 ( avg =       1.07 us, n=           4995)      2.67 % cumulative =      34.08 %
+              Potential Energy: 0 ( avg =       0.34 us, n=           4995)      0.85 % cumulative =      34.93 %
+                    EN Jastrow: 0 ( avg =       1.62 us, n=           4995)      4.06 % cumulative =      38.99 %
+                    EE Jastrow: 0 ( avg =       0.96 us, n=           4995)      2.40 % cumulative =      41.38 %
+                   EEN Jastrow: 0 ( avg =       4.84 us, n=           4995)     12.13 % cumulative =      53.52 %
+                Psi Quantities: 0 ( avg =       2.99 us, n=           4995)      7.51 % cumulative =      61.02 %
+            Walker Propagation: 0 ( avg =       9.09 us, n=           4985)     22.80 % cumulative =      83.83 %
+           Correlated Sampling: 0 ( avg =       0.00 us, n=            -15)      0.00 % cumulative =      83.83 %
+         Calculate Observables: 0 ( avg =       2.67 us, n=           4985)      6.70 % cumulative =      90.53 %
+                   Entire Step: 0 ( avg =      39.86 us, n=           4985)    100.00 % cumulative =     100.00 %
+Wallclock Time:                          222 ms   =                0.222 s    =               0.0037 mins =           6.1667e-05 hrs 

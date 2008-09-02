@@ -179,7 +179,7 @@ a_diag
 ksi
  0.5
 max_optimize_Psi_steps
- 5
+ 30
 equilibrate_first_opt_step
  1
 equilibrate_every_opt_step
