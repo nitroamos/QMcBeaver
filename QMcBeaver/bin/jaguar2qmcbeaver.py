@@ -495,74 +495,18 @@ for atom in atoms:
     OUT.write("%s\t%i\t%s\n" % ( atom[0], NumberBF, atom[1] ) )
 
     for BF in atom[2]:
-        if BF[0] == 'S' :
-            OUT.write("\t%i\t%s\n" % (len(BF[2]),'s'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("s",C[1],C[0])))
+	if BF[0] in ['S','P','D','F']:
+	    if BF[0] == 'F':
+		#Jaguar has a different order than GAMESS
+		mterms = ["fxxx","fyyy","fzzz","fxyy","fyxx","fzxx","fxzz","fyzz","fzyy","fxyz"]
+	    else:
+		mterms = getM(BF[0])
+	    
+	    for m in mterms:
+		OUT.write("\t%i\t%s\n" % (len(BF[2]),m))
+		for C in BF[2]:
+		    OUT.write("\t\t%s\t%s\n"%(C[0], normalize(m,C[1],C[0])))
                 
-	elif BF[0] == 'P' :
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'px'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("px",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'py'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("py",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" % (len(BF[2]),'pz'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("pz",C[1],C[0])))
-                
-	elif BF[0] == 'D' :
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'dxx'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dxx",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'dyy'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dyy",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" % (len(BF[2]),'dzz'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dzz",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'dxy'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dxy",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'dxz'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dxz",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" % (len(BF[2]),'dyz'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dyz",C[1],C[0]))) 
-
-	elif BF[0] == 'F' :
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'fxxx'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fxxx",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'fyyy'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fyyy",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'fzzz'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fzzz",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'fyyx'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fyyz",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'fxxy'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fxxy",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'fxxz'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fxxz",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'fzzx'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fzzx",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'fzzy'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fyzz",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'fyyz'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fyyz",C[1],C[0])))
-            OUT.write("\t%i\t%s\n" %(len(BF[2]),'fxyz'))
-            for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fxyz",C[1],C[0])))
-
 	else:
 	    print "Unknown basis function type: ",BF[0]
 OUT.write("&\n")
