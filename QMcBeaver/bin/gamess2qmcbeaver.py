@@ -49,47 +49,80 @@ def fact2( i ) :
     else : return i * fact2( i-2 )
 
 #calculate the normalization coefficient for a GTO (see pg 280 in the HLR book)
-def normalize( a, b, c, pf, ef ) :
+def normalize( m, pf, ef ) :
     prefactor = string.atof(pf)
     expfactor = string.atof(ef)
-	
+    a = m.count('x')
+    b = m.count('y')
+    c = m.count('z')
     temp = (fact2(2*a-1)*fact2(2*b-1)*fact2(2*c-1))**(-0.5)
     temp *= (2.0 * expfactor / PI)**(0.75)
     temp *= (4.0 * expfactor)**( 0.5*(a+b+c) )
     return temp*prefactor
 
-#This function will make all the basis functions for m
+# This function will make all the basis functions for m
+# It is critical to get the order of these correct.
 def getM(type):
     type = string.lower(type)
-    mterms = []
     
     if type == 's':
-	l = 0
+	return ["s"]
     elif type == 'p':
-	l = 1
+	return ["px","py","pz"]
     elif type == 'd':
-	l = 2
+	return ["dxx","dyy","dzz","dxy","dxz","dyz"]
     elif type == 'f':
-	l = 3
+	return ["fxxx","fyyy","fzzz","fxxy","fxxz","fxyy","fyyz","fxzz","fyzz","fxyz"]
     elif type == 'g':
-	l = 4
-    elif type == 'h':
-	l = 5
-    elif type == 'i':
-	l = 6
+	return ["gxxxx","gyyyy","gzzzz","gxxxy","gxxxz","gxyyy","gyyyz","gxzzz","gyzzz",
+		"gxxyy","gxxzz","gyyzz","gxxyz","gxyyz","gxyzz"]
     else:
 	# If you're looking for some of the hybrid types,
 	# then don't program them in this function.
 	print "Unknown basis function type: ", type
 	sys.exit(0)
+
+    return []
+
+def spinCouple(orb1,orb2,A,B, CI, mult):
+    #orb1 = string.atoi(orb1)
+    #orb2 = string.atoi(orb2)
+    if orb1 == orb2:
+	for i in range(len(A)):
+	    A[i][orb1] = 1
+	    B[i][orb1] = 1	
+	return (A,B,CI)
+    
+    old = len(A)
+    newCI = range(old*2)
+    newA = range(old*2)
+    newB = range(old*2)
+
+    for i in range(len(A)):
+	ratio = math.sqrt(1.0/2.0)
+	ratio = 1.0
 	
-    for a in range(l+1):
-	for b in range(l+1):
-	    for c in range(l+1):
-		if a+b+c == l:
-		    name = type + 'x'*a + 'y'*b + 'z'*c
-		    mterms = [[name,a,b,c]] + mterms
-    return mterms
+	newCI[2*i]      = ratio * CI[i]
+	newA[2*i]       = copy.deepcopy(A[i])
+	newB[2*i]       = copy.deepcopy(B[i])
+	newA[2*i][orb1] = 1
+	newB[2*i][orb2] = 1
+	
+	if mult == 3:
+	    newCI[2*i+1]      = "c %i -1.0"%(2*i)
+	elif mult == 1:
+	    newCI[2*i+1]      = "c %i 1.0"%(2*i)
+	else:
+	    print "Don't know how to couple mult=",mult
+	    sys.exit(0)
+	newA[2*i+1]       = copy.deepcopy(A[i])
+	newB[2*i+1]       = copy.deepcopy(B[i])
+	newA[2*i+1][orb2] = 1
+	newB[2*i+1][orb1] = 1
+    
+    #print "Singlet paired orbitals", orb1, "and", orb2
+    #print "--> Remember: these CI can't be optimized or you will mess up the spin function!! <--"
+    return (newA,newB,newCI)
     
 Infile = sys.argv[1]
 IN = open(Infile,'r')
@@ -113,11 +146,12 @@ IN2.close()
 Outfile = filebase + "ckmf"
 OUT = open(Outfile,'w')
 
-run_type = "ENERGY"
-scf_type = "RHF"
-ci_type  = "NONE"
-pp_type  = "NONE"
+run_type  = "ENERGY"
+scf_type  = "RHF"
+ci_type   = "NONE"
+pp_type   = "NONE"
 spin_mult = 1
+istate    = 1
 
 detcutoff = 0
 if len(sys.argv) == 3:
@@ -134,6 +168,9 @@ for i in range(len(gamess_output)):
 	    for j in range(len(line)):
 		if string.find(line[j],'SCFTYP') != -1:
 		    scf_type = line[j+1]
+		if string.find(line[j],'VBTYP') != -1:
+		    if string.find(line[j+1],'NONE') == -1:
+			scf_type = line[j+1]
 		if string.find(line[j],'RUNTYP') != -1:
 		    run_type = line[j+1]
 		if string.find(line[j],'CITYP') != -1:
@@ -391,6 +428,36 @@ elif scf_type == "GVB":
             end_wavefunction = j
             break
 
+elif scf_type == "VB2000":
+    cicoef=[]
+    for i in range(len(gamess_output)):
+        if string.find(gamess_output[i],'Normalized structure coefficients') != -1:
+	    line = gamess_output[i+1]
+            cicoef += string.split(line)	    
+        if string.find(gamess_output[i],'ENERGY AND DIFF OF MACROITER') != -1:
+	    line = gamess_output[i]
+            energy = (string.split(line))[7]
+
+    pcum = 0
+    for i in range(len(cicoef)):
+	cicoef[i] = string.atof(cicoef[i])
+	pcum += cicoef[i]*cicoef[i]
+    print "VB Coeff = ",cicoef, "\nnorm = ",pcum
+    print "VB Energy = ",energy
+    Datafile = filebase + "vec"	
+    IN2 = open(Datafile,'r')
+    gamess_data = IN2.readlines()
+    IN2.close()
+
+    for i in range(energy_line,len(gamess_data)):
+        if string.find(gamess_data[i],'$VEC') != -1:
+            start_wavefunction = i+1
+            break
+    for j in range(start_wavefunction,len(gamess_data)):
+        if string.find(gamess_data[j],'$END') != -1:
+            end_wavefunction = j
+            break
+
 elif scf_type == "NONE" and ci_type == "ALDET":
 
     for i in range(len(gamess_data)):
@@ -506,25 +573,25 @@ elif scf_type == "UHF":
 # Get the occupation and CI coefficents.
 
 # RHF, ROHF, and UHF have one determinant.
-if ci_type != "ALDET" and scf_type != "GVB":
-    AlphaOccupation = [0]
-    BetaOccupation = [0]
-    AlphaOccupation[0] = range(norbitals)
-    BetaOccupation[0] = range(norbitals)
+if scf_type == "RHF" or scf_type == "ROHF" or scf_type == "UHF":
+    AlphaOcc = [0]
+    BetaOcc = [0]
+    AlphaOcc[0] = range(norbitals)
+    BetaOcc[0] = range(norbitals)
     
     for i in range(nalpha):
-        AlphaOccupation[0][i] = 1
+        AlphaOcc[0][i] = 1
     for j in range(nalpha,norbitals):
-        AlphaOccupation[0][j] = 0
+        AlphaOcc[0][j] = 0
 
     for i in range(nbeta):
-        BetaOccupation[0][i] = 1
+        BetaOcc[0][i] = 1
     for j in range(nbeta,norbitals):
-        BetaOccupation[0][j] = 0
+        BetaOcc[0][j] = 0
 
     ncore = norbitals
     ndeterminants = 1
-    CI_coeffs = [1]
+    CI = [1]
 
 elif scf_type == "GVB":
     core_line_number = -1
@@ -542,19 +609,19 @@ elif scf_type == "GVB":
 	    print "GVB settings: mult=",spin_mult,"ncore=",ncore,"norb=",norb,"npair=",npair,"nseto=",nseto
             break
 
-    AlphaOccupation = range(1)
-    CI_coeffs = range(1)
-    CI_coeffs[0] = 1.0
+    AlphaOcc = range(1)
+    CI = range(1)
+    CI[0] = 1.0
     
-    for i in range(len(AlphaOccupation)):
-        AlphaOccupation[i] = range(norbitals)
+    for i in range(len(AlphaOcc)):
+        AlphaOcc[i] = range(norbitals)
 
-    for i in range(len(AlphaOccupation)):
+    for i in range(len(AlphaOcc)):
         for j in range(norbitals):
 	    if j < ncore:
-		AlphaOccupation[i][j] = 1
+		AlphaOcc[i][j] = 1
 	    else:
-		AlphaOccupation[i][j] = 0
+		AlphaOcc[i][j] = 0
 
     if npair > 0:
 	#The two perfect paired electrons are spin coupled into a singlet
@@ -580,7 +647,7 @@ elif scf_type == "GVB":
 	idet = 0
 	for p in range(npair):
 	#for p in range(npair-1,-1,-1):
-	    old = len(CI_coeffs)
+	    old = len(CI)
 	    coef1 = string.atof(cicoef[index])
 	    index += 1
 	    coef2 = string.atof(cicoef[index])
@@ -599,30 +666,30 @@ elif scf_type == "GVB":
 		branch1 = ci%old
 		branch2 = old-1-ci%old
 		#branch2 = branch1
-		for i in range(len(AlphaOccupation[ci%old])):
+		for i in range(len(AlphaOcc[ci%old])):
 		    if ci < old:
-			pairAlpha[ci][i] = AlphaOccupation[branch1][i]
+			pairAlpha[ci][i] = AlphaOcc[branch1][i]
 		    else:
-			pairAlpha[ci][i] = AlphaOccupation[branch2][i]
+			pairAlpha[ci][i] = AlphaOcc[branch2][i]
 			
 		if ci < old:
-		    pairCI[ci] = CI_coeffs[branch1] * coef1
+		    pairCI[ci] = CI[branch1] * coef1
 		    pairAlpha[ci][orb1] = 1
 		else:
-		    pairCI[ci] = CI_coeffs[branch2] * coef2
+		    pairCI[ci] = CI[branch2] * coef2
 		    pairAlpha[ci][orb2] = 1
 
 	    #for ci in range(len(pairAlpha)):
-	#	for o in range(2*(p+1)):
-	#	    if o % 2 == 0:
-	#		print pairAlpha[ci][o+ncore],
-	#	print
+	    #	for o in range(2*(p+1)):
+	    #	    if o % 2 == 0:
+	    #		print pairAlpha[ci][o+ncore],
+	    #	print
 	    print "Geminal ",p," with coeffs ",coef1, ", ",coef2, " uses orbitals ", orb1, " and ", orb2
 	    #print "Determinant CI coefficients = ",pairCI	
 	    
-	    CI_coeffs = pairCI
-	    AlphaOccupation = pairAlpha
-	BetaOccupation = copy.deepcopy(AlphaOccupation)
+	    CI = pairCI
+	    AlphaOcc = pairAlpha
+	BetaOcc = copy.deepcopy(AlphaOcc)
 	ndeterminants = pow(2,(end_ci - start_ci))
 	
 	#end npair > 0
@@ -633,14 +700,17 @@ elif scf_type == "GVB":
 	print "\n\nWarning: the script does not handle nseto=",nseto," correctly!!!"
 
     if nseto == 2 and spin_mult == 3:
-	#This case is easy, since the NSETO orbitals are both alpha
+	# This case is easy, since the NSETO orbitals are both alpha
 	# WF = anti[12aa]
-	for det in range(len(AlphaOccupation)):
-	    for orb in range(len(AlphaOccupation[det])):
+	for det in range(len(AlphaOcc)):
+	    for orb in range(len(AlphaOcc[det])):
 		if orb >= ncore and orb < ncore+nseto:
-		    AlphaOccupation[det][orb] = 1
+		    AlphaOcc[det][orb] = 1
+	# If you want the other triplet (even though there doesn't appear to be a difference):
+	# WF = anti[12(ab + ba)] = anti[12ab] - anti[21ab]
+	# then you need to use spinCouple
 
-    if nseto == 2 and spin_mult == 1:
+    elif nseto == 2:
 	#The two electrons are spin coupled into a singlet
 	# See Eq 33a from "SCF Equations for GVB" by Bobrowicz and Goddard
 	# WF = anti[12(ab - ba)] = anti[(12 + 21)ab] = anti[12ab] + anti[21ab]
@@ -648,59 +718,101 @@ elif scf_type == "GVB":
 	    if string.find(gamess_output[j],'OPEN SHELL ORBITALS') != -1:
 		start_ci = j+1
 		break
-	old = len(AlphaOccupation)
-	setCI = range(old*nseto)
-	setAlpha = range(old*nseto)
-	setBeta = range(old*nseto)
 
 	ci_line = string.split(gamess_output[start_ci])
 	orb1 = string.atoi(ci_line[4])-1
 	ci_line = string.split(gamess_output[start_ci+1])
 	orb2 = string.atoi(ci_line[4])-1
+	(AlphaOcc,BetaOcc,CI) = spinCouple(orb1,orb2,AlphaOcc,BetaOcc,CI,spin_mult)
 	
-	for i in range(len(AlphaOccupation)):
-	    setCI[2*i]      = math.sqrt(1.0/2.0) * CI_coeffs[i]
-	    setAlpha[2*i]   = copy.deepcopy(AlphaOccupation[i])
-	    setBeta[2*i]    = copy.deepcopy(BetaOccupation[i])
-	    setAlpha[2*i][orb1] = 1
-	    setBeta[2*i][orb2]  = 1
+	ndeterminants = len(CI)
 
-	    setCI[2*i+1]    = math.sqrt(1.0/2.0) * CI_coeffs[i]
-	    setAlpha[2*i+1] = copy.deepcopy(AlphaOccupation[i])
-	    setBeta[2*i+1]  = copy.deepcopy(BetaOccupation[i])
-	    setAlpha[2*i+1][orb2] = 1
-	    setBeta[2*i+1][orb1]  = 1
+    assert(ndeterminants == len(CI))
 
-	print "Singlet paired orbitals", orb1, "and", orb2
-	print "--> Remember: these CI can't be optimized or you will mess up the spin function!! <--"
-	
-	AlphaOccupation = copy.deepcopy(setAlpha)
-	BetaOccupation = copy.deepcopy(setBeta)
-	CI_coeffs = setCI
-	ndeterminants = len(setCI)
+elif scf_type == "VB2000":
+    rumer = []
+    for i in range(len(gamess_output)):
+        if string.find(gamess_output[i],'GENERAL CONTROLS ($GENCTL)') != -1:
+            core_line_number = i+8
+            core_line = string.split(gamess_output[core_line_number])
+            ncore = string.atoi(core_line[3])
+	    print "VB2000 settings: ncore=",ncore
+	if string.find(gamess_output[i],'RUMER PATTERN') != -1:
+	    for r in range(len(cicoef)):
+		line = gamess_output[i+r+1]
+		#the first number is just the index
+		rumer = rumer + [(string.split(line))[1:]]
 
-    assert(ndeterminants == len(CI_coeffs))
+    coreO = range(1)
+    for i in range(len(coreO)):
+        coreO[i] = range(norbitals)
 
+    for i in range(len(coreO)):
+        for j in range(norbitals):
+	    if j < ncore:
+		coreO[i][j] = 1
+	    else:
+		coreO[i][j] = 0
+
+    AlphaOcc = []
+    BetaOcc = []
+    CI = []
+    for r in range(len(rumer)):
+	print "rumer =", rumer[r]
+	tempA = copy.deepcopy(coreO)
+	tempB = copy.deepcopy(coreO)
+	tempC = range(1)
+	tempC[0] = cicoef[r]
+	pcum += tempC[0]*tempC[0]
+	for p in range(len(rumer[r])/2):
+	    orb1 = ncore-1 + string.atoi(rumer[r][2*p])
+	    orb2 = ncore-1 + string.atoi(rumer[r][2*p+1])	    
+	    (tempA,tempB,tempC) = spinCouple(orb1,orb2,tempA,tempB,tempC,1) 
+	#for ci in range(len(tempA)):
+	#    print tempC[ci], ": ",
+	#    for o in range(ncore,norbitals):
+	#	print tempA[ci][o],
+	#    print
+	AlphaOcc = AlphaOcc + tempA
+	BetaOcc  = BetaOcc + tempB
+	CI = CI + tempC
+
+    ndeterminants = len(CI)
+    #sys.exit(0)
 elif scf_type == "NONE" and ci_type == "ALDET":
     core_line_number = -1
+    nstates = 1
     for i in range(len(gamess_output)):
         if string.find(gamess_output[i],'NUMBER OF CORE ORBITALS') != -1:
             core_line_number = i
             core_line = string.split(gamess_output[core_line_number])
             ncore = string.atoi(core_line[5])
+	if string.find(gamess_output[i],'NUMBER OF CI STATES REQUESTED') != -1:
+            line = string.split(gamess_output[i])
+            nstates = string.atoi(line[6])
+	if string.find(gamess_output[i],'PARTIAL TWO ELECTRON INTEGRAL TRANSFORMATION') != -1:
             break
-	
+
+    if nstates > 1:
+	istate = string.atoi(raw_input("Choose which CI state you want [1 to %i]: "%nstates))
+
     for i in range(core_line_number,len(gamess_output)):
         if string.find(gamess_output[i],'ENERGY=') != -1:
-            start_mc_data = i
-            break
-	
+	    line = string.split(gamess_output[i])
+	    if string.atoi(line[1]) == istate:
+		start_mc_data = i
+		break
+
+    end_ci = -1
+    start_ci = -1
     for j in range(start_mc_data,len(gamess_output)):
 	if string.find(gamess_output[j],'ALPH') != -1:
             start_ci = j+2
-            break
+	if start_ci != -1 and len(gamess_output[j]) == 1:
+	    end_ci = j-1
+	    break
 	
-    for i in range(start_ci,len(gamess_output)):
+    for i in range(start_ci,end_ci):
 	try:
 	    ci_line = string.split(gamess_output[i])
 	    coeffs = string.atof(ci_line[4])
@@ -708,9 +820,12 @@ elif scf_type == "NONE" and ci_type == "ALDET":
 		end_ci = i-1
 		break
 	except:
-	    print "i        = ", i
-	    print "start_ci = ", start_ci
-	    print "line     = ", gamess_output[i]
+	    print "Error extracting ALDET state ", istate, ":"
+	    print "First det line = ", start_ci
+	    print "Last  det line = ", end_ci
+	    print "ENERGY= line   = ", start_mc_data
+	    print "Cur det index  = ", i
+	    print "Cur det data   = ", gamess_output[i]
 	    raise
 
 	if string.find(gamess_output[i+1],'DONE WITH DETERMINANT CI') != -1 or string.find(gamess_output[i+1],'DONE WITH GENERAL CI') != -1:
@@ -719,65 +834,57 @@ elif scf_type == "NONE" and ci_type == "ALDET":
 
     ndeterminants = end_ci - start_ci + 1
 
-    AlphaOccupation = range(ndeterminants)
-    BetaOccupation = range(ndeterminants)
-    CI_coeffs = range(ndeterminants)
+    AlphaOcc = range(ndeterminants)
+    BetaOcc = range(ndeterminants)
+    CI = range(ndeterminants)
 
     for i in range(ndeterminants):
-        AlphaOccupation[i] = range(norbitals)
-        BetaOccupation[i] = range(norbitals)
+        AlphaOcc[i] = range(norbitals)
+        BetaOcc[i] = range(norbitals)
 
     for i in range(ndeterminants):
         for j in range(ncore):
-            AlphaOccupation[i][j] = 1
-            BetaOccupation[i][j] = 1
+            AlphaOcc[i][j] = 1
+            BetaOcc[i][j] = 1
 
     for i in range(ndeterminants):
         ci_line = string.split(gamess_output[i+start_ci])
-        CI_coeffs[i] = string.atof(ci_line[4])
+        CI[i] = string.atof(ci_line[4])
         alpha_occ = ci_line[0]
         beta_occ = ci_line[2]
         for j in range(len(alpha_occ)):
-            AlphaOccupation[i][j+ncore] = string.atoi(alpha_occ[j])
-            BetaOccupation[i][j+ncore] = string.atoi(beta_occ[j])
+            AlphaOcc[i][j+ncore] = string.atoi(alpha_occ[j])
+            BetaOcc[i][j+ncore] = string.atoi(beta_occ[j])
         for k in range(len(alpha_occ)+ncore,norbitals):
-            AlphaOccupation[i][k] = 0
-            BetaOccupation[i][k] = 0
+            AlphaOcc[i][k] = 0
+            BetaOcc[i][k] = 0
 
 # GAMESS usually creates many more orbitals than are occupied.  We get rid of
 # the unoccupied orbitals because we don't need them.
 
 total_orbitals = norbitals
-
-if (ci_type == "ALDET" or scf_type == "GVB"):
-    total_orbitals = norbitals
-    for i in range(total_orbitals):
-        index = total_orbitals-i-1
-        keep_this_orbital = 0
-        for j in range(len(AlphaOccupation)):
-            if (AlphaOccupation[j][index] == 1):
-                keep_this_orbital = 1
-                break
-            if (BetaOccupation[j][index] == 1):
-                keep_this_orbital = 1
-                break
-        if (keep_this_orbital == 0):
-            norbitals = norbitals-1
-        elif (keep_this_orbital == 1):
-            break
-elif (ci_type != "ALDET"):
-    if (nalpha >= nbeta):
-        norbitals = nalpha
-    elif (nbeta > nalpha):
-        norbitals = nbeta
+for i in range(total_orbitals):
+    index = total_orbitals-i-1
+    keep_this_orbital = 0
+    for j in range(len(AlphaOcc)):
+	if AlphaOcc[j][index] == 1 or BetaOcc[j][index] == 1:
+	    keep_this_orbital = 1
+	    break
+    if (keep_this_orbital == 0):
+	norbitals = norbitals-1
+    elif (keep_this_orbital == 1):
+	break
 
 for i in range(ndeterminants-1,-1,-1):
-    if abs(CI_coeffs[i]) < detcutoff:
-	#print "Removing",i,"with",CI_coeffs[i]
-	del CI_coeffs[i]
-	del AlphaOccupation[i]
-	del BetaOccupation[i]
-ndeterminants = len(CI_coeffs)
+    try:
+	if abs(CI[i]) < detcutoff:
+	    #print "Removing",i,"with",CI[i]
+	    del CI[i]
+	    del AlphaOcc[i]
+	    del BetaOcc[i]
+    except:
+	continue
+ndeterminants = len(CI)
 ##################  PRINT FLAGS: BEGIN    ########################
 #
 # We'll use ckmf template files (extension ckmft) to help make
@@ -817,30 +924,30 @@ OUT.write('# Using ckmft template file: %s\n'% templates[choice])
 for i in range(len(gamess_output)):
     line = -1;
     if string.find(gamess_output[i],'RUN TITLE') != -1:
-	    line = i+2
-    if string.find(gamess_output[i],' STATE') != -1 and \
+	line = i+2
+    if string.find(gamess_output[i]," STATE   %i"%istate) != -1 and \
 	   string.find(gamess_output[i],'ENERGY=') != -1 and \
 	   string.find(gamess_output[i],'SYM=') != -1:
-	    line = i
+	line = i
     if string.find(gamess_output[i],'CCSD(T) ENERGY:') != -1:
-	    line = i
+	line = i
     if string.find(gamess_output[i],'CCSD[T] ENERGY:') != -1:
-	    line = i
+	line = i
     if string.find(gamess_output[i],'CCSD') != -1 and \
 	   string.find(gamess_output[i],'ENERGY:') != -1 and \
 	   string.find(gamess_output[i],'CORR.') != -1:
-	    line = i
+	line = i
     if string.find(gamess_output[i],'MBPT(2) ENERGY:') != -1:
-	    line = i
+	line = i
     if string.find(gamess_output[i],'CORR.') != -1 and \
 	   string.find(gamess_output[i],'CR-CC') != -1:
-	    line = i
+	line = i
     if string.find(gamess_output[i],'FINAL') != -1:
-	    line = i
+	line = i
     if string.find(gamess_output[i],'$BASIS') != -1:
-	    line = i
+	line = i
     if string.find(gamess_output[i],'ITER:') != -1:
-	    line = -1
+	line = -1
 	    
     if line > 0:
 	    OUT.write('#%s' % gamess_output[line])
@@ -914,23 +1021,20 @@ for atom in geometry :
         if pbf[0][0] == 'L' :
 	    mterms = getM('S')
 	    for m in mterms:
-		OUT.write('\t%i\t%s\n'%(len(pbf),m[0]))
+		OUT.write('\t%i\t%s\n'%(len(pbf),m))
 		for gs in pbf:
-		    OUT.write('\t\t%s\t%s\n'%(gs[1], \
-					      normalize(m[1],m[2],m[3],gs[2],gs[1])))
+		    OUT.write('\t\t%s\t%s\n'%(gs[1],normalize(m,gs[2],gs[1])))
 	    mterms = getM('P')
 	    for m in mterms:
-		OUT.write('\t%i\t%s\n'%(len(pbf),m[0]))
+		OUT.write('\t%i\t%s\n'%(len(pbf),m))
 		for gs in pbf:
-		    OUT.write('\t\t%s\t%s\n'%(gs[1], \
-					      normalize(m[1],m[2],m[3],gs[3],gs[1])))
+		    OUT.write('\t\t%s\t%s\n'%(gs[1],normalize(m,gs[3],gs[1])))
 	else:
 	    mterms = getM(pbf[0][0])
 	    for m in mterms:
-		OUT.write('\t%i\t%s\n'%(len(pbf),m[0]))
+		OUT.write('\t%i\t%s\n'%(len(pbf),m))
 		for gs in pbf:
-		    OUT.write('\t\t%s\t%s\n'%(gs[1], \
-					      normalize(m[1],m[2],m[3],gs[2],gs[1])))
+		    OUT.write('\t\t%s\t%s\n'%(gs[1],normalize(m,gs[2],gs[1])))
 		    
 
 OUT.write('&\n')
@@ -984,43 +1088,59 @@ elif scf_type == "UHF":
                     OUT.write('\n')
             OUT.write('\n\n')        
 
-print "Alpha Occupation:\n"
+print "Alpha Occupation:"
 OUT.write("Alpha Occupation\n")
 for i in range(ndeterminants):
     nume = 0
     for j in range(norbitals):
-	nume += AlphaOccupation[i][j]
-        OUT.write('%i\t'%AlphaOccupation[i][j])
+	nume += AlphaOcc[i][j]
+        OUT.write('%i\t'%AlphaOcc[i][j])
 	if j >= ncore:
-	    print '%i'%AlphaOccupation[i][j],
+	    print '%i'%AlphaOcc[i][j],
     OUT.write('\n')
     print " (=",nume,")"
 OUT.write('\n')
-
-print "Beta Occupation:\n"
+print ""
+print "Beta Occupation:"
 OUT.write("Beta Occupation\n")
 for i in range(ndeterminants):
     nume = 0
     for j in range(norbitals):
-	nume += BetaOccupation[i][j]
-        OUT.write('%i\t'%BetaOccupation[i][j])
+	nume += BetaOcc[i][j]
+        OUT.write('%i\t'%BetaOcc[i][j])
 	if j >= ncore:
-	    print '%i'%BetaOccupation[i][j],	
+	    print '%i'%BetaOcc[i][j],	
     OUT.write('\n')
     print " (=",nume,")"
 OUT.write('\n')
-
+print ""
 OUT.write("CI Coeffs\n")
 for i in range(ndeterminants):
-    OUT.write('%s\n'%CI_coeffs[i])
+    match = 0
+    if ci_type == "ALDET":
+	for j in range(i):
+	    ratio = string.atof(CI[i])/string.atof(CI[j])
+	    if abs(ratio) == 1.0:
+		match = 1
+		# There are some couplings that are required to get the correct spin function.
+		# We want to include the constraints so that QMC knows which are free to optimize.
+		# You'll get ratio = 1 for singlet (ab-ba), and ratio = -1 for triplet (ab+ba)
+		print "Using CI constraint: Det[%i] = %5.3f * Det[%i]"%(i,ratio,j)
+		OUT.write('c %i %5.3f\n'%(j, ratio))
+    if match == 0:
+	OUT.write('%s\n'%CI[i])
 OUT.write('\n')
 
 print str(ndeterminants) + " CI determinant(s) used, with coefficients:"
 cum = 0
 for i in range(ndeterminants):
-    ci = string.atof(CI_coeffs[i])
-    cum += ci*ci
-    print "%3i) %15.7f has percentage %15.10e, cumulative remaining %15.10e" % (i+1,ci,ci*ci,1.0-cum)
+    try:
+	ci = string.atof(CI[i])
+	cum += ci*ci
+	print "%3i) %25.7f has percentage %15.10e, cumulative remaining %15.10e" % (i+1,ci,ci*ci,1.0-cum)
+    except:
+	print "%3i) %25s has percentage %15.10e, cumulative remaining %15.10e" % (i+1,CI[i],0,1.0-cum)
+
 
 
 OUT.write('&\n')
