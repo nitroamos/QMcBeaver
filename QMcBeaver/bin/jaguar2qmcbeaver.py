@@ -17,76 +17,11 @@ import string
 import time
 import os
 from atomic_symbol_to_Z import *
-#from double_factorial import *
+from utilities import *
 
 if len(sys.argv) < 2: 
     print "jaguar2qmcbeaver.py <jaguar restart>.01.in"
     sys.exit(0)
-
-PI = 3.14159265359
-a0 = 0.529177257507
-
-def normalize( xexp, yexp, zexp, precoeff, expcoeff):
-    precoeff = string.atof(precoeff)
-    expcoeff = string.atof(expcoeff)
-
-    value = 0
-    if xexp == 0 and yexp == 0 and zexp == 0:
-        value = 2.0 * expcoeff**(3.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 1 and yexp == 0 and zexp == 0:
-        value = 4.0 * expcoeff**(5.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 0 and yexp == 1 and zexp == 0:
-        value = 4.0 * expcoeff**(5.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 0 and yexp == 0 and zexp == 1:
-        value = 4.0 * expcoeff**(5.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 2 and yexp == 0 and zexp == 0:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                3.0**(-0.5)
-    elif xexp == 0 and yexp == 2 and zexp == 0:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                3.0**(-0.5)
-    elif xexp == 0 and yexp == 0 and zexp == 2:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                3.0**(-0.5)
-    elif xexp == 1 and yexp == 1 and zexp == 0:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 1 and yexp == 0 and zexp == 1:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 0 and yexp == 1 and zexp == 1:
-        value = 8.0*expcoeff**(7.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    elif xexp == 3 and yexp == 0 and zexp == 0:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 0 and yexp == 3 and zexp == 0:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 0 and yexp == 0 and zexp == 3:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 2 and yexp == 1 and zexp == 0:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 2 and yexp == 0 and zexp == 1:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 1 and yexp == 2 and zexp == 0:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 0 and yexp == 2 and zexp == 1:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 1 and yexp == 0 and zexp == 2:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 0 and yexp == 1 and zexp == 2:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)* \
-                15.0**(-0.5)
-    elif xexp == 1 and yexp == 1 and zexp == 1:
-        value = 16.0*expcoeff**(9.0/4.0)/PI**(3.0/4.0)/2.0**(1.0/4.0)
-    else:
-        print "ERROR in normalize!"
-        value = 0
-    return value * precoeff
 
 Infile=sys.argv[1]
 if string.find(Infile,'.in') == -1:
@@ -563,71 +498,73 @@ for atom in atoms:
         if BF[0] == 'S' :
             OUT.write("\t%i\t%s\n" % (len(BF[2]),'s'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize(0,0,0,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("s",C[1],C[0])))
                 
-        if BF[0] == 'P' :
+	elif BF[0] == 'P' :
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'px'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize(1,0,0,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("px",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'py'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize(0,1,0,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("py",C[1],C[0])))
             OUT.write("\t%i\t%s\n" % (len(BF[2]),'pz'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize(0,0,1,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("pz",C[1],C[0])))
                 
-        if BF[0] == 'D' :
+	elif BF[0] == 'D' :
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'dxx'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize(2,0,0,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dxx",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'dyy'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize(0,2,0,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dyy",C[1],C[0])))
             OUT.write("\t%i\t%s\n" % (len(BF[2]),'dzz'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize(0,0,2,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dzz",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'dxy'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize(1,1,0,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dxy",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'dxz'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize(1,0,1,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dxz",C[1],C[0])))
             OUT.write("\t%i\t%s\n" % (len(BF[2]),'dyz'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n" %(C[0], normalize(0,1,1,C[1],C[0]))) 
+                OUT.write("\t\t%s\t%s\n" %(C[0], normalize("dyz",C[1],C[0]))) 
 
-        if BF[0] == 'F' :
+	elif BF[0] == 'F' :
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'fxxx'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize(3,0,0,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fxxx",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'fyyy'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize(0,3,0,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fyyy",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'fzzz'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize(0,0,3,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fzzz",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'fyyx'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize(1,2,0,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fyyz",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'fxxy'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize(2,1,0,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fxxy",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'fxxz'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize(2,0,1,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fxxz",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'fzzx'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize(1,0,2,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fzzx",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'fzzy'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize(0,1,2,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fyzz",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'fyyz'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize(0,2,1,C[1],C[0])))
+                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fyyz",C[1],C[0])))
             OUT.write("\t%i\t%s\n" %(len(BF[2]),'fxyz'))
             for C in BF[2]:
-                OUT.write("\t\t%s\t%s\n"%(C[0], normalize(1,1,1,C[1],C[0])))
-                
+                OUT.write("\t\t%s\t%s\n"%(C[0], normalize("fxyz",C[1],C[0])))
+
+	else:
+	    print "Unknown basis function type: ",BF[0]
 OUT.write("&\n")
 
 # End Write Basis Set
