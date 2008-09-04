@@ -1,3 +1,16 @@
+Wed, Sep 3, 2008 Amos Anderson
+1.  I discovered a bug the other day, dating back about 5.5 years, that has affected every ckmf file produced using
+    jaguar2qmcbeaver.py or gamess2qmcbeaver.py. Essentially, 6 of the 10 f basis functions functions were not given
+    the correct normalization constant, and this was corrected in gamess2qmcbeaver.py on Jul 10, 2008. I didn't notice
+    that I had corrected it until yesterday when I noticed that recent calculations were not matching older calculations.
+    Today, Dan pointed out further discrepancies, by which we discovered that in my Jul 10 changes, I had changed the
+    order of the basis functions. I fixed this problem, and now jaguar2qmcbeaver and gamess2qmcbeaver should be working
+    correctly now.
+
+****The practical upshot of all of this is that (assuming you used those scripts) all calculations up to this point
+    have been flawed, and need to be redone. Well, actually, it was giving good results *before* this correction, so maybe
+    you don't want to redo your calculations.
+
 Tue, Sep 2, 2008 Amos Anderson
 1.  I added new timing system, designed to look at the cost of evaluating each part of the wavefunction.
     Throughout the code, there are functions called aggregateTimers, which will collect Stopwatch objects,
