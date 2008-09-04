@@ -1,3 +1,7 @@
+Thurs, Sep 4 Daniel R Fisher
+1.  Fixed the gamess2qmcbeaver.py script to handle trial functions 
+    with more than 100 basis functions.
+
 Wed, Sep 3, 2008 Amos Anderson
 1.  I discovered a bug the other day, dating back about 5.5 years, that has affected every ckmf file produced using
     jaguar2qmcbeaver.py or gamess2qmcbeaver.py. Essentially, 6 of the 10 f basis functions functions were not given
