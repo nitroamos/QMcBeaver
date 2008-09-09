@@ -1838,6 +1838,9 @@ void QMCManager::writeTimingData( ostream & strm )
   globalSWTimers(numT-1).print(strm);
   strm << setprecision(2) << setw(10) << 100.0 << " % cumulative = "
        << setprecision(2) << setw(10) << 100.0 << " %" << endl;
+
+  for(int i=0; i<localSWTimers.dim1(); i++)
+    localSWTimers(i).reset();
 }
 
 void QMCManager::writeRestart()
