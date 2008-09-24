@@ -1765,6 +1765,8 @@ void QMCManager::writeEnergyResultsSummary( ostream & strm )
 
   strm << endl << setprecision( 15 );
   strm.flush();
+  if (equilibrating)
+    zeroOut();
 }
 
 void QMCManager::writeTransientProperties( int label )
@@ -2086,6 +2088,8 @@ void QMCManager::initializeCalculationState(long int iseed)
 	      writeEnergyResultsSummary(clog);
 	      if (globalInput.flags.zero_out_checkpoint_statistics == 1)
 		clog << "Will zero the checkpoint." << endl;
+	      if (equilibrating == false)
+		equilibrating = globalInput.flags.equilibrate_every_opt_step;
 	    }
 	  else
 	    {

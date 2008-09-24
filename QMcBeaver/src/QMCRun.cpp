@@ -858,6 +858,9 @@ double QMCRun::getPopulationSizeBiasCorrectionFactor()
 
 void QMCRun::toXML(ostream& strm)
 {
+  strm << "<runType>\n\t" << Input->flags.run_type << endl;
+  strm << "</runType>\n";
+
   if (globalInput.flags.run_type == "diffusion")
     {
       strm << "<populationSizeBiasCorrectionFactor>\n\t"
@@ -902,7 +905,16 @@ bool QMCRun::readXML(istream& strm)
 {
   string temp;
 
-  if (globalInput.flags.run_type == "diffusion")
+  strm >> temp;
+  if (temp != "<runType>")
+    return false;
+  strm >> temp;
+  string runType = temp;
+  strm >> temp;
+  if (temp != "</runType>")
+    return false;
+
+  if (runType == "diffusion")
     {
       // read populationSizeBiasCorrectionFactor
       strm >> temp;

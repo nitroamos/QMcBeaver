@@ -1,3 +1,9 @@
+Wed, Sep 24 Daniel R Fisher
+1.  Changed the way checkpoint files are read so that it is possible
+    to start a DMC calculation from a VMC checkpoint.  This allows the
+    user to break the equilibration of a DMC calculation into two
+    parts.  
+
 Thurs, Sep 4 Daniel R Fisher
 1.  Fixed the gamess2qmcbeaver.py script to handle trial functions 
     with more than 100 basis functions.
