@@ -61,6 +61,11 @@ void QMCFlags::read_flags(string InFileName)
   rel_cutoff                     = 100.0;
   limit_branching                = 1;
 
+  branch_age_toolazy             = 4;
+  branch_dWgrowth_toofast        = 5.0;
+  branch_dR_badE                 = 100.0;
+  branch_W_tooheavy              = 4.0;
+
   //Green's function parameters
   sampling_method                = "umrigar93_importance_sampling";
   QF_modification_type           = "umrigar93_unequalelectrons";
@@ -143,7 +148,9 @@ void QMCFlags::read_flags(string InFileName)
   ck_genetic_algorithm_1_initial_distribution_deviation = 1.0;
   singularity_penalty_function_parameter = 1.0e-6;
 
-  optimize_EE_Jastrows           = 1;
+  optimize_UD_Jastrows           = 1;
+  optimize_UU_Jastrows           = 1;
+  optimize_DD_Jastrows           = 1;
   optimize_EN_Jastrows           = 1;
   optimize_NEE_Jastrows          = 1;
   optimize_L                     = 1;
@@ -528,7 +535,24 @@ void QMCFlags::read_flags(string InFileName)
       else if(temp_string == "optimize_EE_Jastrows")
         {
           input_file >> temp_string;
-          optimize_EE_Jastrows = atoi(temp_string.c_str());
+          optimize_UD_Jastrows = atoi(temp_string.c_str());
+          optimize_UU_Jastrows = atoi(temp_string.c_str());
+          optimize_DD_Jastrows = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "optimize_UD_Jastrows")
+        {
+          input_file >> temp_string;
+          optimize_UD_Jastrows = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "optimize_UU_Jastrows")
+        {
+          input_file >> temp_string;
+          optimize_UU_Jastrows = atoi(temp_string.c_str());
+        }
+      else if(temp_string == "optimize_DD_Jastrows")
+        {
+          input_file >> temp_string;
+          optimize_DD_Jastrows = atoi(temp_string.c_str());
         }
       else if(temp_string == "optimize_EN_Jastrows")
         {
@@ -879,6 +903,9 @@ void QMCFlags::read_flags(string InFileName)
   number_of_walkers_initial = number_of_walkers;
   energy_estimated          = energy_trial;
   energy_estimated_original = energy_estimated;
+
+  if(Ndeterminants == 1)
+    optimize_CI = 0;
 }
 
 void QMCFlags::set_filenames(string runfile)
@@ -996,7 +1023,9 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "output_interval\n " << flags.output_interval << endl;
 
   strm << "\n# Parameters for wavefunction optimization\n";
-  strm << "optimize_EE_Jastrows\n " << flags.optimize_EE_Jastrows << endl;
+  strm << "optimize_UD_Jastrows\n " << flags.optimize_UD_Jastrows << endl;
+  strm << "optimize_UU_Jastrows\n " << flags.optimize_UU_Jastrows << endl;
+  strm << "optimize_DD_Jastrows\n " << flags.optimize_DD_Jastrows << endl;
   strm << "optimize_EN_Jastrows\n " << flags.optimize_EN_Jastrows << endl;
   strm << "optimize_NEE_Jastrows\n " << flags.optimize_NEE_Jastrows << endl;
   strm << "optimize_L\n " << flags.optimize_L << endl;
@@ -1217,6 +1246,14 @@ bool QMCFlags::checkFlags()
       clog << "ERROR: (max_time_steps = " << max_time_steps
 	   << ") < (equilibration_steps = " << equilibration_steps << ")" << endl; 
       return false;
+    }
+
+  if(limit_branching == 1)
+    {
+      clog << "Laziness filter: " << branch_age_toolazy << endl;
+      clog << "Fast growth:     " << branch_dWgrowth_toofast << endl;
+      clog << "Bad Energy:      " << branch_dR_badE << endl;
+      clog << "Too heavy:       " << branch_W_tooheavy << endl << endl;
     }
 
   if(dt_equilibration < 0)

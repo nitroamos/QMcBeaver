@@ -196,9 +196,22 @@ void QMCInput::printAISummary()
 
   clog << "There are currently " << numAI << " optimizable parameters:" << endl;  
   
-  int num = globalInput.JP.getNumberEEParameters();
-  if(num != 0) clog << setw(width) << num << "  Electron-Electron Jastrow parameters" << endl;
+  int num;
   
+  if(globalInput.JP.getNumberEupEdnParameters() == 0 ||
+     globalInput.JP.getNumberEupEupParameters() == 0)
+    {
+      num = globalInput.JP.getNumberEupEdnParameters();
+      if(num != 0) clog << setw(width) << num << "  Eup-Edn Jastrow parameters" << endl;
+      num = globalInput.JP.getNumberEupEupParameters();
+      if(num != 0) clog << setw(width) << num << "  Eup-Eup Jastrow parameters" << endl;
+      num = globalInput.JP.getNumberEdnEdnParameters();
+      if(num != 0) clog << setw(width) << num << "  Edn-Edn Jastrow parameters" << endl;
+    } else {
+      num = globalInput.JP.getNumberEEParameters();
+      if(num != 0) clog << setw(width) << num << "  Electron-Electron Jastrow parameters" << endl;
+    }
+
   num = globalInput.JP.getNumberNEParameters();
   if(num != 0) clog << setw(width) << num << "  Nuclear-Electron Jastrow parameters" << endl;
   

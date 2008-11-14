@@ -99,7 +99,7 @@ void QMCJastrowElectronElectron::updateOne(QMCJastrowParameters & JP,
   if(EupEdn != 0)
     {
       U_Function = EupEdn->getCorrelationFunction();
-      numP = EupEdn->getTotalNumberOfParameters();
+      numP = globalInput.JP.getNumberEupEdnParameters();
 
       if(isAlpha)
 	{
@@ -115,7 +115,7 @@ void QMCJastrowElectronElectron::updateOne(QMCJastrowParameters & JP,
   
   if(EupEup != 0)
     {
-      numP  = EupEup->getTotalNumberOfParameters();
+      numP  = globalInput.JP.getNumberEupEupParameters();
       U_Function = EupEup->getCorrelationFunction();
 
       if(isAlpha)
@@ -130,11 +130,13 @@ void QMCJastrowElectronElectron::updateOne(QMCJastrowParameters & JP,
     }
 
   if(globalInput.flags.link_Jastrow_parameters == 0)
-    index += numP;
+    {
+      index += numP;
+      numP  = globalInput.JP.getNumberEdnEdnParameters();
+    }
 
   if(EdnEdn != 0)
     {
-      numP  = EdnEdn->getTotalNumberOfParameters();
       U_Function = EdnEdn->getCorrelationFunction();
 
       if(!isAlpha)
@@ -186,7 +188,7 @@ void QMCJastrowElectronElectron::updateAll(QMCJastrowParameters & JP,
   if(EupEdn != 0)
     {
       U_Function = EupEdn->getCorrelationFunction();
-      numP = EupEdn->getTotalNumberOfParameters();
+      numP  = globalInput.JP.getNumberEupEdnParameters();  
 
       for(int E1=0; E1<nalpha; E1++)
 	for(int E2=nalpha; E2<X.dim1(); E2++)
@@ -197,7 +199,7 @@ void QMCJastrowElectronElectron::updateAll(QMCJastrowParameters & JP,
   
   if(EupEup != 0)
     {
-      numP  = EupEup->getTotalNumberOfParameters();
+      numP  = globalInput.JP.getNumberEupEupParameters();
       U_Function = EupEup->getCorrelationFunction();
 
       for(int E1=0; E1<nalpha; E1++)
@@ -208,11 +210,12 @@ void QMCJastrowElectronElectron::updateAll(QMCJastrowParameters & JP,
     }
   
   if(globalInput.flags.link_Jastrow_parameters == 0)
-    index += numP;
-
+    {
+      index += numP;
+      numP  = globalInput.JP.getNumberEdnEdnParameters();
+    }
   if(EdnEdn != 0)
     {
-      numP  = EdnEdn->getTotalNumberOfParameters();
       U_Function = EdnEdn->getCorrelationFunction();
 
       for(int E1=nalpha; E1<X.dim1(); E1++)
@@ -266,8 +269,8 @@ inline void QMCJastrowElectronElectron::collectForPair(int E1,
     These are for calculating the derivative of the energy
     with respect to parameter ai.
   */
-  if(globalInput.flags.calculate_Derivatives == 1 &&
-     globalInput.flags.optimize_EE_Jastrows == 1)
+  if(globalInput.flags.calculate_Derivatives == 1)
+     //globalInput.flags.optimize_EE_Jastrows == 1)
     {
       double firstDeriv = 1.0;
       double pre1       = 4.0/r;

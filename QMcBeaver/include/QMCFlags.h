@@ -304,7 +304,11 @@ class QMCFlags
      Branching recommendations
    */
   int limit_branching;
-  
+  double branch_dWgrowth_toofast;
+  double branch_W_tooheavy;
+  double branch_dR_badE;
+  int    branch_age_toolazy;
+
   /**
      Time step being used for the calculation.
 
@@ -714,7 +718,9 @@ class QMCFlags
     we're optimizing. If the optimization method is set to
     automatic, then these parameters will automatically be changed.
   */
-  int optimize_EE_Jastrows;
+  int optimize_UU_Jastrows;
+  int optimize_DD_Jastrows;
+  int optimize_UD_Jastrows;
   int optimize_EN_Jastrows;
   int optimize_NEE_Jastrows;
   int optimize_CI;
@@ -841,10 +847,20 @@ class QMCFlags
   double singularity_penalty_function_parameter;
 
   /**
-     1 if up and down electrons use the same Jastrow parameters for
-     their electron-nucleus terms, and 0 otherwise.
+     1 if NE is used for both NEup and NEdn
+     0 if different NE are used for NEup and NEdn
+
+     We recommend link_Jastrow_parameters = 1
   */
   int link_Jastrow_parameters;
+
+  /**
+     2 if 1 NEE is used for NUD, NUU, NDD
+     1 if 2 different NEE is used for NUD and NUU/NDD
+     0 if 3 different NEE is used for NUD, NUU, NDD
+
+     We recommend link_NEE_Jastrows = 2
+  */
   int link_NEE_Jastrows;
 
   /**

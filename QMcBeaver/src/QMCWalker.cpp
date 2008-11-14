@@ -1073,12 +1073,13 @@ void QMCWalker::reweight_walker()
   double originalEnergy = OriginalWalker->walkerData.localEnergy;
   double p = TrialWalker->getAcceptanceProbability();
   double q = 1.0 - p;      
-      
+  int steps = iteration + Input->flags.equilibration_steps;
+
   // determine the weighting factor dW so that the new weight = weight*dW
   
   bool weightIsNaN = false;
 
-  if( Input->flags.run_type == "variational")
+  if(Input->flags.run_type == "variational" || steps < 100)
     {
       // Keep weights constant for VMC
       dW = 1.0;
@@ -1184,7 +1185,10 @@ void QMCWalker::reweight_walker()
     }
 
   dW = exp(reweight*Input->flags.dt_effective);
-  setWeight( getWeight() * dW );
+  if(age - Input->flags.old_walker_acceptance_parameter > 0)
+    setWeight( getWeight() * 0.9 );
+  else
+    setWeight( getWeight() * dW );
 
   //if(getWeight() <= 0.0)
   //  return;
@@ -1314,10 +1318,11 @@ void QMCWalker::reweight_walker()
 
 	How aggressive can we be?
       */
-      if(dW > 4.0 || IeeeMath::isNaN(dW))
+      double dWgrowth = pow(dW,age+1.0);
+      if(dWgrowth > 15.0 || IeeeMath::isNaN(dW))
 	{
 	  stringstream strm;	  
-	  strm << "ERROR: Deleting fast growth walker " << ID(move_accepted,true);
+	  strm << "ERROR: Deleting fast growth (" << dWgrowth << ") walker " << ID(move_accepted,true);
 	  int wi = 25;
 	  int pr = 15;
 
@@ -1424,71 +1429,48 @@ bool QMCWalker::branchRecommended()
     5) 
    */
   bool shouldRecommend = true;
-  string shouldWarn = "";
+  stringstream shouldWarn;
   //int aged = age - 10;
-
-  if(age > 4)
-    {
-      shouldRecommend = false;
-      if(age >= Input->flags.old_walker_acceptance_parameter && age%10 == 0)
-	shouldWarn = "lazy";
-    }
-  if(dW > 1.5)
-    {
-      shouldRecommend = false;
-      if(iteration%10 == 0 && getWeight() > 2.0*Input->flags.branching_threshold)
-	shouldWarn = "dW";
-      if(dW > 2.0)
-	shouldWarn = "dW";
-    }
-  if(getWeight() > 2.0*Input->flags.branching_threshold)
-    {
-      shouldRecommend = false;
-      if(iteration%50 == 0 &&
-	 getWeight() > 2.0*Input->flags.branching_threshold &&
-	 dW > 1.0)
-	shouldWarn = "W";
-    }
-
-  double virial = -TrialWalker->walkerData.potentialEnergy/TrialWalker->walkerData.kineticEnergy;
-
-  // Relatively large virial ratios do not appear to correlate with bad E_L.
-  // It's hard to know how this would be a good indicator given rel_diff
-  if(fabs(virial) < 1e-3)
-    {
-      shouldRecommend = false;
-      //only warn when we arrive at a bad spot
-      if(age == 0)
-	shouldWarn = "virial";
-    }
 
   double rel_diff = fabs( (TrialWalker->walkerData.localEnergy -
 			   Input->flags.energy_estimated_original)/
 			  Input->flags.energy_estimated_original);
+  double W = getWeight();
+  double dWgrowth = pow(dW,age+1);
 
-  //should I use rel_diff > globalInput.flags.rel_cutoff here?
-  if(rel_diff > globalInput.flags.rel_cutoff)
+  if(age > globalInput.flags.branch_age_toolazy)
     {
       shouldRecommend = false;
-      if(age == 0)
-	shouldWarn = "rel E";
+      if(age%10 == 0)
+	shouldWarn << " laziness = " << age;
+    }
+  if(dWgrowth > globalInput.flags.branch_dWgrowth_toofast)
+    {
+      //It's growing too fast
+      shouldRecommend = false;
+      shouldWarn << " W = "        << setprecision(3) << W;
+      shouldWarn << " dW = "       << setprecision(3) << dW;
+      shouldWarn << " dWgrowth = " << setprecision(3) << dWgrowth;
+    } else if(W > globalInput.flags.branch_W_tooheavy &&
+	      dWgrowth > 1.5)
+      {
+	//It's heavy, and it's growing
+	shouldRecommend = false;
+	shouldWarn << " W = "        << setprecision(3) << W;
+	shouldWarn << " dW = "       << setprecision(3) << dW;
+	shouldWarn << " dWgrowth = " << setprecision(3) << dWgrowth;
+      }
+  if(rel_diff > globalInput.flags.branch_dR_badE)
+    {
+      shouldRecommend = false;
+      shouldWarn << " rel E = " << setprecision(3) << rel_diff;
     }
 
-  if(shouldWarn != "" && !shouldRecommend && iteration > 0)
+  if(shouldWarn.str() != "" && !shouldRecommend && iteration > 0)
     {
-      if(shouldWarn == "lazy")
-	{
-	  /*
-	  cerr << "WARNING: Not recommending (reason = " << shouldWarn << ") a branch for walker";
-	  cerr << " age = " << setw(4) << age;
-	  cerr << " (" << genealogy[0] << "::r" << Input->flags.my_rank << ")" << endl;
-	  */
-	}
-      else
-	{
-	  cerr << "WARNING: Not recommending (reason = " << shouldWarn << ") a branch for walker";
-	  cerr << ID(move_accepted,false);
-	}
+      cerr << "WARNING: Not recommending (" << shouldWarn.str() << " ) a branch for walker ";
+      //cerr << " (" << genealogy[0] << "::r" << Input->flags.my_rank << ")" << endl;
+      cerr << ID(move_accepted,false);
       cerr.flush();
     }
 
@@ -1576,6 +1558,10 @@ string QMCWalker::ID(bool showTrial, bool verbose)
       else
 	id << fixed << dW;
       id.width(10);
+      id << "growth= "
+	 << setw(w) << setprecision(5)
+	 << fixed << pow(dW,age+1.0);
+      id.width(10);
       id << endl;
     }
 
@@ -1601,18 +1587,11 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
   // calculate the probability of accepting the trial move
   double p = PsiRatio * PsiRatio * GreensRatio;
 
-  /*
-  printf("OP=%20.10e TP=%20.10e PsiRatio^2=%20.10e GR=%20.10e p=%20.10e\n",
-	 (double)OriginalWalker->walkerData.psi,
-	 (double)TrialWalker->walkerData.psi,
-	 PsiRatio*PsiRatio,GreensRatio,p);
-  //*/
   if( !(IeeeMath::isNaN(p)))
     {
-      // 1.1 ^ 1000 ~= 1e41
       if(age - Input->flags.old_walker_acceptance_parameter > 1000)
 	{
-	  //setWeight(0.0);
+	  // 1.1 ^ 1000 ~= 1e41
 	  p = 1.0;
 	} 
       else if(age - Input->flags.old_walker_acceptance_parameter > 500)
@@ -1694,25 +1673,16 @@ void QMCWalker::acceptOrRejectMove()
       move_accepted = false;
     }
 
-  //int aged = age - Input->flags.old_walker_acceptance_parameter;
   if( iteration > 0)
     {
       if(ageMoved > Input->flags.old_walker_acceptance_parameter + 15)
 	{
-	  //cerr << "WARNING: Old walker moved after " << ageMoved << " iterations " << ID(false,true);
 	  cerr << "WARNING: Old walker moved after " << ageMoved << " iterations." << endl;
 	  cerr << "Original Walker ";
 	  cerr << ID(false,true);
 	  cerr << "Trial Walker ";
 	  cerr << ID(true,false);
-	  //cerr << "WARNING: Old walker " moved after " << ageMoved << " iterations." << endl;
 	}
-      /*
-      if(aged >= 50 && aged%50 == 0)
-	{
-	  cerr << "WARNING: Aged walker " << ID();
-	}
-      */
     }
 }
 

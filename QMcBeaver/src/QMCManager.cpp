@@ -861,8 +861,11 @@ bool QMCManager::run(bool equilibrate)
           updateEffectiveTimeStep( &equilibrationProperties );
 
           if( globalInput.flags.run_type == "diffusion" )
-            updateTrialEnergy( QMCnode.getWeights(),
-                               globalInput.flags.number_of_walkers_initial );
+	    {
+              updateEstimatedEnergy( &Properties_total );
+	      updateTrialEnergy( QMCnode.getWeights(),
+				 globalInput.flags.number_of_walkers_initial );
+	    }
         }
       else if( !equilibrating && globalInput.flags.run_type == "diffusion" )
         {
@@ -2220,7 +2223,8 @@ void QMCManager::updateEstimatedEnergy( QMCProperties* Properties )
 {
   // Update the estimated energy
 
-  if(  !equilibrating && Properties->energy.getNumberSamples()  > 1 )
+  //if(  !equilibrating && Properties->energy.getNumberSamples()  > 1 )
+  if(Properties->energy.getNumberSamples()  >= 100)
     {
       globalInput.flags.energy_estimated = Properties->energy.getAverage();
     }
