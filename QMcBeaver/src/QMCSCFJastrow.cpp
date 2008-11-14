@@ -735,8 +735,6 @@ void QMCSCFJastrow::calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walke
 
 	  Alpha.update_Ds(walkerData);
 	  Beta.update_Ds(walkerData);
-
-	  //printf("cs=%i D=%20.10e\n",cs,(double)(*Alpha.getPsi(0))(0));
 	}
       
       /*
@@ -767,11 +765,6 @@ void QMCSCFJastrow::calculate_CorrelatedSampling(Array1D<QMCWalkerData *> &walke
 	    }
 	  
 	  QMCDouble Jastrow_Psi = Jastrow.getJastrow(w);
-
-	  /*
-	  if(w==0)
-	    printf("cs=%i D=%20.10e\n",cs,(double)wd->D); 
-	  */
 	  QMCDouble cs_Psi = wd->D * Jastrow_Psi;
 
 	  // \frac{\nabla^2 D}{D} + \nabla^2 U
