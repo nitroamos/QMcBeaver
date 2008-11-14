@@ -323,9 +323,9 @@ ostream& operator <<(ostream& strm, Cambridge2CorrelationFunction &rhs)
     strm << "  f = " << rhs.f;
   strm << "  L = " << rhs.L;
   if(rhs.optimizeL)
-    strm << " (optimized)" << endl;
+    strm << " (L optimized)" << endl;
   else
-    strm << " (not optimized)" << endl;
+    strm << " (L not optimized)" << endl;
 
   bool extraPrec = false;
 
