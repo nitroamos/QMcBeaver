@@ -1,3 +1,13 @@
+Fri, Nov 14 Amos Anderson
+1.  You can now optimize UU, DD, or UD Jastrows independently. I found this was critical for getting good Jastrows
+    in triplet methylene.
+
+2.  I've systematized some of the walker branching code, but it's still being tested. What I just uploaded is better than before,
+    but I'm not entirely satisfied yet.
+
+3.  I changed QMCManager so that the trial energy is changed during equilibration. I was seeing that even an energy with a high
+    error worked better than whatever SCF energy was used.
+
 Wed, Sep 24 Daniel R Fisher
 1.  Changed the way checkpoint files are read so that it is possible
     to start a DMC calculation from a VMC checkpoint.  This allows the
