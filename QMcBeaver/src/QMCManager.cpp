@@ -711,8 +711,7 @@ bool QMCManager::run(bool equilibrate)
 
   equilibrationProperties.zeroOut();
 
-  done      = false;
-  iteration = 0;
+  done         = false;
   int eq_steps = 0;
 
   // If this is the first time QMCManager::run() is being called,
@@ -1159,6 +1158,12 @@ bool QMCManager::run(bool equilibrate)
         {
           equilibration_step();
         }
+      if(globalInput.flags.set_debug < 0 && 
+	 abs(globalInput.flags.set_debug) == iteration){
+	//Simulating a crash
+	clog << "Notice: simulating a crash with set_debug = " << globalInput.flags.set_debug << endl;
+	exit(1);
+      }
     }
   /*
     When we've gotten to this stage in the code,
@@ -1228,6 +1233,7 @@ double QMCManager::optimize()
   
   //reopen the config file
   globalInput.openConfigFile();
+  iteration = 0;
 
   localTimers.getOptimizationStopwatch() ->stop();
 
@@ -1759,7 +1765,7 @@ void QMCManager::writeEnergyResultsSummary( ostream & strm )
       strm << setw(width) << setprecision(fixedPrec) << Properties_total.energy.getSeriallyCorrelatedVariance() << " ";
       strm << setw(width) << setprecision(fixedPrec) << Properties_total.energy.getShortString() << " ";
     }
-
+  
   /*
   strm << setw(width) << Properties_total.walkerAge.getAverage() << " ";
   strm << setw(width) << Properties_total.weightChange.getAverage() << " ";
@@ -1943,6 +1949,10 @@ void QMCManager::writeXML( ostream & strm )
   strm << "<Equilibrating>\n" << equilibrating
   << "\n</Equilibrating>" << endl;
 
+  // Write out if the node is equilibrating
+  strm << "<Iteration>\n" << iteration
+  << "\n</Iteration>" << endl;
+
   // Write out the QMCrun state
   QMCnode.toXML( strm );
 }
@@ -1980,6 +1990,7 @@ void QMCManager::writeCheckpoint()
       << filename << " to write the checkpoint." << endl;
       exit(0);
     }
+  writeRestart();
 }
 
 bool QMCManager::readXML( istream & strm )
@@ -2010,12 +2021,22 @@ bool QMCManager::readXML( istream & strm )
   if (temp != "</Equilibrating>")
     return false;
 
+  // Read in the Iteration index
+  strm >> temp;
+  if (temp != "<Iteration>")
+    return false;
+  strm >> temp;
+  iteration = atoi( temp.c_str() );
+  strm >> temp;
+  if (temp != "</Iteration>")
+    return false;
+
   // Read the QMCRun state
   if (!QMCnode.readXML( strm ))
     return false;
 
-  if (equilibrating == 0)
-    iteration = 0;
+  //if (equilibrating == 0)
+  //  iteration = 0;
 
   /*
     These next operations are to load up all the data.
@@ -2025,7 +2046,6 @@ bool QMCManager::readXML( istream & strm )
     This just mimics the way these variables are updated
     in run()
   */
-
   if(globalInput.flags.run_type == "diffusion" )
     {
       if( globalInput.flags.synchronize_dmc_ensemble == 1 )
@@ -2091,7 +2111,7 @@ void QMCManager::initializeCalculationState(long int iseed)
 	      writeEnergyResultsSummary(clog);
 	      if (globalInput.flags.zero_out_checkpoint_statistics == 1)
 		clog << "Will zero the checkpoint." << endl;
-	      if (equilibrating == false)
+	      if (equilibrating == false && globalInput.flags.optimize_Psi == 1)
 		equilibrating = globalInput.flags.equilibrate_every_opt_step;
 	    }
 	  else
@@ -2269,7 +2289,7 @@ void QMCManager::updateTrialEnergy( double weights, int nwalkers_init )
     {
       if ( globalInput.flags.lock_trial_energy == 0 )
         globalInput.flags.energy_trial = globalInput.flags.energy_estimated -
-                                         globalInput.flags.population_control_parameter * logRatio;
+                                         globalInput.flags.population_control_parameter * logRatio;      
     }
 
   if(IeeeMath::isNaN(globalInput.flags.energy_trial)){
@@ -2285,7 +2305,7 @@ void QMCManager::updateTrialEnergy( double weights, int nwalkers_init )
 }
 
 void QMCManager::updateEffectiveTimeStep( QMCProperties* Properties )
-{
+{  
   /*
     According to Umrigar, Nightingale, Runge 93 (DMC w/ small errors)
     The effective time step is not something that we're supposed to

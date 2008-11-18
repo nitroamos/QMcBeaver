@@ -224,19 +224,12 @@ void QMCWalker::processPropagation(QMCFunctions & QMF, bool writeConfigs)
   
   acceptOrRejectMove();
 
-  //exit(0);
-
   if(walkerData.whichE == -1 ||
      walkerData.whichE == 0)
     reweight_walker();
 
   if(getWeight() == 0)
     return;
-
-  if(move_accepted == false)
-    {
-      dR2                   = OriginalWalker->dR2;
-    }
 
   if(writeConfigs)
     {
@@ -417,7 +410,6 @@ QMCDouble QMCWalker::moveElectronsUmrigar93ImportanceSampling()
   QMCDouble GaussianGF;
   QMCDouble SlaterGF;
   QMCDouble OneE;
-
   for(int electron=0; electron<Input->WF.getNumberElectrons(); electron++)
     {
       toMove = true;
@@ -492,7 +484,6 @@ QMCDouble QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	}
                                                               
       double probabilityGaussianTypeMove = 1.0 - probabilitySlaterTypeMove;
-      
       if(toMove)
 	{
 	  // Randomly decide which electron moving method to use
@@ -522,7 +513,7 @@ QMCDouble QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	      double r = ran.randomDistribution1()/(2.0*expParam);
 	      double phi = 2*pi*ran.unidev();
 	      double theta = ran.sindev();
-	      
+
 	      newPosition(0) += r*sin(theta)*cos(phi);
 	      newPosition(1) += r*sin(theta)*sin(phi);
 	      newPosition(2) += r*cos(theta);
@@ -560,7 +551,6 @@ QMCDouble QMCWalker::moveElectronsUmrigar93ImportanceSampling()
       double gc = -distance1Sq/(2*tau);
       
       GaussianGF=QMCDouble(probabilityGaussianTypeMove,ga,gb,gc);
-
       /*
       if(probabilitySlaterTypeMove < 1e-20)
 	{
@@ -568,8 +558,7 @@ QMCDouble QMCWalker::moveElectronsUmrigar93ImportanceSampling()
 	  continue;	  
 	}
       */
-      double distance2Sq = 0.0;
-      
+      double distance2Sq = 0.0;      
       for(int i=0; i<3; i++)
         {
           temp = newPosition(i) -
@@ -1189,7 +1178,7 @@ void QMCWalker::reweight_walker()
     setWeight( getWeight() * 0.9 );
   else
     setWeight( getWeight() * dW );
-
+  
   //if(getWeight() <= 0.0)
   //  return;
 

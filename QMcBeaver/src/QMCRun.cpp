@@ -490,8 +490,8 @@ void QMCRun::calculateObservables()
   // statistics
   timeStepProperties.growthRate.newSample(growthRate,1.0);
 
-  double totalWeights = getWeights() * populationSizeBiasCorrectionFactor;
-  
+  double totalWeights = getWeights() * getPopulationSizeBiasCorrectionFactor();
+
   if (Input->flags.use_equilibration_array == 1)
     {
       EquilibrationArray.newSample(&timeStepProperties, totalWeights,

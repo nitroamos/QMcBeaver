@@ -68,6 +68,10 @@ class Random
   long iy;
   long iv[NTAB];
 
+  //variables used by gasdev
+  int iset;
+  double gset;
+
   /**
      Generates a uniform random number on \f$[0,1]\f$ using the ran1 algorithm 
      from numerical recipes.

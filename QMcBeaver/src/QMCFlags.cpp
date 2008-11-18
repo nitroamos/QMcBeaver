@@ -1201,7 +1201,14 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "\n# Parameters for the molecule and wavefunction\n";
   strm << "atoms\n " << flags.Natoms << endl;
   strm << "charge\n " << flags.charge << endl;
-  strm << "energy\n " << flags.energy_trial << endl;
+
+  if(flags.checkpoint)
+    //This is if you want the checkpointed file to be able to duplicate exactly
+    //a run that wasn't checkpointed.
+    strm << "energy\n " << flags.energy_estimated_original << endl;
+  else
+    strm << "energy\n " << flags.energy_trial << endl;
+
   strm << "trial_function_type\n " << flags.trial_function_type << endl;
   strm << "pseudo_gridLevel\n " << flags.pseudo_gridLevel << endl;
   strm << "pseudo_cutoff\n " << flags.pseudo_cutoff << endl;

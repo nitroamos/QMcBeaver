@@ -59,7 +59,7 @@ void Random::initialize(long seed, int rank)
       seed = intdev();
       reset();
       //intdev returns a postive number, but we'll be switching the sign
-      clog << "Using iseed = -" << seed << endl;
+      clog << "Notice: using iseed = -" << seed << endl;
     }
 
 #ifdef USESPRNG
@@ -130,15 +130,15 @@ void Random::reset()
   for(int i=0; i<NTAB; i++)
     iv[i] = 0;
 #endif
+  iset=0;
 }
 void Random::printStream(ostream & strm)
 {
-  strm << "Random stream info:" << endl;
 #ifdef USESPRNG
   //Apparently I can't choose a stream
   stream->print_sprng();
 #else
-  strm << "current ran1 seed = " << current << endl;
+  strm << "iseed = " << current;
 #endif
 }
 
@@ -155,6 +155,7 @@ void Random::writeXML(ostream & strm)
   strm << iy << " ";
   for(int i=0; i<NTAB; i++)
     strm << iv[i] << " ";
+  strm << iset << " " << gset;
   strm << "\n</internal>" << endl;
 #endif
 }
@@ -200,6 +201,8 @@ bool Random::readXML(istream & strm)
   strm >> iy;
   for(int i=0; i<NTAB; i++)
     strm >> iv[i];
+  strm >> iset;
+  strm >> gset;
   strm >> temp;
   if(temp != "</internal>")
     return false;
@@ -230,30 +233,28 @@ double Random::unidev()
 
 double Random::gasdev()
 {
-  static int iset=0;
-  static double gset;
   double fac,rsq,v1,v2;
 
-  if (current < 0) iset=0;
   if  (iset == 0) 
-  {
-    do 
     {
-      v1=2.0*unidev()-1.0;
-      v2=2.0*unidev()-1.0;
-      rsq=v1*v1+v2*v2;
+      do 
+	{
+	  v1=2.0*unidev()-1.0;
+	  v2=2.0*unidev()-1.0;
+	  rsq=v1*v1+v2*v2;
+	} 
+      while (rsq >= 1.0 || rsq == 0.0);
+      fac=sqrt(-2.0*log(rsq)/rsq);
+      gset=v1*fac;
+      iset=1;
+      return v2*fac;
+      
     } 
-    while (rsq >= 1.0 || rsq == 0.0);
-    fac=sqrt(-2.0*log(rsq)/rsq);
-    gset=v1*fac;
-    iset=1;
-    return v2*fac;
-  } 
   else 
-  {
-    iset=0;
-    return gset;
-  }
+    {
+      iset=0;
+      return gset;
+    }  
 }
 
 double Random::expdev()
