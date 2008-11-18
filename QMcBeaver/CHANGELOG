@@ -1,3 +1,15 @@
+Mon, Nov 17 Amos Anderson
+1.  Previously, if you restarted a DMC calculation from a checkpoint, it wouldn't give you *exactly* the same
+    output as if you had never stopped. I've fixed this, although of course this test only works for single processor
+    jobs. I've added the test "chkpnt" to be sure it's working. VMC was always working, now both do.
+
+2.  In QMCWalker, we previously assigned dR2 = OriginalWalker->dR2 if the move was not accepted. I don't think this was
+    correct; we want to use the same dR2 whether or not the move was accepted. This would only affect the effective time step.
+    In the test "diff", it only made a relative energy difference of 1e-8, so it seems like it's very minor.
+
+3.  To get #1 to work, I removed the static variables in Random::gasdev, since sometimes it would forget calculated values after
+    a checkpoint.
+
 Fri, Nov 14 Amos Anderson
 1.  You can now optimize UU, DD, or UD Jastrows independently. I found this was critical for getting good Jastrows
     in triplet methylene.

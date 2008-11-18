@@ -25,6 +25,7 @@ if($testmode == 0){
 my @files;
 push(@files,".");
 getFileList(".ckmf",\@files);
+@files = reverse @files;
 
 my $header = getCKMFHeader();
 print "$header";
@@ -45,7 +46,8 @@ for(my $index=0; $index<=$#files; $index++){
     my $dirname = `dirname $base`;
     chomp($basename);
     chomp($dirname);
-    next if($files[$index] =~ /.\d\d.ckmf$/ || !(-e "${base}.out"));
+    #next if($files[$index] =~ /.\d\d.ckmf$/ || !(-e "${base}.out"));
+    next if(!(-e "${base}.out"));
 
     my $outname;
 
