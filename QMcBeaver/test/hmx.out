@@ -1,9 +1,14 @@
-QMcBeaver version 20080716 was compiled in double precision.
-Compiled on Aug 24 2008 20:01:57
+QMcBeaver version 20081114 was compiled in double precision.
+Compiled on Nov 14 2008 18:47:55
 Compiler version 3.4.6 20060404 (Red Hat 3.4.6-8)
-With the libraries: MPI BLAS LAPACK
+With the libraries: BLAS LAPACK
 Signaling: CHANNEL1 = 23 CHANNEL2 = 40
 
+
+Laziness filter: 4
+Fast growth:     5
+Bad Energy:      100
+Too heavy:       4
 
 EupEdn:
 Fixed Cusp Pade Jastrow parameters:
@@ -64,25 +69,25 @@ Fixed Cusp Pade Jastrow parameters:
  iteration            Eavg            Estd    Num. Samples           Tcorr      Acceptance         <p dR2>     Sample Var.         Summary
          0    0.0000000000   0.0000000e+00               0   -2.0000000000         0.00000         0.00000    0.0000000000         0.00000 
          2 -1193.932186261   0.0000000e+00               1   -2.0000000000         0.79526         3.33572    0.0000000000     -1193.93219 
-         3 -1192.314686775   0.0000000e+00               2   -2.0000000000         0.79526         2.02407    2.6163045859     -1192.31469 
-         4 -1184.932339978   0.0000000e+00               3   -2.0000000000         0.86351         2.80677  110.7422915242     -1184.93234 
-         5 -1181.548405956   0.0000000e+00               4   -2.0000000000         0.89763         2.24212  117.4097470514     -1181.54841 
-         6 -1179.763627101   0.0000000e+00               5   -2.0000000000         0.91810         1.95796  106.6695398801     -1179.76363 
-         7 -1178.164296981   0.0000000e+00               6   -2.0000000000         0.93175         1.63163  101.6805674006     -1178.16430 
-         8 -1177.021918324   0.0000000e+00               7   -2.0000000000         0.94150         1.39854   94.9849460298     -1177.02192 
-         9 -1168.205494591   0.0000000e+00               8   -2.0000000000         0.94882         1.86521  627.2171198796     -1168.20549 
-        10 -1161.456375092   0.0000000e+00               9   -2.0000000000         0.95450         1.66606  921.9312408729     -1161.45638 
-        11 -1155.988828555   0.0000000e+00              10   -2.0000000000         0.95905         1.50098 1098.7847029785     -1155.98883 
-        12 -1156.651992442   0.0000000e+00              11   -2.0000000000         0.96277         1.66422 1003.2930479328     -1156.65199 
-        13 -1153.213051446   0.0000000e+00              12   -2.0000000000         0.96588         1.56329 1049.7747608443     -1153.21305 
-        14 -1157.567433451   0.0000000e+00              13   -2.0000000000         0.96850         1.77955 1196.5505678754     -1157.56743 
-        15 -1161.297860774   0.0000000e+00              14   -2.0000000000         0.97075         1.65354 1291.9918143676     -1161.29786 
-        16 -1164.479017743   0.0000000e+00              15   -2.0000000000         0.97270         1.56064 1347.5356619645     -1164.47902 
-        17 -1167.314146664   0.0000000e+00              16   -2.0000000000         0.97441         1.46603 1383.8840230960     -1167.31415 
-        18 -1169.751726144   0.0000000e+00              17   -2.0000000000         0.97591         1.41409 1397.5477801265     -1169.75173 
-        19 -1171.961044125   0.0000000e+00              18   -2.0000000000         0.97725         1.33851 1402.8846977849     -1171.96104 
-        20 -1173.953621671   0.0000000e+00              19   -2.0000000000         0.97845         1.26807 1400.5152360155     -1173.95362 
-        20 -1173.953621671   0.0000000e+00              19   -2.0000000000         0.97845         1.26807 1400.5152360155     -1173.95362 
+         3 -1192.314686775   0.0000000e+00               2   -2.0000000000         0.79526         2.04580    2.6163045859     -1192.31469 
+         4 -1184.932339978   0.0000000e+00               3   -2.0000000000         0.86351         2.82126  110.7422915242     -1184.93234 
+         5 -1181.548405956   0.0000000e+00               4   -2.0000000000         0.89763         2.26680  117.4097470514     -1181.54841 
+         6 -1179.763627101   0.0000000e+00               5   -2.0000000000         0.91810         1.98066  106.6695398801     -1179.76363 
+         7 -1178.164296981   0.0000000e+00               6   -2.0000000000         0.93175         1.65055  101.6805674006     -1178.16430 
+         8 -1177.021918324   0.0000000e+00               7   -2.0000000000         0.94150         1.41476   94.9849460298     -1177.02192 
+         9 -1168.205494591   0.0000000e+00               8   -2.0000000000         0.94882         1.87939  627.2171198796     -1168.20549 
+        10 -1161.456375092   0.0000000e+00               9   -2.0000000000         0.95450         1.67752  921.9312408729     -1161.45638 
+        11 -1155.988828555   0.0000000e+00              10   -2.0000000000         0.95905         1.51122 1098.7847029785     -1155.98883 
+        12 -1156.651992442   0.0000000e+00              11   -2.0000000000         0.96277         1.65673 1003.2930479328     -1156.65199 
+        13 -1153.213051446   0.0000000e+00              12   -2.0000000000         0.96588         1.55541 1049.7747608443     -1153.21305 
+        14 -1157.567433451   0.0000000e+00              13   -2.0000000000         0.96850         1.77228 1196.5505678754     -1157.56743 
+        15 -1161.297860774   0.0000000e+00              14   -2.0000000000         0.97075         1.64693 1291.9918143676     -1161.29786 
+        16 -1164.479017743   0.0000000e+00              15   -2.0000000000         0.97270         1.55659 1347.5356619645     -1164.47902 
+        17 -1167.314146664   0.0000000e+00              16   -2.0000000000         0.97441         1.46275 1383.8840230960     -1167.31415 
+        18 -1169.751726144   0.0000000e+00              17   -2.0000000000         0.97591         1.41498 1397.5477801265     -1169.75173 
+        19 -1171.961044125   0.0000000e+00              18   -2.0000000000         0.97725         1.33989 1402.8846977849     -1171.96104 
+        20 -1173.953621671   0.0000000e+00              19   -2.0000000000         0.97845         1.26937 1400.5152360155     -1173.95362 
+        20 -1173.953621671   0.0000000e+00              19   -2.0000000000         0.97845         1.26937 1400.5152360155     -1173.95362 
 ***************  Print Results (ok = 1)
 **************** Start of Results *****************
 
@@ -114,14 +119,14 @@ Fixed Cusp Pade Jastrow parameters:
       0.978448596759 +/- 1.000000000000e+300  (19 samples, Tcorr   -2.00000)
 
 ------------ DistanceMovedAccepted -----------
-      1.268066600978 +/- 1.000000000000e+300  (19 samples, Tcorr   -2.00000)
+      1.269369689137 +/- 1.000000000000e+300  (19 samples, Tcorr   -2.00000)
 
 ------------- DistanceMovedTrial -------------
-      4.554328683513 +/- 1.000000000000e+300  (19 samples, Tcorr   -2.00000)
+      4.695984056347 +/- 1.000000000000e+300  (19 samples, Tcorr   -2.00000)
 
 ----------------- Walker Age -----------------
       0.000000000000 +/- 1.000000000000e+300  (0 samples, Tcorr   -2.00000)
-dt_effective: 0.00278 +/- inf
+dt_effective: 0.00270 +/- inf
 
 --------------- Virial Ratio (-<V>/<T>) ---------------
       0: 1.86246 +/- inf
@@ -130,35 +135,35 @@ dt_effective: 0.00278 +/- inf
 
 **************** End of Results *****************
 ***************  Finalize
-Average iterations per hour:                              16760
-Average iterations*walkers per hour:                      16760
-Average microseconds per sample:                          37355
-Average microseconds per sample per num initial walkers:  37355
+Average iterations per hour:                              17019
+Average iterations*walkers per hour:                      17019
+Average microseconds per sample:                          38177
+Average microseconds per sample per num initial walkers:  38177
 
-Wallclock Time:                         4296 ms   =                4.296 s    =               0.0716 mins =            0.0011933 hrs 
-Total Time:                             4296 ms   =                4.296 s    =               0.0716 mins =            0.0011933 hrs     100.00 %
+Wallclock Time:                         4230 ms   =                 4.23 s    =               0.0705 mins =             0.001175 hrs 
+Total Time:                             4230 ms   =                 4.23 s    =               0.0705 mins =             0.001175 hrs     100.00 %
 Initialization Time:                      51 ms   =                0.051 s    =              0.00085 mins =           1.4167e-05 hrs       1.21 %
-Equilibration Time:                       37 ms   =                0.037 s    =           0.00061667 mins =           1.0278e-05 hrs       0.88 %
-Propagation Time:                        709 ms   =                0.709 s    =             0.011817 mins =           0.00019694 hrs      16.52 %
+Equilibration Time:                       39 ms   =                0.039 s    =              0.00065 mins =           1.0833e-05 hrs       0.93 %
+Propagation Time:                        725 ms   =                0.725 s    =             0.012083 mins =           0.00020139 hrs      17.15 %
 Send Command Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
-Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.01 %
+Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Synchronization Time:                      0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Poll for Command Time:                     0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Optimization Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 
-      Evaluate basis functions: 0 ( avg =   20700.33 us, n=              6)     18.39 % cumulative =      18.39 %
-         Matrix Multiplication: 0 ( avg =   17464.50 us, n=              6)     15.52 % cumulative =      33.91 %
-             Derivative Ratios: 0 ( avg =    1396.83 us, n=              6)      1.24 % cumulative =      35.15 %
-      Evaluate basis functions: 0 ( avg =   20764.00 us, n=              6)     18.45 % cumulative =      53.60 %
-         Matrix Multiplication: 0 ( avg =   16997.33 us, n=              6)     15.10 % cumulative =      68.70 %
-             Derivative Ratios: 0 ( avg =    1174.00 us, n=              6)      1.04 % cumulative =      69.75 %
-              Potential Energy: 0 ( avg =     908.17 us, n=              6)      0.81 % cumulative =      70.55 %
-                    EN Jastrow: 0 ( avg =    1462.83 us, n=              6)      1.30 % cumulative =      71.85 %
-                    EE Jastrow: 0 ( avg =    4154.00 us, n=              6)      3.69 % cumulative =      75.54 %
-                   EEN Jastrow: 0 ( avg =       0.67 us, n=              6)      0.00 % cumulative =      75.54 %
-                Psi Quantities: 0 ( avg =     233.67 us, n=              6)      0.21 % cumulative =      75.75 %
-            Walker Propagation: 0 ( avg =   16308.60 us, n=              5)     14.49 % cumulative =      90.24 %
-           Correlated Sampling: 0 ( avg =       0.00 us, n=            -15)      0.00 % cumulative =      90.24 %
-         Calculate Observables: 0 ( avg =     217.00 us, n=              5)      0.19 % cumulative =      90.44 %
-                   Entire Step: 0 ( avg =  112546.20 us, n=              5)    100.00 % cumulative =     100.00 %
-Wallclock Time:                         4496 ms   =                4.496 s    =             0.074933 mins =            0.0012489 hrs 
+      Evaluate basis functions: 0 ( avg =   21106.67 us, n=              6)     18.35 % cumulative =      18.35 %
+         Matrix Multiplication: 0 ( avg =   17709.67 us, n=              6)     15.40 % cumulative =      33.74 %
+             Derivative Ratios: 0 ( avg =    1402.17 us, n=              6)      1.22 % cumulative =      34.96 %
+      Evaluate basis functions: 0 ( avg =   20981.50 us, n=              6)     18.24 % cumulative =      53.20 %
+         Matrix Multiplication: 0 ( avg =   17348.17 us, n=              6)     15.08 % cumulative =      68.28 %
+             Derivative Ratios: 0 ( avg =    1222.50 us, n=              6)      1.06 % cumulative =      69.35 %
+              Potential Energy: 0 ( avg =     904.33 us, n=              6)      0.79 % cumulative =      70.13 %
+                    EN Jastrow: 0 ( avg =    1469.33 us, n=              6)      1.28 % cumulative =      71.41 %
+                    EE Jastrow: 0 ( avg =    4263.83 us, n=              6)      3.71 % cumulative =      75.12 %
+                   EEN Jastrow: 0 ( avg =       1.00 us, n=              6)      0.00 % cumulative =      75.12 %
+                Psi Quantities: 0 ( avg =     231.33 us, n=              6)      0.20 % cumulative =      75.32 %
+            Walker Propagation: 0 ( avg =   17213.80 us, n=              5)     14.96 % cumulative =      90.28 %
+           Correlated Sampling: 0 ( avg =       0.00 us, n=            -15)      0.00 % cumulative =      90.28 %
+         Calculate Observables: 0 ( avg =     221.40 us, n=              5)      0.19 % cumulative =      90.48 %
+                   Entire Step: 0 ( avg =  115030.20 us, n=              5)    100.00 % cumulative =     100.00 %
+Wallclock Time:                         4445 ms   =                4.445 s    =             0.074083 mins =            0.0012347 hrs 
