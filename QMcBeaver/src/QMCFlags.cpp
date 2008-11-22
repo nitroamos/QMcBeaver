@@ -81,6 +81,7 @@ void QMCFlags::read_flags(string InFileName)
 
   //Other QMcBeaver improvements or added functionality
   replace_electron_nucleus_cusps = 1;
+  print_replacement_orbitals     = 0;
   calculate_bf_density           = 0;
   use_hf_potential               = 0;
   hf_num_average                 = 100;
@@ -697,6 +698,11 @@ void QMCFlags::read_flags(string InFileName)
 	  input_file >> temp_string;
 	  replace_electron_nucleus_cusps = atoi(temp_string.c_str());
 	}
+      else if(temp_string == "print_replacement_orbitals")
+	{
+	  input_file >> temp_string;
+	  print_replacement_orbitals = atoi(temp_string.c_str());
+	}
       else if(temp_string == "equilibrate_every_opt_step")
         {
           input_file >> temp_string;
@@ -1106,6 +1112,8 @@ ostream& operator <<(ostream& strm, QMCFlags& flags)
   strm << "hf_num_average\n " << flags.hf_num_average << endl;
   strm << "replace_electron_nucleus_cusps\n " 
        << flags.replace_electron_nucleus_cusps << endl;
+  strm << "print_replacement_orbitals\n " 
+       << flags.print_replacement_orbitals << endl;
   strm << "nuclear_derivatives\n " << flags.nuclear_derivatives << endl;
   if(flags.future_walking.size() > 0)
     {

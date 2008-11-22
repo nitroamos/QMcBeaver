@@ -890,6 +890,12 @@ class QMCFlags
   int replace_electron_nucleus_cusps;
 
   /**
+     1 if the original and replacement orbital parameters are to be printed 
+     out at the beginning of the calculation and 0 otherwise.
+  */
+  int print_replacement_orbitals;
+
+  /**
      1 if we'll use the energy cutoff recommended by
      DePasquale, Rothstein, Vrbik JCP, 89, 3629, 1988
      0 otherwise

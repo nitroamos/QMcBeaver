@@ -1,3 +1,18 @@
+Fri, Nov 21 Damiel R. Fisher
+1.  I changed the way QMCElectronNucleusCusp fits replacement
+    orbitals.  Previously it changed the value of the replacement
+    orbital at the nucleus until the overall local energy was close to
+    an 'ideal curve.'  Now the value at the nucleus is constrained to
+    be within 10% of the value of the original orbital.
+    This is because the replacement orbitals in some calculations were
+    drastically different from the original ones and were giving bad
+    results.  
+    I added a new flag 'print_replacement_orbitals,' which will print
+    out the original and replacement orbital parameters.  The
+    parameters can be read and visualized with the plot_orbital.py
+    script.  I recommend that users examine the replacement orbitals
+    before starting calculations to make sure they are sensible.
+
 Mon, Nov 17 Amos Anderson
 1.  Previously, if you restarted a DMC calculation from a checkpoint, it wouldn't give you *exactly* the same
     output as if you had never stopped. I've fixed this, although of course this test only works for single processor
