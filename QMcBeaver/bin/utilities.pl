@@ -147,16 +147,14 @@ sub getFileAge
 
 sub estimateTimeToFinish
 {
-    my ($outfile) = @_;
+    my ($outfile, $time) = @_;
     return 0 if(!(-e $outfile));
-
+    my $base = substr($outfile,0,-4);
     @newsteps = `grep "new steps" $outfile`;
 
     my $totalSteps = 0;
     if($#newsteps  < 0){
-	my $infile = substr($outfile,0,-4);
-	$infile .= ".ckmf";
-	open(CKMFFILE,"$infile");
+	open(CKMFFILE,"${base}.ckmf");
 	while(<CKMFFILE>){
 	    if($_ =~ m/^\s*max_time_steps\s*$/){
 		$_ = <CKMFFILE>;
@@ -172,25 +170,29 @@ sub estimateTimeToFinish
 
 
     @itertime = `grep "Average iterations per hour:" $outfile`;
-    return 0 if($#itertime < 0);
-    my $shift = $#itertime;
-    #the correlated sampling phase runs faster per iteration, and we assume that we're currently
-    #in the longer phase, so we want to look back 2 iterations
-    $shift -= 1 if($shift > 0);
-    my $itersPerHour = (split/\s+/,$itertime[$shift])[4];
-
-    my $curIter = (split/\s+/,`tail -n 1 $outfile`)[1];
-
+    my $curIter = (split/\s+/,`tail -n 1 ${base}.qmc`)[1];
+    my $itersPerHour = 0;
+    if($#itertime < 0 && $time != 0){
+	$itersPerHour = abs($curIter) / $time;
+	$itersPerHour *= 3600;
+    } elsif($#itertime >= 0) {
+	my $shift = $#itertime;
+	#the correlated sampling phase runs faster per iteration, and we assume that we're currently
+	#in the longer phase, so we want to look back 2 iterations
+	$shift -= 1 if($shift > 0);
+	$itersPerHour = (split/\s+/,$itertime[$shift])[4];       
+    } else {
+	return "0:0";
+    }
+    return "0" if($itersPerHour == 0);
     my $est = ($totalSteps - $curIter) / $itersPerHour;
-
     my $hrs = int($est);
     my $mns = int(($est - $hrs)*60.0 + 0.5);
     if($mns < 10){
 	$mns = "0$mns";
     }
-    #print "$est = hrs = $hrs mns = $mns\n";
+    #print "$est => hrs = $hrs mns = $mns\n";
     #print "totalSteps = $totalSteps curiter = $curIter itertime = $itersPerHour est = $est\n";
-    #return $est;
     return "${hrs}:${mns}";
 }
 
