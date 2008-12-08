@@ -62,9 +62,16 @@ void QMCFlags::read_flags(string InFileName)
   limit_branching                = 1;
 
   branch_age_toolazy             = 4;
-  branch_dWgrowth_toofast        = 5.0;
+
+  //*
+  branch_dWgrowth_toofast        = 3.0;
   branch_dR_badE                 = 100.0;
-  branch_W_tooheavy              = 4.0;
+  branch_W_tooheavy              = 100.0;
+  /*/
+  branch_dWgrowth_toofast        = 100.0;
+  branch_dR_badE                 = 100.0;
+  branch_W_tooheavy              = 100.0;
+  //*/
 
   //Green's function parameters
   sampling_method                = "umrigar93_importance_sampling";

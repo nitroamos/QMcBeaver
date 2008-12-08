@@ -164,7 +164,7 @@ public:
      to blow up.
      @return whether a branch is recommended for a particular iteration
   */
-  bool branchRecommended();
+  bool branchRecommended(bool printWarning);
 
   /**
      This will return a string with a short identification

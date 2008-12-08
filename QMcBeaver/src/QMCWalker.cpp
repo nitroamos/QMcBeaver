@@ -1388,7 +1388,7 @@ void QMCWalker::reweight_walker()
     }
 }
 
-bool QMCWalker::branchRecommended()
+bool QMCWalker::branchRecommended(bool printWarning)
 {
   if(globalInput.flags.limit_branching == 0)
     return true;
@@ -1455,7 +1455,7 @@ bool QMCWalker::branchRecommended()
       shouldWarn << " rel E = " << setprecision(3) << rel_diff;
     }
 
-  if(shouldWarn.str() != "" && !shouldRecommend && iteration > 0)
+  if(printWarning && shouldWarn.str() != "" && !shouldRecommend && iteration > 0)
     {
       cerr << "WARNING: Not recommending (" << shouldWarn.str() << " ) a branch for walker ";
       //cerr << " (" << genealogy[0] << "::r" << Input->flags.my_rank << ")" << endl;

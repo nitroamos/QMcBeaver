@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "QMCRun.h"
+#include <map>
 
 QMCRun::~QMCRun()
 {
@@ -630,7 +631,7 @@ void QMCRun::unitWeightBranching()
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
     {
       int times_to_branch = 0;
-      if(wp->branchRecommended())
+      if(wp->branchRecommended(true))
 	times_to_branch = int(wp->getWeight() + ran.unidev())-1;
 	
       // Set the walkers weight back to unity
@@ -680,7 +681,7 @@ void QMCRun::nonunitWeightBranching()
     {
       if( wp->getWeight() > Input->flags.branching_threshold )
         {
-	  if(wp->branchRecommended())
+	  if(wp->branchRecommended(true))
 	    {
 	      // Split this walker into two; each with half the weight
 	      wp->setWeight( wp->getWeight()/2.0 );
@@ -745,99 +746,159 @@ void QMCRun::nonunitWeightBranching()
 
 void QMCRun::ack_reconfiguration()
 {
+  // This is the new target average
   double aveW = getWeights()/getNumberOfWalkers();
 
-  double Nreconfp = 0;
-  double Nreconfn = 0;
+  map<double,list<QMCWalker>::iterator> aCandidates;
+  map<double,list<QMCWalker>::iterator> dCandidates;
+  double Nreconfp  = 0.0;
+  double Nreconfn  = 0.0;
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
     {
       double w = wp->getWeight()/aveW;
+      double sw = fabs(w-1.0);
       if(w >= 1.0){
-	Nreconfp += fabs(w-1.0);
+	if(wp->branchRecommended(true)){
+	  Nreconfp += sw;
+	  aCandidates[Nreconfp] = wp;
+	}
       } else {
-	Nreconfn += fabs(w-1.0);
+	Nreconfn += sw;
+	dCandidates[Nreconfn] = wp;
       }
     }
   
-  if(fabs(Nreconfp - Nreconfn) > 1e-5)
-    {
-      cerr << "Error: (Nreconfp = " << Nreconfp << ") != (Nreconfn = " << Nreconfn << ")" << endl;
-    }
-
-  int Nreconf = (int)(Nreconfp + ran.unidev());
-  //int Nreconf = (int)(Nreconfp + 0.5);
-
-  // Make a list of walkers to add and delete
-  list<QMCWalker> WalkersToAdd;
-  list<list<QMCWalker>::iterator> WalkersToDelete;
-
-  int numDeleted = 0;
-  int numToAdd = Nreconf;
-  numToAdd += Input->flags.number_of_walkers_initial - getNumberOfWalkers();
-  while(numDeleted < Nreconf || numToAdd != 0)
-    {
-      
-      /*
-	Older walkers are more likely to be listed in the beginning of the list...
-	biased?
-       */
-      for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
-	{
-	  double w = wp->getWeight()/aveW;
-	  
-	  if(w >= 1.0)
-	    {
-	      if( fabs(w - 1.0) >= ran.unidev() && numToAdd > 0)
-		{
-		  //what if none of the candidates are recommended?
-		  if(wp->branchRecommended())
-		    {
-		      numToAdd--;
-		      WalkersToAdd.push_back( *wp );
-		      wp->branchID();
-		    }
-		}
-	    }
-	  else if(w > 1e-3)
-	    {
-	      if( fabs(w - 1.0) >= ran.unidev() && numDeleted < Nreconf)
-		{
-		  numDeleted++;
-		  WalkersToDelete.push_back(wp);
-		}
-	    }
-	  else
-	    {
-	      numToAdd++;
-	      WalkersToDelete.push_back(wp);
-	    }
-
-	}
-
-      //we'll remove them from wlist now so we don't select them again
-      for(list< list<QMCWalker>::iterator >::iterator wtd=WalkersToDelete.begin();
-	  wtd!=WalkersToDelete.end(); ++wtd)
-	{
-	  wlist.erase( *wtd );
-	}
-      WalkersToDelete.clear();
-    }
-    
-  wlist.splice( wlist.end(), WalkersToAdd );
-
+  //Remove Nreconf randomly selected low weight walkers, proportionally to their weight
+  int Nreconf = min((int)(Nreconfn + ran.unidev()), (int)dCandidates.size());
+  int Nreconf1 = Nreconf;
+  //Let's ensure that these bad walkers get deleted
+  list<list<QMCWalker>::iterator> del;
   for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
-    {
-      //double w = wp->getWeight()/aveW;
-      //wp->setWeight(w);
-      wp->setWeight(aveW);
+    if( wp->getWeight() < 1e-5 && Nreconf > 0){
+      del.push_back(wp);  
+      Nreconf--;
     }
+  int Nreconf2 = Nreconf;
+  int count = 0;
+  while(Nreconf > 0)
+    {
+      count++;
+      double ndx = Nreconfn*ran.unidev();
+      for(map<double,list<QMCWalker>::iterator>::iterator it=dCandidates.begin();
+	  it != dCandidates.end(); it++)
+	if(ndx < (*it).first)
+	  {
+	    //Can't delete the same walker twice
+	    if(find(del.begin(),del.end(),(*it).second) == del.end())
+	      {
+		del.push_back((*it).second);
+		Nreconf--;
+	      }
+	    break;
+	  }
+ 
+      if(count > 50){
+	cout << "Error in count: Nreconf = " << Nreconf << endl;
+	break;
+      }
+    }      
+  
+  //Now add enough walkers to bring us back to the initial number.
+  int numToAdd = min((int)(Input->flags.number_of_walkers_initial-getNumberOfWalkers()+del.size()),
+		     (int)aCandidates.size());
+  list<QMCWalker> add;
+  list<list<QMCWalker>::iterator> addList;
+  count = 0;
+  while(numToAdd > 0)
+    {
+      count++;
+      double ndx = Nreconfp*ran.unidev();
+      for(map<double,list<QMCWalker>::iterator>::iterator it=aCandidates.begin();
+	  it != aCandidates.end(); it++)
+	if(ndx < (*it).first)
+	  {
+	    if(find(addList.begin(),addList.end(),(*it).second) == addList.end())
+	      {
+		addList.push_back((*it).second);
+		add.push_back(*(*it).second);
+		(*it).second->branchID();
+		numToAdd--;
+	      }
+	    break;
+	  }
+ 
+      if(count > 50){
+	cout << "Error in count: numToAdd = " << numToAdd << endl;
+	break;
+      }
+    }      
 
-  if(Input->flags.number_of_walkers_initial != getNumberOfWalkers())
+
+  /*
+  for(int i=0; i<numToAdd; i++)
     {
-      cerr << "Warning: walkers didn't rebalance (" <<
-	Input->flags.number_of_walkers_initial << "!=" <<
-	getNumberOfWalkers() << ")" << endl;
+      double ndx = Nreconfp*ran.unidev();
+      for(map<double,list<QMCWalker>::iterator>::iterator it=aCandidates.begin();
+	  it != aCandidates.end();
+	  ++it)
+	if(ndx < (*it).first)
+	  {
+	    add.push_back( *(*it).second );
+	    (*it).second->branchID();	  
+	    break;
+	  }
     }
+  */
+  if(Input->flags.number_of_walkers_initial != getNumberOfWalkers() +(int)add.size() - (int)del.size())
+    {
+      cout << "ERROR: walkers didn't rebalance (" <<
+	getNumberOfWalkers() << ")" << endl;
+      cout << "Add Size: " << add.size() << endl;
+      cout << "Del Size: " << del.size() << endl;
+      cout << "numToAdd: " << numToAdd << endl;
+      cout << "Nreconfp: " << setprecision(20) << Nreconfp << endl;
+      cout << "Nreconfn: " << setprecision(20) << Nreconfn << endl;
+      cout << "Nreconf1: " << Nreconf1 << endl;
+      cout << "Nreconf2: " << Nreconf2 << endl;
+      cout << "aveW:     " << setprecision(20) << aveW << endl;
+
+      cout << "added: " << endl;
+      for(list<QMCWalker>::iterator wp=add.begin(); wp!=add.end();++wp)
+	cout << "w= " << wp->getWeight() << " sw = " << fabs(wp->getWeight()/aveW-1) << endl;
+
+      cout << "deleted: " << endl;
+      for(list< list<QMCWalker>::iterator >::iterator wp=del.begin();
+	  wp!=del.end(); ++wp)
+	cout << "w= " << (*wp)->getWeight() << " sw = " << fabs((*wp)->getWeight()/aveW-1) << endl;
+
+      cout << "aCandidates(" << aCandidates.size() << "):" << endl;
+      for(map<double,list<QMCWalker>::iterator>::iterator it=aCandidates.begin();
+	  it != aCandidates.end();
+	  it++)
+	printf("idx %10.5f w = %20.10f sw= %20.10f\n",(*it).first,(*it).second->getWeight(),fabs((*it).second->getWeight()/aveW-1));
+      cout << "dCandidates(" << dCandidates.size() << "):" << endl;
+      for(map<double,list<QMCWalker>::iterator>::iterator it=dCandidates.begin();
+	  it != dCandidates.end();
+	  it++)
+	printf("idx %10.5f w = %20.10f sw= %20.10f\n",(*it).first,(*it).second->getWeight(),fabs((*it).second->getWeight()/aveW-1));
+
+      cout << "New Walker List:" << endl;
+      for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp) 
+	cout << wp->ID(true,false);
+      
+      //exit(0);
+    }  
+
+  for(list< list<QMCWalker>::iterator >::iterator wtd=del.begin();
+      wtd!=del.end(); ++wtd)
+    wlist.erase( *wtd );
+  del.clear();
+
+  wlist.splice( wlist.end(), add );
+  
+  for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp)
+    wp->setWeight(aveW);
+
 }
 
 double QMCRun::getWeights()
