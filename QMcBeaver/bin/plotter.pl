@@ -6,30 +6,106 @@ require "$path/utilities.pl";
 
 my $calcDiff = 1;
 my $useAvg   = 1;
-my $withErr  = 1;
+my $withErr  = 0;
+my $spacef   = 0.3;
+my $i_active = 1;
 
 #add lines with these values:
-#my @exact_titles    = ("exp" , "ccsdt");
-#my @exact           = (-21.5539 , -22.5373);
-my @exact_titles    = ("exp");
-my @exact           = (-9.353);
+my @exact_titles;
+my @exact;
 
-my $every    = 1;
+my $every    = 15;
 if($withErr){
     #error lines can be very messy, so decrease the
     #freqency of points
     $every    = 100;
 }
-#hartrees (=1) or kcal/mol (=627.50960803)?
+
 my $units = 627.50960803;
+my $unitsL = "kcal/mol";
 
 #absolute energies (=0) or relative (=1) to each other?
 my $shift = 1;
 
-#should the x axis be samples (=1) or iterations (=0)?
-my $xaxis_samples = 0;
-my $mult_dt       = 1;
+#should the x axis be iteration (=0), samples (=1) or time (=2)?
+my $xtype = 0;
 
+while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
+    $type = shift(@ARGV);
+    $param = "";
+
+    if($type eq "-s"){
+	$calcDiff = ($calcDiff+1)%2;
+	print "Using calcDiff = $calcDiff\n";
+    } elsif($type eq "-a"){
+	$useAvg = ($useAvg+1)%2;
+	print "Using useAvg = $useAvg\n";
+    } elsif($type eq "-i"){
+	$i_active = ($i_active+1)%2;
+	print "Using interactive = $i_active\n";
+    } elsif($type eq "-t"){
+	$param = shift(@ARGV);
+	$xtype = $param;
+	print "Using xtype = $xtype\n";
+    } elsif($type eq "-f" || $type eq "-space"){
+	$param = shift(@ARGV);
+	$spacef = $param;	
+	print "Using spacef = $spacef\n";
+    } elsif($type eq "-e" || $type eq "-every" ){
+	$param = shift(@ARGV);
+	$every = $param;
+	$withErr = 1;
+	print "Using every = $every\n";
+    } elsif($type eq "-err" || $type eq "-error"){
+	$withErr = ($withErr+1)%2;
+	print "Using withErr= $withErr\n";
+    } elsif($type eq "-exp"){
+	$title = shift(@ARGV);
+	$nrg   = shift(@ARGV);
+	push(@exact_titles,$title);
+	push(@exact,$nrg);
+	print "Adding line called $title at $nrg\n";
+    } elsif($type eq "-x"){
+	$param = shift(@ARGV);
+	if($param eq "ch2"){
+	    push(@exact_titles,"exp");
+	    push(@exact,-9.353);	    
+	} elsif($param == 1) {
+	    push(@exact_titles,"exp");
+	    push(@exact,-21.5539);	    
+	    push(@exact_titles,"ccsdt");
+	    push(@exact,-22.5373);
+	} else {
+	    print "Unrecognized energy choice: $param\n";
+	}
+    } elsif($type eq "-u"){
+	$param = shift(@ARGV);
+	$param = lc($param);
+	if($param =~ /kcal/){
+	    $units  = 627.50960803;
+	    $unitsL = "kcal/mol";
+	} elsif($param =~ /ev/) {
+	    $units  = 27.211399;
+	    $unitsL = "eV"; 
+	} elsif($param =~ /kj/) {
+	    $units  = 2625.5002;
+	    $unitsL = "kJ/mol"; 
+	} elsif($param =~ /cm/) {
+	    $units  = 219474.63;
+	    $unitsL = "cm^-1"; 
+	} elsif($param =~ /au/ || $param =~ /hart/) {
+	    $units  = 1;
+	    $unitsL = "au"; 
+	}
+	print "Using $unitsL energy units, conversion = $units\n";
+    } else {
+	print "Unrecognized option: $type\n";
+	die;
+    }
+}
+if($#ARGV >= 0){
+    print "Unrecognized options: @ARGV\n";
+}
 my $d = qx! date +%F.%H-%M-%S !;
 chomp($d);
 my $date = `date`;
@@ -111,8 +187,7 @@ sub operateTwo
     open(DATA,"plotfile.dat");
 
     my $line = <DATA>;
-    $line = <DATA> while($line !~ /$fkey/ && $line !~ /$skey/);
-
+    $line = <DATA> while($line !~ /$fkey$/ && $line !~ /$skey$/);
     if($line =~ /$skey/ && $fkey ne $skey){
 	#we found the second key first, so swap
 	$temp = $fkey;
@@ -137,7 +212,7 @@ sub operateTwo
     #this is header of the next data
     $line = <DATA>;
 
-    while($line !~ /$skey/)
+    while($line !~ /$skey$/)
     {
 	$line = <DATA>;
     }
@@ -179,7 +254,7 @@ sub operateTwo
     chomp($second_min);
     
     #print "First max = $first_max Second max = $second_max fmin = $first_min smin = $second_min\n";
-    #print "num first = $#first_data snum = $#second_data\n";
+    #print "Data first = $#first_data Data second = $#second_data\n";
     #print "last = $first_data[$#first_data]";
     my $s = 0;
     my @sl = split/ +/,$second_data[$s];
@@ -194,10 +269,10 @@ sub operateTwo
 
     my $fbase = `basename $ftitle[3]`;
     chomp($fbase);
-    $fbase =~ s/_[\d]+$//g;
+    #$fbase =~ s/_[\d]+$//g;
     my $sbase = `basename $stitle[3]`;
     chomp($sbase);
-    $sbase =~ s/_[\d]+$//g;
+    #$sbase =~ s/_[\d]+$//g;
 
     my $title_new;
     my $new_weight;
@@ -243,6 +318,8 @@ sub operateTwo
 	#normalize the weights now
 	$new_weight = $fw+$sw;
 	$title_new = "$fbase:${ffactor}A+${sfactor}B";
+	$title_new =~ s/A\+\-B/A\-B/;
+	$title_new =~ s/-A\+B/B\-A/;
     }
 
     my $e_new = sprintf "%-.10f", ($fconst * $fe + $sconst * $se);
@@ -303,14 +380,15 @@ sub averageTwo
     my @lines = `grep dt plotfile.dat`;
     chomp(@lines);
     foreach(my $fset=0; $fset<$#lines; $fset++){
-	$fkey = (split/ +/,$lines[$fset])[4];
-	chomp($fkey);
+	@fdata = split/\s+/,$lines[$fset];
+	chomp @fdata;
 	foreach(my $sset=$fset+1; $sset<=$#lines; $sset++){
-	    $skey = (split/ +/,$lines[$sset])[4];
-	    chomp($skey);
+	    @sdata = split/\s+/,$lines[$sset];
+	    chomp(@sdata);
 	    
-	    if($fkey eq $skey){
-		my $newdata = operateTwo(1.0,$fkey,1.0,$skey);
+	    if($fdata[4] eq $sdata[4]){
+		print "Average $fdata[2] with $sdata[2]\n"; 
+		my $newdata = operateTwo(1.0,$fdata[4],1.0,$sdata[4]);
 		deleteData($lines[$fset],$lines[$sset]);
 
 		open(NEWDATA,">>plotfile.dat");
@@ -327,16 +405,14 @@ sub subtractTwo
 {
     my @lines = `grep dt plotfile.dat`;
     my @keys;
+    my @titles;
     foreach $line (@lines){
-	my $key = (split/ +/,$line)[4];
-	chomp($key);
-	push(@keys,$key);
+	my @data = split/ +/,$line;
+	chomp @data;
+	push(@keys,$data[4]);
+	push(@titles,$data[2]);
     }
     @keys = sort byenergy @keys;
-
-    for(my $i=0; $i<=$#keys; $i++){
-	#print "key $i = $keys[$i]\n";
-    }
     
     my %newdata;
     for(my $i=$#keys; $i>=0; $i--){
@@ -344,7 +420,7 @@ sub subtractTwo
 	for(my $j=0; $j<$i; $j++){
 	    $jKey = $keys[$j];
 
-	    ($iMult,$jMult) = getFormula($iKey,$jKey);
+	    ($iMult,$jMult) = getFormula($iKey,$jKey,1);
 
 	    #the results are not comparable if either is zero
 	    next if($iMult == 0 || $jMult == 0);
@@ -356,9 +432,12 @@ sub subtractTwo
 	    $key .= "x";
 	    $key .= ($iMult < $jMult ? $iMult : $jMult);
 
+	    print "Subtracting: $i) $titles[$i] - $j) $titles[$j]\n";
 	    $newdata{"$key"} .= operateTwo($iMult,$iKey,-1.0*$jMult,$jKey);
 	}
     }
+
+    return 0 if(scalar keys %newdata == 0);
 
     open(NEWDATA,">new_plotfile.dat");
     foreach $key (reverse sort keys %newdata){
@@ -400,8 +479,10 @@ my @lines = `grep dt plotfile.dat`;
 chomp(@lines);
 foreach $line (@lines)
 {
-    #print "$line\n";
     my @data = split/[= ]+/, $line;
+    my ($nrg,$num) = split/:/,$data[5];
+    #print "$line\n";
+    printf "%-30s: from $num data sets, dt=$data[2], with final energy %20.10e $unitsL\n",$data[3],($nrg*$units);
 
     if($all_dt eq ""){
 	$all_dt = $data[2];
@@ -426,6 +507,7 @@ foreach $line (@lines)
 
 my $y_min;
 my $y_max;
+my $y_err;
 open (DAT_FILE, "plotfile.dat");
 my $line = <DAT_FILE>;
 while($line){
@@ -464,13 +546,14 @@ while($line){
 
     #Make sure we have the last line in a series
     if($line !~ /[0-9]/ && "$data[2]" =~ /[0-9]/){
+	$y_err = $data[3];
 	if($data[2] < $y_min || $y_min == 0){
 	    $y_min = $data[2];
-	    $y_min -= $data[3] if($withErr);
+	    $y_min -= $y_err if($withErr || $#lines == 0);
 	}
 	if($data[2] > $y_max || $y_max == 0){
 	    $y_max = $data[2];
-	    $y_max += $data[3] if($withErr);
+	    $y_max += $y_err if($withErr || $#lines == 0);
 	}
     }
 }
@@ -503,7 +586,7 @@ if($calcDiff == 0)
     $shift = 0;
 }
 
-my $space = 0.2*($y_min - $y_max);
+my $space = $spacef*($y_min - $y_max);
 $y_min += $space;
 $y_max -= $space;
 
@@ -517,28 +600,36 @@ if($all_form != -1 && $all_form ne ""){
     $title_extra .= ", $all_form";
 }
 
-my $ylabel = "Energy";
-if($units == 1){
-    $ylabel .= " (au)";
-} else {
-    $ylabel .= " (kcal/mol)";
-}
-
-my $xindex = 4;
-my $xlabel = "Num Iterations";
-if($xaxis_samples == 1){
+my $ylabel = "Energy ($unitsL)";
+my $xindex;
+my $xlabel;
+if($xtype == 0){
+    $xindex = 4;
+    $xlabel = "Num Iterations";
+} elsif($xtype == 1){
     $xindex = 1;
     $xlabel = "Num Samples";
-} elsif($mult_dt){
+} elsif($xtype == 2){
+    $xindex = 4;
     $xlabel = "Time (Hartrees^{-1})";
 }
+$file_name .= sprintf "_%i", ($#{titles}+1);
+$gnuplot .= " -geometry 1280x740"; #this is optimized for Amos' laptop...
+open(GNUPLOT, "|$gnuplot") or die "Can't open GNUPLOT= $gnuplot\n";
+#open(GNUPLOT, ">gnuplot.gnu") or die "Can't open GNUPLOT= $gnuplot\n";
 
-$file_name .= "_$#{titles}_$d.pdf";
-#$file_name .= "_$#{titles}.pdf";
+if($i_active){
+    print "Plotting graph $file_name with X11\n";
+    #print GNUPLOT "set terminal x11 reset persist enhanced font \"Courier-Bold,12\" linewidth 2\n";
+    print GNUPLOT "set terminal x11 persist raise enhanced font \"Courier-Bold,12\" title \"$file_name\" dashed linewidth 2\n";
+} else {
+    $file_name .= sprintf "_$d.pdf", ($#{titles}+1);
+    print "Writing graph in: $file_name\n";
+    `/bin/rm -f $file_name`;
+    print GNUPLOT "set term pdf color enhanced font \"Courier-Bold,12\" linewidth 7 dashed dl 3 size 17.5,10\n";
+    print GNUPLOT "set output \"$file_name\"\n";
+}
 
-print "Writing graph in: $file_name\n";
-`/bin/rm -f $file_name`;
-open(GNUPLOT, "|$gnuplot");
 print GNUPLOT <<gnuplot_Commands_Done;
 #fonts with extensions "ttf" and "dfont" will work
 #here is a list of available fonts: Chalkboard Helvetica Times
@@ -548,11 +639,7 @@ print GNUPLOT <<gnuplot_Commands_Done;
 #fonts on hive:
 #set term gif crop enhanced font 'VeraMono' 8
 #set term svg dynamic enhanced font "VeraMono,8"
-set term pdf color enhanced font "Courier-Bold,12" linewidth 7 size 12,8
-set output "$file_name"
-
-#set term png
-#set terminal png medium
+set mouse zoomjump
 set size 0.9,1
 
 set nokey
@@ -565,12 +652,23 @@ set ylabel "$ylabel"
 set grid ytics
 set mytics
 set tics scale 1.5, 0.75
+
 gnuplot_Commands_Done
 
-print GNUPLOT "plot ";
+my $numLC = 11;
+my @goodlt;
+push(@goodlt,1);
+push(@goodlt,3);
+push(@goodlt,5);
+push(@goodlt,4);
+push(@goodlt,6);
+push(@goodlt,7);
+
+
+my $plotline = "plot ";
 if($#exact >= 0){
     for(my $i=0; $i<=$#exact; $i++){
-	print GNUPLOT "$exact[$i] title \"$exact_titles[$i]\" with lines,\\\n";
+	$plotline .= "$exact[$i] title \"$exact_titles[$i]\" with lines,\\\n";
     }
 }
 for(my $i=0; $i<=$#titles; $i++){
@@ -586,19 +684,44 @@ for(my $i=0; $i<=$#titles; $i++){
     }
 
     my $xfactor = 1;
-    $xfactor = $dt_values[$i] if($mult_dt);
+    $xfactor = $dt_values[$i] if($xtype == 2);
+    
+    my $lt = $goodlt[int($i/$numLC)];    
+    my $lc = $i % $numLC;
 
-    my $plotline = " \"plotfile.dat\" index $i every $every using (\$$xindex * $xfactor):(\$2*$units*$factor-$shift):(\$3*$units) title \"$titles[$i]\"";
-    if($withErr){
-	print GNUPLOT "$plotline with yerrorlines";
-    } else {
-	print GNUPLOT "$plotline with lines";
-    }
-    print GNUPLOT ",\\" if($i != $#titles);
-    print GNUPLOT "\n";
+    $plotline .= " \"plotfile.dat\" index $i every vEvery using (\$$xindex * $xfactor):(\$2*vUnits*$factor-$shift):(\$3*vUnits) lc $lc lt $lt title \"$titles[$i]\"";
+    $plotline .= " with yerrorlines";
+    #$plotline .= ",\\" if($i != $#titles);
+    #$plotline .= "\n";
+    $plotline .= "," if($i != $#titles);
+
+}
+my $plotline_noerr = $plotline;
+$plotline_noerr =~ s/yerrorlines/lines/g;
+print GNUPLOT "vEvery = $every\n";
+print GNUPLOT "vUnits = $units\n";
+if($withErr){
+    print GNUPLOT "$plotline\n";
+} else {
+    print GNUPLOT "$plotline_noerr\n";
 }
 
+#haven't gotten this next bit to work...
+print GNUPLOT "v=0\n";
+print GNUPLOT "bind e 'v=v+1; if(v%2) $plotline; else $plotline_noerr'\n";
+print GNUPLOT "k=0\n";
+print GNUPLOT "bind k 'k=k+1; if(k%2) set nokey; replot; else set key; replot'\n";
+print GNUPLOT "bind '-' 'vEvery=vEvery+5; if(v%2) $plotline; else $plotline_noerr'\n";
+print GNUPLOT "bind '=' 'vEvery=vEvery-5; if(vEvery < 1) vEvery = 1; if(v%2) $plotline; else $plotline_noerr'\n";
+print GNUPLOT "bind '1' 'vUnits=1; set yrange [$y_min/$units:$y_max/$units]; if(v%2) $plotline; else $plotline_noerr'\n";
+
+print GNUPLOT "pause mouse button2\n";
+#print GNUPLOT "pause -1 'Hit return to continue'\n";
+#print GNUPLOT "pause -1\n";
 close (GNUPLOT);
 #`/bin/rm $_.dat`;
-
 #`open $file_name`;
+if($i_active == 0){
+    `bash -c \"echo Current directory \" | /usr/bin/mutt -s \"[jastrows] $file_name\" -a $file_name nitroamos\@gmail.com`;
+    `rm $file_name`;
+}
