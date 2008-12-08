@@ -11,6 +11,7 @@ my $orbFilter  = 1;
 my $compareE   = 0;
 my $sumResults = 1;
 my $latexHelp  = 0;
+my $averageTitle=1;
 my @fileFilters;
 my @exclusionFilters;
 
@@ -61,6 +62,9 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
 	$param = shift(@ARGV);
 	$useVar = $param if($param == 1 || $param == 0);
 	print "Using useVar = $useVar\n";
+    } elsif($type eq "-a"){
+	$averageTitle = ($averageTitle+1)%2;
+	print "Using averageTitle = $averageTitle\n";
     } elsif($type eq "-t"){
 	$param = shift(@ARGV);
 	$dtFilter = $param if($param >= 0);
@@ -75,19 +79,20 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
 	print "Adding file exclusion filter $param\n";
     } elsif($type eq "-u"){
 	$param = shift(@ARGV);
-	if($param == 0){
+	$param = lc($param);
+	if($param =~ /kcal/){
 	    $units  = 627.50960803;
 	    $unitsL = "kcal/mol";
-	} elsif($param == 1) {
+	} elsif($param =~ /ev/) {
 	    $units  = 27.211399;
 	    $unitsL = "eV"; 
-	} elsif($param == 2) {
+	} elsif($param =~ /kj/) {
 	    $units  = 2625.5002;
 	    $unitsL = "kJ/mol"; 
-	} elsif($param == 3) {
+	} elsif($param =~ /cm/) {
 	    $units  = 219474.63;
 	    $unitsL = "cm^-1"; 
-	} elsif($param == 4) {
+	} elsif($param =~ /au/ || $param =~ /hart/) {
 	    $units  = 1;
 	    $unitsL = "au"; 
 	}
@@ -188,8 +193,11 @@ for(my $index=0; $index<=$#files; $index++){
     chomp($short);
     #remove the restart index
     $short = $1 if($short =~ /([\w\d]+)\.\d\d$/);
-    #remove any _\d at the end
-    $short = $1 if($short =~ /([\w\d]+)_[\d]+$/);
+
+    if($averageTitle == 1){
+	#remove any _\d at the end
+	$short = $1 if($short =~ /([\w\d]+)_[\d]+$/);
+    }
 
     my $vare = "";
 
@@ -430,15 +438,15 @@ for(my $index=0; $index<=$#files; $index++){
     chomp($sampleclock);
     my $numwarnings = `grep WARNING $base.out | wc -l`;
     #This is "number of warnings per 1000 samples"
-    $numwarnings /= $num_samples/1e3;
-    $numwarnings = sprintf "%4.2f", $numwarnings;
+    #$numwarnings /= $num_samples;
+    $numwarnings = sprintf "%4i", $numwarnings;
     $numwarnings = " $Chilite$numwarnings$Cnormal" if($numwarnings > 0.5);
     my $numerrors = `grep ERROR $base.out | wc -l`;
-    $numerrors /= $num_samples/1e3;
-    $numerrors = sprintf "%4.2f",$numerrors;
+    #$numerrors /= $num_samples;
+    $numerrors = sprintf "%4i",$numerrors;
 
     $lastlines .= "$line";
-    my $key = "$dt&$numbf&$numjw&$nw&$numci&$numor&$oepi";
+    my $key = "$dt&$numbf&$numjw&$nw&$numci&$numor&$oepi&$short";
     if($vare eq ""){
 	#use the value for energy in the key
 	$key =  "$hfe&$key";
@@ -601,7 +609,7 @@ if($num_results > 0){
 	    my @coldata = split/&/,$col;
 	    my $colJW = (split/=/,$coldata[3])[0];
 
-	    ($rMult,$cMult) = getFormula($row,$col);
+	    ($rMult,$cMult) = getFormula($row,$col,$orbFilter);
 
 	    my $r = $dt_ave_results{$row};
 	    my $c = $dt_ave_results{$col};
@@ -614,7 +622,6 @@ if($num_results > 0){
 	    next if($r < $c);
 	    #This eliminates a lot of the meaningless comparisons
 	    my $orbsMatch = ($rMult * $rOrb == $cMult * $cOrb);
-	    next if($orbFilter && !$orbsMatch);
 
 	    #So that we're comparing the difference
 	    $cMult *= -1;

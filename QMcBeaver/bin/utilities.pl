@@ -78,7 +78,7 @@ sub getEnergyWError {
     return $str;
 }
 sub getFormula {
-    my ($one, $two) = @_;
+    my ($one, $two, $orbFilter) = @_;
     my @od = split/&/,$one;
     my @td = split/&/,$two;
 
@@ -87,6 +87,8 @@ sub getFormula {
 		    $od[4] != $td[4] || #compare num walkers
 		    $od[7] != $td[7] || #compare oepi
 		    $od[3] ne $td[3]);  #compare jastrows
+
+    return (0,0) if($#od > 7 && $od[8] ne $td[8]);
 
     $or = $od[2];
     $tr = $td[2];
@@ -103,6 +105,9 @@ sub getFormula {
     if($or == int($or) && $tr == int($tr) &&
        $or < 10 && $tr < 10)
     {
+	return (0,0) if($tr*$td[6] != $or*$od[6] &&
+			$orbFilter);
+
 	return ($tr, $or);
     } else {
 	return (0, 0);
@@ -189,10 +194,18 @@ sub estimateTimeToFinish
     return "${hrs}:${mns}";
 }
 
+sub getOPTHeader
+{
+    return "IDUE3L";
+}
 sub getCKMFHeader
 {
-    my $header = sprintf "%-30s %2s %3s %11s %1s %-7s %-7s %1s%1s%1s%1s %-15s %8s %8s\n",
-    "Name","  ","NW","EQ/Steps","e","dt","nci:nbf","O","L","C","3","HF","Age","Size";
+    my $header = sprintf "%69s%5s\n",""," CUUN";
+
+    $header .= sprintf "%-30s %2s O %3s %11s %1s %-7s %-7s %6s %-15s %8s %8s\n",
+    "Name","  ","NW","EQ/Steps","e","dt","nci:nbf",
+    getOPTHeader(),
+    "HF","Age","Size";
     return $header;
 }
 
@@ -223,14 +236,18 @@ sub getCKMFSummary
     $hfe     = "";
     $nw      = 0;
     $dt      = 0;
-    $opt     = 0;
-    $optl    = 0;
-    $optci   = 0;
-    $opt3    = 0;
     $steps   = 0;
     $eqsteps = 0;
     $iseed   = 0;
     $oepi    = 0;
+
+    $opt     = 0;
+    $optl    = 0;
+    $optci   = 0;
+    $opt3    = 0;
+    $optUD   = 0;
+    $optUU   = 0;
+    $optNE   = 0;
 
     while(<CKMFFILE>){
 	if($_ =~ m/^\s*run_type\s*$/){
@@ -286,6 +303,31 @@ sub getCKMFSummary
 	    chomp;
 	    my @line = split/[ ]+/;
 	    $optl = $line[1];
+	}
+	if($_ =~ m/^\s*optimize_EE_Jastrows\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $optUU = $line[1];
+	    $optUD = $line[1];
+	}
+	if($_ =~ m/^\s*optimize_EN_Jastrows\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $optNE = $line[1];
+	}
+	if($_ =~ m/^\s*optimize_UD_Jastrows\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $optUD = $line[1];
+	}
+	if($_ =~ m/^\s*optimize_UU_Jastrows\s*$/){
+	    $_ = <CKMFFILE>;
+	    chomp;
+	    my @line = split/[ ]+/;
+	    $optUU = $line[1];
 	}
 	if($_ =~ m/^\s*optimize_CI\s*$/){
 	    $_ = <CKMFFILE>;
@@ -408,11 +450,12 @@ sub getCKMFSummary
     }
 
     my $oneliner = "";
-    $oneliner .= sprintf "%-30s %2s %3i %5s/%-5s %1s %-7s %3i:%-3s %1i%1i%1i%1i %-15s",
-    $shortbase,$rt,
+    $oneliner .= sprintf "%-30s %2s %1i %3i %5s/%-5s %1s %-7s %3i:%-3s %1i%1i%1i%1i%1i%1i %-15s",
+    $shortbase,$rt,$opt,
     $nw,$eqsteps_str,$steps_str,
     $oepi,$dt,
-    ${numci},${numbf},$opt,$optl,$optci,$opt3,$hfe;
+    ${numci},${numbf},
+    $optci,$optUD,$optUU,$optNE,$opt3,$optl,$hfe;
     $oneliner .= sprintf " %10s", $outModTime;
     $oneliner .= sprintf " %7s", $outSize;
     $oneliner .= sprintf " %50s", $ovData;
@@ -484,7 +527,7 @@ sub getFileList
 	    if(-d $cur && $cur !~ /src$/ && $cur !~ /bin$/ && $cur !~ /include$/ && 
 	       ($cur !~ /hide$/ || $loops <= 1))
 	    {
-		my @list = `ls -rt $cur`;
+		my @list = `ls $cur`;
 		foreach $item (@list)
 		{
 		    #we have a directory in the list, so we're going to need to loop again
@@ -498,6 +541,8 @@ sub getFileList
 		    }
 		}	    
 	    } elsif($cur =~ /$ext$/ && $cur !~ /.step[\d]+./ && $cur !~ /.opt[\d]+./){
+		#turn all // in file paths to just one /
+		$cur =~ s/\/\//\//;
 		push(@newfiles,$cur);
 	    }
 	}

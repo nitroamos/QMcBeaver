@@ -7,8 +7,9 @@ require "$path/utilities.pl";
 my $printFunc = 1;
 my $useScaled = 0;
 my $multiPlot = 1;
-my $showOpt   = 0;
+my $showOpt   = 1;
 my $makeGraph = 0;
+#my $summary   = 1;
 #put the jastrow in the exponential
 my $useExp    = 1;
 #square the whole thing (so that the y axis
@@ -67,6 +68,7 @@ if($#files < 0){
 }
 
 getFileList(".out",\@files);
+$showOpt = 1 if($#files == 0);
 
 %jastrows;
 %plotters;
@@ -88,38 +90,13 @@ for(my $index=0; $index<=$#files; $index++){
     $short =~ s/_[\d]+$//g;
 
     #print "base = $base\n";
-    open (CKMFFILE, "$base.ckmf");
-    my $isd = "";
-    while(<CKMFFILE>){	
-	if($_ =~ m/^\s*run_type\s*$/){
-	    $_ = <CKMFFILE>;
-	    chomp;
-	    my @line = split/[ ]+/;
-	    $isd = $line[1];
-	}
-	if($_ =~ m/^\s*nbasisfunc\s*$/){
-	    $_ = <CKMFFILE>;
-	    chomp;
-	    my @line = split/[ ]+/;
-	    $numbf = $line[1];
-	}
-	if($_ =~ m/^\s*ndeterminants\s*$/){
-	    $_ = <CKMFFILE>;
-	    chomp;
-	    my @line = split/[ ]+/;
-	    $numci = $line[1];
-	}
-	if($_ =~ m/^\s*energy\s*$/){
-	    $_ = <CKMFFILE>;
-	    chomp;
-	    my @line = split/[ ]+/;
-	    $refE = $line[1];
-	}
-	if($_ =~ m/&geometry$/){
-	    last;
-	}
-    }
+    my @stuff = split/[\s:]+/,getCKMFSummary("$base.ckmf");
+    $numci  = $stuff[7];
+    $numbf  = $stuff[8];
+    $optStr = $stuff[9];
+    $refE   = $stuff[10];
 
+    open (CKMFFILE, "$base.ckmf");
     $numjw = "";
     $numjwID = 0;
 
@@ -143,7 +120,6 @@ for(my $index=0; $index<=$#files; $index++){
     close CKMFFILE;
 
     open (FILE, "$files[$index]");
-    my $line = <FILE>;
     my $name = "";
     my $L = 0;
     my $best;
@@ -157,8 +133,16 @@ for(my $index=0; $index<=$#files; $index++){
 	    $best = $step;
 	}
     }
+
+    my $iterNRG = 0;
+    my $iterSTD = 0;
+    my $iterN   = 0;
+    my @dat;
+    my $line;
     while(!eof FILE)
     {
+	$line = <FILE>;	
+	@dat = split/\s+/,$line;
 	my $func = "";
 	if(($line =~ /Eup/ || $line =~ /Edn/) && $line !~ /parameters/){
 	    $name = $line;
@@ -169,17 +153,17 @@ for(my $index=0; $index<=$#files; $index++){
 		while($line !~ /x/){
 		    $line = <FILE>;
 		}
+		@dat = split/\s+/,$line;
 		chomp;
-		my @line = split/[\s]+/,$line;
-		$L = $line[4];
+		$L = $dat[4];
 	    } else {
 		#it's a 2 body jastrow	    
 		while($line !~ /x/){
 		    $line = <FILE>;
 		}
 		chomp;
-		my @line = split/[\s]+/,$line;
-		$L = $line[4];
+		@dat = split/\s+/,$line;
+		$L = $dat[4];
 		$func = <FILE>;
 		chomp($func);
 	    }
@@ -199,56 +183,101 @@ for(my $index=0; $index<=$#files; $index++){
 		$best = $step;
 	    }
 	}
-	if($line =~ /Objective Value/ && $line !~ /params/){
-	    $optEnergies{"$short&$best"} = (split/ +/,$line)[6];
+	
+	if($line !~ /[A-Za-df-z]/ && $#dat == 9){
+	    $iterNRG = $dat[2];
+	    $iterSTD = $dat[3];
+	    $iterN   = int($dat[4]/1000 + 0.5);
+	    #print "energy line nrg=$iterNRG std=$iterSTD iterN=$iterN\n";
 	}
-	$line = <FILE>;	
+
+	if($line =~ /Objective Value/ && $line !~ /params/){
+	    $optEnergies{"$short&$best"} = "$iterNRG&$iterSTD&$iterN&$optStr";
+	}
+    }
+
+    if(!defined $optEnergies{"$short&$best"}){
+	$optEnergies{"$short&$best"} = "$iterNRG&$iterSTD&$iterN&$optStr"; 
     }
 
     close(FILE);
 }
 
-printf "%4s %4s %11s %11s %10s %8s %10s %8s   %-30s   %5s   %-s\n",
-    "Type","Iter","RefE","VMC E","Corr E","% diff","L (bohr)","% diff","Jastrow","NumBF","File Name";
+printf "%4s %4s %11s %11s %7s  %10s %8s %8s %10s %8s   %-30s   %5s    %8s %-s\n",
+    "Type","Iter","RefE","VMC E",getOPTHeader(),"Corr E ","std.e.","% diff","L (bohr)","% diff","Jastrow","NumBF","NSmpl(k)","File Name";
 
 my $lastL = 0;
 my $lastE = 0;
 my $lastN = "";
+
+my @optAvg;
+my @optWeight;
+my $avgLen = 4;
+my $startStep = -1;
+
 foreach $key (sort a2n3 keys %jastrows)
 {
     #$jastrows{"$name&$best&$refE&$numci,$numbf&$numjw&$base"} = "$step&$L&$func";
     ($jName,$best,$refE,$dType,$jType,$short) = split/&/,$key;
     ($step,$L,$func,$base) = split/&/,$jastrows{$key};
 
-    $nrg = $optEnergies{"$short&$best"};
-
+    ($nrg,$std,$nsamples,$optStr) = split/&/,$optEnergies{"$short&$best"};
     $corrE = ($refE-$nrg)*627.5095;
+    $std  *= 627.5095;
 
-    printf "%-4s %4i %11.6f %11.6f", $jName, $step, $refE, $nrg, $corrE;
+    if($base ne $startStep){
+	@optAvg    = ();
+	@optWeight = ();
+    }
+    $startStep = $base;
+
+    my $stepVar = 0;
+    push(@optAvg,$corrE);
+    push(@optWeight,$std);
+    shift @optAvg if($#optAvg >= $avgLen);
+    shift @optWeight if($#optAvg >= $avgLen);
+    my $x  = 0;
+    my $x2 = 0;
+    my $ws = 0;
+    for(my $i=0; $i<=$#optAvg; $i+=1){
+	my $val = $optAvg[$i];
+	my $w   = $optWeight[$i];
+	$ws += $w;
+	$x  += $val*$w;
+	$x2 += $val*$val*$w;
+    }
+    $x  /= $ws if(abs($ws) > 0);
+    $x2 /= $ws if(abs($ws) > 0);
+    $stepVar = $x2 - $x*$x;
+    $stepVar = sqrt(abs($stepVar));
+
+    printf "%-4s %4i %11.6f %11.6f %7s", $jName, $step, $refE, $nrg, $optStr;
+
+    if(abs($corrE) > 1e4 || $std == 0){
+	printf "  %10.1e", $corrE;
+    } else {
+	printf "  %-10s", getEnergyWError($corrE,$std);
+    }
+    printf " %8.2f",$stepVar;
     if($jName ne $lastN){
 	$lastL = $L;
 	$lastE = $corrE;
 	$lastN = "$jName";
-	printf " %10.3f %8s", $corrE, " ";
+	printf " %8s", "";
 	printf " %10.5f %8s", $L, " ";
     } else {
 	$diffE = $corrE - $lastE;
-	if(abs($corrE) > 1e4){
-	    printf " %10.1e ", $corrE;
-	} else {
-	    printf " %10.3f ", $corrE;
-	}
 	if(abs($diffE) > 1e4){
-	    printf "%8.1e", $diffE;
+	    printf " %8.1e", $diffE;
 	} else {
-	    printf "%8.2f", $diffE;
+	    printf " %8.2f", $diffE;
 	}
 	printf " %10.5f %8.2f", $L, 100.0*($L - $lastL)/$L;
     }
     $lastL = $L;
     #$lastE = $corrE;
 
-    printf "   %-30s %7s   %-s\n", $jType, $dType, $base;
+    printf "   %-30s %7s    %8g %-s\n", $jType, $dType, $nsamples, $base;
     
     if(!($func eq "")){
 	$plotters{$jName} .= "$jName&$dType&$L&$jType&$func&$nrg&$short#";
@@ -262,6 +291,14 @@ $base =~ s/_[\d]+$//g if(!$showOpt);
 my $modbase = $base;
 $modbase =~ s/_/\\\\_/g;
 my $printedHeader = 0;
+my @goodlt;
+push(@goodlt,3);
+push(@goodlt,1);
+push(@goodlt,5);
+push(@goodlt,4);
+push(@goodlt,6);
+push(@goodlt,7);
+
 foreach $key (reverse sort keys %plotters)
 {
     my $filename;
@@ -313,21 +350,15 @@ foreach $key (reverse sort keys %plotters)
 #Courier, Courier-Bold, Courier-Oblique, Courier-BoldOblique,
 #Helvetica, Helvetica-Bold, Helvetica-Oblique, Helvetica-BoldOblique, 
 #Times-Roman, Times-Bold, Times-Italic, Times-BoldItalic, Symbol, ZapfDingbats
-set term pdf color enhanced font "Courier-Bold,14" linewidth 5 size 17.5,10
-
+set term pdf color enhanced font "Courier-Bold,14" linewidth 5 dashed dl 3 size 17.5,10
 set output "$file_name"
-
-#set term png
-#set terminal png medium
 set size 0.9,1
-
 unset colorbox
 show style line
 #set logscale y 2
 set grid ytics
 set mytics
 set tics scale 1.5, 0.75
-
 set nokey
 set key outside below box Left
 set key reverse
@@ -422,13 +453,15 @@ gnuplot_Commands_Done
 	    if($useSqr){
 		$func = "(${func})**2";
 	    }
-	}
-	
-	#my $linetype = int($i / 4) + 1;
-	#print "line number $i has type $linetype\n";
+	}	
+
+	my $lt = $goodlt[int($i/12)];
+	my $lc = $i % 12;
+	#print "line number $i has type lc $lc lt $lt\n";
 	$func = "x > $max ? 1/0 : $func";
 	#$func = "x";
-	print GNUPLOT " $func title \"$title\""; 
+	
+	print GNUPLOT " $func lc $lc lt $lt title \"$title\""; 
 
 	#print GNUPLOT " [0:$kd[2]] $func title \"$kd[3]\""; 
 	if($i != $#plots){
@@ -454,3 +487,7 @@ if($multiPlot){
     print GNUPLOT "unset multiplot\n";
     close(GNUPLOT);
 }
+
+`bash -c \"echo Current directory \" | /usr/bin/mutt -s \"[jastrows] $file_name\" -a $file_name nitroamos\@gmail.com`;
+`rm $file_name`;
+    
