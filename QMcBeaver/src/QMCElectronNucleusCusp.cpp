@@ -450,14 +450,14 @@ QMCElectronNucleusCuspParameters QMCElectronNucleusCusp::fitOrbitalParameters()
   if (origAtOrigin-origAtRc < 0.0)
     {
       hi_phi = origAtOrigin;
-      mid_phi = origAtOrigin - fabs(origAtOrigin*0.05);
-      lo_phi = origAtOrigin - fabs(origAtOrigin*0.1);
+      mid_phi = origAtOrigin - 0.05*fabs(origAtOrigin-origAtRc);
+      lo_phi = origAtOrigin - 0.1*fabs(origAtOrigin-origAtRc);
     }
   else
     {
       lo_phi = origAtOrigin;
-      mid_phi = origAtOrigin + fabs(origAtOrigin*0.05);
-      hi_phi = origAtOrigin + fabs(origAtOrigin*0.1);
+      mid_phi = origAtOrigin + 0.05*fabs(origAtOrigin-origAtRc);
+      hi_phi = origAtOrigin + 0.1*fabs(origAtOrigin-origAtRc);
     }
   
   loParams.fitReplacementOrbital(lo_phi);

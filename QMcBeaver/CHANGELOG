@@ -1,4 +1,10 @@
-Fri, Nov 21 Damiel R. Fisher
+Thurs, Dec 18 Daniel R. Fisher
+1.  I changed the criteria for fitting replacement orbitals again.
+    The range is now ten percent of the difference between the value of
+    the original orbital at the radius of correction and the origin.
+    The replacement orbitals are much closer to the original ones now.
+
+Fri, Nov 21 Daniel R. Fisher
 1.  I changed the way QMCElectronNucleusCusp fits replacement
     orbitals.  Previously it changed the value of the replacement
     orbital at the nucleus until the overall local energy was close to
