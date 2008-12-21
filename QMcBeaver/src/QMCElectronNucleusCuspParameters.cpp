@@ -588,40 +588,40 @@ void QMCElectronNucleusCuspParameters::findMaxDeviation(double lower,
 
 void QMCElectronNucleusCuspParameters::printParameters()
 {
-  cout << "***ElectronNucleusCuspParameters***" << endl;
-  cout << "rc = " << rc << endl;
+  clog << "***ElectronNucleusCuspParameters***" << endl;
+  clog << "rc = " << rc << endl;
 
   Array1D<double> temp_coeffs;
   temp_coeffs = alpha.getCoefficients();
-  cout << "alpha coefficients:" << endl;
+  clog << "alpha coefficients:" << endl;
   for (int i=0; i<temp_coeffs.dim1(); i++)
-    cout << "\t" << temp_coeffs(i);
-  cout << endl;
+    clog << "\t" << temp_coeffs(i);
+  clog << endl;
  
   temp_coeffs = idealCurve.getCoefficients();
-  cout << "ideal curve coefficients:" << endl;
+  clog << "ideal curve coefficients:" << endl;
   for (int i=0; i<temp_coeffs.dim1(); i++)
-    cout << "\t" << temp_coeffs(i);
-  cout << endl;
+    clog << "\t" << temp_coeffs(i);
+  clog << endl;
 
-  cout << "n0 = " << n0 << endl;
-  cout << "C = " << C << endl;
-  cout << "sgn0 = " << sgn0 << endl;
-  cout << "sigmaSq = " << sigma_sq << endl;
-  cout << "phi0 = " << phi0 << endl;
-  cout << "Z = " << Z << endl;
-  cout << "Zeff = " << Zeff << endl;
-  cout << "Orbital coefficients:" << endl;
+  clog << "n0 = " << n0 << endl;
+  clog << "C = " << C << endl;
+  clog << "sgn0 = " << sgn0 << endl;
+  clog << "sigmaSq = " << sigma_sq << endl;
+  clog << "phi0 = " << phi0 << endl;
+  clog << "Z = " << Z << endl;
+  clog << "Zeff = " << Zeff << endl;
+  clog << "Orbital coefficients:" << endl;
   for (int i=0; i<orbitalCoefficients.dim1(); i++)
     {
-      cout << "\t" << orbitalCoefficients(i,0) << "\t";
-      cout << orbitalCoefficients(i,1) << endl;
+      clog << "\t" << orbitalCoefficients(i,0) << "\t";
+      clog << orbitalCoefficients(i,1) << endl;
     }
-  cout << "The local energy of the replacement orbital at rc = ";
-  cout << calculateLocalEnergy(rc,false) << endl;
+  clog << "The local energy of the replacement orbital at rc = ";
+  clog << calculateLocalEnergy(rc,false) << endl;
   idealCurve.evaluate(rc);
-  cout << "The ideal local energy at rc = ";
-  cout << Z*Z*idealCurve.getFunctionValue() << endl;
+  clog << "The ideal local energy at rc = ";
+  clog << Z*Z*idealCurve.getFunctionValue() << endl;
 
   double ovalue,ogradx,ogrady,ogradz,olap,ox,oy,oz,nor;
 
@@ -637,9 +637,9 @@ void QMCElectronNucleusCuspParameters::printParameters()
   nor = rc;
 
   evaluateOriginalOrbital(ox,oy,oz,nor,ovalue,ogradx,ogrady,ogradz,olap);
-  cout << "Original orbital value at rc = " << ovalue << endl;
-  cout << "Original gradient at rc = " << ogradx << endl;
-  cout << "Original laplacian at rc = " << olap << endl;
+  clog << "Original orbital value at rc = " << ovalue << endl;
+  clog << "Original gradient at rc = " << ogradx << endl;
+  clog << "Original laplacian at rc = " << olap << endl;
 
   ovalue = 0.0;
   ogradx = 0.0;
@@ -648,10 +648,10 @@ void QMCElectronNucleusCuspParameters::printParameters()
   olap = 0.0;
 
   evaluateReplacementOrbital(ox,oy,oz,nor,ovalue,ogradx,ogrady,ogradz,olap);
-  cout << "Replacement orbital value at rc = " << ovalue << endl;
-  cout << "Replacement gradient at rc = " << ogradx << endl;
-  cout << "Replacement laplacian at rc = " << olap << endl;
-  cout << endl << endl;
+  clog << "Replacement orbital value at rc = " << ovalue << endl;
+  clog << "Replacement gradient at rc = " << ogradx << endl;
+  clog << "Replacement laplacian at rc = " << olap << endl;
+  clog << endl << endl;
 }
 
 ostream& operator <<(ostream& strm, QMCElectronNucleusCuspParameters &rhs)

@@ -164,8 +164,8 @@ void QMCElectronNucleusCusp::fitReplacementOrbitals()
 	  ORParams(i,m) = fitOrbitalParameters();
 	  if (globalInput.flags.print_replacement_orbitals == 1)
 	    {
-	      cout << "Orbital replacement parameters for atom " << i;
-	      cout << " orbital " << m << endl;
+	      clog << "Orbital replacement parameters for atom " << i;
+	      clog << " orbital " << m << endl;
 	      ORParams(i,m).printParameters();
 	    }
 	}
@@ -589,10 +589,10 @@ void QMCElectronNucleusCusp::replaceCusps(Array2D<double> & X,
 
   if(Stop - Start + 1 != D.dim1())
     {
-      cout << "Warning: dimensions don't match in QMCElectronNucleusCusp." << endl;  
-      cout << " Start = " << Start << endl;
-      cout << "  Stop = " << Stop << endl;
-      cout << "D.dim1 = " << D.dim1() << endl;
+      clog << "Warning: dimensions don't match in QMCElectronNucleusCusp." << endl;  
+      clog << " Start = " << Start << endl;
+      clog << "  Stop = " << Stop << endl;
+      clog << "D.dim1 = " << D.dim1() << endl;
     }
 
   for (int i=0; i<natoms; i++)
@@ -651,10 +651,10 @@ void QMCElectronNucleusCusp::replaceCusps(Array2D<double> & X,
 
   if(Stop - Start + 1 != D.dim1())
     {
-      cout << "Warning: dimensions don't match in QMCElectronNucleusCusp." << endl;  
-      cout << " Start = " << Start << endl;
-      cout << "  Stop = " << Stop << endl;
-      cout << "D.dim1 = " << D.dim1() << endl;
+      clog << "Warning: dimensions don't match in QMCElectronNucleusCusp." << endl;  
+      clog << " Start = " << Start << endl;
+      clog << "  Stop = " << Stop << endl;
+      clog << "D.dim1 = " << D.dim1() << endl;
     }
 
   for (int i=0; i<natoms; i++)
