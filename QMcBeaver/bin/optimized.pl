@@ -8,8 +8,9 @@ my $printFunc = 1;
 my $useScaled = 0;
 my $multiPlot = 1;
 my $showOpt   = 1;
-my $makeGraph = 0;
+my $makeGraph = 1;
 #my $summary   = 1;
+my $i_active  = 1;
 #put the jastrow in the exponential
 my $useExp    = 1;
 #square the whole thing (so that the y axis
@@ -280,7 +281,7 @@ foreach $key (sort a2n3 keys %jastrows)
     printf "   %-30s %7s    %8g %-s\n", $jType, $dType, $nsamples, $base;
     
     if(!($func eq "")){
-	$plotters{$jName} .= "$jName&$dType&$L&$jType&$func&$nrg&$short#";
+	$plotters{$jName} .= "$jName&$dType&$L&$jType&$func&$nrg&$short&$step#";
     }    
 }
 
@@ -332,10 +333,16 @@ foreach $key (reverse sort keys %plotters)
     print "Adding graph of $key to: $file_name\n";
 
     if(!$printedHeader){
-
-	#`/bin/rm -f $file_name`;
+	$gnuplot .= " -geometry 1280x740"; #this is optimized for Amos' laptop...      
 	open(GNUPLOT, "|$gnuplot");
-	#open(GNUPLOT, ">gnuplot.gnu");
+	if($i_active){
+	    print GNUPLOT "set terminal x11 persist raise enhanced font \"Courier-Bold,12\" title \"$file_name\" dashed linewidth 2\n";
+	} else {
+	    `/bin/rm -f $file_name`;
+	    #open(GNUPLOT, ">gnuplot.gnu");
+	    print GNUPLOT "set term pdf color enhanced font \"Courier-Bold,14\" linewidth 5 dashed dl 3 size 17.5,10\n";
+	    print GNUPLOT "set output \"$file_name\"\n"; 
+	}
 	print GNUPLOT <<gnuplot_Commands_Done;
 #fonts with extensions "ttf" and "dfont" will work
 #here is a list of available fonts: Chalkboard Helvetica Times
@@ -350,8 +357,6 @@ foreach $key (reverse sort keys %plotters)
 #Courier, Courier-Bold, Courier-Oblique, Courier-BoldOblique,
 #Helvetica, Helvetica-Bold, Helvetica-Oblique, Helvetica-BoldOblique, 
 #Times-Roman, Times-Bold, Times-Italic, Times-BoldItalic, Symbol, ZapfDingbats
-set term pdf color enhanced font "Courier-Bold,14" linewidth 5 dashed dl 3 size 17.5,10
-set output "$file_name"
 set size 0.9,1
 unset colorbox
 show style line
@@ -365,7 +370,6 @@ set key reverse
 #set key noenhanced
 set xlabel "$xlabel"
 set ylabel "$ylabel"
-
 #set yrange[$y_min:$y_max]
 gnuplot_Commands_Done
 
@@ -411,14 +415,14 @@ gnuplot_Commands_Done
 
     print GNUPLOT "plot [0:$xmax]";
     for(my $i=0; $i<=$#plots; $i++){
-	($jName,$dType,$max,$jw,$func,$optE,$example) = split/&/,$plots[$i];
+	($jName,$dType,$max,$jw,$func,$optE,$example,$step) = split/&/,$plots[$i];
 	$jw =~ s/18,//g;
 	$jw =~ s/18//g;
 
 	my $title;
 
 	if($showOpt){
-	    $title = sprintf "%2i %8.4f", $i, $optE;
+	    $title = sprintf "%2i %8.4f", $step, $optE;
 	} else {
 	    if($max >= 10.0){
 		$title = sprintf "%-4.1f;",$max;
@@ -440,7 +444,7 @@ gnuplot_Commands_Done
 	
 	#add in the implicit multiplications
 	#this line confuses emacs' indentation algorithm...
-	$func =~ s/([\d])([x(])/$1*$2/g;
+	$func =~ s/([\d])([x\(])/$1*$2/g;
 	
 	if($useScaled){
 	    $max = 1;
@@ -454,7 +458,7 @@ gnuplot_Commands_Done
 		$func = "(${func})**2";
 	    }
 	}	
-
+	
 	my $lt = $goodlt[int($i/12)];
 	my $lc = $i % 12;
 	#print "line number $i has type lc $lc lt $lt\n";
@@ -462,22 +466,23 @@ gnuplot_Commands_Done
 	#$func = "x";
 	
 	print GNUPLOT " $func lc $lc lt $lt title \"$title\""; 
-
+	
 	#print GNUPLOT " [0:$kd[2]] $func title \"$kd[3]\""; 
 	if($i != $#plots){
 	    print GNUPLOT ",\\"; 
 	}
 	print GNUPLOT "\n";
     }
-
+    
     if($multiPlot){
 	#In order to only include the key once, we must make sure that the
 	#plots are always sorted the same!!!
 	print GNUPLOT "set nokey\n";
     } else {
+	print GNUPLOT "pause mouse button2\n";
 	close(GNUPLOT);
     }
-
+    
     
 #`/bin/rm $_.dat`;
     
@@ -485,9 +490,11 @@ gnuplot_Commands_Done
 }
 if($multiPlot){
     print GNUPLOT "unset multiplot\n";
+    print GNUPLOT "pause mouse button2\n";
     close(GNUPLOT);
 }
 
-`bash -c \"echo Current directory \" | /usr/bin/mutt -s \"[jastrows] $file_name\" -a $file_name nitroamos\@gmail.com`;
-`rm $file_name`;
-    
+if($i_active == 0){
+    `bash -c \"echo Current directory \" | /usr/bin/mutt -s \"[jastrows] $file_name\" -a $file_name nitroamos\@gmail.com`;
+    `rm $file_name`;
+}
