@@ -87,9 +87,15 @@ sub getFormula {
 		    $od[4] != $td[4] || #compare num walkers
 		    $od[7] != $td[7] || #compare oepi
 		    $od[3] ne $td[3]);  #compare jastrows
-
-    return (0,0) if($#od > 7 && $od[8] ne $td[8]);
-
+    
+    
+# This forces the names to be exactly the same
+    # return (0,0) if($#od > 7 && $od[8] ne $td[8]);
+    my $odLastIdx = $1 if($od[8] =~ /[\w\d_]+_([\d]+)$/); 
+    my $tdLastIdx = $1 if($td[8] =~ /[\w\d_]+_([\d]+)$/); 
+#print "$od[8] -> $odLastIdx $td[8] -> $tdLastIdx\n";
+#    return (0,0) if($odLastIdx ne $tdLastIdx);
+    
     $or = $od[2];
     $tr = $td[2];
     $factor = 100;
@@ -105,7 +111,7 @@ sub getFormula {
     if($or == int($or) && $tr == int($tr) &&
        $or < 10 && $tr < 10)
     {
-	return (0,0) if($tr*$td[6] != $or*$od[6] &&
+	return (0,0) if($or*$td[6] != $tr*$od[6] &&
 			$orbFilter);
 
 	return ($tr, $or);
@@ -426,13 +432,13 @@ sub getCKMFSummary
     $steps_str = "";
     if($steps >= 1000*1000*1000){
 	$steps /= int(1000*1000*1000);
-	$steps_str = "${steps}B";
+	$steps_str = sprintf "%2.1fB",${steps}; 
     } elsif($steps >= 1000*1000){
 	$steps /= int(1000*1000);
-	$steps_str = "${steps}M";
+	$steps_str = sprintf "%2.1fM",${steps};
     } elsif($steps >= 1000){
 	$steps /= int(1000);
-	$steps_str = "${steps}K";
+	$steps_str = sprintf "%2.1fK",${steps}; 
     } else {
 	$steps_str = "$steps";
     }
@@ -440,13 +446,13 @@ sub getCKMFSummary
     $eqsteps_str = "";
     if($eqsteps >= 1000*1000*1000){
 	$eqsteps /= int(1000*1000*1000);
-	$eqsteps_str = "${eqsteps}B";
+	$eqsteps_str = sprintf "%2.1fB",${eqsteps};
     } elsif($eqsteps >= 1000*1000){
 	$eqsteps /= int(1000*1000);
-	$eqsteps_str = "${eqsteps}M";
+	$eqsteps_str = sprintf "%2.1fM",${eqsteps};  
     } elsif($eqsteps >= 1000){
 	$eqsteps /= int(1000);
-	$eqsteps_str = "${eqsteps}K";
+	$eqsteps_str = sprintf "%2.1fK",${eqsteps};  
     } else {
 	$eqsteps_str = "$eqsteps";
     }
