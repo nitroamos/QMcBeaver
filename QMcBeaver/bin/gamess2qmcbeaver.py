@@ -28,6 +28,10 @@
 # 3) This script can read the ALDET output file, and will find as many determinants
 #    as were printed out, and put them in the ckmf file. You might need to modify
 #    PRTTOL in the $DET section to get more determinants.
+#
+# NOTE: check your ALDET runs... I've found that the occupations don't always match
+# the orbitals printed! For one of my runs, it sorted the natural orbitals according to occupation,
+# which was different from the input order.
 
 import re
 import sys
@@ -60,7 +64,7 @@ Datafile = filebase + "dat"
 IN2 = open(Datafile,'r')
 gamess_data = IN2.readlines()
 IN2.close()
-                       
+
 Outfile = filebase + "ckmf"
 OUT = open(Outfile,'w')
 
@@ -108,7 +112,7 @@ if ci_type == "GENCI":
 
 # Find where the geometry is stored.
 
-if run_type == "ENERGY":
+if run_type == "ENERGY" or run_type == "HESSIAN":
     for i in range(len(gamess_output)):
         if string.find(gamess_output[i], 'RUN TITLE') != -1:
             start_geometry = i
@@ -132,7 +136,11 @@ elif run_type == "OPTIMIZE":
                     break
             break    
 
-geom_data = gamess_output[start_geometry:end_geometry]
+try:
+    geom_data = gamess_output[start_geometry:end_geometry]
+except:
+    print "Failed to find geometry for run_type = ", run_type
+    raise
 geometry = []
 
 start = 0
@@ -258,109 +266,67 @@ for line in gamess_output:
 
 #################### EXTRACT WAVEFUNCTION: BEGIN ##################
 
-# Find where the wavefunction is in the .dat file.
 
-energy_line = -1
-start_wavefunction = -1
+# First, we want to load in all the $VEC .. $END sections we can find.
+# We look in both the .dat file, and in the .inp file, and we save
+# the name that GAMESS gave it.
+collecting = 0
+Inputfile = filebase + "inp"	
+INPFILE = open(Inputfile,'r')
+input_data = INPFILE.readlines()
+INPFILE.close()
 
+name = "MOREAD orbitals from " + Inputfile + "\n"
+raw_orbitals = []
+orbital_vecs = []
+orbital_name = []
+for i in range(len(input_data)):
+    if string.find(input_data[i],'$END') != -1 and collecting == 1:
+	collecting = 0
+	orbital_vecs = orbital_vecs + [raw_orbitals]
+	orbital_name = orbital_name + [name]
+	raw_orbitals = []
+    if string.find(input_data[i],'$VEC') != -1:
+	collecting = 1
+    elif collecting == 1:
+	raw_orbitals = raw_orbitals + [input_data[i]]
+
+for i in range(len(gamess_data)):
+    if string.find(gamess_data[i],'NO-S OF CI STATE') != -1 or \
+	   string.find(gamess_data[i], 'GVB ORBITALS') != -1 or \
+	   string.find(gamess_data[i], 'LOCALIZED') != -1 or \
+	   string.find(gamess_data[i], 'OPEN SHELL ORBITALS') != -1 or \
+	   string.find(gamess_data[i], 'CLOSED SHELL ORBITALS') != -1 or \
+	   string.find(gamess_data[i], 'MP2 NATURAL ORBITALS') != -1 or \
+	   string.find(gamess_data[i], 'OPTIMIZED MCSCF') != -1 or \
+	   string.find(gamess_data[i], 'NATURAL ORBITALS OF MCSCF') != -1:
+	name = gamess_data[i]
+    if string.find(gamess_data[i],'$END') != -1 and collecting == 1:
+	collecting = 0
+	orbital_vecs = orbital_vecs + [raw_orbitals]
+	orbital_name = orbital_name + [name]
+	raw_orbitals = []
+    if string.find(gamess_data[i],'$VEC') != -1:
+	collecting = 1
+    elif collecting == 1:
+	raw_orbitals = raw_orbitals + [gamess_data[i]]
+    m=re.search('^E\([\w\-]+\)=\s*([\d\-\.]+)',gamess_data[i])
+    if m:
+	energy = m.group(1)
+    m=re.search('CI STATE\s+\d+\sE=\s*([\d\-\.]+)',gamess_data[i])
+    if m:
+	energy = m.group(1)
+	
 if scf_type == "RHF":
-    for i in range(len(gamess_data)):
-        if string.find(gamess_data[i],'E(RHF)=') != -1:
-            energy_line = i
-        elif string.find(gamess_data[i],'E(R-B3LYP)=') != -1:
-            energy_line = i
-    energy_data = string.split(gamess_data[energy_line])
-    for j in range(len(energy_data)):
-        if (energy_data[j] == "E(RHF)="):
-            energy = energy_data[j+1]
-            energy = energy[0:len(energy)-1]
-            break
-        elif (energy_data[j] == "E(R-B3LYP)="):
-            energy = energy_data[j+1]
-            energy = energy[0:len(energy)-1]
-            break
-    for i in range(energy_line,len(gamess_data)):
-        if string.find(gamess_data[i],'LOCALIZED') != -1:
-            start_wavefunction = i+2
-            break
-    if start_wavefunction == -1:
-        for i in range(energy_line,len(gamess_data)):
-	    if string.find(gamess_data[i],'$VEC') != -1:
-	        start_wavefunction = i+1
-		break
-    for j in range(start_wavefunction,len(gamess_data)):
-        if string.find(gamess_data[j],'$END') != -1:
-            end_wavefunction = j
-            break
-
+    default_orb_string = 'CLOSED SHELL ORBITALS'    
 elif scf_type == "ROHF":
-    for i in range(len(gamess_data)):
-        if string.find(gamess_data[i],'E(ROHF)=') != -1:
-            energy_line = i
-    energy_data = string.split(gamess_data[energy_line])
-    for j in range(len(energy_data)):
-        if (energy_data[j] == "E(ROHF)="):
-            energy = energy_data[j+1]
-            energy = energy[0:len(energy)-1]
-            break
-    for i in range(energy_line,len(gamess_data)):
-        if string.find(gamess_data[i],'$VEC') != -1:
-            start_wavefunction = i+1
-            break
-    for j in range(start_wavefunction,len(gamess_data)):
-        if string.find(gamess_data[j],'$END') != -1:
-            end_wavefunction = j
-            break
-
+    default_orb_string = 'OPEN SHELL ORBITALS'
 elif scf_type == "UHF":
-    for i in range(len(gamess_data)):
-        if string.find(gamess_data[i],'E(UHF)=') != -1:
-            energy_line = i
-    energy_data = string.split(gamess_data[energy_line])
-    for j in range(len(energy_data)):
-        if (energy_data[j] == "E(UHF)="):
-            energy = energy_data[j+1]
-            energy = energy[0:len(energy)-1]
-            break
-    for i in range(energy_line,len(gamess_data)):
-        if string.find(gamess_data[i],'$VEC') != -1:
-            start_wavefunction = i+1
-            break
-    for j in range(start_wavefunction,len(gamess_data)):
-        if string.find(gamess_data[j],'$END') != -1:
-            end_wavefunction = j
-            break
-
+    default_orb_string = ''
 elif scf_type == "GVB":
-    #the CI Coefficients in the dat file are more precise, so we want them
-    #this might have a problem if too many GVB pairs are used
-    cicoef=[]
-    for i in range(len(gamess_data)):
-        if string.find(gamess_data[i],'CICOEF') != -1:
-	    line = gamess_data[i]
-	    p = re.compile("\(\s+")
-	    line = p.sub("(",line)
-	    line = string.replace(line,',',' ')
-            cicoef += string.split(line)	    
-
-    for i in range(len(gamess_data)):
-        if string.find(gamess_data[i],'E(GVB)=') != -1:
-            energy_line = i
-    energy_data = string.split(gamess_data[energy_line])
-    for j in range(len(energy_data)):
-        if (energy_data[j] == "E(GVB)="):
-            energy = energy_data[j+1]
-            energy = energy[0:len(energy)-1]
-            break
-    for i in range(energy_line,len(gamess_data)):
-        if string.find(gamess_data[i],'$VEC') != -1:
-            start_wavefunction = i+1
-            break
-    for j in range(start_wavefunction,len(gamess_data)):
-        if string.find(gamess_data[j],'$END') != -1:
-            end_wavefunction = j
-            break
-
+    default_orb_string = 'GVB ORBITALS'
+elif scf_type == "NONE" and ci_type == "ALDET":
+    default_orb_string = 'MOREAD'
 elif scf_type == "VB2000":
     cicoef=[]
     for i in range(len(gamess_output)):
@@ -377,58 +343,45 @@ elif scf_type == "VB2000":
 	pcum += cicoef[i]*cicoef[i]
     print "VB Coeff = ",cicoef, "\nnorm = ",pcum
     print "VB Energy = ",energy
+
+    print "Fix VB2000 to get the right orbitals!";
+    sys.exit(0)
     Datafile = filebase + "vec"	
     IN2 = open(Datafile,'r')
     gamess_data = IN2.readlines()
     IN2.close()
-
-    for i in range(energy_line,len(gamess_data)):
-        if string.find(gamess_data[i],'$VEC') != -1:
-            start_wavefunction = i+1
-            break
-    for j in range(start_wavefunction,len(gamess_data)):
-        if string.find(gamess_data[j],'$END') != -1:
-            end_wavefunction = j
-            break
-
-elif scf_type == "NONE" and ci_type == "ALDET":
-
-    for i in range(len(gamess_data)):
-        if string.find(gamess_data[i],'NO-S OF CI') != -1:
-            energy_line = i
-    energy_data = string.split(gamess_data[energy_line])
-    for j in range(len(energy_data)):
-        if (energy_data[j] == "E="):
-            energy = energy_data[j+1]
-            break
-    for i in range(energy_line,len(gamess_data)):
-        if string.find(gamess_data[i],'$VEC') != -1:
-            start_wavefunction = i+1
-            break
-    for j in range(start_wavefunction,len(gamess_data)):
-        if string.find(gamess_data[j],'$END') != -1:
-            end_wavefunction = j
-            break
-
 else:
     print "SCFTYP", scf_type, "is not supported."
     sys.exit(0) 
+
+orb_choice = len(orbital_name)-1
+print "We found %i orbital sets:"%len(orbital_name)
+for i in range(len(orbital_name)):
+    lines_per_orb = int(nbasisfunc/5)+1
+    print "%i) %g orbitals"%(i,((len(orbital_vecs[i]))/float(lines_per_orb))),
+    print "for: ", orbital_name[i],
+    if string.find(orbital_name[i],default_orb_string) != -1:
+	orb_choice = i
+try:
+    orb_choice = string.atoi(raw_input("Your choice [%i]:"%orb_choice))
+except:
+    print "",
 
 # Get the wavefunction parameters from the .dat file.
 
 orbital_number = []
 orbital_coeffs = [] 
-for n in range(start_wavefunction, end_wavefunction):
-    len_line = len(gamess_data[n])
+for n in range(len(orbital_vecs[orb_choice])):
+    len_line = len(orbital_vecs[orb_choice][n])
     number_of_entries = len_line/15
     line_data = range(number_of_entries)
     for i in range(number_of_entries):
         line_data[number_of_entries-i-1] = \
-                   gamess_data[n][len_line-15*(i+1)-1:len_line-15*i-1]
+                   orbital_vecs[orb_choice][n][len_line-15*(i+1)-1:len_line-15*i-1]
     for j in range(len(line_data)):
         line_data[j] = string.atof(line_data[j])
     orbital_coeffs.append(line_data)
-    number = gamess_data[n][0:2]
+    number = orbital_vecs[orb_choice][n][0:2]
     orbital_number.append(string.atoi(number))
 
 wavefunction = []
@@ -529,6 +482,17 @@ if scf_type == "RHF" or scf_type == "ROHF" or scf_type == "UHF":
     CI = [1]
 
 elif scf_type == "GVB":
+    #the CI Coefficients in the dat file are more precise, so we want them
+    #this might have a problem if too many GVB pairs are used
+    cicoef=[]
+    for i in range(len(gamess_data)):
+        if string.find(gamess_data[i],'CICOEF') != -1:
+	    line = gamess_data[i]
+	    p = re.compile("\(\s+")
+	    line = p.sub("(",line)
+	    line = string.replace(line,',',' ')
+            cicoef += string.split(line)	    
+
     core_line_number = -1
     start_ci = 0
     end_ci = 0
@@ -624,10 +588,10 @@ elif scf_type == "GVB":
 	    
 	    CI = pairCI
 	    AlphaOcc = pairAlpha
-	BetaOcc = copy.deepcopy(AlphaOcc)
-	ndeterminants = pow(2,(end_ci - start_ci))
-	
+	ndeterminants = pow(2,(end_ci - start_ci))	
 	#end npair > 0
+
+    BetaOcc = copy.deepcopy(AlphaOcc)
 
     if nseto > 0 and nseto != 2 and npair > 0:
 	print "\n\nWarning: the script maybe doesn't know how to handle npair=",npair, " with nseto=",nseto
@@ -842,19 +806,18 @@ print "\nAvailable ckmf templates:"
 for i in range(len(templates)):
     print " %3i : " % i, templates[i]
 
+choice = 1
 try:
-    #choice = 1
-    choice = string.atoi(raw_input("Your choice [0]:"))
+    choice = string.atoi(raw_input("Your choice [%i]:"%choice))
 except:
-    choice = 0
+    print "",
 
-print "You chose ckmf template: ", templates[choice]
 myStandardFlags=open(templates[choice],'r')
 
 OUT.write('# Created on %s\n'%(time.strftime("%a, %d %b %Y %H:%M:%S", time.gmtime())))
 OUT.write('# Using gamess output file:  %s\n'% os.path.abspath(Infile))
 OUT.write('# Using ckmft template file: %s\n'% templates[choice])
-
+OUT.write('# Orbitals are: %s'%orbital_name[orb_choice])
 #let's save some of the important info from a GAMESS calculation
 for i in range(len(gamess_output)):
     line = -1;
@@ -898,7 +861,7 @@ OUT.write('charge\n %i\n'%charge)
 OUT.write('energy\n %s\n'%energy)
 
 if abs(string.atof(energy)) < 1e-10:
-    print "\nEnergy",energy," didn't converge!!!\n"
+    print "\nEnergy",energy," didn't converge!!! Quitting.\n"
     sys.exit(0)
     
 OUT.write('norbitals\n %i\n'%norbitals)
@@ -935,10 +898,16 @@ for i in range(len(basis)):
     maxgaussian = 0
     for bf in basis[i]:
         if bf[0][0] == 'S' : nbf = nbf + 1
-        if bf[0][0] == 'P' : nbf = nbf + 3
-        if bf[0][0] == 'D' : nbf = nbf + 6
-        if bf[0][0] == 'F' : nbf = nbf + 10
-        if bf[0][0] == 'L' : nbf = nbf + 4
+        elif bf[0][0] == 'P' : nbf = nbf + 3
+        elif bf[0][0] == 'D' : nbf = nbf + 6
+        elif bf[0][0] == 'F' : nbf = nbf + 10
+	elif bf[0][0] == 'G' : nbf = nbf + 15
+	elif bf[0][0] == 'H' : nbf = nbf + 21
+	elif bf[0][0] == 'I' : nbf = nbf + 28
+        elif bf[0][0] == 'L' : nbf = nbf + 4
+	else:
+	    print "Error: we don't know about basis function type: ",bf[0][0]
+	    sys.exit(0)
         if len(bf) > maxgaussian : maxgaussian = len(bf)
     basis[i] = [[label,nbf,maxgaussian]] + basis[i]
 
@@ -979,11 +948,14 @@ OUT.write('&\n')
 ##################  PRINT WAVEFUNCTION: BEGIN ###################
 
 OUT.write('&wavefunction\n\n')
-print "norbitals  = %d\nnbasisfunc = %d\n" % (norbitals,nbasisfunc)
+print "norbitals  = %d\nnbasisfunc = %d\nenergy     = %s\n" % (norbitals,nbasisfunc,energy)
 
 if scf_type != "UHF":
 
     for i in range(norbitals):
+	if len(wavefunction[i]) != nbasisfunc:
+	    print "Error: Orbital",i,"has",len(wavefunction[i]),"basisfunctions, instead of the expected",nbasisfunc
+	    sys.exit(0)
         for j in range(nbasisfunc):
 	    try:
 	        OUT.write('%20s'%wavefunction[i][j])
@@ -1049,19 +1021,23 @@ for i in range(ndeterminants):
     print " (=",nume,")"
 OUT.write('\n')
 print ""
+constraints = []
 OUT.write("CI Coeffs\n")
 for i in range(ndeterminants):
     match = 0
-    if ci_type == "ALDET":
+    constraints.append(-1)
+    if ci_type == "ALDET" or 1:
 	for j in range(i):
 	    ratio = string.atof(CI[i])/string.atof(CI[j])
-	    if abs(ratio) == 1.0:
+	    if abs(abs(ratio)-1.0) < 1e-5:
 		match = 1
 		# There are some couplings that are required to get the correct spin function.
 		# We want to include the constraints so that QMC knows which are free to optimize.
 		# You'll get ratio = 1 for singlet (ab-ba), and ratio = -1 for triplet (ab+ba)
-		print "Using CI constraint: Det[%i] = %5.3f * Det[%i]"%(i,ratio,j)
+		#print "Using CI constraint: Det[%i] = %5.3f * Det[%i]"%(i,ratio,j)
+		constraints[i] = j
 		OUT.write('c %i %5.3f\n'%(j, ratio))
+		break
     if match == 0:
 	OUT.write('%s\n'%CI[i])
 OUT.write('\n')
@@ -1072,7 +1048,12 @@ for i in range(ndeterminants):
     try:
 	ci = string.atof(CI[i])
 	cum += ci*ci
-	print "%3i) %25.7f has percentage %15.10e, cumulative remaining %15.10e" % (i+1,ci,ci*ci,1.0-cum)
+	print "%3i) %25.7e has percentage %15.8f, cumulative remaining %15.8e" % (i+1,ci,ci*ci*100,1.0-cum),
+	if constraints[i] == -1:
+	    print ""
+	else:
+	    rel_diff = ci/string.atof(CI[constraints[i]])-1.0
+	    print ", constrained to %2i %25.7e"%(constraints[i]+1,rel_diff)
     except:
 	print "%3i) %25s has percentage %15.10e, cumulative remaining %15.10e" % (i+1,CI[i],0,1.0-cum)
 
