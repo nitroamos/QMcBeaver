@@ -86,8 +86,18 @@ istream& operator >>(istream &strm, QMCBasisFunctionCoefficients &rhs)
   strm >> rhs.Label;
   rhs.Label = StringManipulation::toFirstUpperRestLower( rhs.Label );
 
+  if((char)rhs.Label[0] < 'A' || (char)rhs.Label[0] > 'Z'){
+    clog << "Error in &basis section: invalid atom with label \"" << rhs.Label << "\"..." << endl;
+    exit(0);
+  }
+
   strm >> rhs.N_Orbitals;
   strm >> rhs.Max_Gaussians;
+
+  if(rhs.N_Orbitals <= 0){
+    clog << "Error in &basis: why does atom " << rhs.Label << " have " << rhs.N_Orbitals << " orbitals?" << endl;
+    exit(1);
+  }
 
   rhs.Coeffs.allocate(rhs.N_Orbitals,rhs.Max_Gaussians,2);
   rhs.xyz_powers.allocate(rhs.N_Orbitals,3);
@@ -106,7 +116,7 @@ istream& operator >>(istream &strm, QMCBasisFunctionCoefficients &rhs)
       rhs.xyz_powers(i,1) = y;
       rhs.xyz_powers(i,2) = z;
       rhs.lmax = max(rhs.lmax,x+y+z);
-      
+
       for(int j=0; j<rhs.N_Gauss(i); j++)
 	{
 	  strm >> rhs.Coeffs(i,j,0);
