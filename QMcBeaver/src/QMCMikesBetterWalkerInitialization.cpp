@@ -55,6 +55,9 @@ Array3D<double> QMCMikesBetterWalkerInitialization::initializeBunchOfWalkersPosi
   double z = 0.0;
   int which_atom = 0;
 
+  clog << "Error: this initialization scheme is not complete!" << endl;
+  exit(0); 
+
   //For each electron
   for(int i=0;i<nelectrons;i++)
     {
@@ -100,7 +103,7 @@ FindBestWalker(Array3D<double> &severalRs)
 
   for(int i=0;i<nelectrons;i++)
     {
-      for(int j=0;j<nTestWalkers;i++)
+      for(int j=0;j<nTestWalkers;j++)
 	{
 	  Occupations(i,j) = 1.0/nTestWalkers;
 	}
