@@ -123,7 +123,12 @@ QMCOptimizationAlgorithm * QMCOptimizationFactory::
       cerr << "ERROR: Unknown optimization algorithm ("
 	   << input->flags.optimize_Psi_method
 	   << ") in QMCOptimizationFactory!" << endl;
+
+#ifdef PARALLEL
+      MPI_Abort(MPI_COMM_WORLD,1);
+#endif
       exit(1);
+
     }
 
   return optAlg;
