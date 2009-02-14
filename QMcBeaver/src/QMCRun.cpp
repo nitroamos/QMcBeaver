@@ -148,6 +148,60 @@ void QMCRun::initializeFunction()
     QMCSCFJastrow * qmfHFJ = static_cast<QMCSCFJastrow*>(QMF);
     qmfHFJ->initialize(Input,&HartreeFock);
   }
+
+  //testPseudoPotential();
+}
+
+void QMCRun::testPseudoPotential()
+{
+  QMCInitializeWalker * IW =
+    QMCInitializeWalkerFactory::initializeWalkerFactory(Input,
+        Input->flags.walker_initialization_method);
+  
+  QMCWalker w;
+  w.initialize(Input);
+  Array2D<double> R = IW->initializeWalkerPosition();
+  w.setR(R);
+
+  //Pick the closest electron for our testing
+  int elec = 0;
+  for(int e=0; e<R.dim1(); e++){
+    if(w.getWalkerData()->riA(elec,0) > w.getWalkerData()->riA(e,0)){
+      elec = e;
+    }
+  }
+  printf("\n\n\nStarting pseudopotential ratio check...\n");
+  printf("       %2s:%1s %20s %20s/%20s %20s\n","gr","N","r","PsiP(gr)","Psi","ratio");
+  QMCPotential_Energy::printElec = elec;
+  QMF->evaluate(*w.getR(),*w.getWalkerData());
+  QMCPotential_Energy::printElec = -2;
+  printf("\n");
+
+  double Psi = w.getWalkerData()->psi;
+  Array1D<double> origR(globalInput.Molecule.getNumberAtoms());
+  for(int nuc=0; nuc<globalInput.Molecule.getNumberAtoms(); nuc++)
+    origR(nuc) = w.getWalkerData()->riA(elec,nuc);
+
+  for(int nuc=0; nuc<globalInput.Molecule.getNumberAtoms(); nuc++){
+    double r = origR(nuc);
+    Array2D<double> grid = globalInput.Molecule.getGrid(nuc,r,true);
+
+    Array1D<double> PsiP(grid.dim1());
+    PsiP = 0.0;
+    for(int gr=0; gr<grid.dim1(); gr++){
+
+      for(int xyz=0; xyz<3; xyz++)
+	R(elec,xyz) = grid(gr,xyz);
+
+      //printf("x %20.10e y %20.10e z %20.10e\n",R(elec,0),R(elec,1),R(elec,2));
+      
+      w.setR(R); //Make sure the function accepts zeros as coordinates
+      QMF->evaluate(*w.getR(),*w.getWalkerData());
+      PsiP(gr) = w.getWalkerData()->psi;
+      printf("QMCRUN %2i:%i %20.10f %20.10e/%20.10e %20.10e\n",gr,nuc,r,PsiP(gr),Psi,PsiP(gr)/Psi);
+    }
+  }
+  exit(0);
 }
 
 void QMCRun::initialize(QMCInput *INPUT)
@@ -440,12 +494,11 @@ void QMCRun::randomlyInitializeWalkers()
 			      Input->flags.energy_estimated_original);
       initialization_try = 1;
       while( (w.isSingular() || rel_diff > globalInput.flags.rel_cutoff) && initialization_try < 1000)
-	{
+	{	  
 	  cerr << "Regenerating Walker " << i
 	       << " with energy " << w.getWalkerData()->localEnergy
 	       << ", rel_diff = " << rel_diff <<  "..." << endl;
 	  cerr.flush();
-        
 	  temp_R = IW->initializeWalkerPosition();
 	  w.setR(temp_R);
 	  QMF->evaluate(*w.getR(),*w.getWalkerData());
@@ -882,10 +935,11 @@ void QMCRun::ack_reconfiguration()
 	  it++)
 	printf("idx %10.5f w = %20.10f sw= %20.10f\n",(*it).first,(*it).second->getWeight(),fabs((*it).second->getWeight()/aveW-1));
 
+      /*
       cout << "New Walker List:" << endl;
       for(list<QMCWalker>::iterator wp=wlist.begin(); wp!=wlist.end();++wp) 
 	cout << wp->ID(true,false);
-      
+      */
       //exit(0);
     }  
 

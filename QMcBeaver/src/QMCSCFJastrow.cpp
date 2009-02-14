@@ -445,9 +445,11 @@ void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio()
       IeeeMath::isNaN(wd->modificationRatio) ||
       lengthGradTrialUnmodified == 0)
     {
-      cerr << "WARNING: trial Grad Psi Ratio is NaN "; 
-      cerr << "   lengthGradTrialModified = " << lengthGradTrialModified << endl;
-      cerr << "   lengthGradTrialUnmodified = " << lengthGradTrialUnmodified << endl;
+      if(QMCPotential_Energy::printElec != -2){
+	cerr << "WARNING: trial Grad Psi Ratio is NaN ";
+	cerr << "   lengthGradTrialModified = " << lengthGradTrialModified << endl;
+	cerr << "   lengthGradTrialUnmodified = " << lengthGradTrialUnmodified << endl;
+      }
       wd->singular = true;	
     } 
 }
