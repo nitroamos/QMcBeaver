@@ -487,7 +487,7 @@ void QMCBasisFunction::basisFunctionsOnGrid(Array2D<double>& grid,
 					    Array2D<qmcfloat>& chi_val)
 {
   int bf;
-
+  int maxrn = 1;
   qmcfloat p0, temp1;
   temp1 = 0;
   //First just handle the radial gaussians: X = \sum pi1 exp(-pi0 r)
@@ -498,7 +498,7 @@ void QMCBasisFunction::basisFunctionsOnGrid(Array2D<double>& grid,
       for (int atom=0; atom<flags->Natoms; atom++)
         {
 	  if(atom == nuc && idx > 0){
-
+	    maxrn = max(maxrn,BFCoeffs(atom).getMaxL());
 	    const int numBF = BFCoeffs(atom).getNumberBasisFunctions();
 	    for (int j=0; j<numBF; j++)
 	      {
@@ -550,14 +550,12 @@ void QMCBasisFunction::basisFunctionsOnGrid(Array2D<double>& grid,
       r += Xcalc(xyz)*Xcalc(xyz);
     }
   r = sqrt(r);
-
-  const int maxrn = 4;
+  
   double rn[maxrn];
   rn[0] = 1.0;
-  for(int i=1; i<maxrn; i++)
+  for(int i=1; i<=maxrn; i++)
     rn[i] = rn[i-1]*r;
-
-
+  
   Array2D<double> ang(angularCi.dim1(),angularCi.dim2());
   ang = 0.0;
   double * chi_p = chi_val.array();

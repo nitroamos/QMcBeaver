@@ -280,6 +280,11 @@ int QMCMolecule::readPseudoPotential(string runfile)
 	  (Vlocal(i))(vloc,0) = atof(item.c_str());//coeff
 	  input_file >> item;
 	  (Vlocal(i))(vloc,1) = atof(item.c_str());//r^n
+
+	  if((Vlocal(i))(vloc,1) <= 0){
+	    clog << "Warning: with QMC you're supposed to use non-singular pseudopotentials,";
+	    clog << " but " << pseudoTitle(i,0) << " has a local term with n = " << (Vlocal(i))(vloc,1) << endl;
+	  }
 	  input_file >> item;
 	  (Vlocal(i))(vloc,2) = atof(item.c_str());//zeta
 	}
@@ -298,6 +303,13 @@ int QMCMolecule::readPseudoPotential(string runfile)
 	      (Vnonlocal(i))(l)(vnloc,0) = atof(item.c_str());//coeff
 	      input_file >> item;
 	      (Vnonlocal(i))(l)(vnloc,1) = atof(item.c_str());//r^n
+	      if((Vnonlocal(i))(l)(vnloc,1) <= 0){
+		clog << "Warning: with QMC you're supposed to use non-singular pseudopotentials,";
+		clog << " but " << pseudoTitle(i,0) << " has a non-local term with n = "
+		     << (Vnonlocal(i))(l)(vnloc,1) << endl;
+	      }
+
+
 	      input_file >> item;
 	      (Vnonlocal(i))(l)(vnloc,2) = atof(item.c_str());//exponent
 	    }

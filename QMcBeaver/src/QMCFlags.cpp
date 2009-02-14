@@ -1271,7 +1271,7 @@ bool QMCFlags::checkFlags()
       return false;
     }
 
-  if(limit_branching == 1)
+  if(limit_branching == 1 && run_type == "diffusion")
     {
       clog << "Laziness filter: " << branch_age_toolazy << endl;
       clog << "Fast growth:     " << branch_dWgrowth_toofast << endl;

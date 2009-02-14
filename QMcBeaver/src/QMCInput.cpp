@@ -191,6 +191,7 @@ void QMCInput::printAIParameters(ostream & strm,
 
 void QMCInput::printAISummary()
 {
+  if(flags.set_debug == 1) return;
   int width = 10;
   int numAI = globalInput.getNumberAIParameters();
 
