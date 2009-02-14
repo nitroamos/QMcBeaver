@@ -8,6 +8,15 @@
 QMCDansWalkerInitialization::QMCDansWalkerInitialization(QMCInput * INPUT)
 {
   Input = INPUT;
+
+  for (int i=0; i<Input->flags.Natoms; i++){
+    if(Input->Molecule.Z(i) >= 18){
+      clog << "Warning: QMCDansWalkerInitialization can only handle atoms with up to Z=18, but atom "
+	   << i << " has Z=" << Input->Molecule.Z(i) << endl;
+      clog << "         Instead of quitting, we'll proceed with our best guess..." << endl;
+    }
+  }
+
   if (!arraysInitialized)
     {
       arraysInitialized = true;
@@ -598,6 +607,7 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 	    }
         }
     }
+
   return atom_occ;
 }
 
@@ -989,26 +999,32 @@ double QMCDansWalkerInitialization::generateThetaCoordinate(int index)
 Array1D<double> QMCDansWalkerInitialization::\
                               generateRadialDistances(int Z, int n, int nelecs)
 {
-  int atomicNumberIndex = Z-1;
-  int energyLevelIndex = n-1;
+  int atomicNumberIndex = min(17,Z-1);
+  int energyLevelIndex =  min(2,n-1);
+
+  if(atomicNumberIndex > radialSplinesMade.dim1()){
+    clog << "Error: QMCDansWalkerInitialization can not initialize atom with atomic number: " << Z << endl;
+    exit(0);
+  }
   if (radialSplinesMade(atomicNumberIndex,energyLevelIndex) == 0)
     {
       Array1D<double> r_array;
-      r_array = RadialDistributions::getRadialArray(Z,n);
+      r_array = RadialDistributions::getRadialArray(atomicNumberIndex+1,
+						    energyLevelIndex+1);
       double derivativeAtZero = r_array(1)*20;
       double derivativeAtOne = (r_array(20) - r_array(19))*20;
       radialSplines(atomicNumberIndex,energyLevelIndex).\
 	initializeWithFunctionValues\
-	                    (x_array,r_array,derivativeAtZero,derivativeAtOne);
+	(x_array,r_array,derivativeAtZero,derivativeAtOne);
       radialSplinesMade(atomicNumberIndex,energyLevelIndex) = 1;
     }
   Array1D<double> r_locs(nelecs);
   for (int i=0; i<nelecs; i++)
     {
       radialSplines(atomicNumberIndex,energyLevelIndex).evaluate\
-                                                   (ran.unidev());
+	(ran.unidev());
       r_locs(i) = radialSplines(atomicNumberIndex,energyLevelIndex).\
-                                                            getFunctionValue();
+	getFunctionValue();
     }
   return r_locs;
 }
