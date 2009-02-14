@@ -91,6 +91,10 @@ public:
   void aggregateTimers(Array1D<Stopwatch> & timers,
 		       int & idx);
 
+  /**
+     This variable is used by QMCRun to control printing of debug data.
+  */
+  static int printElec;
  private:
   Array1D<Stopwatch> swTimers;
 
@@ -122,6 +126,12 @@ public:
   void calc_P_nn();
   void calc_P_en(Array2D<double> &R);
   void calc_P_ee(Array2D<double> &R);
+  
+  /**
+     This function prints out the values of the local & non local
+     pseudopotential energies
+  */
+  void printPseudoPotential(double max, int num, int nuc);
 };
 
 #endif

@@ -106,6 +106,11 @@ class QMCBasisFunctionCoefficients
   int lmax;
 
   /**
+     Access the highest value of l used by psuedopotentials
+  */
+  int getMaxL(){ return lmax; }
+
+  /**
     Sets two QMCBasisFunctionCoefficients objects equal.
 
     @param rhs object to set this object equal to

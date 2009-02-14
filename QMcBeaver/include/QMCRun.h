@@ -344,6 +344,14 @@ private:
   void propagateWalkers(bool writeConfigs, int iteration);
 
   /**
+     This function will help you make sure that the wavefunction ratios
+     are being calculated correctly for pseudopotentials but calculating
+     the same thing two different ways. First, the pp code calculate the ratios
+     directly, second, we can use the regular QMCSCFJastrow::evaluate.
+  */
+  void testPseudoPotential();
+
+  /**
     Creates and destroys walkers based on their weights.
   */
   void branchWalkers();

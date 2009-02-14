@@ -474,6 +474,11 @@ private:
   */
   static long int nextID;
 
+  /**
+     I'm still having problems with exploding output files. This variable
+     just helps put a cap on how large those files can be before calling it quits.
+  */
+  static long int numErrors;
 };
 
 #endif
