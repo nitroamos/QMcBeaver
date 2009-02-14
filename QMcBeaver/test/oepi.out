@@ -1,14 +1,9 @@
-QMcBeaver version 20081114 was compiled in double precision.
-Compiled on Nov 14 2008 18:47:55
+QMcBeaver version 20090214 was compiled in double precision.
+Compiled on Feb 14 2009 10:43:08
 Compiler version 3.4.6 20060404 (Red Hat 3.4.6-8)
-With the libraries: BLAS LAPACK
+With the libraries: MPI BLAS LAPACK
 Signaling: CHANNEL1 = 23 CHANNEL2 = 40
 
-
-Laziness filter: 4
-Fast growth:     5
-Bad Energy:      100
-Too heavy:       4
 
 Warning: you requested more walkers_per_pass (10) than walkers (1), resetting walkers_per_pass.
 EupEdn:
@@ -59,88 +54,88 @@ x12 = r12 / 3.811493
        -10    0.0000000000   0.0000000e+00               0   -2.0000000000         0.00000         0.00000    0.0000000000         0.00000 
          0    0.0000000000   0.0000000e+00               0   -2.0000000000         0.00000         0.00000    0.0000000000         0.00000 
         30    0.0000000000   0.0000000e+00               0   -2.0000000000         0.00000         0.00000    0.0000000000         0.00000 
-        40  -82.9305680786   0.0000000e+00               1   -2.0000000000         0.99220         0.02492    0.0000000000       -82.93057 
-        50  -82.8920890237   0.0000000e+00               2   -2.0000000000         0.99429         0.01330    0.0014806377       -82.89209 
-        60  -82.8920890237   0.0000000e+00               2   -2.0000000000         0.99429         0.01330    0.0014806377       -82.89209 
-        70  -82.8880771842   0.0000000e+00               3   -2.0000000000         0.99100         0.01102    0.0010192815       -82.88808 
-        80  -82.8880771842   0.0000000e+00               3   -2.0000000000         0.99100         0.01102    0.0010192815       -82.88808 
-        90  -82.7922229457   0.0000000e+00               4   -2.0000000000         0.99325         0.01235    0.0283285663       -82.79222 
-       100  -82.0228701428   0.0000000e+00               5   -2.0000000000         0.99398         0.01923    2.3902777940       -82.02287 
-       100  -82.0228701428   0.0000000e+00               5   -2.0000000000         0.99398         0.01923    2.3902777940       -82.02287 
+        40  -83.7211614873   0.0000000e+00               1   -2.0000000000         0.99221         0.02492    0.0000000000       -83.72116 
+        50  -82.8647784075   0.0000000e+00               2   -2.0000000000         0.99429         0.01330    0.7333919794       -82.86478 
+        60  -82.8647784075   0.0000000e+00               2   -2.0000000000         0.99429         0.01330    0.7333919794       -82.86478 
+        70  -82.7019680642   0.0000000e+00               3   -2.0000000000         0.99100         0.01102    0.5419424020       -82.70197 
+        80  -82.7019680642   0.0000000e+00               3   -2.0000000000         0.99100         0.01102    0.5419424020       -82.70197 
+        90  -82.6793370376   0.0000000e+00               4   -2.0000000000         0.99325         0.01235    0.4079932916       -82.67934 
+       100  -81.9177176971   0.0000000e+00               5   -2.0000000000         0.99398         0.01923    2.6466507129       -81.91772 
+       100  -81.9177176971   0.0000000e+00               5   -2.0000000000         0.99398         0.01923    2.6466507129       -81.91772 
 ***************  Print Results (ok = 1)
 **************** Start of Results *****************
 
 ------------------- Energy -------------------
-    -82.022870142828 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
+    -81.917717697067 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
   DeCorr_depth       samples           Ave           Std        StdStd           Var        VarStd    Corr. Len.      Variance          Skew      Kurtosis
-0                          5    -82.022870  7.730262e-01  2.733060e-01  5.975694e-01  4.225454e-01      0.000000      2.390278      1.465658      0.200827
-1                          2    -82.792223  9.986608e-02  7.061598e-02  9.973234e-03  1.410428e-02      0.016690      0.009973      0.000000      0.000000
-2                          1    -82.792223
+0                          5    -81.917718  8.134265e-01  2.875897e-01  6.616627e-01  4.678662e-01      0.000000      2.646651      1.020868     -0.230697
+1                          2    -82.679337  1.854414e-01  1.311269e-01  3.438850e-02  4.863269e-02      0.051973      0.034389      0.000000      0.000000
+2                          1    -82.679337
 
 ----------------- Energy^2 -------------------
-   6730.141504261255 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
+   6713.159123409317 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
 
 --------------- Kinetic Energy ---------------
-     58.575701893635 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
+     58.655366252740 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
 
 -------------- Potential Energy --------------
-   -140.598572036463 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
+   -140.573083949807 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
 
 -------------- Nuc-Elec Energy ---------------
-   -234.371730655468 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
+   -234.348362343502 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
 
 -------------- Elec-Elec Energy --------------
-     60.328487109595 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
+     60.330606884285 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
 
 ------------ AcceptanceProbability -----------
-      0.993978170317 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
+      0.993977139828 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
 
 ------------ DistanceMovedAccepted -----------
-      0.019234067694 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
+      0.019234015699 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
 
 ------------- DistanceMovedTrial -------------
-      0.019324035118 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
+      0.019324026240 +/- 1.000000000000e+300  (5 samples, Tcorr   -2.00000)
 
 ----------------- Walker Age -----------------
       0.000000000000 +/- 1.000000000000e+300  (0 samples, Tcorr   -2.00000)
 dt_effective: 0.00995 +/- inf
 
 --------------- Virial Ratio (-<V>/<T>) ---------------
-      0: 2.34031 +/- inf
-         Total Energy Estimator (KE/Virial): -61.13208 +/- inf
-         Total Energy Estimator (PE/Virial): -71.53409 +/- inf
+      0: 2.33829 +/- inf
+         Total Energy Estimator (KE/Virial): -61.17075 +/- inf
+         Total Energy Estimator (PE/Virial): -71.51743 +/- inf
 
 **************** End of Results *****************
 ***************  Finalize
-Average iterations per hour:                              6.2914e+06
-Average iterations*walkers per hour:                      6.2914e+06
-Average microseconds per sample:                          2458.8
-Average microseconds per sample per num initial walkers:  2458.8
+Average iterations per hour:                              5.5869e+06
+Average iterations*walkers per hour:                      5.5869e+06
+Average microseconds per sample:                          2442
+Average microseconds per sample per num initial walkers:  2442
 
-Wallclock Time:                           57 ms   =                0.057 s    =              0.00095 mins =           1.5833e-05 hrs 
-Total Time:                               57 ms   =                0.057 s    =              0.00095 mins =           1.5833e-05 hrs     100.00 %
-Initialization Time:                       1 ms   =                0.001 s    =           1.6667e-05 mins =           2.7778e-07 hrs       2.72 %
-Equilibration Time:                        3 ms   =                0.003 s    =                5e-05 mins =           8.3333e-07 hrs       6.61 %
-Propagation Time:                         12 ms   =                0.012 s    =               0.0002 mins =           3.3333e-06 hrs      21.49 %
-Send Command Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
-Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
+Wallclock Time:                           64 ms   =                0.064 s    =            0.0010667 mins =           1.7778e-05 hrs 
+Total Time:                               64 ms   =                0.064 s    =            0.0010667 mins =           1.7778e-05 hrs     100.00 %
+Initialization Time:                       1 ms   =                0.001 s    =           1.6667e-05 mins =           2.7778e-07 hrs       2.34 %
+Equilibration Time:                        3 ms   =                0.003 s    =                5e-05 mins =           8.3333e-07 hrs       5.62 %
+Propagation Time:                         12 ms   =                0.012 s    =               0.0002 mins =           3.3333e-06 hrs      18.95 %
+Send Command Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.01 %
+Gather Properties Time:                    0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.29 %
 Synchronization Time:                      0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Poll for Command Time:                     0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 Optimization Time:                         0 ms   =                    0 s    =                    0 mins =                    0 hrs       0.00 %
 
-      Evaluate basis functions: 0 ( avg =      14.55 us, n=             38)      8.53 % cumulative =       8.53 %
-         Matrix Multiplication: 0 ( avg =       8.13 us, n=             38)      4.77 % cumulative =      13.30 %
-             Derivative Ratios: 0 ( avg =       1.58 us, n=             38)      0.93 % cumulative =      14.23 %
-      Evaluate basis functions: 0 ( avg =      13.86 us, n=             37)      8.13 % cumulative =      22.36 %
-         Matrix Multiplication: 0 ( avg =       8.14 us, n=             37)      4.77 % cumulative =      27.13 %
-             Derivative Ratios: 0 ( avg =       1.76 us, n=             37)      1.03 % cumulative =      28.16 %
-              Potential Energy: 0 ( avg =       4.80 us, n=             89)      2.81 % cumulative =      30.97 %
-                    EN Jastrow: 0 ( avg =       5.00 us, n=             89)      2.93 % cumulative =      33.90 %
-                    EE Jastrow: 0 ( avg =       6.20 us, n=             89)      3.64 % cumulative =      37.54 %
-                   EEN Jastrow: 0 ( avg =      64.38 us, n=             89)     37.75 % cumulative =      75.29 %
-                Psi Quantities: 0 ( avg =       8.29 us, n=             89)      4.86 % cumulative =      80.15 %
-            Walker Propagation: 0 ( avg =      46.54 us, n=             85)     27.29 % cumulative =     107.44 %
-           Correlated Sampling: 0 ( avg =       0.00 us, n=            -15)      0.00 % cumulative =     107.44 %
-         Calculate Observables: 0 ( avg =       9.45 us, n=             85)      5.54 % cumulative =     112.98 %
-                   Entire Step: 0 ( avg =     170.54 us, n=             85)    100.00 % cumulative =     100.00 %
-Wallclock Time:                           71 ms   =                0.071 s    =            0.0011833 mins =           1.9722e-05 hrs 
+      Evaluate basis functions: 0 ( avg =      14.21 us, n=             38)      8.42 % cumulative =       8.42 %
+         Matrix Multiplication: 0 ( avg =       8.45 us, n=             38)      5.00 % cumulative =      13.42 %
+             Derivative Ratios: 0 ( avg =       1.74 us, n=             38)      1.03 % cumulative =      14.45 %
+      Evaluate basis functions: 0 ( avg =      14.11 us, n=             37)      8.36 % cumulative =      22.81 %
+         Matrix Multiplication: 0 ( avg =       8.49 us, n=             37)      5.03 % cumulative =      27.84 %
+             Derivative Ratios: 0 ( avg =       1.54 us, n=             37)      0.91 % cumulative =      28.75 %
+              Potential Energy: 0 ( avg =       4.71 us, n=             89)      2.79 % cumulative =      31.54 %
+                    EN Jastrow: 0 ( avg =       4.42 us, n=             89)      2.62 % cumulative =      34.15 %
+                    EE Jastrow: 0 ( avg =       5.44 us, n=             89)      3.22 % cumulative =      37.37 %
+                   EEN Jastrow: 0 ( avg =      65.38 us, n=             89)     38.73 % cumulative =      76.10 %
+                Psi Quantities: 0 ( avg =       8.43 us, n=             89)      4.99 % cumulative =      81.10 %
+            Walker Propagation: 0 ( avg =      45.19 us, n=             85)     26.77 % cumulative =     107.87 %
+           Correlated Sampling: 0 ( avg =       0.00 us, n=            -15)      0.00 % cumulative =     107.87 %
+         Calculate Observables: 0 ( avg =       9.06 us, n=             85)      5.37 % cumulative =     113.23 %
+                   Entire Step: 0 ( avg =     168.81 us, n=             85)    100.00 % cumulative =     100.00 %
+Wallclock Time:                           77 ms   =                0.077 s    =            0.0012833 mins =           2.1389e-05 hrs 
