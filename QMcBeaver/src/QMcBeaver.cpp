@@ -301,12 +301,15 @@ void qmcbeaver()
 
   if(!ok)
     {
-      clog << "Error: the calculation was terminated prematurely.\n";
+      clog << "Error: the calculation had a problem, so we're quitting.\n";
       /*
-      clog << "Some possible problems:\n";
-      clog << "   1) You didn't request enough time from your queuing system.\n";
-      clog << "   2) Your wavefunction has a problem.\n";
+	clog << "Some possible problems:\n";
+	clog << "   1) You didn't request enough time from your queuing system.\n";
+	clog << "   2) Your wavefunction has a problem.\n";
       */
+#ifdef PARALLEL
+      MPI_Abort(MPI_COMM_WORLD,1);
+#endif 
     }
 
   if(globalInput.flags.set_debug == 0)

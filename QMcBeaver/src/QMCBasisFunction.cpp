@@ -467,8 +467,7 @@ void QMCBasisFunction::evaluateBasisFunctions(Array2D<double>& X,
                 {
 		  if(fabs(p0 - coeffs[i][0]) > 1e-10){
 		    p0     = coeffs[i][0];
-		    temp1  = exp(-p0*r_sq);		    
-		    //temp1  = MathFunctions::fast_exp(-p0*r_sq);
+		    temp1  = exp(-p0*r_sq);
 		  }
 
                   x_val += temp1*coeffs[i][1];

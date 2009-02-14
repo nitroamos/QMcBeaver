@@ -18,6 +18,7 @@
 const double QMCWalker::maxFWAsymp = 1.0;
 long int QMCWalker::nextID = 0;
 //const int QMCWalker::numAncestors = 10;
+long int QMCWalker::numErrors = 0;
 
 QMCWalker::QMCWalker()
 {
@@ -1312,6 +1313,7 @@ void QMCWalker::reweight_walker()
 	{
 	  stringstream strm;	  
 	  strm << "ERROR: Deleting fast growth (" << dWgrowth << ") walker " << ID(move_accepted,true);
+	  numErrors++;
 	  int wi = 25;
 	  int pr = 15;
 
@@ -1372,6 +1374,7 @@ void QMCWalker::reweight_walker()
       if(getWeight() > 50.0)
 	{
 	  cerr << "ERROR: Deleting heavy walker " << ID(move_accepted,true);
+	  numErrors++;
 	  cerr.flush();
 	  setWeight(0.0);
 	  return;
@@ -1380,6 +1383,7 @@ void QMCWalker::reweight_walker()
       if(rel_diff > globalInput.flags.rel_cutoff)
 	{
 	  cerr << "ERROR: Deleting walker with bad energy " << ID(move_accepted,!true);
+	  numErrors++;
 	  cerr.flush();
 	  setWeight(0.0);
 	  return;
@@ -1430,7 +1434,7 @@ bool QMCWalker::branchRecommended(bool printWarning)
   if(age > globalInput.flags.branch_age_toolazy)
     {
       shouldRecommend = false;
-      if(age%10 == 0)
+      if(age%10 == 0 && age > 50)
 	shouldWarn << " laziness = " << age;
     }
   if(dWgrowth > globalInput.flags.branch_dWgrowth_toofast)
@@ -1613,13 +1617,14 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
       TrialWalker->walkerData.zero();
     }
 
-  if(numWarnings >= 10){
+  if(numWarnings >= 10 || numErrors > 10000){
     /*
       I've had problems with exploding files. It's usually an indicator of a
       programming error somewhere.
     */
-    cerr << "ERROR: There have been " << numWarnings << " warnings, so I'm quitting." << endl;
-
+    cerr << "ERROR: There have been " << numWarnings << " warnings and "
+	 << numErrors << " errors, so I'm quitting." << endl;
+    
 #ifdef PARALLEL
     MPI_Abort(MPI_COMM_WORLD,1);
 #endif
@@ -2062,7 +2067,7 @@ bool QMCWalker::setR(Array2D<double> temp_R)
       if(IeeeMath::isNaN(temp_R(i,j)) || temp_R(i,j) == 0 || fabs(temp_R(i,j)) > 500.0 )
 	{
 	  //cout << "Error: setting electron position (" << i << "," << j << ") = " << temp_R(i,j) << endl;
-	  ok = false;
+	  //ok = false;
 	}
   if(ok)
     {
