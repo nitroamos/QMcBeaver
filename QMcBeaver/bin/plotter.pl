@@ -4,6 +4,7 @@ my $path = `dirname $0`;
 chomp($path);
 require "$path/utilities.pl";
 
+my $orbFilter  = 1;
 my $calcDiff = 1;
 my $useAvg   = 1;
 my $withErr  = 0;
@@ -40,6 +41,9 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
     } elsif($type eq "-a"){
 	$useAvg = ($useAvg+1)%2;
 	print "Using useAvg = $useAvg\n";
+    } elsif($type eq "-o"){
+	$orbFilter = ($orbFilter+1)%2;
+	print "Using orbFilter = $orbFilter\n";
     } elsif($type eq "-i"){
 	$i_active = ($i_active+1)%2;
 	print "Using interactive = $i_active\n";
@@ -420,7 +424,7 @@ sub subtractTwo
 	for(my $j=0; $j<$i; $j++){
 	    $jKey = $keys[$j];
 
-	    ($iMult,$jMult) = getFormula($iKey,$jKey,1);
+	    ($iMult,$jMult) = getFormula($iKey,$jKey,$orbFilter);
 
 	    #the results are not comparable if either is zero
 	    next if($iMult == 0 || $jMult == 0);
@@ -706,7 +710,6 @@ if($withErr){
     print GNUPLOT "$plotline_noerr\n";
 }
 
-#haven't gotten this next bit to work...
 print GNUPLOT "v=0\n";
 print GNUPLOT "bind e 'v=v+1; if(v%2) $plotline; else $plotline_noerr'\n";
 print GNUPLOT "k=0\n";

@@ -94,7 +94,7 @@ sub getFormula {
     my $odLastIdx = $1 if($od[8] =~ /[\w\d_]+_([\d]+)$/); 
     my $tdLastIdx = $1 if($td[8] =~ /[\w\d_]+_([\d]+)$/); 
 #print "$od[8] -> $odLastIdx $td[8] -> $tdLastIdx\n";
-#    return (0,0) if($odLastIdx ne $tdLastIdx);
+    return (0,0) if($odLastIdx ne $tdLastIdx);
     
     $or = $od[2];
     $tr = $td[2];
@@ -158,6 +158,7 @@ sub estimateTimeToFinish
     my $base = substr($outfile,0,-4);
     @newsteps = `grep "new steps" $outfile`;
 
+    my $equilSteps = 0;
     my $totalSteps = 0;
     if($#newsteps  < 0){
 	open(CKMFFILE,"${base}.ckmf");
@@ -166,20 +167,27 @@ sub estimateTimeToFinish
 		$_ = <CKMFFILE>;
 		chomp;
 		my @line = split/[ ]+/;
-		$totalSteps = $line[1];
-		last;
+		$totalSteps += $line[1];
+	    }
+	    if($_ =~ m/^\s*equilibration_steps\s*$/){
+		$_ = <CKMFFILE>;
+		chomp;
+		my @line = split/[ ]+/;
+		$equilSteps = $line[1];
+		#$totalSteps += $line[1];
 	    }
 	}
     } else {
 	$totalSteps = (split/\s+/,$newsteps[$#newsteps])[12];
     }
 
-
     @itertime = `grep "Average iterations per hour:" $outfile`;
     my $curIter = (split/\s+/,`tail -n 1 ${base}.qmc`)[1];
+    $curIter += $equilSteps if($curIter <= 0);
+
     my $itersPerHour = 0;
     if($#itertime < 0 && $time != 0){
-	$itersPerHour = abs($curIter) / $time;
+	$itersPerHour = $curIter / $time;
 	$itersPerHour *= 3600;
     } elsif($#itertime >= 0) {
 	my $shift = $#itertime;
