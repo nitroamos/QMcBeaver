@@ -18,6 +18,7 @@
 #include "QMCJastrowElectronNuclear.h"
 #include "QMCThreeBodyJastrow.h"
 #include "Stopwatch.h"
+#include "Random.h"
 
 int QMCPotential_Energy::printElec = -1;
 
@@ -69,12 +70,14 @@ void QMCPotential_Energy::initialize(QMCInput * Ip, QMCHartreeFock * HF)
     }
 
   int numN = MOL->Atom_Positions.dim1();
-  angularGrids.allocate(numN);
+  angularGrids.allocate(numN,QMCMolecule::numRandomGrids);
   for(int nuc=0; nuc<numN; nuc++)
     if(MOL->usesPseudo(nuc)) 
       {
-	Array2D<double> grTemp = MOL->getGrid(nuc,1.0,false);
-	globalInput.BF.angularGrid(grTemp,nuc,angularGrids(nuc));
+	for(int rg=0; rg<QMCMolecule::numRandomGrids; rg++){
+	  Array2D<double> grTemp = MOL->getGrid(nuc,rg,1.0,false);
+	  globalInput.BF.angularGrid(grTemp,nuc,angularGrids(nuc,rg));
+	}
       }
 
   swTimers.allocate(1);
@@ -87,10 +90,10 @@ double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int ele
   bool isAlpha;
   int elecIndex;
   double r = wd->riA(elec,nuc);
-  int lmax = (MOL->gridLegendre(nuc)).dim1();
+  int numl = MOL->getNumL(nuc);
 
-  Array1D<double> vnl(lmax);
-  Array1D<double> integral(lmax);
+  Array1D<double> vnl(numl);
+  Array1D<double> integral(numl);
 
   /*
     Most pseudopotentials have local and nonlocal (i.e. requiring a separate integration)
@@ -100,14 +103,14 @@ double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int ele
   Vlocal -= MOL->Zeff(nuc) / r;
   
   bool small = true;
-  for(int l=0; l<lmax; l++)
+  for(int l=0; l<numl; l++)
     {
       vnl(l) = MOL->evaluatePotential((MOL->Vnonlocal(nuc))(l),r);
       if(fabs(vnl(l)) > globalInput.flags.pseudo_cutoff) small = false;
     }
 
   //If all the nonlocal components are small, then we can cut out early.
-  if(small) return Vlocal;
+  if(small && printElec != elec) return Vlocal;
   
   if(elec < WF->getNumberElectrons(true))
     {
@@ -124,7 +127,9 @@ double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int ele
     The grid is composed of points on a spherical shell, all
     the same distance from the nucleus as the electron itself.
   */
-  Array2D<double> grid = MOL->getGrid(nuc,r,true);
+  int whichRG = (int)(ran.unidev()*QMCMolecule::numRandomGrids);
+  //whichRG = 39;//This needs to be uncommented if you're testing
+  Array2D<double> grid = MOL->getGrid(nuc,whichRG,r,true);
 
   int grSize = grid.dim1();
   X.allocate(grSize,WF->getNumberBasisFunctions());
@@ -157,7 +162,7 @@ double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int ele
   
   //These two function calls should produce the same result.
   //globalInput.BF.evaluateBasisFunctions(grid,X); 
-  globalInput.BF.basisFunctionsOnGrid(grid,nuc,angularGrids(nuc),X);
+  globalInput.BF.basisFunctionsOnGrid(grid,nuc,angularGrids(nuc,whichRG),X);
   X.gemm(*WF->getCoeff(isAlpha),D,true);
 
   if (globalInput.flags.replace_electron_nucleus_cusps == 1)
@@ -201,6 +206,7 @@ double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int ele
   if(printElec == elec){
     //The output here is controled by QMCRun::testPseudoPotential()
     //to see if we're correctly calculating wavefunction ratios.
+    cout << "whichrg = " << whichRG << endl;
     for(int gp=0; gp<grSize; gp++) 
       printf("QMCPOT %2i:%i %20.10f %20.10e/%20.10e %20.10e\n",gp,nuc,r,integrand(gp),psi,integrand(gp)/psi); 
   }
@@ -209,8 +215,8 @@ double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int ele
   rDotR = 0.0;
   for(int gp=0; gp<rDotR.dim1(); gp++)
     for(int xyz=0; xyz<3; xyz++)
-      rDotR(gp) += R(elec,xyz)*grid(gp,xyz);
-  rDotR /= (r*r);
+      rDotR(gp) += wd->riA_uvec(elec,nuc,xyz)*grid(gp,xyz);
+  rDotR /= r;
   
   /*
     This is the actual integral part. The Legendre function selects the angular component
@@ -219,7 +225,7 @@ double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int ele
     integration on the unit sphere, and see the src/Lebedev-Laikov.cpp code for references.
   */
   integral = 0.0;
-  for(int l=0; l<lmax; l++)
+  for(int l=0; l<numl; l++)
     for(int gp=0; gp<grSize; gp++)
       integral(l) += integrand(gp) * MathFunctions::legendre(l,rDotR(gp)) * (MOL->gridWeights(nuc))(gp);
 
@@ -227,7 +233,7 @@ double QMCPotential_Energy::evaluatePseudoPotential(Array2D<double> & R, int ele
     This is the summation in formula 28. The 4pi was included in the integral.
   */
   double Vnonlocal = 0.0;
-  for(int l=0; l<lmax; l++)
+  for(int l=0; l<numl; l++)
     Vnonlocal += (2.0*l + 1.0) * vnl(l) * integral(l) / psi;
 
   return Vlocal + Vnonlocal;  
@@ -355,10 +361,10 @@ void QMCPotential_Energy::aggregateTimers(Array1D<Stopwatch> & timers,
 
 void QMCPotential_Energy::printPseudoPotential(double max, int num, int nuc)
 {
-  int lmax = (MOL->gridLegendre(nuc)).dim1();
+  int numl = MOL->getNumL(nuc);
   double vloc,v;
   printf("%20s %20s","r(au)","V_loc");
-  for(int l=0; l<lmax; l++){
+  for(int l=0; l<numl; l++){
     printf(" %19s%1i","V_",l);
   }
   printf("\n");
@@ -369,7 +375,7 @@ void QMCPotential_Energy::printPseudoPotential(double max, int num, int nuc)
     vloc -= MOL->Zeff(nuc) / r;
 
     printf("%20.10f %20.10e",r,vloc);
-    for(int l=0; l<lmax; l++){
+    for(int l=0; l<numl; l++){
       //to compare with figure 1 in the 2008 Burkatzki, Filippi, Dolg paper,
       //I need to add vloc to each of these
       v = vloc + MOL->evaluatePotential((MOL->Vnonlocal(nuc))(l),r);  

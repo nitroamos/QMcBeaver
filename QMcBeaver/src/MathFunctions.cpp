@@ -11,6 +11,7 @@
 // drkent@users.sourceforge.net mtfeldmann@users.sourceforge.net
 
 #include "MathFunctions.h"
+#include "Random.h"
 
 double MathFunctions::erf(double x)
 {
@@ -418,6 +419,26 @@ double MathFunctions::legendre(int l, double x)
     return x;
   
   return ( (2.0*l-1.0)*x*legendre(l-1, x) - (l-1.0)*legendre(l-2, x) ) / l;
+}
+
+void MathFunctions::randomlyRotate(Array2D<double> & points)
+{
+  double phi = ran.unidev()*2*pi;
+  double theta = ran.sindev();
+  double angle = ran.unidev()*2*pi;
+  
+  Array1D<double> axis(3);
+  axis(0) = sin(theta)*cos(phi);
+  axis(1) = sin(theta)*sin(phi);
+  axis(2) = cos(theta);
+  
+  for (int i=0; i<points.dim1(); i++)
+    {
+      Array1D<double> temp_coords(3);
+      for (int j=0; j<3; j++) temp_coords(j) = points(i,j);
+      temp_coords.rotate(axis,angle);
+      for (int k=0; k<3; k++) points(i,k) = temp_coords(k);
+    }
 }
 
 double MathFunctions::rij(Array2D<double> &position, int i, int j)

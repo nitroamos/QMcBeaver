@@ -18,12 +18,14 @@
 QMCMolecule::QMCMolecule()
 {
   Natoms = 0;
+  numL   = 0;
 }
 
 void QMCMolecule::initialize(int nAtoms, int GridLevel)
 {
   Natoms    = nAtoms;
   gridLevel = GridLevel;
+  numL      = 0;
 }
 
 int QMCMolecule::getNumberAtoms()
@@ -47,7 +49,8 @@ QMCMolecule QMCMolecule::operator=( const QMCMolecule & rhs )
   Atom_Labels    = rhs.Atom_Labels;
   Atom_Positions = rhs.Atom_Positions;
   Z              = rhs.Z;
-
+  numL           = rhs.numL;
+  
   gridLevel      = rhs.gridLevel;
   Zeff           = rhs.Zeff;
   usesPseudo     = rhs.usesPseudo;
@@ -55,7 +58,6 @@ QMCMolecule QMCMolecule::operator=( const QMCMolecule & rhs )
   Vnonlocal      = rhs.Vnonlocal;
   grid           = rhs.grid;
   gridWeights    = rhs.gridWeights;
-  gridLegendre   = rhs.gridLegendre;
 
   return *this;
 }
@@ -84,6 +86,7 @@ istream& operator >>(istream &strm, QMCMolecule &rhs)
   rhs.Atom_Positions.allocate(rhs.Natoms,3);
   rhs.Z.allocate(rhs.Natoms);
   rhs.usesPseudo.allocate(rhs.Natoms);
+  rhs.numL.allocate(rhs.Natoms);
 
   for(int i=0; i<rhs.Natoms; i++)
     {
@@ -102,6 +105,7 @@ istream& operator >>(istream &strm, QMCMolecule &rhs)
       strm >> rhs.Atom_Positions(i,1);
       strm >> rhs.Atom_Positions(i,2);
       rhs.usesPseudo(i) = false;
+      rhs.numL(i)       = -1;
     }
 
   rhs.Zeff = rhs.Z;
@@ -189,9 +193,8 @@ int QMCMolecule::readPseudoPotential(string runfile)
 			  &LD0590,&LD0770,&LD0974,&LD1202,&LD1454,&LD1730,&LD2030,&LD2354,
 			  &LD2702,&LD3074,&LD3470,&LD3890,&LD4334,&LD4802,&LD5294,&LD5810};
 
-  grid.allocate(Natoms);
+  grid.allocate(Natoms,numRandomGrids);
   gridWeights.allocate(Natoms);
-  gridLegendre.allocate(Natoms);  
   pseudoTitle.allocate(Natoms,2);
   Vlocal.allocate(Natoms);
   Vnonlocal.allocate(Natoms);
@@ -223,12 +226,14 @@ int QMCMolecule::readPseudoPotential(string runfile)
 	  if(ppTypes(j) == item){
 	    matched = j;
 	    usesPseudo(i) = usesPseudo(j);
+	    numL(i) = numL(j);
 	    Zeff(i) = Zeff(j);
 	    Vlocal(i) = Vlocal(j);
 	    Vnonlocal(i) = Vnonlocal(j);
-	    grid(i) = grid(j);
 	    gridWeights(i) = gridWeights(j);
-	    gridLegendre(i) = gridLegendre(j);
+
+	    for(int rg=0; rg<numRandomGrids; rg++)
+	      grid(i,rg) = grid(j,rg);
 	    break;
 	  }
 	}
@@ -252,7 +257,6 @@ int QMCMolecule::readPseudoPotential(string runfile)
       }
 
       int elec_removed = 0;
-      int numl         = 0;
       int vloc_size    = 0;
       if(item == "NONE")
 	{
@@ -268,7 +272,7 @@ int QMCMolecule::readPseudoPotential(string runfile)
       Zeff(i) = Z(i) - elec_removed;
 
       lineSS >> item;
-      numl = atoi(item.c_str());
+      numL(i) = atoi(item.c_str());
 
       input_file >> item;
       vloc_size = atoi(item.c_str());      
@@ -290,8 +294,8 @@ int QMCMolecule::readPseudoPotential(string runfile)
 	}
 
       //This pseudopotential defines numl projection operators
-      Vnonlocal(i).allocate(numl);
-      for(int l=0; l<numl; l++)
+      Vnonlocal(i).allocate(numL(i));
+      for(int l=0; l<numL(i); l++)
 	{
 	  input_file >> item;
 	  int vnloc_size = atoi(item.c_str());      
@@ -330,21 +334,22 @@ int QMCMolecule::readPseudoPotential(string runfile)
       w = 0.0;
       z = 0.0;
       
-      grid(i).allocate(grSize,3);
       gridWeights(i).allocate(grSize);
-      gridLegendre(i).allocate(numl,grSize);
-      
-      (functions[gridLevel])(x.array(),y.array(),z.array(),w.array());
-      
-      for(int gp=0; gp<grSize; gp++)
-	{
-	  (grid(i))(gp,0)       = x[gp+1];
-	  (grid(i))(gp,1)       = y[gp+1];
-	  (grid(i))(gp,2)       = z[gp+1];
-	  (gridWeights(i))(gp)  = w[gp+1];
-	  for(int l=0; l<numl; l++)
-	    (gridLegendre(i))(l,gp) = MathFunctions::legendre(l,z[gp+1]);
-	}
+      for(int rg=0; rg<numRandomGrids; rg++){
+	grid(i,rg).allocate(grSize,3);
+	
+	(functions[gridLevel])(x.array(),y.array(),z.array(),w.array());
+
+	for(int gp=0; gp<grSize; gp++)
+	  {
+	    (grid(i,rg))(gp,0)       = x[gp+1];
+	    (grid(i,rg))(gp,1)       = y[gp+1];
+	    (grid(i,rg))(gp,2)       = z[gp+1];
+	    (gridWeights(i))(gp)  = w[gp+1];
+	  }
+
+	MathFunctions::randomlyRotate(grid(i,rg));
+      }
     }
 
   int usePseudo = 0;
@@ -352,7 +357,7 @@ int QMCMolecule::readPseudoPotential(string runfile)
     if(usesPseudo(i)){
       usePseudo = 1;
       clog << "On atom " << i << ": replacing " << (Z(i)-Zeff(i)) << " electrons with the " << pseudoTitle(i,0) << " ecp"
-	   << " using " << grid(i).dim1() << " grid points." << endl;
+	   << " using " << grid(i,0).dim1() << " grid points." << endl;
       /*
 	clog << "Zeff(" << ppTypes(i) << ") = " << Zeff(i) << " gridSize = " << grid(i).dim1() << endl;
 	clog << "Vlocal(" << ppTypes(i) << ") = \n" << Vlocal(i);
@@ -363,14 +368,14 @@ int QMCMolecule::readPseudoPotential(string runfile)
   return usePseudo;
 }
 
-Array2D<double> QMCMolecule::getGrid(int nuc, double r, bool translate)
+Array2D<double> QMCMolecule::getGrid(int nuc, int rg, double r, bool translate)
 {
   /*
     The grid points are on a spherical shell centered at
     the nucleus. So scale the unit shell by the radius, then
     translate to the nucleus.
   */
-  Array2D<double> gNuc = grid(nuc); 
+  Array2D<double> gNuc = grid(nuc,rg); 
   gNuc *= r;
 
   //No translation
@@ -444,9 +449,7 @@ ostream& operator <<(ostream& strm, QMCMolecule& rhs)
 
     //Num elec removed
     strm << " " << (rhs.Z(i) - rhs.Zeff(i));
-
-    int numl = rhs.Vnonlocal(i).dim1();
-    strm << " " << numl;
+    strm << " " << rhs.numL(i);
     strm << endl;
 
     int numG = rhs.Vlocal(i).dim1();
@@ -456,7 +459,7 @@ ostream& operator <<(ostream& strm, QMCMolecule& rhs)
 	   << setw(5)  << (rhs.Vlocal(i))(ng,1)
 	   << setw(20) << (rhs.Vlocal(i))(ng,2) << endl;
     
-    for(int l=0; l<numl; l++){
+    for(int l=0; l<rhs.numL(i); l++){
       numG = (rhs.Vnonlocal(i))(l).dim1();
       strm << setw(5) << numG << endl;
       for(int ng=0; ng<numG; ng++)

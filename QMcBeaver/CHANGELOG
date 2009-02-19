@@ -1,3 +1,13 @@
+Wed, Feb 18 Amos Anderson
+1.  I've been trying to get the pseudopotential code to work... I fixed a bug,
+    discovered by comparing with 'qwalk' (thanks!), but I'm still not sure if I
+    have it right... My Cr2 diffusion calculation always goes to crazytown! Some
+    systems are working, so I'll just have to see if they give reasonable energies.
+
+2.  Along the lines of Cr calculations, I hacked Dan's initialization code so that
+    it produces *something* for initialization, even if his code wasn't designed to
+    handle Z>18.
+
 Thurs, Dec 18 Daniel R. Fisher
 1.  I changed the criteria for fitting replacement orbitals again.
     The range is now ten percent of the difference between the value of

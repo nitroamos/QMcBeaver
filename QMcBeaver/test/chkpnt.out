@@ -1,5 +1,5 @@
 QMcBeaver version 20090214 was compiled in double precision.
-Compiled on Feb 14 2009 10:43:08
+Compiled on Feb 17 2009 21:50:11
 Compiler version 3.4.6 20060404 (Red Hat 3.4.6-8)
 With the libraries: MPI BLAS LAPACK
 Signaling: CHANNEL1 = 23 CHANNEL2 = 40
@@ -8,7 +8,7 @@ Signaling: CHANNEL1 = 23 CHANNEL2 = 40
 Laziness filter: 4
 Fast growth:     5
 Bad Energy:      100
-Too heavy:       4
+Too heavy:       100
 
 Notice: checkpoint files will be written into .//
 EupEdn:

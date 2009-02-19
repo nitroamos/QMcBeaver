@@ -68,9 +68,9 @@ void QMCFlags::read_flags(string InFileName)
   branch_dR_badE                 = 100.0;
   branch_W_tooheavy              = 100.0;
   /*/
-  branch_dWgrowth_toofast        = 100.0;
+  branch_dWgrowth_toofast        = 5.0;
   branch_dR_badE                 = 100.0;
-  branch_W_tooheavy              = 100.0;
+  branch_W_tooheavy              = 4.0;
   //*/
 
   //Green's function parameters

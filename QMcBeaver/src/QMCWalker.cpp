@@ -1242,7 +1242,7 @@ void QMCWalker::reweight_walker()
 	{
 	  if(steps > min_steps)
 	    {
-	      if(dW > 2.0 || dW < 0.25 || IeeeMath::isNaN(dW))
+	      if(dW > 2.0 || dW < 0.25 || IeeeMath::isNaN(dW))	      
 		{
 		  cerr << "WARNING: Deleting walker with bad dW " << ID(move_accepted,false);
 		  cerr << "       p = " << p << "; q = " << q;
@@ -1617,10 +1617,11 @@ void QMCWalker::calculateMoveAcceptanceProbability(double GreensRatio)
       TrialWalker->walkerData.zero();
     }
 
-  if(numWarnings >= 10 || numErrors > 10000){
+  if(numWarnings >= 10 || numErrors >= 10000){
     /*
       I've had problems with exploding files. It's usually an indicator of a
-      programming error somewhere.
+      programming error somewhere, but it looks like many runs w/
+      psuedopotentials also blow up.
     */
     cerr << "ERROR: There have been " << numWarnings << " warnings and "
 	 << numErrors << " errors, so I'm quitting." << endl;

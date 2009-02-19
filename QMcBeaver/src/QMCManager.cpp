@@ -1202,7 +1202,7 @@ bool QMCManager::run(bool equilibrate)
      than zero, then we'll assume that the optimization failed. If we kept running,
      the output files would explode with error messages.
   */
-  if(QMCManager::SIGNAL_SAYS_QUIT || Properties_total.energy.getAverage() > 0)
+  if(QMCManager::SIGNAL_SAYS_QUIT )//|| Properties_total.energy.getAverage() > 0)
     return false;
   return true;
 }

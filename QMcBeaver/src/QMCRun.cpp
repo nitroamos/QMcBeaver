@@ -184,7 +184,8 @@ void QMCRun::testPseudoPotential()
 
   for(int nuc=0; nuc<globalInput.Molecule.getNumberAtoms(); nuc++){
     double r = origR(nuc);
-    Array2D<double> grid = globalInput.Molecule.getGrid(nuc,r,true);
+    int whichRG = 39; //remember, QMCPotential_Energy chooses this randomly...
+    Array2D<double> grid = globalInput.Molecule.getGrid(nuc,whichRG,r,true);
 
     Array1D<double> PsiP(grid.dim1());
     PsiP = 0.0;
@@ -493,10 +494,11 @@ void QMCRun::randomlyInitializeWalkers()
 			       Input->flags.energy_estimated_original)/
 			      Input->flags.energy_estimated_original);
       initialization_try = 1;
-      while( (w.isSingular() || rel_diff > globalInput.flags.rel_cutoff) && initialization_try < 1000)
+      while( (w.isSingular() || rel_diff > 1.0 || w.getWalkerData()->localEnergy > 0) && initialization_try < 1000)
 	{	  
-	  cerr << "Regenerating Walker " << i
-	       << " with energy " << w.getWalkerData()->localEnergy
+	  cerr << "Reinitializing Walker " << setw(4) << i
+	       << " with energy " << setprecision(5) << setw(11) << w.getWalkerData()->localEnergy
+	       << ", with psi " << setprecision(5) << setw(11) << (double)w.getWalkerData()->psi
 	       << ", rel_diff = " << rel_diff <<  "..." << endl;
 	  cerr.flush();
 	  temp_R = IW->initializeWalkerPosition();
@@ -509,6 +511,14 @@ void QMCRun::randomlyInitializeWalkers()
 
 	  initialization_try++;
 	}
+
+      if(initialization_try > 1){
+	cerr << "             Accepted     "
+	     << "             " << setprecision(5) << setw(11) << w.getWalkerData()->localEnergy
+	     << ",          " << setprecision(5) << setw(11) << (double)w.getWalkerData()->psi
+	     << ",            " << rel_diff << endl;
+	cerr.flush();
+      }
 
       int cutoff = 100;
       if( initialization_try > cutoff )
