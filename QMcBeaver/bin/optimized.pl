@@ -28,8 +28,11 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
 	$showOpt = ! $showOpt;
 	print "Using showOpt = $showOpt\n";
     } elsif($type eq "-p"){
-	$makeGraph = 1;
+	$makeGraph = ($makeGraph+1)%2;
 	print "Using makeGraph = $makeGraph\n";
+    } elsif($type eq "-i"){
+	$i_active = ($i_active+1)%2;
+	print "Using i_active = $i_active\n";
     } elsif($type eq "-f"){
 	$param = shift(@ARGV);
 	push(@fileFilters,$param);
@@ -300,6 +303,9 @@ push(@goodlt,4);
 push(@goodlt,6);
 push(@goodlt,7);
 
+my $allPlots = "set key outside below box Left reverse;\\\n";
+my $lastPlot = "set key outside below box Left reverse;\\\n";
+
 foreach $key (reverse sort keys %plotters)
 {
     my $filename;
@@ -314,7 +320,7 @@ foreach $key (reverse sort keys %plotters)
     } else {
 	$file_name .= "_plot.pdf";
     }
-
+    
     if($showOpt){
 	$caption .= ", $modbase";
     } else {
@@ -322,24 +328,25 @@ foreach $key (reverse sort keys %plotters)
     }
     my $xlabel = "r_{ij} (Bohr)";
     my $ylabel = "u_{ij}";
-
+    
     if($useExp){
 	$ylabel = "Exp[$ylabel]";
 	if($useSqr){
 	    $ylabel = "|$ylabel|^2";
 	}
     }
-
+    
     print "Adding graph of $key to: $file_name\n";
-
+    
     if(!$printedHeader){
-	$gnuplot .= " -geometry 1280x740"; #this is optimized for Amos' laptop...      
-	open(GNUPLOT, "|$gnuplot");
 	if($i_active){
+	    $gnuplot .= " -geometry 1280x740"; #this is optimized for Amos' laptop...      
+	    open(GNUPLOT, "|$gnuplot");
 	    print GNUPLOT "set terminal x11 persist raise enhanced font \"Courier-Bold,12\" title \"$file_name\" dashed linewidth 2\n";
 	} else {
 	    `/bin/rm -f $file_name`;
 	    #open(GNUPLOT, ">gnuplot.gnu");
+	    open(GNUPLOT, "|$gnuplot");
 	    print GNUPLOT "set term pdf color enhanced font \"Courier-Bold,14\" linewidth 5 dashed dl 3 size 17.5,10\n";
 	    print GNUPLOT "set output \"$file_name\"\n"; 
 	}
@@ -365,13 +372,12 @@ set grid ytics
 set mytics
 set tics scale 1.5, 0.75
 set nokey
-set key outside below box Left
-set key reverse
 #set key noenhanced
 set xlabel "$xlabel"
 set ylabel "$ylabel"
 #set yrange[$y_min:$y_max]
 gnuplot_Commands_Done
+
 
 	if($multiPlot){
 	    $numPlots = scalar keys %plotters;
@@ -380,7 +386,8 @@ gnuplot_Commands_Done
 	    $numC = 3 if($numPlots > 4);
 	    $numR = 3 if($numPlots > 6);
 	    die "Too many plots: $numPlots" if($numPlots > 9);
-	    print GNUPLOT "set multiplot layout $numR,$numC\n";
+	    $allPlots .= "set multiplot layout $numR,$numC;\\\n";
+	    $lastPlot .= "set multiplot layout $numR,$numC;\\\n";
 	}
     }
 
@@ -390,9 +397,11 @@ gnuplot_Commands_Done
     $caption =~ s/Nuclear([\w]+)/$1/g;
     $caption = "$caption Jastrow Functions";
     if($printedHeader){
-	print GNUPLOT "set title \"$caption\"\n";
+	$allPlots .= "set title \"$caption\";\\\n";
+	$lastPlot .= "set title \"$caption\";\\\n";
     } else {
-	print GNUPLOT "set title \"$caption\\n{/=8${date}}\"\n";
+	$allPlots .= "set title \"$caption\\n{/=8${date}}\";\\\n";
+	$lastPlot .= "set title \"$caption\\n{/=8${date}}\";\\\n";
     }
     $printedHeader = 1;
 
@@ -413,8 +422,10 @@ gnuplot_Commands_Done
 	}
     }
 
-    print GNUPLOT "plot [0:$xmax]";
-    for(my $i=0; $i<=$#plots; $i++){
+    $allPlots .= "plot [0:$xmax]";
+    $lastPlot .= "plot [0:$xmax]";
+#    for(my $i=0; $i<=$#plots; $i++){
+    for(my $i=$#plots; $i>=0; $i -= 1){
 	($jName,$dType,$max,$jw,$func,$optE,$example,$step) = split/&/,$plots[$i];
 	$jw =~ s/18,//g;
 	$jw =~ s/18//g;
@@ -464,37 +475,53 @@ gnuplot_Commands_Done
 	#print "line number $i has type lc $lc lt $lt\n";
 	$func = "x > $max ? 1/0 : $func";
 	#$func = "x";
-	
-	print GNUPLOT " $func lc $lc lt $lt title \"$title\""; 
+	$func = " $func lc $lc lt $lt title \"$title\""; 
+	$allPlots .= $func;
 	
 	#print GNUPLOT " [0:$kd[2]] $func title \"$kd[3]\""; 
-	if($i != $#plots){
-	    print GNUPLOT ",\\"; 
+	if($i == 0){
+	    $allPlots .= ";\\"; 
+	    $lastPlot .= " $func;\\\n";
+	} elsif($i==1) {
+	    $allPlots .= ",\\"; 
+	    $lastPlot .= " $func,\\\n";
+	} else {
+	    $allPlots .= ",\\"; 
 	}
-	print GNUPLOT "\n";
+	$allPlots .= "\n";
     }
     
     if($multiPlot){
 	#In order to only include the key once, we must make sure that the
 	#plots are always sorted the same!!!
-	print GNUPLOT "set nokey\n";
-    } else {
-	print GNUPLOT "pause mouse button2\n";
-	close(GNUPLOT);
+	$allPlots .= "set nokey;\\\n";
+	$lastPlot .= "set nokey;\\\n";
     }
-    
     
 #`/bin/rm $_.dat`;
     
 #`open $file_name`;
 }
+$allPlots .= "unset multiplot";
+$lastPlot .= "unset multiplot";
+
+#print $lastPlot;
+#print "bind e 'v=v+1; if(v%2) $lastPlot; else $allPlots;'\n"; 
+#die;
+print GNUPLOT "v=0\n";
+print GNUPLOT "bind l 'v=v+1; if(v%2) $lastPlot; else $allPlots'\n"; 
+
+print GNUPLOT "$allPlots\n";
+
 if($multiPlot){
-    print GNUPLOT "unset multiplot\n";
-    print GNUPLOT "pause mouse button2\n";
-    close(GNUPLOT);
+    #print GNUPLOT "unset multiplot\n";
 }
+print GNUPLOT "pause mouse button2\n";
+close(GNUPLOT);
 
 if($i_active == 0){
-    `bash -c \"echo Current directory \" | /usr/bin/mutt -s \"[jastrows] $file_name\" -a $file_name nitroamos\@gmail.com`;
+    my $email = "nitroamos\@gmail.com";
+    print "Check $email...\n";
+    `bash -c \"echo Current directory \" | /usr/bin/mutt -s \"[jastrows] $file_name\" -a $file_name $email`;
     `rm $file_name`;
 }
