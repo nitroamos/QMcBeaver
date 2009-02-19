@@ -109,7 +109,7 @@ public:
   Array1D<double> Energy_ee;
 
   //A bunch of data for ecp evaluation
-  Array1D< Array2D< Array1D<double> > > angularGrids;
+  Array2D< Array2D< Array1D<double> > > angularGrids;
   Array1D<double> integrand;
   Array2D<qmcfloat> * coeffs;
   Array2D<double> X;

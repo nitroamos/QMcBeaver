@@ -32,6 +32,7 @@ class MathFunctions
   */
   static double legendre(int l, double x);
 
+  static void randomlyRotate(Array2D<double> & points);
   /**
      Returns the error function of a double.
      @param x A double value.

@@ -122,13 +122,6 @@ class QMCMolecule
   Array1D< Array1D<double> > gridWeights;
 
   /**
-     In order to perform the ecp integration, we need
-     to evaluate the legendre function at each point.
-     Dim L,nuc; grid point
-  */
-  Array1D< Array2D<double> > gridLegendre;
-
-  /**
      We store the grid as points on the unit sphere centered
      at the origin. This function is called to provide scales
      and translated grid points.
@@ -138,7 +131,7 @@ class QMCMolecule
      @param translate should be false if you want to keep
      it centered at the origin
   */
-  Array2D<double> getGrid(int nuc, double R, bool translate);
+  Array2D<double> getGrid(int nuc, int rg, double R, bool translate);
 
   /**
      Array containing all of the different atom labels used in the molecule.
@@ -187,9 +180,12 @@ class QMCMolecule
      @return 1 if there were some pseudopotentials read in
   */
   int readPseudoPotential(string runfile);
-
+  int getNumL(int nuc){ return numL(nuc); };
+  const static int numRandomGrids = 50;
  private:
   int Natoms;
+  
+  Array1D<int> numL;
 
   /**
      This will be initialized to the same value as:
@@ -200,11 +196,10 @@ class QMCMolecule
 
   /**
      We access the Lebedev-Laikov functions once, and
-     save the grid points in these arrays.
-     indexed: num nuclei; num grid points, 3
+     save the grid points in these arrays. indexed:
+     num nuclei x num grids : num grid points x 3
   */
-  Array1D< Array2D<double> > grid;
-
+  Array2D< Array2D<double> > grid;
 };
 
 #endif
