@@ -107,7 +107,7 @@ public:
      @param angularCi the coefficients Ci of the polynomials produced by angularGrid
      @param angularCi (output) the evaluated basis functions
   */
-  void QMCBasisFunction::basisFunctionsOnGrid(Array2D<double>& grid,
+  void basisFunctionsOnGrid(Array2D<double>& grid,
 					      int nuc,
 					      Array2D< Array1D<double> > & angularCi,
 					      Array2D<qmcfloat>& chi_val);

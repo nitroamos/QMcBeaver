@@ -1,3 +1,9 @@
+Wed, March 18 Daniel R. Fisher
+1.  I improved the way the electrons are assigned to the nuclei.
+    Previously there were some cases where too many electrons were
+    being assigned to one nucleus, which caused the initialization to
+    crash.
+
 Wed, Feb 18 Amos Anderson
 1.  I've been trying to get the pseudopotential code to work... I fixed a bug,
     discovered by comparing with 'qwalk' (thanks!), but I'm still not sure if I

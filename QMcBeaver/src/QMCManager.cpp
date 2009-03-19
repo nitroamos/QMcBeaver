@@ -1003,7 +1003,7 @@ bool QMCManager::run(bool equilibrate)
               writeTimingData( cout );
 
               if(globalInput.flags.checkpoint == 1)
-                writeCheckpoint();
+		//                writeCheckpoint();
 
               writeRestart();
             }
@@ -1145,7 +1145,7 @@ bool QMCManager::run(bool equilibrate)
                     finalize();
 
                     if(globalInput.flags.checkpoint == 1)
-                      writeCheckpoint();
+		      //                      writeCheckpoint();
 
                     break;
                 }
@@ -1180,7 +1180,7 @@ bool QMCManager::run(bool equilibrate)
 
   if( globalInput.flags.checkpoint == 1 )
     {
-      writeCheckpoint();
+      //      writeCheckpoint();
     }
 
   if(  globalInput.flags.write_all_energies_out == 1 )
@@ -2111,7 +2111,7 @@ void QMCManager::initializeCalculationState(long int iseed)
 	      writeEnergyResultsSummary(clog);
 	      if (globalInput.flags.zero_out_checkpoint_statistics == 1)
 		clog << "Will zero the checkpoint." << endl;
-	      if (equilibrating == false && globalInput.flags.optimize_Psi == 1)
+	      if (equilibrating == false)
 		equilibrating = globalInput.flags.equilibrate_every_opt_step;
 	    }
 	  else
@@ -2124,7 +2124,7 @@ void QMCManager::initializeCalculationState(long int iseed)
 	      //	      exit(0);
 	      clog << " Randomly initializing walkers." << endl;
 	      qmcCheckpoint.close();
-	      QMCnode.zeroOut();
+	      zeroOut();
 	      ran.initialize(iseed,globalInput.flags.my_rank);
 	      QMCnode.randomlyInitializeWalkers();
 	      equilibrating = globalInput.flags.equilibrate_first_opt_step;
@@ -2141,12 +2141,17 @@ void QMCManager::initializeCalculationState(long int iseed)
 
           clog << "Randomly initializing walkers." << endl;
           localTimers.getInitializationStopwatch()->start();
-          QMCnode.zeroOut();
+          zeroOut();
           ran.initialize(iseed,globalInput.flags.my_rank);
           QMCnode.randomlyInitializeWalkers();
           equilibrating = globalInput.flags.equilibrate_first_opt_step;
           localTimers.getInitializationStopwatch()->stop();
         }
+    }
+  if (equilibrating == true)
+    {
+      iteration = 0;
+      zeroOut();
     }
 }
 

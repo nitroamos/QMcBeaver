@@ -8,15 +8,6 @@
 QMCDansWalkerInitialization::QMCDansWalkerInitialization(QMCInput * INPUT)
 {
   Input = INPUT;
-
-  for (int i=0; i<Input->flags.Natoms; i++){
-    if(Input->Molecule.Z(i) >= 18){
-      clog << "Warning: QMCDansWalkerInitialization can only handle atoms with up to Z=18, but atom "
-	   << i << " has Z=" << Input->Molecule.Z(i) << endl;
-      clog << "         Instead of quitting, we'll proceed with our best guess..." << endl;
-    }
-  }
-
   if (!arraysInitialized)
     {
       arraysInitialized = true;
@@ -85,6 +76,15 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 
   Array2D<int> ab_count(natoms,3);
   ab_count = assign_electrons_to_nuclei();
+
+  cout << "initial ab_count:" << endl;
+  for (int i=0; i<natoms; i++)
+    {
+      cout << "atom " << i << ":";
+      for (int j=0; j<3; j++)
+	cout << "\t" << ab_count(i,j);
+      cout << endl;
+    }
 
   // Redistribute electrons if there are charged centers.
   // We use Zeff here- the effective nuclear charge shielded by pseudo 
@@ -225,6 +225,15 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  }
       }
 
+  cout << "ab_count after charged:" << endl;
+  for (int i=0; i<natoms; i++)
+    {
+      cout << "atom " << i << ":";
+      for (int j=0; j<3; j++)
+	cout << "\t" << ab_count(i,j);
+      cout << endl;
+    }
+
   // Now we check to make sure no center has too many or too few electrons of 
   // one type.  We want to make sure each energy level is full before we start
   // filling the next one.  We assume the previous checks have made the atoms
@@ -264,31 +273,53 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
             {
               int extra_alphas = ab_count(i,1)-1;
               for (int p=0; p<extra_alphas; p++)
-                for (int q=0; q<natoms; q++)
-                  if (q != i && ab_count(q,1) <= ab_count(q,2))
-                    {
-                      ab_count(i,1) -= 1;
-                      ab_count(q,1) += 1;
-                      ab_count(i,2) += 1;
-                      ab_count(q,2) -= 1;
-                      break;
-                    }
-            }
+		{
+		  for (int q=0; q<natoms; q++)
+		    if (q != i)
+		      if (ab_count(q,1) <= ab_count(q,2))
+			{
+			  ab_count(i,1) -= 1;
+			  ab_count(q,1) += 1;
+			  ab_count(i,2) += 1;
+			  ab_count(q,2) -= 1;
+			  break;
+			}
+		      else if (Input->Molecule.Z(q) - ab_count(q,0) > 0)
+			{
+			  ab_count(i,1) -= 1;
+			  ab_count(i,0) -= 1;
+			  ab_count(q,1) += 1;
+			  ab_count(q,0) += 1;
+			  break;
+			}
+		    }
+	    }
           if (ab_count(i,2) > 1)
             {
               int extra_betas = ab_count(i,2)-1;
               for (int r=0; r<extra_betas; r++)
                 for (int s=0; s<natoms; s++)
-                  if (s != i && ab_count(s,1) >= ab_count(s,2))
-                    {
-                      ab_count(i,2) -= 1;
-                      ab_count(i,1) += 1;
-                      ab_count(s,2) += 1;
-                      ab_count(s,1) -= 1;
-                      break;
-                    }
-            }
-        }
+		  if (s != i)
+		    {
+		      if (ab_count(s,1) >= ab_count(s,2))
+			{
+			  ab_count(i,2) -= 1;
+			  ab_count(i,1) += 1;
+			  ab_count(s,2) += 1;
+			  ab_count(s,1) -= 1;
+			  break;
+			}
+		      else if (Input->Molecule.Z(s) - ab_count(s,0) > 0)
+			{
+			  ab_count(i,2) -= 1;
+			  ab_count(i,0) -= 1;
+			  ab_count(s,2) += 1;
+			  ab_count(s,0) += 1;
+			  break;
+			}
+		    }
+	    }
+	}
       if (Input->Molecule.Z(i) <= 10 && Input->Molecule.Z(i) > 2)
         {
           // If this atom is in the second row, it should have at least one but
@@ -298,14 +329,25 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               int extra_alphas = ab_count(i,1)-5;
               for (int j=0; j<extra_alphas; j++)
                 for (int k=0; k<natoms; k++)
-                  if (k != i && ab_count(k,1) <= ab_count(k,2))
-                    { 
-                      ab_count(i,1) -= 1;
-                      ab_count(k,1) += 1;
-                      ab_count(i,2) += 1;
-                      ab_count(k,2) -= 1;
-                      break;
-                    }      
+		  if (k != i)
+		    {
+		      if (ab_count(k,1) <= ab_count(k,2))
+			{ 
+			  ab_count(i,1) -= 1;
+			  ab_count(k,1) += 1;
+			  ab_count(i,2) += 1;
+			  ab_count(k,2) -= 1;
+			  break;
+			}
+		      else if (Input->Molecule.Z(k) - ab_count(k,0) > 0)
+			{
+			  ab_count(i,1) -= 1;
+			  ab_count(i,0) -= 1;
+			  ab_count(k,1) += 1;
+			  ab_count(k,0) += 1;
+			  break;
+			}
+		    }
             }
           if (ab_count(i,1) == 0)
             {
@@ -313,40 +355,73 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               // is not filled, so we can't start the second one.  We need to
               // get an alpha from another atom.
               for (int j=0; j<natoms; j++)
-                if (j != i && ab_count(j,1) >= ab_count(j,2))
-                  {
-                    ab_count(i,1) += 1;
-                    ab_count(j,1) -= 1;
-                    ab_count(i,2) -= 1;
-                    ab_count(j,2) += 1;
-                    break;
-                  }
+                if (j != i)
+		  {
+		    if (ab_count(j,1) >= ab_count(j,2))
+		      {
+			ab_count(i,1) += 1;
+			ab_count(j,1) -= 1;
+			ab_count(i,2) -= 1;
+			ab_count(j,2) += 1;
+			break;
+		      }
+		    else if (Input->Molecule.Z(j) - ab_count(j,0) < 0)
+		      {
+			ab_count(i,1) += 1;
+			ab_count(i,0) += 1;
+			ab_count(j,1) -= 1;
+			ab_count(j,0) -= 1;
+			break;
+		      }
+		  }
             }
           if (ab_count(i,2) > 5)
             {
               int extra_betas = ab_count(i,2)-5;
               for (int m=0; m<extra_betas; m++)
                 for (int n=0; n<natoms; n++)
-                  if (n != i && ab_count(n,1) >= ab_count(n,2))
-                    {
-                      ab_count(i,2) -= 1;
-                      ab_count(n,2) += 1;
-                      ab_count(i,1) += 1;
-                      ab_count(n,1) -= 1;
-                      break;
-                    }
+                  if (n != i)
+		    {
+		      if (ab_count(n,1) >= ab_count(n,2))
+			{
+			  ab_count(i,2) -= 1;
+			  ab_count(n,2) += 1;
+			  ab_count(i,1) += 1;
+			  ab_count(n,1) -= 1;
+			  break;
+			}
+		      else if (Input->Molecule.Z(n) - ab_count(n,0) > 0)
+			{
+			  ab_count(i,1) -= 1;
+			  ab_count(i,0) -= 1;
+			  ab_count(n,1) += 1;
+			  ab_count(n,0) += 1;
+			  break;
+			}
+		    }
             }
           if (ab_count(i,2) == 0)
             {
               for (int j=0; j<natoms; j++)
-                if (j != i && ab_count(j,2) >= ab_count(j,1))
+                if (j != i)
                   {
-                    ab_count(i,2) += 1;
-                    ab_count(j,2) -= 1;
-                    ab_count(i,1) -= 1;
-                    ab_count(j,1) += 1;
-                    break;
-                  }
+		    if (ab_count(j,2) >= ab_count(j,1))
+		      {
+			ab_count(i,2) += 1;
+			ab_count(j,2) -= 1;
+			ab_count(i,1) -= 1;
+			ab_count(j,1) += 1;
+			break;
+		      }
+		    else if (Input->Molecule.Z(j) - ab_count(j,0) < 0)
+		      {
+			ab_count(i,2) += 1;
+			ab_count(i,0) += 1;
+			ab_count(j,2) -= 1;
+			ab_count(j,0) -= 1;
+			break;
+		      }
+		  }
             }
         }
       if (Input->Molecule.Z(i) <= 18 && Input->Molecule.Z(i) > 10)
@@ -358,56 +433,99 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
               int extra_alphas = ab_count(i,1)-9;
               for (int j=0; j<extra_alphas; j++)
                 for (int k=0; k<natoms; k++)
-                  if (k != i && ab_count(k,1) <= ab_count(k,2))
-                    {
-                      ab_count(i,1) -= 1;
-                      ab_count(k,1) += 1;
-                      ab_count(i,2) += 1;
-                      ab_count(k,2) -= 1;
-                      break;
-                    }
+                  if (k != i)
+		    {
+		      if (ab_count(k,1) <= ab_count(k,2))
+			{
+			  ab_count(i,1) -= 1;
+			  ab_count(k,1) += 1;
+			  ab_count(i,2) += 1;
+			  ab_count(k,2) -= 1;
+			  break;
+			}
+		      else if (Input->Molecule.Z(k) - ab_count(k,0) > 0)
+			{
+			  ab_count(i,1) -= 1;
+			  ab_count(i,0) -= 1;
+			  ab_count(k,1) += 1;
+			  ab_count(k,0) += 1;
+			  break;
+			}
+		    }
             }
           if (ab_count(i,1) < 5)
             {
               int alphas_needed = 5-ab_count(i,1);
               for (int j=0; j<alphas_needed; j++)
                 for (int k=0; k<natoms; k++)
-                  if (k != i && ab_count(k,1) >= ab_count(k,2))
+                  if (k != i)
                     {
-                      ab_count(i,1) += 1;
-                      ab_count(k,1) -= 1;
-                      ab_count(i,2) -= 1;
-                      ab_count(k,2) += 1;
-                      break;
-                    }
+		      if (ab_count(k,1) >= ab_count(k,2))
+			{
+			  ab_count(i,1) += 1;
+			  ab_count(k,1) -= 1;
+			  ab_count(i,2) -= 1;
+			  ab_count(k,2) += 1;
+			  break;
+			}
+		      else if (Input->Molecule.Z(k) - ab_count(k,0) < 0)
+			{
+			  ab_count(i,1) += 1;
+			  ab_count(i,0) += 1;
+			  ab_count(k,1) -= 1;
+			  ab_count(k,0) -= 1;
+			  break;
+			}
+		    }
             }
           if (ab_count(i,2) > 9)
             {
               int extra_betas = ab_count(i,2)-9;
               for (int m=0; m<extra_betas; m++)
                 for (int n=0; n<natoms; n++)
-                  if (n != i && ab_count(n,1) >= ab_count(n,2))
+                  if (n != i)
                     {
-                      ab_count(i,2) -= 1;
-                      ab_count(n,2) += 1;
-                      ab_count(i,1) += 1;
-                      ab_count(n,1) -= 1;
-                      break;
-                    }
+		      if (ab_count(n,1) >= ab_count(n,2))
+			{
+			  ab_count(i,2) -= 1;
+			  ab_count(n,2) += 1;
+			  ab_count(i,1) += 1;
+			  ab_count(n,1) -= 1;
+			  break;
+			}
+		      else if (Input->Molecule.Z(n) - ab_count(n,0) > 0)
+			{
+			  ab_count(i,2) -= 1;
+			  ab_count(i,0) -= 1;
+			  ab_count(n,2) += 1;
+			  ab_count(n,0) += 1;
+			  break;
+			}
+		    }
             }
           if (ab_count(i,2) < 5)
             {
               int betas_needed = 5-ab_count(i,2);
               for (int j=0; j<betas_needed; j++)
                 for (int k=0; k<natoms; k++)
-                  if (k != i && ab_count(k,2) >= ab_count(k,1))
+                  if (k != i)
                     {
-                      ab_count(i,2) += 1;
-                      ab_count(k,2) -= 1;
-                      ab_count(i,1) -= 1;
-                      ab_count(k,1) += 1;
-                      break;
-                    }
+		      if (ab_count(k,2) >= ab_count(k,1))
+			{
+			  ab_count(i,2) += 1;
+			  ab_count(k,2) -= 1;
+			  ab_count(i,1) -= 1;
+			  ab_count(k,1) += 1;
+			  break;
+			}
+		      else if (Input->Molecule.Z(k) - ab_count(k,0) < 0)
+			{
+			  ab_count(i,2) += 1;
+			  ab_count(i,0) += 1;
+			  ab_count(k,2) -= 1;
+			  ab_count(k,0) -= 1;
+			}
+		    }
             }
         }       
     }
@@ -424,6 +542,15 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  ab_count(i,1) -= pseudo/2;
 	  ab_count(i,2) -= pseudo/2;
 	}
+    }
+
+  cout << "ab_count after alpha/beta:" << endl;
+  for (int i=0; i<natoms; i++)
+    {
+      cout << "atom " << i << ":";
+      for (int j=0; j<3; j++)
+	cout << "\t" << ab_count(i,j);
+      cout << endl;
     }
 
   // Check to see that all electrons have been assigned.
@@ -607,7 +734,6 @@ Array2D<int> QMCDansWalkerInitialization::assign_electrons_to_nuclei()
 	    }
         }
     }
-
   return atom_occ;
 }
 
@@ -999,32 +1125,26 @@ double QMCDansWalkerInitialization::generateThetaCoordinate(int index)
 Array1D<double> QMCDansWalkerInitialization::\
                               generateRadialDistances(int Z, int n, int nelecs)
 {
-  int atomicNumberIndex = min(17,Z-1);
-  int energyLevelIndex =  min(2,n-1);
-
-  if(atomicNumberIndex > radialSplinesMade.dim1()){
-    clog << "Error: QMCDansWalkerInitialization can not initialize atom with atomic number: " << Z << endl;
-    exit(0);
-  }
+  int atomicNumberIndex = Z-1;
+  int energyLevelIndex = n-1;
   if (radialSplinesMade(atomicNumberIndex,energyLevelIndex) == 0)
     {
       Array1D<double> r_array;
-      r_array = RadialDistributions::getRadialArray(atomicNumberIndex+1,
-						    energyLevelIndex+1);
+      r_array = RadialDistributions::getRadialArray(Z,n);
       double derivativeAtZero = r_array(1)*20;
       double derivativeAtOne = (r_array(20) - r_array(19))*20;
       radialSplines(atomicNumberIndex,energyLevelIndex).\
 	initializeWithFunctionValues\
-	(x_array,r_array,derivativeAtZero,derivativeAtOne);
+	                    (x_array,r_array,derivativeAtZero,derivativeAtOne);
       radialSplinesMade(atomicNumberIndex,energyLevelIndex) = 1;
     }
   Array1D<double> r_locs(nelecs);
   for (int i=0; i<nelecs; i++)
     {
       radialSplines(atomicNumberIndex,energyLevelIndex).evaluate\
-	(ran.unidev());
+                                                   (ran.unidev());
       r_locs(i) = radialSplines(atomicNumberIndex,energyLevelIndex).\
-	getFunctionValue();
+                                                            getFunctionValue();
     }
   return r_locs;
 }
