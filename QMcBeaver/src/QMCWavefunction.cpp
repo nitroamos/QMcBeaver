@@ -403,7 +403,16 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
 	  strm >> d;
 	  // This coefficient is constrained
 	  // when optimizing
-	  rhs.CI_constraints(i) = c;
+	  if(rhs.CI_constraints(c) == -1){
+	    rhs.CI_constraints(i) = c;
+	  } else {
+	    clog << "Warning: constraint for determinant "
+		 << i << " depends on constrained determinant "
+		 << c << " so we'll set it to the original determinant "
+		 << rhs.CI_constraints(c) << "." << endl;
+	    rhs.CI_constraints(i) = rhs.CI_constraints(c);
+	  }
+
 	  rhs.CI_const_coeffs(i) = d;
 	  rhs.numCIIndependent--;
 	} else {
@@ -413,8 +422,8 @@ istream& operator >>(istream &strm,QMCWavefunction &rhs)
 
   for(int i=0; i<rhs.Ndeterminants; i++)
     if(rhs.CI_constraints(i) != -1)
-      rhs.CI_coeffs(i) = rhs.CI_const_coeffs(i) * rhs.CI_coeffs(rhs.CI_constraints(i));
-  
+	rhs.CI_coeffs(i) = rhs.CI_const_coeffs(i) * rhs.CI_coeffs(rhs.CI_constraints(i));
+
   if(rhs.Ncharge != 0)
     {
       cerr << "Error: molecular charges have not been included in QMcBeaver\n";
