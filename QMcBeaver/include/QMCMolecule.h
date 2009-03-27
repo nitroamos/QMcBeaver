@@ -180,8 +180,13 @@ class QMCMolecule
      @return 1 if there were some pseudopotentials read in
   */
   int readPseudoPotential(string runfile);
+
+  void writeXYZ(ostream & strm, Array2D<double> & R, Array2D<double> &grad,
+		int numA, int markE);
+
   int getNumL(int nuc){ return numL(nuc); };
   const static int numRandomGrids = 50;
+
  private:
   int Natoms;
   

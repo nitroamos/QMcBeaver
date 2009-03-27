@@ -53,6 +53,7 @@ class QMCSurfer
   void equipotentialSurface();
   void scanEnergies(int, int, int, int, double, double, double);
   void surfaceExplorer();
+  void grid3D();
 };
 
 #endif

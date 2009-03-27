@@ -3,6 +3,9 @@
 */
 #include "QMCSurfer.h"
 #include "QMCInput.h"
+#include "MathFunctions.h"
+#include "QMCPotential_Energy.h"
+#include "StringManipulation.h"
 
 using namespace std;
 
@@ -23,6 +26,7 @@ QMCSurfer::~QMCSurfer()
 int QMCSurfer::mainMenu(QMCFunctions * useQMF, int iteration,
 			Array2D<double> newR)
 {
+  QMCPotential_Energy::printElec = -2;
   /*
   int entry = min(globalInput.flags.max_time_steps -
 		  globalInput.flags.equilibration_steps - 10,
@@ -34,7 +38,7 @@ int QMCSurfer::mainMenu(QMCFunctions * useQMF, int iteration,
   static char ok = 's';
   static int iteration_to_stop = iteration + 100 - 1;
   cout << "iteration_to_stop = " << iteration_to_stop << endl;
-  string prompt = "[e]xit [c]usp toggle [j]astrow toggle [d]etailed [r]eset [n]ext [s]can s[w]apper s[v]d cutoff [p]ositions [a]nother walker [i]terations ";
+  string prompt = "[e]xit [c]usp toggle [j]astrow toggle [d]etailed [r]eset [n]ext [s]can [g]rid s[w]apper s[v]d cutoff [p]ositions [a]nother walker [i]terations ";
   if( iteration >= iteration_to_stop)
     {
       iteration_to_stop += 1000;
@@ -47,6 +51,10 @@ int QMCSurfer::mainMenu(QMCFunctions * useQMF, int iteration,
       if(mystr != "") ok = (mystr.c_str())[0];
       ok = tolower(ok);
 
+      /*
+	Not all of these options necessarily work because I didn't save all the code I modified, often because it complicated
+	other parts of QMcBeaver.
+      */
       while(ok != 'n' && ok != 'a')
 	{
 	  int skip;
@@ -74,6 +82,14 @@ int QMCSurfer::mainMenu(QMCFunctions * useQMF, int iteration,
 	      walkerData.updateDistances(R);
 	      //QMF->evaluate(R,walkerData);
 	      surfaceExplorer();
+	      break;
+
+	    case 'g':
+	      R = newR;
+	      walkerData.whichE = -1;
+	      walkerData.updateDistances(R);
+	      //QMF->evaluate(R,walkerData);
+	      grid3D();
 	      break;
 
 	    case 'r':
@@ -117,7 +133,7 @@ int QMCSurfer::mainMenu(QMCFunctions * useQMF, int iteration,
 		{
 		  cout << "Turning cusp replacement off..." << endl;
 		  globalInput.flags.replace_electron_nucleus_cusps = 0;
-		} else {
+		} else {		  
 		  cout << "Turning cusp replacement on..." << endl;
 		  globalInput.flags.replace_electron_nucleus_cusps = 1;
 		}
@@ -558,7 +574,7 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
 	    {
 	      printf(" %20.7e %20.7e",
 		     -0.5*walkerData.D_xx,
-		     -0.5*walkerData.U);
+		     -0.5*walkerData.U_xx);
 	    }
 	  printf(" %20.10e",
 		 walkerData.potentialEnergy);
@@ -571,7 +587,7 @@ void QMCSurfer::scanEnergies(int moveE, int nucStart, int nucStop, int numSteps,
 	    {
 	      printf(" %20.10f %20.10f",
 		     -0.5*walkerData.D_xx,
-		     -0.5*walkerData.U);
+		     -0.5*walkerData.U_xx);
 	    }
 	  printf(" %20.14f",
 		 walkerData.potentialEnergy);
@@ -806,4 +822,147 @@ void QMCSurfer::surfaceExplorer()
 	  }
 	}
     }
+}
+
+void QMCSurfer::grid3D()
+{
+  static int lowerAtom = -1;
+  static int upperAtom = -1;
+  double lowerR = 1.0;
+  double upperR = 1.0;
+  for(int i=0; i<globalInput.Molecule.getNumberAtoms(); i++)
+    {
+      Array2D<double> LowerL(1,3);
+      LowerL(0,0) = -1e10;
+      LowerL(0,1) = -1e10;
+      LowerL(0,2) = -1e10;
+      Array2D<double> UpperR(1,3);
+      UpperR = LowerL;
+      UpperR *= -1;
+      if(lowerAtom == -1 || MathFunctions::rij(LowerL,globalInput.Molecule.Atom_Positions,0,i) <  lowerR){
+	lowerR = MathFunctions::rij(LowerL,globalInput.Molecule.Atom_Positions,0,i);
+	lowerAtom = i;
+      }
+      if(upperAtom == -1 || MathFunctions::rij(UpperR,globalInput.Molecule.Atom_Positions,0,i) <  upperR){
+	upperR = MathFunctions::rij(UpperR,globalInput.Molecule.Atom_Positions,0,i);
+	upperAtom = i;
+      }
+    }
+
+  static int moveE   = 0;
+  static int outputT = 1;
+  static int numG    = 20;
+  static double pert = 1.0;
+  char ok = 'n';
+
+  while(ok == 'n' || ok == 'N')
+    {
+      string mystr;
+
+      cout << "Enter electron to move [" << moveE << "]: ";
+      getline(cin,mystr);
+      if(mystr != "") stringstream(mystr) >> moveE;
+
+      cout << "1: Total Psi\n";
+      cout << "2: Total Energy\n";
+      cout << "3: Kinetic Energy\n";
+      cout << "4: Potential Energy\n";
+      cout << "5: Jastrow Psi\n";
+      cout << "6: Jastrow Lap\n";
+      cout << "7: Slater Psi\n";
+      cout << "8: Slater Lap\n";
+      cout << "Enter output type [" << outputT << "]: ";
+      getline(cin,mystr);
+      if(mystr != "") stringstream(mystr) >> outputT;
+
+      cout << "Number of grid points [" << numG << "]: ";
+      getline(cin,mystr);
+      if(mystr != "") stringstream(mystr) >> numG;
+
+      cout << "Box diag increase [" << pert << "]: ";
+      getline(cin,mystr);
+      if(mystr != "") stringstream(mystr) >> pert;
+
+      ok = 'y';
+    }
+
+  //double pert = 0.0;
+  double origX = globalInput.Molecule.Atom_Positions(lowerAtom,0)-pert;
+  double origY = globalInput.Molecule.Atom_Positions(lowerAtom,1)-pert;
+  double origZ = globalInput.Molecule.Atom_Positions(lowerAtom,2)-pert;
+  double maxX  = globalInput.Molecule.Atom_Positions(upperAtom,0)+pert;
+  double maxY  = globalInput.Molecule.Atom_Positions(upperAtom,1)+pert;
+  double maxZ  = globalInput.Molecule.Atom_Positions(upperAtom,2)+pert;
+
+  int numX = numG;
+  int numY = numG;
+  int numZ = numG;
+  double deltaX = (maxX-origX)/numX;
+  double deltaY = (maxY-origY)/numY;
+  double deltaZ = (maxZ-origZ)/numZ;
+
+  printf("orig=(%20.10e, %20.10e, %20.10e) max=(%20.10e,%20.10e,%20.10e)\n",origX,origY,origZ,maxX,maxY,maxZ);
+  printf("delta=(%20.10e,%20.10e,%20.10e)\n",deltaX,deltaY,deltaZ);
+
+  string filename = "scan3D."+globalInput.flags.base_file_name
+    + "." + StringManipulation::intToString(moveE) + ".";
+  string xyzname  = filename + "xyz";
+  ofstream xyzfile( xyzname.c_str() );
+  walkerData.whichE = -1;
+  walkerData.updateDistances(R);
+  QMF->evaluate(R,walkerData);
+  globalInput.Molecule.writeXYZ(xyzfile,R,walkerData.gradPsiRatio,
+				globalInput.WF.getNumberElectrons(true),
+				moveE);
+  xyzfile.close();
+
+  Array1D<double> data(numX*numY*numZ);
+  double dMax = 0.0;
+  double dMin = 0.0;
+  double dAvg = 0.0;
+  int idx = 0;
+  for(int i=0; i<numX; i++)
+    for(int j=0; j<numY; j++)
+      for(int k=0; k<numZ; k++){
+	R(moveE,0) = origX + deltaX*i;
+	R(moveE,1) = origY + deltaY*j;
+	R(moveE,2) = origZ + deltaZ*k;
+
+	walkerData.updateDistances(R);
+	QMF->evaluate(R,walkerData);
+
+	switch(outputT){
+	case 1: data(idx) = (double)walkerData.psi; break;
+	case 2: data(idx) = walkerData.localEnergy; break;
+	case 3: data(idx) = walkerData.kineticEnergy; break;
+	case 4: data(idx) = walkerData.potentialEnergy; break;
+	case 5: data(idx) = walkerData.U; break;
+	case 6: data(idx) = walkerData.U_xx; break;
+	case 7: data(idx) = walkerData.D; break;
+	case 8: data(idx) = walkerData.D_xx; break;
+	default: cout << "Unknown output type: " << outputT << endl;
+	  exit(0); break;	  
+	}
+
+	dMax = max(fabs(data(idx)),dMax);
+	dMin = min(fabs(data(idx)),dMin);
+	dAvg += data(idx);
+	idx++;
+      }
+  dAvg /= data.dim1();
+  double scale = 1.0/dAvg;
+
+  FILE * pf;
+  string grdname = filename+"grd";
+  pf = fopen(grdname.c_str(),"w");
+  fprintf(pf,"QMcBeaver output=%i\n",outputT);
+  fprintf(pf,"%20i %20i %20i  //Num grid points\n",numX,numY,numZ);
+  fprintf(pf,"%20.10e %20.10e %20.10e  //Origin of the 3D grid\n",origX,origY,origZ);
+  fprintf(pf,"%20.10e %20.10e %20.10e  //grid increments\n",deltaX,deltaY,deltaZ);
+  printf("max=%20.10e min=%20.10e avg=%20.10e scale=%20.10e\n",dMax,dMin,dAvg,scale);
+  for(int i=0; i<data.dim1(); i++){
+    fprintf(pf," %20.14f", data(i)*scale);
+    if(i%5==0 && i > 0) fprintf(pf,"\n");   
+  }
+  fclose(pf);
 }

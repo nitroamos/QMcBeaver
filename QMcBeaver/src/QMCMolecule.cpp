@@ -472,5 +472,46 @@ ostream& operator <<(ostream& strm, QMCMolecule& rhs)
   return strm;
 }
 
+void QMCMolecule::writeXYZ(ostream& strm, Array2D<double> & R, Array2D<double> & grad, int numA, int markE)
+{
+  bool printGrad = false;
+  if(grad.dim1() == R.dim1())
+    printGrad = true;
+
+  strm << (Natoms+R.dim1()) << endl;
+  strm << "XYZ Frame" << endl;
+  strm.unsetf(ios::fixed);
+  strm.setf(ios::scientific);
+  for(int i=0; i<Natoms; i++)
+    {
+      strm << setw(5) << left << Atom_Labels(i);
+      for(int j=0; j<3; j++)
+	strm << setw(20) << Atom_Positions(i,j);
+      if(printGrad)
+	for(int j=0; j<3; j++)
+	  strm << setw(20) << 0.0;
+      strm << endl;
+    }
+  for(int i=0; i<R.dim1(); i++)
+    {
+      if(i < numA){
+	if(i == markE) 
+	  strm << setw(5) << left << "Hs";
+	else
+	  strm << setw(5) << left << "Sg";
+      } else {
+	if(i == markE) 
+	  strm << setw(5) << left << "Mt";
+	else
+	  strm << setw(5) << left << "Bh";
+      }
+      for(int j=0; j<3; j++)
+	strm << setw(20) << R(i,j);
+      if(printGrad)
+	for(int j=0; j<3; j++)
+	  strm << setw(20) << (grad(i,j)*-0.03);
+      strm << endl;
+    }
+}
 
 
