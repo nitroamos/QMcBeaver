@@ -254,7 +254,7 @@ for line in gamess_output:
     if string.find(line,'CHARGE OF MOLECULE') !=-1 :
         charge = string.atoi(string.split(line)[4])
 #we'll rely on orbital occupations to indicate charge
-	charge = 0
+#	charge = 0
     if string.find(line,'TOTAL NUMBER OF ATOMS') !=-1 :
         atoms = string.atoi(string.split(line)[5])
     if string.find(line,'NUMBER OF OCCUPIED ORBITALS (ALPHA)') != -1 :
@@ -280,7 +280,18 @@ name = "MOREAD orbitals from " + Inputfile + "\n"
 raw_orbitals = []
 orbital_vecs = []
 orbital_name = []
+iorder_vecs  = []
+norder_vecs  = 0
 for i in range(len(input_data)):
+    m = re.search('norder\s*=(\d+)',input_data[i],re.I)
+    if m:
+	norder_vecs = m.group(1)
+    m = re.search('iorder\((\d+)\)=([\d,]+)',input_data[i],re.I)
+    if m:
+	iorder_vecs.append(int(m.group(1)))
+	iorder_vecs += [int(k) for k in m.group(2).split(',')]
+	print "Notice: found IORDER section for MOREAD orbitals: ",iorder_vecs
+	
     if string.find(input_data[i],'$END') != -1 and collecting == 1:
 	collecting = 0
 	orbital_vecs = orbital_vecs + [raw_orbitals]
@@ -368,10 +379,20 @@ except:
     print "",
 
 # Get the wavefunction parameters from the .dat file.
-
 orbital_number = []
 orbital_coeffs = [] 
+wavefunction   = []
+current_index  = 1
 for n in range(len(orbital_vecs[orb_choice])):
+    orbital_index = string.atoi(orbital_vecs[orb_choice][n][0:2])
+
+    #if the index changed, then we completed the old orbital, so we add it to the wf
+    if orbital_index != current_index:
+	wavefunction.append(orbital_coeffs)
+	current_index = orbital_index
+	orbital_coeffs = []
+
+    #turn the text into numbers: index coeff1 coeff2 coeff3 coeff4 coeff5
     len_line = len(orbital_vecs[orb_choice][n])
     number_of_entries = len_line/15
     line_data = range(number_of_entries)
@@ -380,104 +401,55 @@ for n in range(len(orbital_vecs[orb_choice])):
                    orbital_vecs[orb_choice][n][len_line-15*(i+1)-1:len_line-15*i-1]
     for j in range(len(line_data)):
         line_data[j] = string.atof(line_data[j])
-    orbital_coeffs.append(line_data)
-    number = orbital_vecs[orb_choice][n][0:2]
-    orbital_number.append(string.atoi(number))
 
-wavefunction = []
-alpha_orbitals = []
-beta_orbitals = []
+    #append the current line to the current orbital
+    orbital_coeffs = orbital_coeffs + line_data
 
-trialFunctionType = "restricted"
+#Add that last orbital
+wavefunction.append(orbital_coeffs)    
+norbitals = len(wavefunction)
 
-if scf_type != "UHF":
+if re.search("MOREAD",orbital_name[orb_choice],re.I) and len(iorder_vecs) > 0 and norder_vecs == 1:
+    print "Reordering according to IORDER: ",
+    new_orbitals = []
+    for i in range(iorder_vecs[0]-1):
+	print i+1,
+	new_orbitals.append(wavefunction[i])
+    for i in range(len(iorder_vecs)-1):
+	print iorder_vecs[i+1],
+	new_orbitals.append(wavefunction[iorder_vecs[i+1]-1])
+    print "\n"
+    wavefunction = new_orbitals
 
-    current_index = 1
-    temp_coeffs = orbital_coeffs[0]
-    m = 1
-    while 1:
-        if orbital_number[m] == current_index % 100:
-            temp_coeffs = temp_coeffs + orbital_coeffs[m]
-        else:
-            wavefunction.append(temp_coeffs)
-            current_index = current_index+1
-            temp_coeffs = orbital_coeffs[m]
-        if m == len(orbital_number)-1:
-            wavefunction.append(temp_coeffs)
-            break
-        else:
-            m = m+1
-    norbitals = len(wavefunction)
-
-elif scf_type == "UHF":
-
-    trialFunctionType = "unrestricted"
-
-    current_index = 1
-
-    alpha_only = 0
-
-    m = start_wavefunction+1
-    temp_coeffs = orbital_coeffs[0]
-
-    while 1:
-        wavefunction_line = string.split(gamess_data[m])
-        if wavefunction_line[0] == "$END":
-            alpha_only = 1
-            break
-        elif string.atoi(wavefunction_line[0]) == current_index:
-            temp_coeffs = temp_coeffs + orbital_coeffs[m-start_wavefunction]
-        elif string.atoi(wavefunction_line[0]) > current_index:
-            alpha_orbitals.append(temp_coeffs)
-            current_index = current_index+1
-            temp_coeffs = orbital_coeffs[m-start_wavefunction]
-        if current_index != 1 and string.atoi(wavefunction_line[0]) == 1:
-            alpha_orbitals.append(temp_coeffs)
-            break
-        else:
-            m = m+1
-
-    if alpha_only == 0:
-        current_index = 1
-        m = m+1
-        temp_coeffs = orbital_coeffs[m-start_wavefunction-1]
-    while 1:
-        if alpha_only == 1:
-            break
-        wavefunction_line = string.split(gamess_data[m])
-        if string.atoi(wavefunction_line[0]) == current_index:
-            temp_coeffs = temp_coeffs + orbital_coeffs[m-start_wavefunction]
-        else:
-            beta_orbitals.append(temp_coeffs)
-            current_index = current_index+1
-            temp_coeffs = orbital_coeffs[m-start_wavefunction]
-        if m == end_wavefunction-1:
-            beta_orbitals.append(temp_coeffs)
-            break
-        else:
-            m = m+1
-    norbitals = len(alpha_orbitals)
-
-# Get the occupation and CI coefficents.
-
-# RHF, ROHF, and UHF have one determinant.
+################ Set up the occupation and CI coefficent arrays.
 if scf_type == "RHF" or scf_type == "ROHF" or scf_type == "UHF":
-    AlphaOcc = [0]
-    BetaOcc = [0]
+    AlphaOcc    = [0]
+    BetaOcc     = [0]
     AlphaOcc[0] = range(norbitals)
-    BetaOcc[0] = range(norbitals)
+    BetaOcc[0]  = range(norbitals)
+
+    for j in range(0,norbitals):
+        AlphaOcc[0][j] = 0
+        BetaOcc[0][j]  = 0
     
     for i in range(nalpha):
         AlphaOcc[0][i] = 1
-    for j in range(nalpha,norbitals):
-        AlphaOcc[0][j] = 0
 
-    for i in range(nbeta):
+    #The VEC section is double in size... The first half are the alpha
+    #orbitals, and the second half are the beta orbitals... If that statement
+    #isn't always true, then this will have problems.
+    beta_start = 0
+    if scf_type == "UHF":
+	if norbitals % 2 == 0:
+	    beta_start = norbitals/2
+	else:
+	    print "Error: unexpected problem reading UHF wavefunction...\n"
+	    sys.exit(0)
+
+    for i in range(beta_start,nbeta+beta_start):
         BetaOcc[0][i] = 1
-    for j in range(nbeta,norbitals):
-        BetaOcc[0][j] = 0
 
-    ncore = norbitals
+    ncore = 0
     ndeterminants = 1
     CI = [1]
 
@@ -500,13 +472,22 @@ elif scf_type == "GVB":
         if string.find(gamess_output[i],'ROHF-GVB INPUT PARAMETERS') != -1:
             core_line_number = i+3
             core_line = string.split(gamess_output[core_line_number])
-            ncore = string.atoi(core_line[5])
 	    norb = string.atoi(core_line[2])
+            ncore = string.atoi(core_line[5])
 	    pair_line = string.split(gamess_output[core_line_number+1]) 
 	    npair = string.atoi(pair_line[2])
-	    nseto = string.atoi(pair_line[5]) 
+	    nseto = string.atoi(pair_line[5])
+	    odegen = 0
+	    if re.search("NO",gamess_output[core_line_number+2],re.I):
+		no_line = string.split(gamess_output[core_line_number+2])
+		odegen  = string.atoi(no_line[2])
+		
 	    print "GVB settings: mult=",spin_mult,"ncore=",ncore,"norb=",norb,"npair=",npair,"nseto=",nseto
-            break
+
+	    #if odegen > 0:
+	#	print "Error: open shell too complicated, no = ",odegen
+	#	sys.exit(0)
+        #    break
 
     AlphaOcc = range(1)
     CI = range(1)
@@ -522,6 +503,10 @@ elif scf_type == "GVB":
 	    else:
 		AlphaOcc[i][j] = 0
 
+    if npair == 0:
+	ndeterminants = 1
+	ncore = 0
+	
     if npair > 0:
 	#The two perfect paired electrons are spin coupled into a singlet
 	# See Eq 56 from "SCF Equations for GVB" by Bobrowicz and Goddard
@@ -598,8 +583,9 @@ elif scf_type == "GVB":
     if nseto > 2:
 	print "\n\nWarning: the script does not handle nseto=",nseto," correctly!!!"
 
-    if nseto == 2 and spin_mult == 3:
-	# This case is easy, since the NSETO orbitals are both alpha
+    #if nseto == 2 and spin_mult == 3:
+    if nseto > 0 and spin_mult > 1:
+	# This case is easy, since the NSETO orbitals are alpha
 	# WF = anti[12aa]
 	for det in range(len(AlphaOcc)):
 	    for orb in range(len(AlphaOcc[det])):
@@ -692,11 +678,18 @@ elif scf_type == "NONE" and ci_type == "ALDET":
 	if string.find(gamess_output[i],'PARTIAL TWO ELECTRON INTEGRAL TRANSFORMATION') != -1:
             break
 
+    print ""
+    for i in range(core_line_number,len(gamess_output)):
+        if string.find(gamess_output[i],'ENERGY=') != -1 and \
+	       string.find(gamess_output[i],'CONVERGED') == -1:
+	    print gamess_output[i],
+	    
     if nstates > 1:
 	istate = string.atoi(raw_input("Choose which CI state you want [1 to %i]: "%nstates))
 
     for i in range(core_line_number,len(gamess_output)):
-        if string.find(gamess_output[i],'ENERGY=') != -1:
+        if string.find(gamess_output[i],'ENERGY=') != -1 and \
+	       string.find(gamess_output[i],'CONVERGED') == -1:
 	    line = string.split(gamess_output[i])
 	    if string.atoi(line[1]) == istate:
 		start_mc_data = i
@@ -758,22 +751,7 @@ elif scf_type == "NONE" and ci_type == "ALDET":
             AlphaOcc[i][k] = 0
             BetaOcc[i][k] = 0
 
-# GAMESS usually creates many more orbitals than are occupied.  We get rid of
-# the unoccupied orbitals because we don't need them.
-
-total_orbitals = norbitals
-for i in range(total_orbitals):
-    index = total_orbitals-i-1
-    keep_this_orbital = 0
-    for j in range(len(AlphaOcc)):
-	if AlphaOcc[j][index] == 1 or BetaOcc[j][index] == 1:
-	    keep_this_orbital = 1
-	    break
-    if (keep_this_orbital == 0):
-	norbitals = norbitals-1
-    elif (keep_this_orbital == 1):
-	break
-
+######### Use a cutoff criteria to decide which CSFs to include
 for i in range(ndeterminants-1,-1,-1):
     try:
 	if abs(CI[i]) < detcutoff:
@@ -784,6 +762,23 @@ for i in range(ndeterminants-1,-1,-1):
     except:
 	continue
 ndeterminants = len(CI)
+
+######## Remove any orbitals that aren't used
+
+for i in range(norbitals-1,-1,-1):
+    keep_this_orbital = 0
+    for j in range(ndeterminants):
+	if AlphaOcc[j][i] == 1 or BetaOcc[j][i] == 1:
+	    keep_this_orbital = 1
+	    break
+    if(keep_this_orbital == 1):
+	continue
+    del wavefunction[i]
+    for j in range(ndeterminants):
+	del AlphaOcc[j][i]
+	del BetaOcc[j][i]
+norbitals = len(wavefunction)
+
 ##################  PRINT FLAGS: BEGIN    ########################
 #
 # We'll use ckmf template files (extension ckmft) to help make
@@ -805,8 +800,8 @@ for dir in templatedir:
 print "\nAvailable ckmf templates:"
 for i in range(len(templates)):
     print " %3i : " % i, templates[i]
+    choice = i
 
-choice = 1
 try:
     choice = string.atoi(raw_input("Your choice [%i]:"%choice))
 except:
@@ -948,52 +943,24 @@ OUT.write('&\n')
 ##################  PRINT WAVEFUNCTION: BEGIN ###################
 
 OUT.write('&wavefunction\n\n')
+print "charge     = %i"%charge
 print "norbitals  = %d\nnbasisfunc = %d\nenergy     = %s\n" % (norbitals,nbasisfunc,energy)
 
-if scf_type != "UHF":
 
-    for i in range(norbitals):
-	if len(wavefunction[i]) != nbasisfunc:
-	    print "Error: Orbital",i,"has",len(wavefunction[i]),"basisfunctions, instead of the expected",nbasisfunc
-	    sys.exit(0)
-        for j in range(nbasisfunc):
-	    try:
-	        OUT.write('%20s'%wavefunction[i][j])
-	    except:
-	        print "Error:\nnorbitals = %d\nnbasisfunc = %d\ni = %d\nj = %d\n" % (norbitals,nbasisfunc,i,j)
-		print "wavefunction is %d by %d\n" % (len(wavefunction),len(wavefunction[i]))
-		sys.exit(1)
-            if (j+1)%3 == 0:
-                OUT.write('\n')
-        OUT.write('\n\n')
-
-elif scf_type == "UHF":
-
-    OUT.write("Alpha Molecular Orbitals\n\n")
-    for i in range(norbitals):
-        for j in range(nbasisfunc):
-            OUT.write('%20s'%alpha_orbitals[i][j])
-            if (j+1)%3 == 0:
-                OUT.write('\n')
-        OUT.write('\n\n')
-
-    if alpha_only == 0:
-        OUT.write("Beta Molecular Orbitals\n\n")
-        for i in range(norbitals):
-            for j in range(nbasisfunc):
-                OUT.write('%20s'%beta_orbitals[i][j])
-                if (j+1)%3 == 0:
-                    OUT.write('\n')
-            OUT.write('\n\n')
-
-    elif alpha_only == 1:
-        OUT.write("Beta Molecular Orbitals\n\n")
-        for i in range(norbitals):
-            for j in range(nbasisfunc):
-                OUT.write('%20s'%alpha_orbitals[i][j])
-                if (j+1)%3 == 0:
-                    OUT.write('\n')
-            OUT.write('\n\n')        
+for i in range(norbitals):
+    if len(wavefunction[i]) != nbasisfunc:
+	print "Error: Orbital",i,"has",len(wavefunction[i]),"basisfunctions, instead of the expected",nbasisfunc
+	sys.exit(0)
+    for j in range(nbasisfunc):
+	try:
+	    OUT.write('%20s'%wavefunction[i][j])
+	except:
+	    print "Error:\nnorbitals = %d\nnbasisfunc = %d\ni = %d\nj = %d\n" % (norbitals,nbasisfunc,i,j)
+	    print "wavefunction is %d by %d\n" % (len(wavefunction),len(wavefunction[i]))
+	    sys.exit(1)
+	if (j+1)%5 == 0:
+	    OUT.write('\n')
+    OUT.write('\n\n')
 
 print "Alpha Occupation:"
 OUT.write("Alpha Occupation\n")
@@ -1001,9 +968,9 @@ for i in range(ndeterminants):
     nume = 0
     for j in range(norbitals):
 	nume += AlphaOcc[i][j]
-        OUT.write('%i\t'%AlphaOcc[i][j])
+        OUT.write('%i '%AlphaOcc[i][j])
 	if j >= ncore:
-	    print '%i'%AlphaOcc[i][j],
+	    sys.stdout.write('%i'%AlphaOcc[i][j])
     OUT.write('\n')
     print " (=",nume,")"
 OUT.write('\n')
@@ -1014,9 +981,9 @@ for i in range(ndeterminants):
     nume = 0
     for j in range(norbitals):
 	nume += BetaOcc[i][j]
-        OUT.write('%i\t'%BetaOcc[i][j])
+        OUT.write('%i '%BetaOcc[i][j])
 	if j >= ncore:
-	    print '%i'%BetaOcc[i][j],	
+	    sys.stdout.write('%i'%BetaOcc[i][j])
     OUT.write('\n')
     print " (=",nume,")"
 OUT.write('\n')
@@ -1029,7 +996,7 @@ for i in range(ndeterminants):
     if ci_type == "ALDET" or 1:
 	for j in range(i):
 	    ratio = string.atof(CI[i])/string.atof(CI[j])
-	    if abs(abs(ratio)-1.0) < 1e-5:
+	    if abs(abs(ratio)-1.0)< 1e-5:
 		match = 1
 		# There are some couplings that are required to get the correct spin function.
 		# We want to include the constraints so that QMC knows which are free to optimize.
