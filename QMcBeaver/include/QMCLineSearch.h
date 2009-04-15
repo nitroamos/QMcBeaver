@@ -45,7 +45,9 @@ public:
   /**
     Virtual destructor.
     */
-  virtual ~QMCLineSearch(){};
+  virtual ~QMCLineSearch(){
+    delete stepLengthAlg;
+  };
 
   Array1D<double> optimize(Array1D<double> & initialGuess,
 			   QMCDerivativeProperties & dp,

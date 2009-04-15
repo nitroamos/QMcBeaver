@@ -717,7 +717,7 @@ void QMCJastrowParameters::read(Array1D<string> & nucleitypes,
   NucleiTypes = nucleitypes;
 
   // Save the number of up and down electrons
-  NumberOfElectronsUp = nelup;
+  NumberOfElectronsUp   = nelup;
   NumberOfElectronsDown = neldn;
 
   if( NumberOfElectronsDown > NumberOfElectronsUp )
@@ -1123,6 +1123,12 @@ Array1D<string> * QMCJastrowParameters::getNucleiTypes()
 
 QMCJastrowParameters::QMCJastrowParameters()
 {
+  NumberOfEupEdnParameters   = 0;
+  NumberOfEupEupParameters   = 0;
+  NumberOfEdnEdnParameters   = 0;
+  NumberOfNEParameters       = 0;
+  NumberOfNEupParameters     = 0;
+  this->NumberOfNEParameters = 0;
 }
 
 QMCJastrowParameters::QMCJastrowParameters(const QMCJastrowParameters & rhs)

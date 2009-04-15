@@ -284,6 +284,12 @@ QMCCorrelationFunctionParameters::QMCCorrelationFunctionParameters()
   CorrelationFunctionType = "None";
   CorrelationFunction = 0;
   ParticleTypes.allocate(2);
+
+  NumberOfParameterTypes  = 0;
+  TotalNumberOfParameters = 0;
+  NumberOfConstantTypes   = 0;
+  TotalNumberOfConstants  = 0;
+  
   setCorrelationFunction();
 }
 

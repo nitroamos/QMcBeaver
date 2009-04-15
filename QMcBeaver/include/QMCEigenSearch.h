@@ -46,7 +46,9 @@ public:
   /**
     Virtual destructor.
     */
-  virtual ~QMCEigenSearch(){};
+  virtual ~QMCEigenSearch(){
+    delete stepLengthAlg;
+  };
 
   double get_a_diag(QMCDerivativeProperties & dp, double factor);
 

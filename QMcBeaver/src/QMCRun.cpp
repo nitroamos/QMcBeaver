@@ -141,6 +141,11 @@ void QMCRun::zeroOut()
 
 void QMCRun::initializeFunction()
 {
+  if(QMF != 0){
+    delete QMF;
+    QMF = 0;
+  }
+
   QMF = QMCFunctionsFactory::functionsFactory(Input, Input->flags.trial_function_type);
 
   if(Input->flags.trial_function_type ==   "restricted" ||

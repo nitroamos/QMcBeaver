@@ -23,8 +23,12 @@ QMCProperty::QMCProperty()
    */
   
   // initialize the rest of the calculation
-  
-  zeroOut();
+
+  for(int i=0;i<DCL;i++)
+    DeCorr[i].zeroOut();
+  memset(&DeCorr_flags,0,sizeof(int)*DCL);
+  memset(&DeCorr_sample,0,sizeof(double)*DCL);
+  memset(&DeCorr_weight,0,sizeof(double)*DCL);
   
 #ifdef PARALLEL
   if( !mpiTypeCreated )
@@ -432,7 +436,7 @@ void QMCProperty::newSample(double s, double weight)
   int inc=1;
   double pushed_sample=s; 
   double pushed_weight=weight; 
-  
+
   while(!done)
   {
     if(inc>=DCL)
