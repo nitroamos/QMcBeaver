@@ -152,7 +152,8 @@ class QMCWalkerData {
   */
   double localEnergy, kineticEnergy, potentialEnergy;
   double neEnergy, eeEnergy;
-  
+  double x2, y2, z2;
+
   QMCDouble psi;
   
   /**

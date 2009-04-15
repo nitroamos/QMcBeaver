@@ -21,6 +21,7 @@ QMCRun::~QMCRun()
 
 QMCRun::QMCRun()
 {
+  QMF = 0;
   populationSizeBiasCorrectionFactor = 1.0;
 }
 

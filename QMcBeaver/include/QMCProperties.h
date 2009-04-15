@@ -62,6 +62,10 @@ public:
   */
   QMCProperty logWeights;
 
+  QMCProperty x2;
+  QMCProperty y2;
+  QMCProperty z2;
+
   /**
     Probability a trial move is accepted.
   */

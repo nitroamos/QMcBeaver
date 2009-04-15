@@ -45,6 +45,9 @@ void QMCProperties::zeroOut()
   potentialEnergy.zeroOut();
   neEnergy.zeroOut();
   eeEnergy.zeroOut();
+  x2.zeroOut();
+  y2.zeroOut();
+  z2.zeroOut();
   logWeights.zeroOut();
   acceptanceProbability.zeroOut();
   distanceMovedAccepted.zeroOut();
@@ -73,6 +76,9 @@ void QMCProperties::newSample(QMCProperties* newProperties, double weight,
 				weight);
       neEnergy.newSample(newProperties->neEnergy.getAverage(), weight);
       eeEnergy.newSample(newProperties->eeEnergy.getAverage(), weight);
+      x2.newSample(newProperties->x2.getAverage(),weight);
+      y2.newSample(newProperties->y2.getAverage(),weight);
+      z2.newSample(newProperties->z2.getAverage(),weight);
       acceptanceProbability.newSample
 	(newProperties->acceptanceProbability.getAverage(), weight);
       distanceMovedAccepted.newSample
@@ -95,6 +101,9 @@ void QMCProperties::operator = ( const QMCProperties &rhs )
   potentialEnergy       = rhs.potentialEnergy;
   neEnergy              = rhs.neEnergy;
   eeEnergy              = rhs.eeEnergy;
+  x2                    = rhs.x2;
+  y2                    = rhs.y2;
+  z2                    = rhs.z2;
   logWeights            = rhs.logWeights;
   acceptanceProbability = rhs.acceptanceProbability;
   distanceMovedAccepted = rhs.distanceMovedAccepted;
@@ -115,6 +124,9 @@ QMCProperties QMCProperties::operator + ( QMCProperties &rhs )
   result.potentialEnergy       = potentialEnergy + rhs.potentialEnergy;
   result.neEnergy              = neEnergy + rhs.neEnergy;
   result.eeEnergy              = eeEnergy + rhs.eeEnergy;
+  result.x2                    = x2 + rhs.x2;
+  result.y2                    = y2 + rhs.y2;
+  result.z2                    = z2 + rhs.z2;
   result.logWeights            = logWeights + rhs.logWeights;
   result.acceptanceProbability = acceptanceProbability + 
     rhs.acceptanceProbability;
@@ -156,6 +168,18 @@ void QMCProperties::toXML(ostream& strm)
       strm << "<ElecElecEnergy>" << endl;
       eeEnergy.toXML(strm);
       strm << "</ElecElecEnergy>" << endl;
+
+      strm << "<x2>" << endl;
+      x2.toXML(strm);
+      strm << "</x2>" << endl;
+
+      strm << "<y2>" << endl;
+      y2.toXML(strm);
+      strm << "</y2>" << endl;
+
+      strm << "<z2>" << endl;
+      z2.toXML(strm);
+      strm << "</z2>" << endl;
 
       // log weights
       strm << "<LogWeights>" << endl;
@@ -258,6 +282,33 @@ bool QMCProperties::readXML(istream& strm)
       if (temp != "</ElecElecEnergy>")
 	return false;
 
+      strm >> temp;
+      if (temp != "<x2>")
+	return false;
+      if (!x2.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</x2>")
+	return false;
+
+      strm >> temp;
+      if (temp != "<y2>")
+	return false;
+      if (!y2.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</y2>")
+	return false;
+
+      strm >> temp;
+      if (temp != "<z2>")
+	return false;
+      if (!z2.readXML(strm))
+	return false;
+      strm >> temp;
+      if (temp != "</z2>")
+	return false;
+
       // Read log weights
       strm >> temp;
       if (temp != "<LogWeights>")
@@ -357,6 +408,15 @@ ostream& operator <<(ostream& strm, QMCProperties &rhs)
   strm << endl << "-------------- Elec-Elec Energy --------------" << endl;
   strm << rhs.eeEnergy;
 
+  strm << endl << "-------------------- x2 ----------------------" << endl;
+  strm << rhs.x2;
+
+  strm << endl << "-------------------- y2 ----------------------" << endl;
+  strm << rhs.y2;
+
+  strm << endl << "-------------------- z2 ----------------------" << endl;
+  strm << rhs.z2;
+
   strm << endl << "------------ AcceptanceProbability -----------" << endl;
   strm << rhs.acceptanceProbability;
 
@@ -398,7 +458,7 @@ void QMCProperties::buildMpiType()
 
   // The number of properties 
   // ADJUST THIS WHEN ADDING NEW PROPERTIES
-  const int NumberOfProperties = 13;
+  const int NumberOfProperties = 16;
   
   int          block_lengths[NumberOfProperties];
   MPI_Aint     displacements[NumberOfProperties];
@@ -424,10 +484,13 @@ void QMCProperties::buildMpiType()
   MPI_Address(&(indata.potentialEnergy), &addresses[7]);  
   MPI_Address(&(indata.neEnergy), &addresses[8]);
   MPI_Address(&(indata.eeEnergy), &addresses[9]);
-  MPI_Address(&(indata.walkerAge), &addresses[10]);
-  MPI_Address(&(indata.weightChange), &addresses[11]);
-  MPI_Address(&(indata.growthRate), &addresses[12]);
-  MPI_Address(&(indata.energy2), &addresses[13]);
+  MPI_Address(&(indata.x2), &addresses[10]);
+  MPI_Address(&(indata.y2), &addresses[11]);
+  MPI_Address(&(indata.z2), &addresses[12]);
+  MPI_Address(&(indata.walkerAge), &addresses[13]);
+  MPI_Address(&(indata.weightChange), &addresses[14]);
+  MPI_Address(&(indata.growthRate), &addresses[15]);
+  MPI_Address(&(indata.energy2), &addresses[16]);
   
   // Find the relative addresses of the data elements to the start of 
   // the struct
@@ -485,6 +548,9 @@ void QMCProperties::Reduce_Function(QMCProperties *in, QMCProperties *inout,
       inout[i].potentialEnergy       = inout[i].potentialEnergy + in[i].potentialEnergy;
       inout[i].neEnergy              = inout[i].neEnergy + in[i].neEnergy;
       inout[i].eeEnergy              = inout[i].eeEnergy + in[i].eeEnergy;
+      inout[i].x2                    = inout[i].x2 + in[i].x2;
+      inout[i].y2                    = inout[i].y2 + in[i].y2;
+      inout[i].z2                    = inout[i].z2 + in[i].z2;
       inout[i].logWeights            = inout[i].logWeights + in[i].logWeights;
       inout[i].acceptanceProbability = inout[i].acceptanceProbability + 
 	in[i].acceptanceProbability;

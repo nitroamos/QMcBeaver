@@ -161,6 +161,13 @@ void QMCSCFJastrow::evaluate(Array1D<QMCWalkerData *> &walkerData,
     wd->psi                    = getPsi();
     wd->singular              |= isSingular(i);
 
+    wd->x2 = wd->y2 = wd->z2 = 0.0;
+    for(int e=0; e<x->dim1(); e++){
+      wd->x2 += x->get(e,0)*x->get(e,0);
+      wd->y2 += x->get(e,1)*x->get(e,1);
+      wd->z2 += x->get(e,2)*x->get(e,2);
+    } 
+
     //checkParameterDerivatives(); 
   }
 
@@ -408,9 +415,19 @@ void QMCSCFJastrow::calculate_Modified_Grad_PsiRatio()
       temp = closest_nucleus_Z * closest_nucleus_Z *
              closest_nucleus_distance_squared;
 
-      a = 0.5*(1.0 + closest_nucleus_to_electron_norm_vector *
-               electron_velocity_norm_vector) + temp/(10.0*(4.0+temp));
+      double dotp = 0;
+      for(int xyz=0; xyz<3; xyz++)
+	dotp += closest_nucleus_to_electron_norm_vector(xyz)*
+	  electron_velocity_norm_vector(xyz);
+      a = 0.5*(1.0 + dotp) + temp/(10.0*(4.0+temp));
 
+      //This should accomplish what the previous few lines do, but
+      //valgrind thinks there's a problem. It might have to do with using
+      //an array allocated with new to a fortran function...
+      //a = 0.5*(1.0 + closest_nucleus_to_electron_norm_vector *
+      //         electron_velocity_norm_vector) + temp/(10.0*(4.0+temp));
+
+ 
       // Now calculate the factor the QF of this electron is modified by
       if (fabs(electron_velocity_norm_squared) < 1e-10)
         factor = 1.0;

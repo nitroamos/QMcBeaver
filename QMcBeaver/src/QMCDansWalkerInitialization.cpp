@@ -8,6 +8,15 @@
 QMCDansWalkerInitialization::QMCDansWalkerInitialization(QMCInput * INPUT)
 {
   Input = INPUT;
+
+  for (int i=0; i<Input->flags.Natoms; i++){
+    if(Input->Molecule.Z(i) >= 18){
+      clog << "Warning: QMCDansWalkerInitialization can only handle atoms with up to Z=18, but atom "
+	   << i << " has Z=" << Input->Molecule.Z(i) << endl;
+      clog << "         Instead of quitting, we'll proceed with our best guess..." << endl;
+    }
+  }
+
   if (!arraysInitialized)
     {
       arraysInitialized = true;
@@ -76,15 +85,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 
   Array2D<int> ab_count(natoms,3);
   ab_count = assign_electrons_to_nuclei();
-
-  cout << "initial ab_count:" << endl;
-  for (int i=0; i<natoms; i++)
-    {
-      cout << "atom " << i << ":";
-      for (int j=0; j<3; j++)
-	cout << "\t" << ab_count(i,j);
-      cout << endl;
-    }
 
   // Redistribute electrons if there are charged centers.
   // We use Zeff here- the effective nuclear charge shielded by pseudo 
@@ -224,15 +224,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	      }
 	  }
       }
-
-  cout << "ab_count after charged:" << endl;
-  for (int i=0; i<natoms; i++)
-    {
-      cout << "atom " << i << ":";
-      for (int j=0; j<3; j++)
-	cout << "\t" << ab_count(i,j);
-      cout << endl;
-    }
 
   // Now we check to make sure no center has too many or too few electrons of 
   // one type.  We want to make sure each energy level is full before we start
@@ -542,15 +533,6 @@ Array2D<double> QMCDansWalkerInitialization::initializeWalkerPosition()
 	  ab_count(i,1) -= pseudo/2;
 	  ab_count(i,2) -= pseudo/2;
 	}
-    }
-
-  cout << "ab_count after alpha/beta:" << endl;
-  for (int i=0; i<natoms; i++)
-    {
-      cout << "atom " << i << ":";
-      for (int j=0; j<3; j++)
-	cout << "\t" << ab_count(i,j);
-      cout << endl;
     }
 
   // Check to see that all electrons have been assigned.
@@ -1125,12 +1107,19 @@ double QMCDansWalkerInitialization::generateThetaCoordinate(int index)
 Array1D<double> QMCDansWalkerInitialization::\
                               generateRadialDistances(int Z, int n, int nelecs)
 {
-  int atomicNumberIndex = Z-1;
-  int energyLevelIndex = n-1;
+  int atomicNumberIndex = min(17,Z-1);
+  int energyLevelIndex =  min(2,n-1);
+
+  if(atomicNumberIndex > radialSplinesMade.dim1()){
+    clog << "Error: QMCDansWalkerInitialization can not initialize atom with atomic number: " << Z << endl;
+    exit(0);
+  }
+
   if (radialSplinesMade(atomicNumberIndex,energyLevelIndex) == 0)
     {
       Array1D<double> r_array;
-      r_array = RadialDistributions::getRadialArray(Z,n);
+      r_array = RadialDistributions::getRadialArray(atomicNumberIndex+1,
+						    energyLevelIndex+1);
       double derivativeAtZero = r_array(1)*20;
       double derivativeAtOne = (r_array(20) - r_array(19))*20;
       radialSplines(atomicNumberIndex,energyLevelIndex).\

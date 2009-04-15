@@ -329,7 +329,7 @@ Array1D<double> RadialDistributions::getRadialArray(int Z, int n)
       r_array(20) = 0.77;
     }
 
-  else if (Z == 8 && n == 2)
+  else if (Z == 8 && n >= 2)
     {
       r_array(0) = 0.0;
       r_array(1) = 0.426259553538;

@@ -36,6 +36,9 @@ void QMCWalkerData::partialCopy(const QMCWalkerData & rhs)
   potentialEnergy        = rhs.potentialEnergy;
   neEnergy               = rhs.neEnergy;
   eeEnergy               = rhs.eeEnergy;
+  x2                     = rhs.x2;
+  y2                     = rhs.y2;
+  z2                     = rhs.z2;
 
   D                      = rhs.D;
   D_x                    = rhs.D_x;
@@ -206,6 +209,7 @@ void QMCWalkerData::zero()
   potentialEnergy        = 0.0;
   neEnergy               = 0.0;
   eeEnergy               = 0.0;
+  x2 = y2 = z2           = 0.0;
   D_xx                   = 0.0;
 }
 

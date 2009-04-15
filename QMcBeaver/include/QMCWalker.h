@@ -249,7 +249,7 @@ public:
     @param temp_R the positions of the electrons
     @return whether the position is ok
   */
-  bool setR(Array2D<double> temp_R);
+  template<typename T> bool setR(Array2D<T> temp_R);
 
   /**
     Gets the walkerData for this walker
@@ -311,6 +311,7 @@ private:
 
   double neEnergy;
   double eeEnergy;
+  double x2, y2, z2;
 
   static const double maxFWAsymp;
   

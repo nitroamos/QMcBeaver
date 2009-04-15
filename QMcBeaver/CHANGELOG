@@ -1,3 +1,11 @@
+Wed, Apr 15 Amos Anderson
+1.  I fixed all the memory leaks & other problems valgrind found.
+    For the test files I tried (bare.ckmf & opt.ckmf) there shouldn't be
+    any more errors or warnings.
+
+2.  I added statistics collectors for the spatial extent of the wavefunction,
+    that is, <x^2>, <y^2>, and <z^2>, but they don't use future walking.
+
 Wed, March 18 Daniel R. Fisher
 1.  I improved the way the electrons are assigned to the nuclei.
     Previously there were some cases where too many electrons were

@@ -135,7 +135,10 @@ void QMCWalker::operator=( const QMCWalker & rhs )
   potentialEnergy       = rhs.potentialEnergy;
   neEnergy              = rhs.neEnergy;
   eeEnergy              = rhs.eeEnergy;
-  
+  x2                    = rhs.x2;
+  y2                    = rhs.y2;
+  z2                    = rhs.z2;
+
   fwNormalization       = rhs.fwNormalization;
   fwR12                 = rhs.fwR12;
   fwR2                  = rhs.fwR2;
@@ -2060,19 +2063,23 @@ Array2D<double> * QMCWalker::getR()
   return &R;
 }
 
-bool QMCWalker::setR(Array2D<double> temp_R)
+template<typename T>
+bool QMCWalker::setR(Array2D<T> temp_R)
 {
   bool ok = true;
   for(int i=0; i<temp_R.dim1(); i++)
     for(int j=0; j<temp_R.dim2(); j++)
-      if(IeeeMath::isNaN(temp_R(i,j)) || temp_R(i,j) == 0 || fabs(temp_R(i,j)) > 500.0 )
-	{
-	  //cout << "Error: setting electron position (" << i << "," << j << ") = " << temp_R(i,j) << endl;
-	  //ok = false;
-	}
+      {
+	R(i,j) = (double)temp_R(i,j);
+	if(IeeeMath::isNaN(temp_R(i,j)) || temp_R(i,j) == 0 || fabs(temp_R(i,j)) > 500.0 )
+	  {
+	    
+	    //cout << "Error: setting electron position (" << i << "," << j << ") = " << temp_R(i,j) << endl;
+	    //ok = false;
+	  }
+      }
   if(ok)
     {
-      R = temp_R;
       walkerData.updateDistances(R);
     }
   return ok;
@@ -2105,7 +2112,12 @@ void QMCWalker::calculateObservables()
              q * OriginalWalker->walkerData.neEnergy;
   eeEnergy = p * TrialWalker->walkerData.eeEnergy + 
              q * OriginalWalker->walkerData.eeEnergy;
-
+  x2 = p * TrialWalker->walkerData.x2 +
+       q * OriginalWalker->walkerData.x2;
+  y2 = p * TrialWalker->walkerData.y2 +
+       q * OriginalWalker->walkerData.y2;
+  z2 = p * TrialWalker->walkerData.z2 +
+       q * OriginalWalker->walkerData.z2;
 
   if(globalInput.cs_Parameters.dim1() > 1)
     {
@@ -2320,9 +2332,8 @@ void QMCWalker::calculateObservables( QMCProperties & props )
   }
   ageMoved = -1;
 
-
   props.weightChange.newSample(dW,1.0);
-    
+
   double rel_diff = fabs( (localEnergy -
 			   Input->flags.energy_estimated_original)/
 			  Input->flags.energy_estimated_original);
@@ -2340,6 +2351,9 @@ void QMCWalker::calculateObservables( QMCProperties & props )
       // Calculate the ne and ee potential energy
       props.neEnergy.newSample( neEnergy, getWeight() );
       props.eeEnergy.newSample( eeEnergy, getWeight() );
+      props.x2.newSample( x2, getWeight() );
+      props.y2.newSample( y2, getWeight() );
+      props.z2.newSample( z2, getWeight() );
     }
   else
     {
