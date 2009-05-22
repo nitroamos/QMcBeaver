@@ -75,7 +75,7 @@ pp_type   = "NONE"
 spin_mult = 1
 istate    = 1
 
-detcutoff = 0
+detcutoff = 1e-10
 if len(sys.argv) == 3:
     detcutoff = string.atof(sys.argv[2])
     print "Removing all determinants with coefficients less than ",detcutoff
@@ -285,12 +285,11 @@ norder_vecs  = 0
 for i in range(len(input_data)):
     m = re.search('norder\s*=(\d+)',input_data[i],re.I)
     if m:
-	norder_vecs = m.group(1)
+	norder_vecs = int(m.group(1))
     m = re.search('iorder\((\d+)\)=([\d,]+)',input_data[i],re.I)
     if m:
 	iorder_vecs.append(int(m.group(1)))
 	iorder_vecs += [int(k) for k in m.group(2).split(',')]
-	print "Notice: found IORDER section for MOREAD orbitals: ",iorder_vecs
 	
     if string.find(input_data[i],'$END') != -1 and collecting == 1:
 	collecting = 0
@@ -302,6 +301,9 @@ for i in range(len(input_data)):
     elif collecting == 1:
 	raw_orbitals = raw_orbitals + [input_data[i]]
 
+if norder_vecs == 1:
+    print "Notice: found IORDER section for MOREAD orbitals: ",iorder_vecs
+       
 for i in range(len(gamess_data)):
     if string.find(gamess_data[i],'NO-S OF CI STATE') != -1 or \
 	   string.find(gamess_data[i], 'GVB ORBITALS') != -1 or \
@@ -412,12 +414,17 @@ norbitals = len(wavefunction)
 if re.search("MOREAD",orbital_name[orb_choice],re.I) and len(iorder_vecs) > 0 and norder_vecs == 1:
     print "Reordering according to IORDER: ",
     new_orbitals = []
+    num = len(iorder_vecs)-1
+    print num, ", first = ",iorder_vecs[0]
     for i in range(iorder_vecs[0]-1):
 	print i+1,
 	new_orbitals.append(wavefunction[i])
-    for i in range(len(iorder_vecs)-1):
+    for i in range(num):
 	print iorder_vecs[i+1],
 	new_orbitals.append(wavefunction[iorder_vecs[i+1]-1])
+    for i in range(iorder_vecs[0]-1+num,norbitals):
+	print i+1,
+	new_orbitals.append(wavefunction[i])
     print "\n"
     wavefunction = new_orbitals
 
@@ -698,12 +705,16 @@ elif scf_type == "NONE" and ci_type == "ALDET":
     end_ci = -1
     start_ci = -1
     for j in range(start_mc_data,len(gamess_output)):
+	m=re.search('STATE\s+\d+\s+ENERGY=\s*([\d\-\.]+)',gamess_output[j])
+	if m:
+	    energy = m.group(1)
+
 	if string.find(gamess_output[j],'ALPH') != -1:
             start_ci = j+2
 	if start_ci != -1 and len(gamess_output[j]) == 1:
 	    end_ci = j-1
 	    break
-	
+
     for i in range(start_ci,end_ci):
 	try:
 	    ci_line = string.split(gamess_output[i])
@@ -855,7 +866,7 @@ OUT.write('atoms\n %i\n'%atoms)
 OUT.write('charge\n %i\n'%charge)
 OUT.write('energy\n %s\n'%energy)
 
-if abs(string.atof(energy)) < 1e-10:
+if string.atof(energy) >= 0.0:
     print "\nEnergy",energy," didn't converge!!! Quitting.\n"
     sys.exit(0)
     
