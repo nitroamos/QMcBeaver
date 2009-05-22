@@ -4,6 +4,7 @@ my $path = `dirname $0`;
 chomp($path);
 require "$path/utilities.pl";
 
+my $publication = 0;
 my $printFunc = 1;
 my $useScaled = 0;
 my $multiPlot = 1;
@@ -62,7 +63,7 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
 	print "Using $unitsL energy units, conversion = $units\n";
     } else {
 	print "Unrecognized option: $type\n";
-	die;
+	exit;
     }
 }
 
@@ -73,6 +74,9 @@ if($#files < 0){
 
 getFileList(".out",\@files);
 $showOpt = 1 if($#files == 0);
+
+my $Cnormal = "\x1b[0m";
+my $Chilite = "\x1b[37m";
 
 %jastrows;
 %plotters;
@@ -125,7 +129,7 @@ for(my $index=0; $index<=$#files; $index++){
 
     open (FILE, "$files[$index]");
     my $name = "";
-    my $L = 0;
+    my $L = 1;
     my $best;
     if($showOpt == 1){
 	$best = $step;
@@ -162,21 +166,31 @@ for(my $index=0; $index<=$#files; $index++){
 		$L = $dat[4];
 	    } else {
 		#it's a 2 body jastrow	    
-		while($line !~ /x/){
-		    $line = <FILE>;
-		}
+		$line = <FILE>;
+		my $type = $line;
 		chomp;
-		@dat = split/\s+/,$line;
-		$L = $dat[4];
-		$func = <FILE>;
+		if($type =~ /Fixed/){
+		    $func = <FILE>;
+		    chomp($func);
+		    $func .= <FILE>;
+		    chomp($func);
+		    $L = 10.0;
+		} else {
+		    $line = <FILE>;
+		    $line = <FILE>;
+		    chomp($func);
+		    @dat = split/\s+/,$line;
+		    $L = $dat[4];
+		    $func = <FILE>;
+		}
 		chomp($func);
 	    }
 
 	    $name =~ s/[:()]//g;
 	    $name =~ s/Nuclear//;
-	    $name =~ s/EupEup/aa/g;
-	    $name =~ s/EupEdn/ab/g;
-	    $name =~ s/Eup/u/g;
+	    $name =~ s/EupEup/Parallel Spin/g;
+	    $name =~ s/EupEdn/Opposite Spin/g;
+	    $name =~ s/Eup/Electron\-/g;
 	    
 	    $jastrows{"$name&$best&$refE&$numci,$numbf&$numjw&$short"} = "$step&$L&$func&$base";
 	}
@@ -207,7 +221,7 @@ for(my $index=0; $index<=$#files; $index++){
     close(FILE);
 }
 
-printf "%4s %4s %11s %11s %7s  %10s %8s %8s %10s %8s   %-30s   %5s    %8s %-s\n",
+printf "%15s %4s %11s %11s %7s  %10s %8s %8s %10s %8s   %-30s   %5s    %8s %-s\n",
     "Type","Iter","RefE","VMC E",getOPTHeader(),"Corr E ","std.e.","% diff","L (bohr)","% diff","Jastrow","NumBF","NSmpl(k)","File Name";
 
 my $lastL = 0;
@@ -255,13 +269,20 @@ foreach $key (sort a2n3 keys %jastrows)
     $stepVar = $x2 - $x*$x;
     $stepVar = sqrt(abs($stepVar));
 
-    printf "%-4s %4i %11.6f %11.6f %7s", $jName, $step, $refE, $nrg, $optStr;
+    printf "%-15s %4i %11.6f %11.6f %7s", $jName, $step, $refE, $nrg, $optStr;
 
+    my $corrEstr = "";
     if(abs($corrE) > 1e4 || $std == 0){
-	printf "  %10.1e", $corrE;
+	$corrEstr = sprintf "  %10.1e", $corrE;
     } else {
-	printf "  %-10s", getEnergyWError($corrE,$std);
+	$corrEstr = sprintf "  %-10s", getEnergyWError($corrE,$std);
     }
+    if($corrE < 0){
+	printf "$Chilite$corrEstr$Cnormal";
+    } else {
+	printf "$corrEstr";
+    }
+
     printf " %8.2f",$stepVar;
     if($jName ne $lastN){
 	$lastL = $L;
@@ -288,7 +309,7 @@ foreach $key (sort a2n3 keys %jastrows)
     }    
 }
 
-die if($makeGraph == 0);
+exit if($makeGraph == 0);
 
 my $gnuplot = "/ul/amosa/bin/gnuplot";
 $base =~ s/_[\d]+$//g if(!$showOpt);
@@ -296,7 +317,7 @@ my $modbase = $base;
 $modbase =~ s/_/\\\\_/g;
 my $printedHeader = 0;
 my @goodlt;
-push(@goodlt,3);
+push(@goodlt,3);# if($publication == 0);
 push(@goodlt,1);
 push(@goodlt,5);
 push(@goodlt,4);
@@ -316,7 +337,8 @@ foreach $key (reverse sort keys %plotters)
 	$printedHeader = 0;
     }
     if($showOpt){
-	$file_name .= "_${base}_plot.pdf";
+	#$file_name .= "_${base}_plot.pdf";
+	$file_name .= "_plot.pdf";
     } else {
 	$file_name .= "_plot.pdf";
     }
@@ -347,7 +369,11 @@ foreach $key (reverse sort keys %plotters)
 	    `/bin/rm -f $file_name`;
 	    #open(GNUPLOT, ">gnuplot.gnu");
 	    open(GNUPLOT, "|$gnuplot");
-	    print GNUPLOT "set term pdf color enhanced font \"Courier-Bold,14\" linewidth 5 dashed dl 3 size 17.5,10\n";
+	    if($publication == 1){
+		print GNUPLOT "set term pdf color enhanced font \"Courier-Bold,16\" linewidth 10 dashed dl 3 size 17.5,10\n";
+	    } else {
+		print GNUPLOT "set term pdf color enhanced font \"Courier-Bold,14\" linewidth 5 dashed dl 3 size 17.5,10\n";
+	    }
 	    print GNUPLOT "set output \"$file_name\"\n"; 
 	}
 	print GNUPLOT <<gnuplot_Commands_Done;
@@ -396,7 +422,7 @@ gnuplot_Commands_Done
     $caption =~ s/Edn/E_{dn} /g;
     $caption =~ s/Nuclear([\w]+)/$1/g;
     $caption = "$caption Jastrow Functions";
-    if($printedHeader){
+    if($printedHeader || $publication == 1){
 	$allPlots .= "set title \"$caption\";\\\n";
 	$lastPlot .= "set title \"$caption\";\\\n";
     } else {
@@ -434,6 +460,7 @@ gnuplot_Commands_Done
 
 	if($showOpt){
 	    $title = sprintf "%2i %8.4f", $step, $optE;
+	    #$title = $example;
 	} else {
 	    if($max >= 10.0){
 		$title = sprintf "%-4.1f;",$max;
@@ -470,8 +497,13 @@ gnuplot_Commands_Done
 	    }
 	}	
 	
-	my $lt = $goodlt[int($i/12)];
-	my $lc = $i % 12;
+	my $lt;
+	if($publication == 1){
+	    $lt = $goodlt[$i%12];
+	} else {
+	    $lt = $goodlt[int($i/12)];
+	}
+	my $lc = ($i+1) % 12;
 	#print "line number $i has type lc $lc lt $lt\n";
 	$func = "x > $max ? 1/0 : $func";
 	#$func = "x";

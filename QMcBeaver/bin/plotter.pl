@@ -11,6 +11,12 @@ my $withErr  = 0;
 my $spacef   = 0.3;
 my $i_active = 1;
 
+#absolute energies (=0) or relative (=1) to each other?
+my $shift = 1;
+
+#should the x axis be iteration (=0), samples (=1) or time (=2)?
+my $xtype = 0;
+
 #add lines with these values:
 my @exact_titles;
 my @exact;
@@ -24,12 +30,6 @@ if($withErr){
 
 my $units = 627.50960803;
 my $unitsL = "kcal/mol";
-
-#absolute energies (=0) or relative (=1) to each other?
-my $shift = 1;
-
-#should the x axis be iteration (=0), samples (=1) or time (=2)?
-my $xtype = 0;
 
 while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
     $type = shift(@ARGV);
@@ -421,10 +421,17 @@ sub subtractTwo
     my %newdata;
     for(my $i=$#keys; $i>=0; $i--){
 	$iKey = $keys[$i];
+	my @iData = split/&/,$iKey;
 	for(my $j=0; $j<$i; $j++){
 	    $jKey = $keys[$j];
+	    my @jData = split/&/,$jKey;
+	    next if(!areComparable($iKey,$jKey));
 
-	    ($iMult,$jMult) = getFormula($iKey,$jKey,$orbFilter);
+	    my $temp = 0;
+	    ($iMult,$temp,$jMult) = getFormula($iData[2],0,$jData[2],$orbFilter);
+	    my $orbsMatch = 0;
+	    $orbsMatch = 1 if($iMult * $iData[6] == $jMult * $jData[6]);
+	    next if($orbsMatch == 0 && $orbFilter == 1 && $temp == 0);
 
 	    #the results are not comparable if either is zero
 	    next if($iMult == 0 || $jMult == 0);

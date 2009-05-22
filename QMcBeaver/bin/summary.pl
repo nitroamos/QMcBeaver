@@ -1,39 +1,33 @@
 #!/usr/bin/perl
 
+# Quick start guide is found by running: summary.pl -h
+#
+#
+#
+#use strict;
 #assume utilities.pl is in the same directory as summary.pl
 my $path = `dirname $0`;
 chomp($path);
 require "$path/utilities.pl";
 
-my $useVar     = 0;
-my $dtFilter   = 0;
-my $orbFilter  = 1;
-my $compareE   = 0;
-my $sumResults = 1;
-my $latexHelp  = 0;
-my $averageTitle=1;
+# First, select the default values for all our parameters.
+my $useVar       = 0;
+my $dtFilter     = 0;
+my $orbFilter    = 1;
+my $compareE     = 0;
+my $sumResults   = 1;
+my $latexHelp    = 0;
+my $latexDTcol   = 0;
+my $averageTitle = 0;
+my $estd_stop    = 0.0;#in $units
+#my $extraTag  = "trail_eps2";
+
 my @fileFilters;
 my @exclusionFilters;
 
-#my $extraTag  = "trail_eps2";
 
-# This script will create a gnuplot graph
-# showing the convergence + error bars for a
-# set of calculations.
-# If the associated .ckmf files are in the same
-# directory, it will include some extra info on the graph.
-# I programmed this with the latest GNUPLOT on OSX, which
-# now has gif output.
-
-#use strict;
-
-#hartrees (=1) or kcal/mol (=627.50960803) or eV (27.211399)?
-#my $units = 27.211399;
 my $units = 627.50960803;
 my $unitsL = "kcal/mol";
-
-#absolute energies (=0) or relative (=1) to each other?
-my $shift = 1;
 
 #keep only 1 line every $drop lines
 #also look at $every in plotter.pl
@@ -42,25 +36,36 @@ if($drop != 1){
     print "Keeping only 1 line in $drop\n";
 }
 
-my $d = qx! date +%F.%H-%M-%S !;
-chomp($d);
-#my $gnuplot = "/usr/local/bin/gnuplot";
-my $gnuplot = "gnuplot";
-
-#you might need to add this command to your .cshrc
-# `setenv GDFONTPATH /Library/Fonts:/System/Library/Fonts`;
-# `setenv GDFONTPATH /usr/share/fonts/bitstream-vera/`;
-
-my $date = `date`;
-chomp $date;
-
-while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
+#Second, read in user input.
+my @files;
+while($#ARGV >= 0){
     $type = shift(@ARGV);
     $param = "";
 
-    if($type eq "-v"){
-	$param = shift(@ARGV);
-	$useVar = $param if($param == 1 || $param == 0);
+    if($type !~ /^-/){
+	#assume for now that it an output file
+	push(@files,$type);
+    } elsif($type eq "-h"){
+	print "Usage:\n";
+	print "-h Print this help.\n";
+	print "-v Include VMC calculations (currently = $useVar).\n";
+	print "-a Average equivalent files (currently = $averageTitle).\n";
+	print "-t <param> Only include dt=<param> (or all if 0, currently = $dtFilter).\n";
+	print "-f <param> Only include files that match <param>.\n";
+	print "-x <param> Exclude files that match <param>.\n";
+	print "-u <param> Convert energy units to <param> units. E.g. <param> = ev or kcal\n";
+	print "-o Include comparisons between inconsistent orbitals (currently = $orbFilter).\n";
+	print "-c Include non-DMC energy comparisons, if available (currently = $compareE).\n";
+	print "-e <param> Stop reading calculations when the error goes below <param>, in the selected units (currently = $estd_stop).\n";
+	print "-s Summarize output if sumResults=1 (currently = $sumResults).\n";
+	print "-l Make a LaTeX table (currently = $latexHelp).\n";
+	print "Any option not starting with a '-' will be interpreted as a calculation file/directory.\n";
+	print "Directories are recursively scanned, ignoring any directories named \"hide\"\n";
+	print "If you don't include any calculation files, then we'll add directory \".\"\n";
+	print "So far, you've selected \"@files\".\n";
+	exit;
+    } elsif($type eq "-v"){
+	$useVar = ($useVar+1)%2;
 	print "Using useVar = $useVar\n";
     } elsif($type eq "-a"){
 	$averageTitle = ($averageTitle+1)%2;
@@ -96,52 +101,41 @@ while($#ARGV >= 0 && $ARGV[0] =~ /^-/){
 	    $units  = 1;
 	    $unitsL = "au"; 
 	}
-	print "Using $unitsL energy units, conversion = $units\n";
+	print "Converting energy units: 1.0 $unitsL = $units au\n";
     } elsif($type eq "-o"){
-	$orbFilter = 0;
+	$orbFilter = ($orbFilter+1)%2;
 	if($orbFilter == 1){
 	    print "Filtering to only include balanced orbitals\n";
 	} else {
 	    print "Not filtering results based on orbital usage.\n";
 	}
     } elsif($type eq "-c"){
-	$compareE = 1;
-	print "Comparing with reference energies.\n";
+	$compareE = ($compareE+1)%2;
+	print "Comparing with reference energies, compareE = $compareE.\n";
+    } elsif($type eq "-e"){
+	$param = shift(@ARGV);
+	$estd_stop = 1*$param;
+	#Print the message later, once we're sure $unitsL has been set
     } elsif($type eq "-s"){
-	$sumResults = 0;
-	print "Extended report.\n";
+	$sumResults = ($sumResults+1)%2;
+	print "Summarize report, sumResults = $sumResults.\n";
     } elsif($type eq "-l"){
-	$latexHelp = 1;
-	print "LaTex Helper.\n";
+	$latexHelp = ($latexHelp+1)%2;
+	print "LaTex Helper, latexHelp = $latexHelp.\n";
     } else {
 	print "Unrecognized option: $type\n";
 	die;
     }
 }
 
-my @files = @ARGV;
-if($#ARGV < 0)
-{
-    push(@files,".");
-    #if the first argument is a plotfile.dat, then we'll add new data to it
-    #otherwise, we'll create a new plotfile.dat
-    
-    #print "Usage: qmc_convergence_graph.pl {plotfile.dat || output1.out} [output2.out ...]\n";
-    #print "Will produce a graph of energy vs num samples or iterations.\n";
-    #die;
+if($estd_stop > 0.0){
+    print "Notice: we will stop reading calculations once they reach an error of $estd_stop $unitsL!\n\n";
 }
 
+push(@files,".") if($#files < 0);
 #getFileList(".out",\@files);
 getFileList(".qmc",\@files);
-
-if($ARGV[0] =~ /.dat$/)
-{
-    print "Adding data to $ARGV[0]\n";
-    open (DATFILE, ">>plotfile.dat");
-} else {
-    #print "Truncating plotfile.dat\n";
-    open (DATFILE, ">plotfile.dat");
-}
+open (DATFILE, ">plotfile.dat");
 
 my $Cnormal = "\x1b[0m";
 my $Chilite = "\x1b[37m";
@@ -370,6 +364,7 @@ for(my $index=0; $index<=$#files; $index++){
     while(<QMCFILE>){
 	$headerLine = $_ if(/iteration/ && /Eavg/ && /Samples/);
 
+	next if($estd > 0 && $estd * $units < $estd_stop);
 	#this is to avoid processing lines with warnings
 	next if( $_ =~ /[=:]/ && $_ !~ /Results/);
 
@@ -381,6 +376,7 @@ for(my $index=0; $index<=$#files; $index++){
 	if($#data >= 8 && $_ !~ /[A-DF-Za-df-z]+/ && $more){
 	    $counter++;
 	    $iteration   = $data[1];
+	    $iteration  /= 8 if($oepi == 1);
 	    $eavg        = $data[2];
 	    $estd        = $data[3];
 
@@ -457,7 +453,7 @@ for(my $index=0; $index<=$#files; $index++){
 
     my $runage = getFileAge("$base.out",1);
     # updated in the last 15 minutes
-    $short = "*$short" if($runage < 900);
+    $short = "*$short" if($runage < 900 && $estd * $units > $estd_stop);
     if(exists $shortnames{$key}){
 	my $orig = $shortnames{$key};
 	$shortnames{$key} = $short if(length $orig > length $short);
@@ -553,162 +549,264 @@ foreach $sum (sort bydt keys %summary)
     print "$summary{$sum}";
 }
 
-if($num_results > 0){
-    $ave_result /= $num_results;
-    #print "Average result = $ave_result\n";
-    $labelLen = $lenLong;
-    $labelLen = length "Label" if(length "Label" > $labelLen);
-    printf "%5s %*s %10s %1s %20s %5s %7s   %-25s %5s %20s %20s %10s\n",
+die if($num_results <= 0);
+
+$ave_result /= $num_results;
+#print "Average result = $ave_result\n";
+$labelLen = $lenLong;
+$labelLen = length "Label" if(length "Label" > $labelLen);
+printf "%5s %*s %10s %1s %20s %5s %7s   %-25s %5s %20s %20s %10s\n",
     "ID",$labelLen,"Label",
     "dt","e","Ref. Energy","Num","CI:BF","NumJW","NumW","Average","Corr. E.","Weight";
-    my %qref;
-    my %href;
-    my $dtref = 0;
-    my $cure = "";
-    foreach $key (sort byenergy keys %dt_ave_results)
-    {
-	my @keydata = split/&/,$key;
+my %qref;
+my %href;
+my $dtref = 0;
+my $cure = "";
+foreach $key (sort byenergy keys %dt_ave_results)
+{
+    my @keydata = split/&/,$key;
+
+    if($dt_num_results{$key} > 0){
 	$dt_ave_results{$key} /= $dt_num_results{$key};
-
-	if($dt_nme_results{$key} > 0){
-	    $dt_err_results{$key} = sqrt($dt_err_results{$key}/$dt_nme_results{$key});
-	} else {
-
-	}
-
-	printf "%5i %*s %10s %1i %20s %5i %3i:%-3i   %-25s %5i %20s %20.10f %10.5f\n",
-	$label{$key},
-	$labelLen,
-	$shortnames{$key},
-	"$keydata[1]", $keydata[7], "$keydata[0]",
-	$dt_num{$key},
-	$keydata[5],
-	$keydata[2],
-	$keydata[3],
-	$keydata[4],
-	getEnergyWError($dt_ave_results{$key},$dt_err_results{$key}),
-	($keydata[0]-$dt_ave_results{$key}),
-	$dt_num_results{$key};
+    } else {
+	print "Why does $key have $dt_num_results{$key} results?\n";
+	die;
     }
 
-    print "\n\n";
-    #matrix output
-    #the data is sorted according to dt first
-    #we calculate the difference for for all results available
-    #but we don't compare calculations if dt and energy are different
-    print "DMC comparisons:\n";
-    my %comparisons;
+    if($dt_nme_results{$key} > 0){
+	$dt_err_results{$key} = sqrt($dt_err_results{$key}/$dt_nme_results{$key});
+    } else {
+	
+    }
+    
+    printf "%5i %*s %10s %1i %20s %5i %3i:%-3i   %-25s %5i %20s %20.10f %10.5f\n",
+    $label{$key},
+    $labelLen,
+    $shortnames{$key},
+    "$keydata[1]", $keydata[7], "$keydata[0]",
+    $dt_num{$key},
+    $keydata[5],
+    $keydata[2],
+    $keydata[3],
+    $keydata[4],
+    getEnergyWError($dt_ave_results{$key},$dt_err_results{$key}),
+    ($keydata[0]-$dt_ave_results{$key}),
+    $dt_num_results{$key};
+}
 
-    foreach $row (sort bydt keys %dt_ave_results)
+print "\n\n";
+#matrix output
+#the data is sorted according to dt first
+#we calculate the difference for for all results available
+#but we don't compare calculations if dt and energy are different
+my %comparisons;
+
+#A + B = C + D
+foreach $A (sort bydt keys %dt_ave_results)
+{
+    my @Adata = split/&/,$A;
+    foreach $C (sort bydt keys %dt_ave_results)
     {
-	my $newrow = 1;
-	my @rowdata = split/&/,$row;
-	my $rowJW = (split/=/,$rowdata[3])[0];
-	foreach $col (sort bydt keys %dt_ave_results)
+	my @Cdata = split/&/,$C;	
+	next if(!areComparable($A,$C));
+
+	foreach $B (sort bydt keys %dt_ave_results)
 	{
-	    my @coldata = split/&/,$col;
-	    my $colJW = (split/=/,$coldata[3])[0];
+	    #next if($A eq $B || $A eq $C || $B eq $C);
+	    next if(!areComparable($A,$B));
 
-	    ($rMult,$cMult) = getFormula($row,$col,$orbFilter);
+	    my @Bdata = split/&/,$B;
+	    my $a = $dt_ave_results{$A};
+	    my $b = $dt_ave_results{$B};
+	    my $c = $dt_ave_results{$C};
+	    next if($a < $c || $a < $b); #otherwise we'll get two of every comparison
+	    #next if($a < $c); #otherwise we'll get two of every comparison
+	    
+	    my $aOrb = $Adata[6];
+	    my $bOrb = $Bdata[6];
+	    my $cOrb = $Cdata[6];	    
 
-	    my $r = $dt_ave_results{$row};
-	    my $c = $dt_ave_results{$col};
-	    my $rOrb = $rowdata[6];
-	    my $cOrb = $coldata[6];
-
-	    #the results are not comparable if either is zero
-	    next if($rMult == 0 || $cMult == 0);
-	    #otherwise we'll get two of every comparison
-	    next if($r < $c);
+	    ($aMult,$bMult,$cMult) = getFormula($Adata[2],$Bdata[2],$Cdata[2],$orbFilter);
+	    #print "$a $b $c ($aMult,$bMult,$cMult) \n" if($bMult != 0);
+	    next if($a < $b && $bMult > 0);	    
+	    next if($aMult == 0 || $cMult == 0); #the results are not comparable if either is zero
 	    #This eliminates a lot of the meaningless comparisons
-	    my $orbsMatch = ($rMult * $rOrb == $cMult * $cOrb);
-
-	    #So that we're comparing the difference
+	    my $orbsMatch = 0;
+	    $orbsMatch = 1 if($aMult * $aOrb == $cMult * $cOrb);
+	    next if($orbsMatch == 0 && $orbFilter == 1 && $bMult == 0);
+            #So that we're comparing the difference
 	    $cMult *= -1;
 
-	    my $diff = $r*$rMult + $c*$cMult;
-	    my $stdR = abs($dt_err_results{$row}*$rMult);
-	    my $stdC = abs($dt_err_results{$col}*$cMult);
-	    my $diffe = sqrt($stdR*$stdR + $stdC*$stdC);
+	    #print "$orbsMatch = ($aMult * $aOrb == $cMult * $cOrb)   ($aMult,$bMult,$cMult)\n";
+	    #print "$orbsMatch \n";
+
+
+	    my $diff = $a*$aMult + $b*$bMult + $c*$cMult;
+	    my $stdA = abs($dt_err_results{$A}*$aMult);
+	    my $stdB = abs($dt_err_results{$B}*$bMult);
+	    my $stdC = abs($dt_err_results{$C}*$cMult);
+	    my $diffe = sqrt($stdA*$stdA + $stdB*$stdB + $stdC*$stdC);
 	    
-	    $diff *=  $units;
+	    $diff  *= $units;
 	    $diffe *= $units;
-
+	    
 	    my $comparison = "";
-	    my $rStr = getEnergyWError($dt_ave_results{$row},$dt_err_results{$row});
-	    my $cStr = getEnergyWError($dt_ave_results{$col},$dt_err_results{$col});
+	    my $aStr = getEnergyWError($dt_ave_results{$A},$dt_err_results{$A});
+	    my $bStr = getEnergyWError($dt_ave_results{$B},$dt_err_results{$B});
+	    my $cStr = getEnergyWError($dt_ave_results{$C},$dt_err_results{$C});
+	    my $diffStr = getEnergyWError($diff,$diffe);
 
+	    #print "($Adata[2],$Bdata[2],$Cdata[2]) => ($aMult,$bMult,$cMult) := $diffStr\n";
+	    
 	    if($sumResults == 1){
-		$comparison .= sprintf "%3i %3i) %6s",$label{$row},$label{$col},$rowdata[1];
-		my $rM = $rMult;
+		$comparison .= sprintf "%3i %3i) %6s",$label{$A},$label{$C},$Adata[1];
+		my $aM = $aMult;
+		my $bM = $bMult;
 		my $cM = $cMult;
-		$rM = " " if($rMult == 1);
+		$aM = " " if($aMult == 1);
+		$bM = " " if($bMult == 1);
 		$cM = "- " if($cMult == -1);
+		
+		my $compType = sprintf " ${aM} %*s ",
+		$lenLong,$shortnames{$A};
+		
+		if($bMult != 0){
+		    $compType .= sprintf " +${bM} %*s ",
+		    $lenLong,$shortnames{$B};
+		}
+		$compType .= sprintf " +${cM} %*s ",
+		$lenLong,$shortnames{$C};
 
-		$compType = sprintf " ${rM} %*s +${cM} %*s ",
-		$lenLong,$shortnames{$row},
-		$lenLong,$shortnames{$col};
 		$compType =~ s/\+\-/\-/g;
 		$comparison .= sprintf "%s =", $compType;
 	    } else {
+		my $AJW = (split/=/,$Adata[3])[0];
+		my $BJW = (split/=/,$Bdata[3])[0];
+		my $CJW = (split/=/,$Cdata[3])[0];
 		$comparison .= sprintf "%3i) %*s %15s %6s %3s:%2s:%-3s %5s | ",
-		$label{$row},$lenLong,$shortnames{$row},
-		$rStr,$rowdata[1],$rowdata[5],$rOrb,$rowdata[2],$rowJW;
+		$label{$A},$lenLong,$shortnames{$A},
+		$aStr,$Adata[1],$Adata[5],$aOrb,$Adata[2],$AJW;
+
+		if($bMult != 0){
+		    $comparison .= sprintf "%3i) %*s %15s %6s %3s:%2s:%-3s %5s | ",
+		    $label{$B},$lenLong,$shortnames{$B},
+		    $bStr,$Bdata[1],$Bdata[5],$bOrb,$Bdata[2],$BJW;
+
+		    $compType = "${aMult}A+${bMult}B+${cMult}C";
+		} else {
+		    $compType = "${aMult}A+${cMult}B";
+		}
+
 		$comparison .= sprintf "%3i) %*s %15s %6s %3s:%2s:%-3s %5s | ",
-		$label{$col},$lenLong,$shortnames{$col},
-		$cStr,$coldata[1],$coldata[5],$cOrb,$coldata[2],$colJW;
-		$compType = "${rMult}A+${cMult}B";
+		$label{$C},$lenLong,$shortnames{$C},
+		$cStr,$Cdata[1],$Cdata[5],$cOrb,$Cdata[2],$CJW;
+
 		$compType =~ s/1//g;
 		$compType =~ s/\+\-/\-/g;
 		$comparison .= sprintf "%6s=", $compType;
 	    }
-
+	    
 	    if($orbsMatch){
 		$comparison .= " ";
 	    } else {
 		$comparison .= "*";
 	    }
-
-	    $dStr = getEnergyWError($diff,$diffe);
+	    
 	    if(0){
 		$comparison .= sprintf " %9.5f",$diff;
 		$comparison .= sprintf " +/- %-9.5f $unitsL", $diffe;
 	    } else {
-		$comparison .= sprintf " %10s $unitsL",$dStr;
+		$comparison .= sprintf " %10s $unitsL",$diffStr;
 	    }
-
+	    
 	    if($compareE){
-		foreach $etype (reverse sort keys %{$referenceE{$row}}){
-		    $eRow = $referenceE{$row}{$etype} * $rMult;
-		    $eCol = $referenceE{$col}{$etype} * $cMult;
-		    my $temp = ($eRow + $eCol)*$units;
+		foreach $etype (reverse sort keys %{$referenceE{$A}}){
+		    $eA = $referenceE{$A}{$etype} * $aMult;
+		    $eB = $referenceE{$B}{$etype} * $bMult;
+		    $eC = $referenceE{$C}{$etype} * $cMult;
+		    my $temp = ($eA + $eB + $eC)*$units;
 		    
-		    next if(!exists $referenceE{$col}{$etype} || abs($temp) < 1e-10);
-
+		    next if(!exists $referenceE{$C}{$etype} || abs($temp) < 1e-10);
+		    
 		    if($sumResults == 1){
 			#$comparison .= sprintf " %*s = %9.5f %s\n",(2*$lenLong+22),"",$temp,$etype;
 			$comparison .= sprintf " %s = %9.5f",$etype,$temp;
 		    } else {
 			$comparison .= sprintf "\n     %*s %15.10f %23s |      %*s %15.10f %23s | %7s  %9.5f %s",
-			$lenLong,"",$referenceE{$row}{$etype},"",$lenLong,"",$referenceE{$col}{$etype},"","",$temp,$etype;
+			$lenLong,"",$referenceE{$A}{$etype},"",$lenLong,"",$referenceE{$C}{$etype},"","",$temp,$etype;
 		    }
 		}
 	    }
 	    $comparison .= sprintf "\n";
-
+	    
 	    if($latexHelp){
-		$tempStr = sprintf "%5s & %20s & %15s & %20s & %15s & %15s \\\\",
-		$rowdata[1],$shortnames{$row},$rStr,$shortnames{$col},$cStr,$dStr;
+		#strip off any of the title after the first underscore
+		my $nameA = $1 if($shortnames{$A} =~ /([\dA-Za-z]+)_/);
+		my $nameC = $1 if($shortnames{$C} =~ /([\dA-Za-z]+)_/);
+
+		$tempStr = "";
+		$tempStr = sprintf "%5s & ", $Adata[1] if($latexDTcol);		
+		$tempStr .= sprintf "%20s & %15s & %20s & %15s & %15s \\\\",
+		$nameA,$aStr,$nameC,$cStr,$diffStr;
 		$tempStr =~ s/\./\&/g;
 		$comparison = "$tempStr\n";
 	    }
-
-	    $comparisons{$comparison} = $diff;
+	    
+	    $comparisons{$comparison} = $diff if(abs($diff) < 1000);
 	}
     }
-
-    foreach $key (sort {$comparisons{$a} <=> $comparisons{$b}} keys %comparisons){
-	print "$key";
-    }
-    print "\n\n";
 }
+
+if($latexHelp){
+    if($latexDTcol){
+	print <<LATEX_HEADER;
+\\begin{center}
+\\begin{table}[htdp]
+\\caption{A \$\\leftarrow\$ B}
+\\label{table:gen}
+\\begin{tabular}{r\@{.}l r r\@{.}lr r\@{.}lr\@{.}l}
+\\hline \\hline
+\\multicolumn{2}{c}{\$\\delta t\$} & A &
+\\multicolumn{2}{c}{DMC} & B &
+\\multicolumn{2}{c}{DMC} &
+\\multicolumn{2}{c}{\$\\Delta\$} \\\\
+\\multicolumn{2}{c}{au\$^{-1}\$} &  &
+\\multicolumn{2}{c}{au} &  &
+\\multicolumn{2}{c}{au} &
+\\multicolumn{2}{c}{$unitsL} \\\\
+\\hline
+LATEX_HEADER
+} else {
+    print <<LATEX_HEADER;
+\\begin{center}
+\\begin{table}[htdp]
+\\caption{A \$\\leftarrow\$ B}
+\\label{table:gen}
+\\begin{tabular}{r r\@{.}lr r\@{.}lr\@{.}l}
+\\hline \\hline
+A &
+\\multicolumn{2}{c}{DMC} & B &
+\\multicolumn{2}{c}{DMC} &
+\\multicolumn{2}{c}{\$\\Delta\$} \\\\
+  &
+\\multicolumn{2}{c}{au} &  &
+\\multicolumn{2}{c}{au} &
+\\multicolumn{2}{c}{$unitsL} \\\\
+\\hline
+LATEX_HEADER
+}
+}
+foreach $key (sort {$comparisons{$a} <=> $comparisons{$b}} keys %comparisons){
+    print "$key";
+}
+if($latexHelp){
+print <<LATEX_TAIL;
+\\hline \\hline
+\\end{tabular}
+\\end{table}
+\\end{center}
+LATEX_TAIL
+}
+
+print "\n\n";
+

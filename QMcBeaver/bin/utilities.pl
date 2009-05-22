@@ -1,6 +1,49 @@
 #!/usr/bin/perl
 use POSIX;
 
+sub areComparable {
+# This function is used by the code to see if two calculations can be compared.
+# The script will generate output comparing each result against all other results,
+# which add up to quite a few comparisons, most of which are actually meaningless.
+# So if they're meaningless, then return 0. You'll probably want to edit this function
+# to choose your own comparisons.
+#
+# The input is from summary.pl, where each a key is created for each calculation:
+# my $key = "$refE&$dt&$numbf&$numjw&$nw&$numci&$numor&$oepi&$short"; 
+#
+    my ($one, $two) = @_;
+    my @od = split/&/,$one;
+    my @td = split/&/,$two;
+
+    return 0 if($od[0] == $td[0] || #compare energies
+		$od[1] != $td[1] || #compare dt
+		$od[4] != $td[4] || #compare num walkers
+		$od[7] != $td[7]); #compare oepi
+
+    #make sure the jastrows are comparable
+    return 0 if($od[3] =~ /44/ && $td[3] !~ /44/);
+    return 0 if($od[3] !~ /44/ && $td[3] =~ /44/);
+    
+    #the files are named something like awt0p2, so extract the letter after the 0 (or 4),
+    #p in this case, and make sure they match
+    my $oType = "";
+    my $tType = "";
+    $oType = $1 if($od[8] =~ /t\d(\w)/);
+    $tType = $1 if($td[8] =~ /t\d(\w)/);
+    #this probably needs to be turned off for atomization energies
+    return 0 if($oType ne $tType);
+
+    #make sure the last number in the file matches
+    #This only makes a difference if we didn't average over the results.
+    my $oLast = "";
+    my $tLast = "";
+    $oLast = $1 if($od[8] =~ /([\d\.]+)$/);
+    $tLast = $1 if($td[8] =~ /([\d\.]+)$/);
+    #return 0 if($oLast ne $tLast);
+
+    return 1;
+}
+
 #alphabet first, numerical second
 sub a1n2 {
     my @adata = split/&/,$a;
@@ -77,47 +120,43 @@ sub getEnergyWError {
     #printf("nrg=%10.5f err=%10.5f d=%3i energy=%20f str=%s\n",$nrg,$err,$d,$energy,$str);
     return $str;
 }
+
 sub getFormula {
-    my ($one, $two, $orbFilter) = @_;
-    my @od = split/&/,$one;
-    my @td = split/&/,$two;
+    my ($a, $b, $c, $orbFilter) = @_;
+    my $am = $c;
+    my $bm = $b;
+    my $cm = $a;
 
-    return (0,0) if($od[0] == $td[0] || #compare energies
-		    $od[1] != $td[1] || #compare dt
-		    $od[4] != $td[4] || #compare num walkers
-		    $od[7] != $td[7] || #compare oepi
-		    $od[3] ne $td[3]);  #compare jastrows
-    
-    
-# This forces the names to be exactly the same
-    # return (0,0) if($#od > 7 && $od[8] ne $td[8]);
-    my $odLastIdx = $1 if($od[8] =~ /[\w\d_]+_([\d]+)$/); 
-    my $tdLastIdx = $1 if($td[8] =~ /[\w\d_]+_([\d]+)$/); 
-#print "$od[8] -> $odLastIdx $td[8] -> $tdLastIdx\n";
-    return (0,0) if($odLastIdx ne $tdLastIdx);
-    
-    $or = $od[2];
-    $tr = $td[2];
-    $factor = 100;
-
+    my $factor = 100;
     while($factor != 1){
-	$factor = gcf($or,$tr);
-	#print "gcf($or,$tr) = $factor\n";
-	$or /= $factor;
-	$tr /= $factor;
+	$factor = gcf($am,$cm);
+	#print "gcf($ar,$cr) = $factor\n";
+	$am /= $factor;
+	$cm /= $factor;
     }
 
-    #print "ratio = $ratio : intr = $intr : intdiff = $intdiff\n";
-    if($or == int($or) && $tr == int($tr) &&
-       $or < 10 && $tr < 10)
+    if($am == int($am) && $cm == int($cm) &&
+       $am < 10 && $cm < 10)
     {
-	return (0,0) if($or*$td[6] != $tr*$od[6] &&
-			$orbFilter);
-
-	return ($tr, $or);
-    } else {
-	return (0, 0);
+	#return (0,0) if($ar*$cd[6] != $cr*$ad[6] &&
+	#		$arbFilter);
+	#print "($a, 0, $c) => ($am, 0, $cm)\n";
+	return ($am, 0, $cm);
     }
+
+    my $maxF = 6;
+    for($am=1; $am <= $maxF; $am+=1){
+	for($bm=1; $bm <= $maxF; $bm+=1){
+	    for($cm=1; $cm <= $maxF; $cm+=1){
+		if( $am*$a + $bm*$b == $cm*$c){
+		    #print "($a, $b, $c) => ($am, $bm, $cm)\n";
+		    return ($am,$bm,$cm);
+		}
+	    }
+	}
+    }    
+    
+    return (0, 0, 0);
 }
 
 sub getFileAge
@@ -264,7 +303,6 @@ sub getCKMFSummary
     $optUD   = 0;
     $optUU   = 0;
     $optNE   = 0;
-
     while(<CKMFFILE>){
 	if($_ =~ m/^\s*run_type\s*$/){
 	    $_ = <CKMFFILE>;
