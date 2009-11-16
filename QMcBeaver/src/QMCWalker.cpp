@@ -2085,6 +2085,9 @@ bool QMCWalker::setR(Array2D<T> temp_R)
   return ok;
 }
 
+template bool QMCWalker::setR(Array2D<double> temp_R);
+template bool QMCWalker::setR(Array2D<float> temp_R);
+
 QMCWalkerData* QMCWalker::getWalkerData()
 {
   return &walkerData;

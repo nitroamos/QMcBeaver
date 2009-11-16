@@ -84,8 +84,11 @@ bool IeeeMath::isNaN(T x)
 #endif
 }
 
+template bool IeeeMath::isNaN(double x);
+template bool IeeeMath::isNaN(float x);
+
 //QSC compiler quits if this line is uncommented...
-#if ! defined USING_QSC
-template bool IeeeMath::isNaN<double>(double x);
-#endif
+//#if ! defined USING_QSC
+//template bool IeeeMath::isNaN<double>(double x);
+//#endif
 
